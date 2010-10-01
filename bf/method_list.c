@@ -1,0 +1,124 @@
+/*
+ * Copyright (C) 1999-2003,2005,2007,2008 Bernd Feige
+ * 
+ * This file is part of avg_q.
+ * 
+ * avg_q is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * avg_q is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#include <bf.h>
+
+LOCAL void (* const method_selects[])(transform_info_ptr)={
+ select_readasc,
+ select_dip_simulate,
+ select_get_mfxepoch,
+ select_null_source,
+ select_read_brainvision,
+ select_read_freiburg,
+ select_read_generic,
+ select_read_hdf,
+ select_read_inomed,
+ select_read_labview,
+ select_read_kn,
+ select_read_neurofile,
+ select_read_rec,
+ select_read_sound,
+ select_read_synamps,
+ select_read_tucker,
+ select_read_vitaport,
+
+ select_assert,
+ select_reject_bandwidth,
+ select_reject_flor,
+
+ select_add,
+ select_add_channels,
+ select_add_zerochannel,
+ select_baseline_divide,
+ select_baseline_subtract,
+ select_calc,
+ select_calc_binomial_items,
+ select_change_axes,
+ select_collapse_channels,
+ select_convolve,
+ select_correlate,
+ select_demean_maps,
+ select_detrend,
+ select_differentiate,
+ select_dip_fit,
+ select_echo,
+ select_export_point,
+ select_extract_item,
+ select_fftfilter,
+ select_fftspect,
+ select_icadecomp,
+ select_import_point,
+ select_integrate,
+ select_invert,
+ select_laplacian,
+ select_link_order,
+ select_normalize_channelbox,
+ select_orthogonalize,
+#ifndef __BORLANDC__
+ select_posplot,
+#endif
+ select_project,
+ select_push,
+ select_pop,
+ select_query,
+ select_raw_fft,
+ select_recode,
+ select_remove_channel,
+ select_rereference,
+ select_run,
+ select_scale_by,
+ select_set,
+ select_set_channelposition,
+ select_set_comment,
+#ifndef __BORLANDC__
+ select_show_memuse,
+#endif
+ select_sliding_average,
+ select_subtract,
+ select_svdecomp,
+ select_swap_fc,
+ select_swap_ic,
+ select_swap_ix,
+ select_trim,
+ select_write_crossings,
+ select_zero_phase,
+
+ select_append,
+ select_average,
+ select_histogram,
+ select_minmax,
+ select_null_sink,
+
+ select_writeasc,
+ select_write_freiburg,
+ select_write_generic,
+ select_write_hdf,
+ select_write_kn,
+ select_write_mfx,
+ select_write_rec,
+ select_write_sound,
+ select_write_synamps,
+ select_write_vitaport,
+
+ NULL
+};
+
+GLOBAL void
+(* const *get_method_list(void))(transform_info_ptr) {
+ return method_selects;
+}

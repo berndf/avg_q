@@ -1,0 +1,103 @@
+/*
+ * Copyright (C) 1993,1994,1996-1999,2003,2004 Bernd Feige
+ * 
+ * This file is part of avg_q.
+ * 
+ * avg_q is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * avg_q is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * swap_xz global function to transform a linked tinfo chain into another
+ * in which the former x coordinate is the z coordinate and vice versa.
+ * The original data is NOT freed; in fact, those buffers of the old chain 
+ * that can be used by the new are addressed by the new tinfo's (eg the
+ * sensor names and positions).
+ *	-- Bernd Feige 26.04.1993
+ */
+
+/*{{{}}}*/
+/*{{{  #includes*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "transform.h"
+#include "bf.h"
+/*}}}  */
+
+GLOBAL transform_info_ptr
+swap_xz(transform_info_ptr tinfo) {
+ transform_info_ptr newtinfo, tinfoptr;
+ DATATYPE *xdata, *ydata;
+ int i, xsize, channel, point, itempart;
+ char *const newxchannelname=(tinfo->z_label==NULL ? (char *)"Dataset" : tinfo->z_label);
+
+ /*{{{  Allocate the memory areas*/
+ if ((newtinfo=(struct transform_info_struct *)malloc(tinfo->nr_of_points*sizeof(struct transform_info_struct)))==NULL) {
+  ERREXIT(tinfo->emethods, "swap_xz: Error malloc'ing tinfo structs\n");
+ }
+ /* Count how many tinfo structs there are in the input (our x values): */
+ for (xsize=0, tinfoptr=tinfo; tinfoptr!=NULL; xsize++) tinfoptr=tinfoptr->next;
+ if ((xdata=(DATATYPE *)malloc(xsize*sizeof(DATATYPE)+strlen(newxchannelname)+1))==NULL) {
+  ERREXIT(tinfo->emethods, "swap_xz: Error malloc'ing xdata array\n");
+ }
+ /* Allocate the y data arrays for all tinfo->nr_of_points new tinfo's */
+ if ((ydata=(DATATYPE *)malloc(xsize*tinfo->nr_of_channels*tinfo->nr_of_points*tinfo->itemsize*sizeof(DATATYPE)))==NULL) {
+  ERREXIT(tinfo->emethods, "swap_xz: Error malloc'ing ydata array\n");
+ }
+ /*}}}  */
+
+ /*{{{  Copy the xdata and ydata values*/
+ for (i=0, tinfoptr=tinfo; i<xsize; i++) {
+  nonmultiplexed(tinfoptr);
+  xdata[i]=(tinfo->z_label==NULL ? i : tinfoptr->z_value);
+  for (channel=0; channel<tinfoptr->nr_of_channels; channel++) {
+   for (point=0; point<tinfoptr->nr_of_points; point++) {
+    for (itempart=0; itempart<tinfoptr->itemsize; itempart++) {
+     ydata[(point*tinfo->nr_of_channels*xsize+channel*xsize+i)*tinfoptr->itemsize+itempart]=tinfoptr->tsdata[(channel*tinfoptr->nr_of_points+point)*tinfo->itemsize+itempart];
+    }
+   }
+  }
+  tinfoptr=tinfoptr->next;
+ }
+ strcpy((char *)(xdata+xsize),newxchannelname);
+ /*}}}  */
+
+ /*{{{  Set the contents of the new tinfo chain*/
+ for (i=0; i<tinfo->nr_of_points; i++) {
+  memcpy(newtinfo+i, tinfo, sizeof(struct transform_info_struct));
+  newtinfo[i].multiplexed=FALSE;
+  newtinfo[i].xchannelname=(char *)(xdata+xsize);
+  newtinfo[i].xdata=xdata;
+  newtinfo[i].nr_of_points=xsize;
+  newtinfo[i].z_label=tinfo->xchannelname;
+  newtinfo[i].z_value=tinfo->xdata[i];
+  newtinfo[i].tsdata=ydata+i*tinfo->nr_of_channels*tinfo->itemsize*xsize;
+  newtinfo[i].previous=newtinfo+i-1;
+  newtinfo[i].next=newtinfo+i+1;
+ }
+ newtinfo[0].previous=NULL;
+ newtinfo[tinfo->nr_of_points-1].next=NULL;
+ /*}}}  */
+
+ return newtinfo;
+}
+
+GLOBAL void
+swap_xz_free(transform_info_ptr newtinfo) {
+ if (newtinfo!=NULL) {
+  free_pointer((void **)&newtinfo->tsdata);
+  free_pointer((void **)&newtinfo->xdata);
+  free((void *)newtinfo);
+ }
+}

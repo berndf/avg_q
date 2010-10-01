@@ -1,0 +1,752 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/darren@hiebert.com/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://darren.hiebert.com/ctags/	/official site/
+!_TAG_PROGRAM_VERSION	3.4	/with C, C++, Eiffel, Fortran, and Java  support/
+ABS	polygons.c	16;"	d	file:
+AKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+AKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+AKEY	vodevice.h	18;"	d
+ARC	vogl.h	110;"	d
+ARCF	vogl.h	141;"	d
+Angle	vogl.h	/^typedef short	Angle;$/;"	t
+Astack	vogl.h	/^} Astack;$/;"	t
+Attribute	vogl.h	/^} Attribute;$/;"	t
+BACKBUFFER	vogl.h	133;"	d
+BACKFACE	polygons.c	926;"	d	file:
+BACKFACE	polygons.c	929;"	d	file:
+BACKFACING	vogl.h	136;"	d
+BACKSL	fvodevic.h	/^	integer BACKSL, EQUALK, LEFTBR, RIGHTB$/;"	v
+BACKSL	fvodevice.h	/^	integer BACKSL, EQUALK, LEFTBR, RIGHTB$/;"	v
+BACKSLASHKEY	vodevice.h	61;"	d
+BACKSP	fvodevic.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+BACKSP	fvodevice.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+BACKSPACEKEY	vodevice.h	66;"	d
+BKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+BKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+BKEY	vodevice.h	19;"	d
+BLACK	fvogl.h	/^	integer BLACK, RED, GREEN, YELLOW, BLUE, MAGENT, $/;"	v
+BLACK	vogl.h	36;"	d
+BLUE	fvogl.h	/^	integer BLACK, RED, GREEN, YELLOW, BLUE, MAGENT, $/;"	v
+BLUE	vogl.h	40;"	d
+Boolean	vogl.h	/^typedef long	Boolean;$/;"	t
+CALLOBJ	vogl.h	111;"	d
+CIRCF	vogl.h	142;"	d
+CIRCLE	vogl.h	112;"	d
+CKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+CKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+CKEY	vodevice.h	20;"	d
+CLEAR	vogl.h	113;"	d
+CMOV	vogl.h	146;"	d
+COLOR	vogl.h	114;"	d
+COMMAKEY	vodevice.h	58;"	d
+COMMAN	fvodevic.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+COMMAN	fvodevice.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+COT	viewing.c	24;"	d	file:
+CYAN	fvogl.h	/^     +		CYAN, WHITE$/;"	v
+CYAN	vogl.h	42;"	d
+CalcW2Vcoeffs	mapping.c	/^CalcW2Vcoeffs(void)$/;"	f
+Colorindex	vogl.h	/^typedef unsigned short	Colorindex;$/;"	t
+Coord	vogl.h	/^typedef float	Coord;$/;"	t
+D2R	vogl.h	58;"	d
+DELKEY	fvodevic.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+DELKEY	fvodevice.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+DELKEY	vodevice.h	70;"	d
+DEVSTACK	drivers.c	410;"	d	file:
+DKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+DKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+DKEY	vodevice.h	21;"	d
+DRAW	vogl.h	115;"	d
+DRAWSTR	vogl.h	116;"	d
+DevEntry	vogl.h	/^} DevEntry;$/;"	t
+Device	vogl.h	/^typedef unsigned short	Device;$/;"	t
+EIGHTK	fvodevic.h	/^	integer SIXKEY, SEVENK, EIGHTK, NINEKE $/;"	v
+EIGHTK	fvodevice.h	/^	integer SIXKEY, SEVENK, EIGHTK, NINEKE $/;"	v
+EIGHTKEY	vodevice.h	52;"	d
+EKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+EKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+EKEY	vodevice.h	22;"	d
+EQUALK	fvodevic.h	/^	integer BACKSL, EQUALK, LEFTBR, RIGHTB$/;"	v
+EQUALK	fvodevice.h	/^	integer BACKSL, EQUALK, LEFTBR, RIGHTB$/;"	v
+EQUALKEY	vodevice.h	62;"	d
+ESCKEY	vodevice.h	71;"	d
+F	polygons.c	/^static float	F[6][4], S[6][4], I[4], p[MAXVERTS][4];$/;"	v	file:
+FALSE	vogl.h	22;"	d
+FIRST_REDRAW	drivers.c	345;"	d	file:
+FIVEKEY	vodevice.h	49;"	d
+FKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+FKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+FKEY	vodevice.h	23;"	d
+FLAT	fvogl.h	/^	integer FLAT, SMOOTH, GDXPMA, GDYPMA$/;"	v
+FLAT	vogl.h	28;"	d
+FOURKE	fvodevic.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+FOURKE	fvodevice.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+FOURKEY	vodevice.h	48;"	d
+FRONTBUFFER	vogl.h	134;"	d
+GDXPMA	fvogl.h	/^	integer FLAT, SMOOTH, GDXPMA, GDYPMA$/;"	v
+GD_XPMAX	vogl.h	30;"	d
+GD_YPMAX	vogl.h	31;"	d
+GKEY	fvodevic.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+GKEY	fvodevice.h	/^	integer AKEY, BKEY, CKEY, DKEY, EKEY, FKEY, GKEY, HKEY$/;"	v
+GKEY	vodevice.h	24;"	d
+GREEN	fvogl.h	/^	integer BLACK, RED, GREEN, YELLOW, BLUE, MAGENT, $/;"	v
+GREEN	vogl.h	38;"	d
+HKEY	vodevice.h	25;"	d
+I	polygons.c	/^static float	F[6][4], S[6][4], I[4], p[MAXVERTS][4];$/;"	v	file:
+IKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+IKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+IKEY	vodevice.h	26;"	d
+INPUTCHANGE	vodevice.h	89;"	d
+Icoord	vogl.h	/^typedef long	Icoord;$/;"	t
+JKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+JKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+JKEY	vodevice.h	27;"	d
+KEYBD	fvodevic.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+KEYBD	fvodevice.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+KEYBD	vodevice.h	73;"	d
+KKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+KKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+KKEY	vodevice.h	28;"	d
+LEFTBR	fvodevic.h	/^	integer BACKSL, EQUALK, LEFTBR, RIGHTB$/;"	v
+LEFTBR	fvodevice.h	/^	integer BACKSL, EQUALK, LEFTBR, RIGHTB$/;"	v
+LEFTBRACKETKEY	vodevice.h	63;"	d
+LEFTMO	fvodevic.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+LEFTMO	fvodevice.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+LEFTMOUSE	vodevice.h	81;"	d
+LINEFE	fvodevic.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+LINEFE	fvodevice.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+LINEFEEDKEY	vodevice.h	68;"	d
+LINESTYLE	vogl.h	147;"	d
+LINEWIDTH	vogl.h	148;"	d
+LKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+LKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+LKEY	vodevice.h	29;"	d
+LOADMATRIX	vogl.h	118;"	d
+LT	lines.c	/^} LT;$/;"	t	file:
+LT_SIZE	lines.c	4;"	d	file:
+Linestyle	vogl.h	/^typedef unsigned short	Linestyle;$/;"	t
+MAGENT	fvogl.h	/^	integer BLACK, RED, GREEN, YELLOW, BLUE, MAGENT, $/;"	v
+MAGENTA	vogl.h	41;"	d
+MAPCOLOR	vogl.h	119;"	d
+MAX	polygons.c	14;"	d	file:
+MAXDEV	vodevice.h	91;"	d
+MAXDEVTABSIZE	vodevice.h	96;"	d
+MAXENTS	vogl.h	95;"	d
+MAXTOKS	vogl.h	96;"	d
+MAXVERTS	vogl.h	90;"	d
+MIDDLE	fvodevic.h	/^	integer MIDDLE, MAXDEV$/;"	v
+MIDDLE	fvodevice.h	/^	integer MIDDLE, MAXDEV$/;"	v
+MIDDLEMOUSE	vodevice.h	82;"	d
+MIN	polygons.c	15;"	d	file:
+MINUSKEY	vodevice.h	60;"	d
+MKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+MKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+MKEY	vodevice.h	30;"	d
+MOUSE1	fvodevic.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+MOUSE1	fvodevice.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+MOUSE1	vodevice.h	78;"	d
+MOUSE2	fvodevic.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+MOUSE2	fvodevice.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+MOUSE2	vodevice.h	79;"	d
+MOUSE3	fvodevic.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+MOUSE3	fvodevice.h	/^	integer KEYBD, MOUSE1, MOUSE2, MOUSE3, LEFTMO, RIGHTM$/;"	v
+MOUSE3	vodevice.h	80;"	d
+MOUSEX	fvodevic.h	/^	integer MOUSEX, MOUSEY$/;"	v
+MOUSEX	fvodevice.h	/^	integer MOUSEX, MOUSEY$/;"	v
+MOUSEX	vodevice.h	12;"	d
+MOUSEY	vodevice.h	13;"	d
+MOVE	vogl.h	120;"	d
+MULTMATRIX	vogl.h	121;"	d
+MakeEdgeCoords	clip.c	/^MakeEdgeCoords(int i, float *p)$/;"	f
+Matrix	vogl.h	/^typedef float	Matrix[4][4];$/;"	t
+Mstack	vogl.h	/^} Mstack;$/;"	t
+NINEKEY	vodevice.h	53;"	d
+NKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+NKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+NKEY	vodevice.h	31;"	d
+NONE	vogl.h	158;"	d
+OKEY	fvodevic.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+OKEY	fvodevice.h	/^	integer IKEY, JKEY, KKEY, LKEY, MKEY, NKEY, OKEY, PKEY$/;"	v
+OKEY	vodevice.h	32;"	d
+OLD_SGI_BOXES	polygons.c	92;"	d	file:
+ONEKEY	fvodevic.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+ONEKEY	fvodevice.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+ONEKEY	vodevice.h	45;"	d
+Object	vogl.h	/^typedef long	Object;$/;"	t
+PERIOD	fvodevic.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+PERIOD	fvodevice.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+PERIODKEY	vodevice.h	57;"	d
+PI	vogl.h	56;"	d
+PKEY	vodevice.h	33;"	d
+POLY	vogl.h	122;"	d
+POLYF	vogl.h	143;"	d
+POLYMODE	vogl.h	145;"	d
+POPATTRIBUTES	vogl.h	123;"	d
+POPMATRIX	vogl.h	124;"	d
+POPVIEWPORT	vogl.h	125;"	d
+PUSHATTRIBUTES	vogl.h	126;"	d
+PUSHMATRIX	vogl.h	127;"	d
+PUSHVIEWPORT	vogl.h	128;"	d
+PYM_FI	fvogl.h	/^	integer PYM_PO, PYM_LI, PYM_FI, PYM_HO$/;"	v
+PYM_FILL	vogl.h	104;"	d
+PYM_HOLLOW	vogl.h	105;"	d
+PYM_LI	fvogl.h	/^	integer PYM_PO, PYM_LI, PYM_FI, PYM_HO$/;"	v
+PYM_LINE	vogl.h	103;"	d
+PYM_PO	fvogl.h	/^	integer PYM_PO, PYM_LI, PYM_FI, PYM_HO$/;"	v
+PYM_POINT	vogl.h	102;"	d
+QKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+QKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+QKEY	vodevice.h	34;"	d
+QUOTEK	fvodevic.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+QUOTEK	fvodevice.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+QUOTEKEY	vodevice.h	59;"	d
+RCURVE	vogl.h	129;"	d
+RECTF	vogl.h	144;"	d
+RED	fvogl.h	/^	integer BLACK, RED, GREEN, YELLOW, BLUE, MAGENT, $/;"	v
+RED	vogl.h	37;"	d
+REDRAW	fvodevic.h	/^	integer REDRAW, INPUTC$/;"	v
+REDRAW	fvodevice.h	/^	integer REDRAW, INPUTC$/;"	v
+REDRAW	vodevice.h	88;"	d
+RETKEY	fvodevic.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+RETKEY	fvodevice.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+RETKEY	vodevice.h	69;"	d
+RIGHTBRACKETKEY	vodevice.h	64;"	d
+RIGHTMOUSE	vodevice.h	83;"	d
+RKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+RKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+RKEY	vodevice.h	35;"	d
+ROTATE	vogl.h	138;"	d
+RPATCH	vogl.h	130;"	d
+S	polygons.c	/^static float	F[6][4], S[6][4], I[4], p[MAXVERTS][4];$/;"	v	file:
+SCALE	vogl.h	139;"	d
+SECTOR	vogl.h	131;"	d
+SEMICO	fvodevic.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+SEMICO	fvodevice.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+SEMICOLONKEY	vodevice.h	56;"	d
+SEVENK	fvodevic.h	/^	integer SIXKEY, SEVENK, EIGHTK, NINEKE $/;"	v
+SEVENK	fvodevice.h	/^	integer SIXKEY, SEVENK, EIGHTK, NINEKE $/;"	v
+SEVENKEY	vodevice.h	51;"	d
+SINGLE	vogl.h	183;"	d
+SIXKEY	fvodevic.h	/^	integer SIXKEY, SEVENK, EIGHTK, NINEKE $/;"	v
+SIXKEY	fvodevice.h	/^	integer SIXKEY, SEVENK, EIGHTK, NINEKE $/;"	v
+SIXKEY	vodevice.h	50;"	d
+SKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+SKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+SKEY	vodevice.h	36;"	d
+SMOOTH	fvogl.h	/^	integer FLAT, SMOOTH, GDXPMA, GDYPMA$/;"	v
+SMOOTH	vogl.h	29;"	d
+SPACEK	fvodevic.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+SPACEK	fvodevice.h	/^	integer SPACEK, SEMICO, PERIOD, COMMAN, QUOTEK, MINUSK$/;"	v
+SPACEKEY	vodevice.h	55;"	d
+SQ	viewing.c	23;"	d	file:
+SWAPBUFFERS	vogl.h	135;"	d
+Scoord	vogl.h	/^typedef short	Scoord;$/;"	t
+Screencoord	vogl.h	/^typedef short	Screencoord;$/;"	t
+TABKEY	fvodevic.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+TABKEY	fvodevice.h	/^	integer BACKSP, TABKEY, LINEFE, RETKEY, DELKEY, ESCKEY$/;"	v
+TABKEY	vodevice.h	67;"	d
+THREEK	fvodevic.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+THREEK	fvodevice.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+THREEKEY	vodevice.h	47;"	d
+TKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+TKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+TKEY	vodevice.h	37;"	d
+TRANSLATE	vogl.h	137;"	d
+TRUE	vogl.h	18;"	d
+TWOKEY	fvodevic.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+TWOKEY	fvodevice.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+TWOKEY	vodevice.h	46;"	d
+Tensor	vogl.h	/^typedef float	Tensor[4][4][4];$/;"	t
+TokList	vogl.h	/^} TokList;$/;"	t
+Token	vogl.h	/^} Token;$/;"	t
+UKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+UKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+UKEY	vodevice.h	38;"	d
+VCLINE	vogl.h	161;"	d
+VDevice	vogl.h	/^} VDevice;$/;"	t
+VFLUSH	vogl.h	153;"	d
+VFONT	vogl.h	117;"	d
+VIEWPORT	vogl.h	132;"	d
+VKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+VKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+VKEY	vodevice.h	39;"	d
+VLINE	vogl.h	160;"	d
+VOGL	vodevice.h	6;"	d
+VOGL	vogl.h	14;"	d
+VObject	objects.c	/^} VObject;$/;"	t	file:
+VPNT	vogl.h	159;"	d
+VPOLY	vogl.h	162;"	d
+VQSTRIP	vogl.h	164;"	d
+VTMESH	vogl.h	163;"	d
+V_W	vogl.h	309;"	d
+V_X	vogl.h	306;"	d
+V_Y	vogl.h	307;"	d
+V_Z	vogl.h	308;"	d
+Vbackb	vogl.h	/^	int	(*Vbackb)(void),		\/* Set drawing in back buffer *\/$/;"	m	struct:dev
+Vcx	mapping.c	/^static	float	Vcx, Vcy, Vsx, Vsy;$/;"	v	file:
+Vcy	mapping.c	/^static	float	Vcx, Vcy, Vsx, Vsy;$/;"	v	file:
+Vector	vogl.h	/^typedef float	Vector[4];$/;"	t
+Viewport	vogl.h	/^} Viewport; $/;"	t
+Vstack	vogl.h	/^} Vstack;$/;"	t
+Vsx	mapping.c	/^static	float	Vcx, Vcy, Vsx, Vsy;$/;"	v	file:
+Vsy	mapping.c	/^static	float	Vcx, Vcy, Vsx, Vsy;$/;"	v	file:
+WHITE	vogl.h	43;"	d
+WKEY	fvodevic.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+WKEY	fvodevice.h	/^	integer QKEY, RKEY, SKEY, TKEY, UKEY, VKEY, WKEY, XKEY$/;"	v
+WKEY	vodevice.h	40;"	d
+WtoVx	mapping.c	/^WtoVx(float *p)$/;"	f
+WtoVy	mapping.c	/^WtoVy(float *p)$/;"	f
+XKEY	vodevice.h	41;"	d
+YELLOW	fvogl.h	/^	integer BLACK, RED, GREEN, YELLOW, BLUE, MAGENT, $/;"	v
+YELLOW	vogl.h	39;"	d
+YKEY	fvodevic.h	/^	integer YKEY, ZKEY$/;"	v
+YKEY	fvodevice.h	/^	integer YKEY, ZKEY$/;"	v
+YKEY	vodevice.h	42;"	d
+YOBBA	yobbaray.c	/^struct	YOBBA	{$/;"	s	file:
+YOBBA	yobbarays.c	/^struct	YOBBA	{$/;"	s	file:
+ZEROKE	fvodevic.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+ZEROKE	fvodevice.h	/^	integer ZEROKE, ONEKEY, TWOKEY, THREEK, FOURKE, FIVEKE$/;"	v
+ZEROKEY	vodevice.h	44;"	d
+ZKEY	vodevice.h	43;"	d
+_voutfile	drivers.c	/^_voutfile(void)$/;"	f
+a	vogl.h	/^	Attribute	a;$/;"	m	struct:as
+addemup	patches.c	/^addemup(float (*m)[4])$/;"	f	file:
+allocated	drivers.c	/^static int	allocated = 0;$/;"	v	file:
+alpha	yobbaray.c	/^				unsigned alpha : 1;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+alpha	yobbarays.c	/^				unsigned alpha : 1;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+alreadyread	vogl.h	/^	char		alreadyread;		\/* queue device stuff *\/$/;"	m	struct:vdev
+arc	arcs.c	/^arc(Coord x, Coord y, Coord radius, Angle sang, Angle eang)$/;"	f
+arcf	arcs.c	/^arcf(Coord x, Coord y, Coord radius, Angle sang, Angle eang)$/;"	f
+arcfi	arcs.c	/^arcfi(Icoord x, Icoord y, Icoord radius, Angle sang, Angle eang)$/;"	f
+arcfs	arcs.c	/^arcfs(Scoord x, Scoord y, Scoord radius, Angle sang, Angle eang)$/;"	f
+arci	arcs.c	/^arci(Icoord x, Icoord y, Icoord radius, Angle sang, Angle eang)$/;"	f
+arcprecision	arcs.c	/^arcprecision(int noseg)$/;"	f
+arcs	arcs.c	/^arcs(Scoord x, Scoord y, Scoord radius, Angle sang, Angle eang)$/;"	f
+as	vogl.h	/^typedef	struct	as {	\/* Attribute stack entries *\/$/;"	s
+asfree	attr.c	/^static	Astack	*asfree = (Astack *)NULL;$/;"	v	file:
+attr	vogl.h	/^	Astack		*attr;			\/* top of attribute stack *\/$/;"	m	struct:vdev
+back	vogl.h	/^	struct	as	*back;$/;"	m	struct:as
+back	vogl.h	/^	struct	ms	*back;$/;"	m	struct:ms
+back	vogl.h	/^	struct	vs	*back;$/;"	m	struct:vs
+backbuffer	buffer.c	/^backbuffer(int yes)$/;"	f
+backface	polygons.c	/^backface(int onoff)$/;"	f
+backface	vogl.h	/^	char		backface,$/;"	m	struct:
+bases	vogl.h	/^	Matrix		tbasis, ubasis, *bases; \/* Patch stuff *\/$/;"	m	struct:vdev
+beta	yobbaray.c	/^				unsigned beta  : 2;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+beta	yobbarays.c	/^				unsigned beta  : 2;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+bgnclosedline	draw.c	/^bgnclosedline(void)$/;"	f
+bgnline	draw.c	/^bgnline(void)$/;"	f
+bgnmode	vogl.h	/^	char		bgnmode;		\/* What to do with v*() calls *\/$/;"	m	struct:vdev
+bgnpoint	points.c	/^bgnpoint(void)$/;"	f
+bgnpolygon	polygons.c	/^bgnpolygon(void)$/;"	f
+bgnqstrip	polygons.c	/^bgnqstrip(void)$/;"	f
+bgntmesh	polygons.c	/^bgntmesh(void)$/;"	f
+bottom	vogl.h	/^	float	bottom;$/;"	m	struct:vp
+callobj	objects.c	/^callobj(long int ob)$/;"	f
+charstr	text.c	/^charstr(char *str)$/;"	f
+checkbacki	polygons.c	/^checkbacki(void)$/;"	f	file:
+circ	arcs.c	/^circ(Coord x, Coord y, Coord radius)$/;"	f
+circf	arcs.c	/^circf(Coord x, Coord y, Coord radius)$/;"	f
+circfi	arcs.c	/^circfi(Icoord x, Icoord y, Icoord radius)$/;"	f
+circfs	arcs.c	/^circfs(Scoord x, Scoord y, Scoord radius)$/;"	f
+circi	arcs.c	/^circi(Icoord x, Icoord y, Icoord radius)$/;"	f
+circleprecision	arcs.c	/^circleprecision(int noseg)$/;"	f
+circs	arcs.c	/^circs(Scoord x, Scoord y, Scoord radius)$/;"	f
+clear	drivers.c	/^clear(void)$/;"	f
+clip	clip.c	/^clip(register float *p0, register float *p1)$/;"	f
+clipoff	vogl.h	/^			clipoff,$/;"	m	struct:vdev
+clipplanes	vogl.h	/^			clipplanes;		\/* active clipping planes *\/$/;"	m	struct:vdev
+clockwise	polygons.c	/^static	int	clockwise = 1;$/;"	v	file:
+closeobj	objects.c	/^closeobj(void)$/;"	f
+cmov	text.c	/^cmov(float x, float y, float z)$/;"	f
+cmov2	text.c	/^cmov2(float x, float y)$/;"	f
+cmov2i	text.c	/^cmov2i(Icoord x, Icoord y)$/;"	f
+cmov2s	text.c	/^cmov2s(Scoord x, Scoord y)$/;"	f
+cmovi	text.c	/^cmovi(Icoord x, Icoord y, Icoord z)$/;"	f
+cmovs	text.c	/^cmovs(Scoord x, Scoord y, Scoord z)$/;"	f
+color	drivers.c	/^color(int i)$/;"	f
+color	vogl.h	/^	int		color;$/;"	m	struct:
+colorf	drivers.c	/^colorf(float f)$/;"	f
+concave	polygons.c	/^concave(Boolean yesno)$/;"	f
+concave	vogl.h	/^	int		concave;		\/* concave polygons? *\/$/;"	m	struct:vdev
+copyattributes	attr.c	/^copyattributes(Attribute *a, Attribute *b)$/;"	f	file:
+copymatrix	matrix.c	/^copymatrix(register float (*a)[4], register float (*b)[4])$/;"	f
+copytensor	tensor.c	/^copytensor(float (*b)[4][4], float (*a)[4][4])$/;"	f
+copytensortrans	tensor.c	/^copytensortrans(float (*b)[4][4], float (*a)[4][4])$/;"	f
+copytranspose	matrix.c	/^copytranspose(register float (*a)[4], register float (*b)[4])$/;"	f
+copyvector	matrix.c	/^copyvector(register float *a, register float *b)$/;"	f
+count	vogl.h	/^	int		count;$/;"	m	struct:tls
+cpVvalid	vogl.h	/^			cpVvalid,		\/* is the current device position valid *\/$/;"	m	struct:vdev
+cpVx	vogl.h	/^			cpVx, cpVy;$/;"	m	struct:vdev
+cpVy	vogl.h	/^			cpVx, cpVy;$/;"	m	struct:vdev
+cpW	vogl.h	/^	Vector		cpW,			\/* current postion in world coords *\/$/;"	m	struct:vdev
+cpWtrans	vogl.h	/^			cpWtrans,		\/* current world coords transformed *\/$/;"	m	struct:vdev
+cpos	text.c	/^static	Vector	cpos;	\/* Current character position *\/$/;"	v	file:
+crvn	curves.c	/^crvn(long int n, Coord (*geom)[3])$/;"	f
+current	newtoken.c	/^static TokList		*current;$/;"	v	file:
+current	newtokens.c	/^static TokList		*current;$/;"	v	file:
+curvebasis	curves.c	/^curvebasis(short int id)$/;"	f
+curveit	curves.c	/^curveit(short int n)$/;"	f
+curveprecision	curves.c	/^curveprecision(short int nsegments)$/;"	f
+data	vogl.h	/^	int		devno, data;$/;"	m	struct:vdev
+defbasis	patches.c	/^defbasis(short int id, float (*mat)[4])$/;"	f
+deflinestyle	lines.c	/^deflinestyle(short int n, Linestyle ls)$/;"	f
+delobj	objects.c	/^delobj(long int ob)$/;"	f
+depth	vogl.h	/^	int		depth,			\/* # bit planes on screen *\/$/;"	m	struct:vdev
+dev	vogl.h	/^	DevEntry	dev;$/;"	m	struct:vdev
+dev	vogl.h	/^typedef struct dev {$/;"	s
+devname	vogl.h	/^	char		*devname;		\/* pointer to device name *\/$/;"	m	struct:vdev
+devname	vogl.h	/^	char	*devname;		\/* name of device *\/$/;"	m	struct:dev
+devno	vogl.h	/^	int		devno, data;$/;"	m	struct:vdev
+doarc	objects.c	/^doarc(float x, float y, float xoff, float yoff, float cosine, float sine, int nsegs)$/;"	f	file:
+doarcf	objects.c	/^doarcf(float x, float y, float xoff, float yoff, float cosine, float sine, int nsegs)$/;"	f	file:
+dopoly	polygons.c	/^dopoly(int n)$/;"	f	file:
+doublebuffer	buffer.c	/^doublebuffer(void)$/;"	f
+draw	draw.c	/^draw(float x, float y, float z)$/;"	f
+draw2	draw.c	/^draw2(float x, float y)$/;"	f
+draw2i	draw.c	/^draw2i(Icoord x, Icoord y)$/;"	f
+draw2s	draw.c	/^draw2s(Scoord x, Scoord y)$/;"	f
+drawi	draw.c	/^drawi(Icoord x, Icoord y, Icoord z)$/;"	f
+draws	draw.c	/^draws(Scoord x, Scoord y, Scoord z)$/;"	f
+drcurve	curves.c	/^drcurve(int n, float (*r)[4])$/;"	f
+drpatch	patches.c	/^drpatch(float (*R)[4][4], int ntcurves, int nucurves, int ntsegs, int nusegs, int ntiter, int nuiter)$/;"	f
+e	curves.c	/^static	Matrix	e;$/;"	v	file:
+enabled	vogl.h	/^	char		*enabled;		\/* pointer to enabled devices mask *\/$/;"	m	struct:vdev
+endclosedline	draw.c	/^endclosedline(void)$/;"	f
+endline	draw.c	/^endline(void)$/;"	f
+endpoint	points.c	/^endpoint(void)$/;"	f
+endpolygon	polygons.c	/^endpolygon(void)$/;"	f
+endqstrip	polygons.c	/^endqstrip(void)$/;"	f
+endtmesh	polygons.c	/^endtmesh(void)$/;"	f
+et	patches.c	/^static Matrix	et, eu,$/;"	v	file:
+eu	patches.c	/^static Matrix	et, eu,$/;"	v	file:
+extract	patches.c	/^extract(register float (*b)[4], register float (*a)[4][4], register int k)$/;"	f	file:
+f	vogl.h	/^	float		f;$/;"	m	union:tk
+fill	vogl.h	/^			fill,			\/* polygon filling *\/$/;"	m	struct:vdev
+first	polygons.c	/^static int	nout, first[6], numv;$/;"	v	file:
+fixe	yobbaray.c	/^				unsigned fixe  : 3;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+fixe	yobbarays.c	/^				unsigned fixe  : 3;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+float	vogl.h	49;"	d
+font	text.c	/^font(short int id)$/;"	f
+fontnum	vogl.h	/^	int		fontnum;$/;"	m	struct:
+foreground	drivers.c	/^foreground(void)$/;"	f
+fp	drivers.c	/^static FILE	*fp = NULL;$/;"	v	file:
+frontbuffer	buffer.c	/^frontbuffer(int yes)$/;"	f
+frontface	polygons.c	/^frontface(int onoff)$/;"	f
+gconfig	drivers.c	/^gconfig(void)$/;"	f
+genobj	objects.c	/^genobj(void)$/;"	f
+getbut	fvodevic.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+getbut	fvodevic.h	/^	integer getbut, getval, getpla, qread$/;"	v
+getbut	fvodevice.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+getbut	fvodevice.h	/^	integer getbut, getval, getpla, qread$/;"	v
+getbutton	drivers.c	/^getbutton(Device dev)$/;"	f
+getcolor	drivers.c	/^getcolor(void)$/;"	f
+getcpos	text.c	/^getcpos(Scoord *cx, Scoord *cy)$/;"	f
+getdev	drivers.c	/^getdev(long int n, Device *devs, short int *vals)$/;"	f
+getdevice	drivers.c	/^getdevice(char *device)$/;"	f	file:
+getgdesc	drivers.c	/^getgdesc(long int inq)$/;"	f
+getgp	getgp.c	/^getgp(Coord *x, Coord *y, Coord *z)$/;"	f
+getgpos	getgp.c	/^getgpos(Coord *x, Coord *y, Coord *z, Coord *w)$/;"	f
+getheight	text.c	/^getheight(void)$/;"	f
+getmatrix	matrix.c	/^getmatrix(float (*m)[4])$/;"	f
+getopenobj	objects.c	/^getopenobj(void)$/;"	f
+getorigin	drivers.c	/^getorigin(long int *x, long int *y)$/;"	f
+getpla	fvodevic.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+getpla	fvodevic.h	/^	integer getbut, getval, getpla, qread$/;"	v
+getpla	fvodevice.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+getpla	fvodevice.h	/^	integer getbut, getval, getpla, qread$/;"	v
+getplanes	drivers.c	/^getplanes(void)$/;"	f
+getprefposandsize	pref.c	/^getprefposandsize(int *x, int *y, int *xs, int *ys)$/;"	f
+getsize	drivers.c	/^getsize(long int *x, long int *y)$/;"	f
+getval	fvodevic.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+getval	fvodevic.h	/^	integer getbut, getval, getpla, qread$/;"	v
+getval	fvodevice.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+getval	fvodevice.h	/^	integer getbut, getval, getpla, qread$/;"	v
+getvaluator	drivers.c	/^getvaluator(Device dev)$/;"	f
+getviewport	viewp.c	/^getviewport(Screencoord *left, Screencoord *right, Screencoord *bottom, Screencoord *top)$/;"	f
+getwidth	text.c	/^getwidth()$/;"	f
+gexit	drivers.c	/^gexit(void)$/;"	f
+ginit	drivers.c	/^ginit(void)$/;"	f
+hheight	vogl.h	/^	float		hheight, hwidth;	\/* hardware character height, width *\/$/;"	m	struct:vdev
+hwidth	vogl.h	/^	float		hheight, hwidth;	\/* hardware character height, width *\/$/;"	m	struct:vdev
+i	vogl.h	/^	int		i;$/;"	m	union:tk
+identmatrix	matrix.c	/^identmatrix(float (*a)[4])$/;"	f
+inbackbuffer	vogl.h	/^			inbackbuffer,		\/* are we in the backbuffer *\/$/;"	m	struct:vdev
+initialised	vogl.h	/^	char		initialised,$/;"	m	struct:vdev
+inobject	vogl.h	/^			inobject,$/;"	m	struct:vdev
+inpolygon	vogl.h	/^			inpolygon,$/;"	m	struct:vdev
+intersect	polygons.c	/^intersect(int side, register float *Ip, register float *Pnt)$/;"	f	file:
+ip1	polygons.c	/^static int	ip1[MAXVERTS], ip2[MAXVERTS];$/;"	v	file:
+ip2	polygons.c	/^static int	ip1[MAXVERTS], ip2[MAXVERTS];$/;"	v	file:
+isobj	objects.c	/^isobj(long int ob)$/;"	f
+isqueued	queue.c	/^isqueued(Device dev)$/;"	f
+iterate	patches.c	/^iterate(register float (*R)[4][4], int n)$/;"	f	file:
+kbdevents	vogl.h	/^	char		kbdevents;		\/* are kbd events enabled *\/$/;"	m	struct:vdev
+kbdmode	vogl.h	/^	char		kbdmode;		\/* are we in keyboard mode *\/$/;"	m	struct:vdev
+keepaspect	drivers.c	/^keepaspect(void)$/;"	f
+kralb	yobbaray.c	/^				unsigned kralb  : 1;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+kralb	yobbarays.c	/^				unsigned kralb  : 1;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+l	lines.c	/^typedef struct l {$/;"	s	file:
+large	vogl.h	/^	char	*large,			\/* name of large font *\/$/;"	m	struct:dev
+left	vogl.h	/^	float	left;$/;"	m	struct:vp
+linewidth	lines.c	/^linewidth(short int w)$/;"	f
+linewidthf	lines.c	/^linewidthf(float w)$/;"	f
+loadmatrix	matrix.c	/^loadmatrix(float (*mat)[4])$/;"	f
+lookat	viewing.c	/^lookat(Coord vx, Coord vy, Coord vz, Coord px, Coord py, Coord pz, Angle twist)$/;"	f
+ls	lines.c	/^	unsigned	ls;$/;"	m	struct:l
+ls	vogl.h	/^	Linestyle	ls;			$/;"	m	struct:
+ls_table	lines.c	/^static LT	*ls_table[LT_SIZE] = { (LT *)0, };$/;"	v	file:
+lw	vogl.h	/^	short		lw;			\/* Linewidth *\/$/;"	m	struct:
+m	vogl.h	/^	Matrix		m;$/;"	m	struct:ms
+makeobj	objects.c	/^makeobj(long int ob)$/;"	f
+makeprec	patches.c	/^makeprec(void)$/;"	f	file:
+makeprec_called	patches.c	/^		makeprec_called = 0;$/;"	v	file:
+mapcolor	drivers.c	/^mapcolor(Colorindex i, short int r, short int g, short int b)$/;"	f
+maxVx	vogl.h	/^			maxVx, minVx,$/;"	m	struct:vdev
+maxVy	vogl.h	/^			maxVy, minVy,$/;"	m	struct:vdev
+maxfontnum	vogl.h	/^	int		maxfontnum;$/;"	m	struct:vdev
+minVx	vogl.h	/^			maxVx, minVx,$/;"	m	struct:vdev
+minVy	vogl.h	/^			maxVy, minVy,$/;"	m	struct:vdev
+minv4	minv4.c	/^minv4(a, b)$/;"	f
+mode	vogl.h	/^			mode;			\/* Which mode are we in *\/$/;"	m	struct:
+mouseevents	vogl.h	/^	char		mouseevents;		\/* are mouse events enabled *\/$/;"	m	struct:vdev
+move	move.c	/^move(Coord x, Coord y, Coord z)$/;"	f
+move2	move.c	/^move2(Coord x, Coord y)$/;"	f
+move2i	move.c	/^move2i(Icoord x, Icoord y)$/;"	f
+move2s	move.c	/^move2s(Scoord x, Scoord y)$/;"	f
+movei	move.c	/^movei(Icoord x, Icoord y, Icoord z)$/;"	f
+moves	move.c	/^moves(Scoord x, Scoord y, Scoord z)$/;"	f
+ms	vogl.h	/^typedef	struct	ms {	\/* Matrix stack entries	*\/$/;"	s
+msfree	matrix.c	/^static	Mstack	*msfree = (Mstack *)NULL;$/;"	v	file:
+mult4x4	matrix.c	/^mult4x4(register float (*a)[4], register float (*b)[4], register float (*c)[4])$/;"	f
+multmatrix	matrix.c	/^multmatrix(float (*mat)[4])$/;"	f
+multtensor	tensor.c	/^multtensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4])$/;"	f
+multvector	matrix.c	/^multvector(register float *v, register float *a, register float (*b)[4])$/;"	f
+n	lines.c	/^	short		n;$/;"	m	struct:l
+newtokens	newtoken.c	/^newtokens(int num)$/;"	f
+newtokens	newtokens.c	/^newtokens(int num)$/;"	f
+next	lines.c	/^	struct l	*next;$/;"	m	struct:l
+next	objects.c	/^	struct o	*next;$/;"	m	struct:o
+next	vogl.h	/^	struct tls	*next;$/;"	m	struct:tls
+normallookat	viewing.c	/^normallookat(float vx, float vy, float vz, float px, float py, float pz)$/;"	f	file:
+nout	polygons.c	/^static int	nout, first[6], numv;$/;"	v	file:
+nsegs	arcs.c	/^static int	nsegs = 32;$/;"	v	file:
+nsegs	curves.c	/^static	int	nsegs = 15;$/;"	v	file:
+ntcurves	patches.c	/^		ntcurves = 10, nucurves = 10, $/;"	v	file:
+ntiter	patches.c	/^		ntiter = 1, nuiter = 1,$/;"	v	file:
+ntsegs	patches.c	/^static int	ntsegs, tsegs = 10, nusegs, usegs = 10, $/;"	v	file:
+nucurves	patches.c	/^		ntcurves = 10, nucurves = 10, $/;"	v	file:
+nuiter	patches.c	/^		ntiter = 1, nuiter = 1,$/;"	v	file:
+numv	polygons.c	/^static int	nout, first[6], numv;$/;"	v	file:
+nusegs	patches.c	/^static int	ntsegs, tsegs = 10, nusegs, usegs = 10, $/;"	v	file:
+o	objects.c	/^typedef struct o {$/;"	s	file:
+object_table	objects.c	/^static VObject		*object_table[MAXENTS];$/;"	v	file:
+obno	objects.c	/^	int		obno;$/;"	m	struct:o
+obno	objects.c	/^static long		obno = -1, omax = 0;$/;"	v	file:
+omax	objects.c	/^static long		obno = -1, omax = 0;$/;"	v	file:
+ones	patches.c	/^		ones =	{$/;"	v	file:
+ortho	viewing.c	/^ortho(Coord left, Coord right, Coord bottom, Coord top, Coord hither, Coord yon)$/;"	f
+ortho2	viewing.c	/^ortho2(Coord left, Coord right, Coord bottom, Coord top)$/;"	f
+p	polygons.c	/^static float	F[6][4], S[6][4], I[4], p[MAXVERTS][4];$/;"	v	file:
+patch	patches.c	/^patch(float (*geomx)[4], float (*geomy)[4], float (*geomz)[4])$/;"	f
+patchbasis	patches.c	/^patchbasis(long int tb, long int ub)$/;"	f
+patchcurves	patches.c	/^patchcurves(long int nt, long int nu)$/;"	f
+patchprecision	patches.c	/^patchprecision(long int tseg, long int useg)$/;"	f
+pclos	polygons.c	/^pclos(void)$/;"	f
+pdr	polygons.c	/^pdr(Coord x, Coord y, Coord z)$/;"	f
+pdr2	polygons.c	/^pdr2(float x, float y)$/;"	f
+pdr2i	polygons.c	/^pdr2i(Icoord x, Icoord y)$/;"	f
+pdr2s	polygons.c	/^pdr2s(Scoord x, Scoord y)$/;"	f
+pdri	polygons.c	/^pdri(Icoord x, Icoord y, Icoord z)$/;"	f
+pdrs	polygons.c	/^pdrs(Scoord x, Scoord y)$/;"	f
+perspective	viewing.c	/^perspective(Angle ifov, float aspect, Coord hither, Coord yon)$/;"	f
+planes	clip.c	/^static int planes[] = {'\\01', '\\02', '\\04', '\\010', '\\020', '\\040'};$/;"	v	file:
+pmove	vogl.h	/^	void		(*pmove)(),		\/* Polygon moves *\/$/;"	m	struct:vdev
+pmv	polygons.c	/^pmv(float x, float y, float z)$/;"	f
+pmv2	polygons.c	/^pmv2(float x, float y)$/;"	f
+pmv2i	polygons.c	/^pmv2i(Icoord x, Icoord y)$/;"	f
+pmv2s	polygons.c	/^pmv2s(Scoord x, Scoord y)$/;"	f
+pmvi	polygons.c	/^pmvi(Icoord x, Icoord y, Icoord z)$/;"	f
+pmvs	polygons.c	/^pmvs(Scoord x, Scoord y, Scoord z)$/;"	f
+pnt	points.c	/^pnt(float x, float y, float z)$/;"	f
+pnt2	points.c	/^pnt2(Coord x, Coord y)$/;"	f
+pnt2i	points.c	/^pnt2i(Icoord x, Icoord y)$/;"	f
+pnt2s	points.c	/^pnt2s(Scoord x, Scoord y)$/;"	f
+pnti	points.c	/^pnti(Icoord x, Icoord y, Icoord z)$/;"	f
+pnts	points.c	/^pnts(Scoord x, Scoord y, int z)$/;"	f
+polarview	viewing.c	/^polarview(Coord dist, Angle azim, Angle inc, Angle twist)$/;"	f
+polf	polygons.c	/^polf(long int nv, float (*dp)[3])$/;"	f
+polf2	polygons.c	/^polf2(long int nv, float (*dp)[2])$/;"	f
+polf2i	polygons.c	/^polf2i(long int nv, Icoord (*dp)[2])$/;"	f
+polf2s	polygons.c	/^polf2s(long int nv, Scoord (*dp)[2])$/;"	f
+polfi	polygons.c	/^polfi(long int nv, Icoord (*dp)[3])$/;"	f
+polfs	polygons.c	/^polfs(long int nv, Scoord (*dp)[3])$/;"	f
+poly	polygons.c	/^poly(long int nv, float (*dp)[3])$/;"	f
+poly2	polygons.c	/^poly2(long int nv, float (*dp)[2])$/;"	f
+poly2i	polygons.c	/^poly2i(long int nv, Icoord (*dp)[2])$/;"	f
+poly2s	polygons.c	/^poly2s(long int nv, Scoord (*dp)[2])$/;"	f
+polyclip	polygons.c	/^polyclip(register int n)$/;"	f	file:
+polyi	polygons.c	/^polyi(long int nv, Icoord (*dp)[3])$/;"	f
+polymode	polygons.c	/^polymode(long int mode)$/;"	f
+polymodeflag	polygons.c	/^static long	polymodeflag = PYM_FILL;$/;"	v	file:
+polyobj	polygons.c	/^polyobj(int n, Token *dp, int fill)$/;"	f
+polyoutline	polygons.c	/^polyoutline(int n, int *ipx, int *ipy)$/;"	f	file:
+polys	polygons.c	/^polys(long int nv, Scoord (*dp)[3])$/;"	f
+popattributes	attr.c	/^popattributes(void)$/;"	f
+popdev	drivers.c	/^popdev(void)$/;"	f
+popmatrix	matrix.c	/^popmatrix(void)$/;"	f
+popviewport	viewp.c	/^popviewport(void)$/;"	f
+prefposition	pref.c	/^prefposition(long int x1, long int x2, long int y1, long int y2)$/;"	f
+prefsize	pref.c	/^prefsize(long int x, long int y)$/;"	f
+premulttensor	tensor.c	/^premulttensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4])$/;"	f
+premultvector	matrix.c	/^premultvector(float *v, float *a, float (*b)[4])$/;"	f
+printmat	matrix.c	/^printmat(s, m)$/;"	f
+printvect	matrix.c	/^printvect(s, v)$/;"	f
+pushattributes	attr.c	/^pushattributes(void)$/;"	f
+pushdev	drivers.c	/^pushdev(char *device)$/;"	f
+pushmatrix	matrix.c	/^pushmatrix(void)$/;"	f
+pushviewport	viewp.c	/^pushviewport(void)$/;"	f
+px	pref.c	/^static	long	px = -1, py = -1, pxs = -1, pys = -1;$/;"	v	file:
+pxs	pref.c	/^static	long	px = -1, py = -1, pxs = -1, pys = -1;$/;"	v	file:
+py	pref.c	/^static	long	px = -1, py = -1, pxs = -1, pys = -1;$/;"	v	file:
+pys	pref.c	/^static	long	px = -1, py = -1, pxs = -1, pys = -1;$/;"	v	file:
+qdevice	queue.c	/^qdevice(Device dev)$/;"	f
+qenter	queue.c	/^qenter(Device dev, short int val)$/;"	f
+qread	fvodevic.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+qread	fvodevice.h	/^	external getbut, getval, getpla, qread, qtest$/;"	v
+qread	queue.c	/^qread(short int *ret)$/;"	f
+qreset	queue.c	/^qreset(void)$/;"	f
+qtest	queue.c	/^qtest(void)$/;"	f
+quickclip	clip.c	/^quickclip(register float *p0, register float *p1)$/;"	f
+rcrvn	curves.c	/^rcrvn(long int n, Coord (*geom)[4])$/;"	f
+rdr	draw.c	/^rdr(float dx, float dy, float dz)$/;"	f
+rdr2	draw.c	/^rdr2(float dx, float dy)$/;"	f
+rdr2i	draw.c	/^rdr2i(Icoord dx, Icoord dy)$/;"	f
+rdr2s	draw.c	/^rdr2s(Scoord dx, Scoord dy)$/;"	f
+rdri	draw.c	/^rdri(Icoord dx, Icoord dy, Icoord dz)$/;"	f
+rdrs	draw.c	/^rdrs(Scoord dx, Scoord dy, Scoord dz)$/;"	f
+rect	rect.c	/^rect(Coord x1, Coord y1, Coord x2, Coord y2)$/;"	f
+rectf	rect.c	/^rectf(Coord x1, Coord y1, Coord x2, Coord y2)$/;"	f
+rectfi	rect.c	/^rectfi(Icoord x1, Icoord y1, Icoord x2, Icoord y2)$/;"	f
+rectfs	rect.c	/^rectfs(Scoord x1, Scoord y1, Scoord x2, Scoord y2)$/;"	f
+recti	rect.c	/^recti(Icoord x1, Icoord y1, Icoord x2, Icoord y2)$/;"	f
+rects	rect.c	/^rects(Scoord x1, Scoord y1, Scoord x2, Scoord y2)$/;"	f
+register	vogl.h	84;"	d
+replace	patches.c	/^replace(float (*a)[4][4], float (*b)[4], int k)$/;"	f	file:
+reshapeviewport	drivers.c	/^reshapeviewport(void)$/;"	f
+right	vogl.h	/^	float	right;$/;"	m	struct:vp
+rindex	text.c	8;"	d	file:
+rmv	move.c	/^rmv(Coord dx, Coord dy, Coord dz)$/;"	f
+rmv2	move.c	/^rmv2(float dx, float dy)$/;"	f
+rmv2i	move.c	/^rmv2i(Icoord dx, Icoord dy)$/;"	f
+rmv2s	move.c	/^rmv2s(Scoord dx, Scoord dy)$/;"	f
+rmvi	move.c	/^rmvi(Icoord dx, Icoord dy, Icoord dz)$/;"	f
+rmvs	move.c	/^rmvs(Scoord dx, Scoord dy, Scoord dz)$/;"	f
+rot	trans.c	/^rot(float r, char axis)$/;"	f
+rotate	trans.c	/^rotate(Angle r, char axis)$/;"	f
+rpatch	patches.c	/^rpatch(float (*geomx)[4], float (*geomy)[4], float (*geomz)[4], float (*geomw)[4])$/;"	f
+rpdr	polygons.c	/^rpdr(Coord dx, Coord dy, Coord dz)$/;"	f
+rpdr2	polygons.c	/^rpdr2(Coord dx, Coord dy)$/;"	f
+rpdr2i	polygons.c	/^rpdr2i(Icoord dx, Icoord dy)$/;"	f
+rpdr2s	polygons.c	/^rpdr2s(Scoord dx, Scoord dy)$/;"	f
+rpdri	polygons.c	/^rpdri(Icoord dx, Icoord dy, Icoord dz)$/;"	f
+rpdrs	polygons.c	/^rpdrs(Scoord dx, Scoord dy, Scoord dz)$/;"	f
+rpmv	polygons.c	/^rpmv(Coord dx, Coord dy, Coord dz)$/;"	f
+rpmv2	polygons.c	/^rpmv2(Coord dx, Coord dy)$/;"	f
+rpmv2i	polygons.c	/^rpmv2i(Icoord dx, Icoord dy)$/;"	f
+rpmv2s	polygons.c	/^rpmv2s(Scoord dx, Scoord dy)$/;"	f
+rpmvi	polygons.c	/^rpmvi(Icoord dx, Icoord dy, Icoord dz)$/;"	f
+rpmvs	polygons.c	/^rpmvs(Scoord dx, Scoord dy, Scoord dz)$/;"	f
+save	vogl.h	/^	int		save;			\/* Do we save 1st v*() point *\/$/;"	m	struct:vdev
+savex	vogl.h	/^	float		savex,			\/* Where we started for v*() *\/$/;"	m	struct:vdev
+savey	vogl.h	/^			savey,$/;"	m	struct:vdev
+savez	vogl.h	/^			savez;$/;"	m	struct:vdev
+sc_x	text.c	/^static	int	sync, sc_x, sc_y;$/;"	v	file:
+sc_y	text.c	/^static	int	sync, sc_x, sc_y;$/;"	v	file:
+scale	scale.c	/^scale(float x, float y, float z)$/;"	f
+setlinestyle	lines.c	/^setlinestyle(short int n)$/;"	f
+shademodel	drivers.c	/^shademodel(long int model)$/;"	f
+shclip	polygons.c	/^shclip(float *Pnt, int side)$/;"	f	file:
+shclose	polygons.c	/^shclose(int side)$/;"	f	file:
+singlebuffer	buffer.c	/^singlebuffer(void)$/;"	f
+sizeSx	vogl.h	/^			sizeSx, sizeSy,		\/* side in x, side in y (# pixels) *\/$/;"	m	struct:vdev
+sizeSy	vogl.h	/^			sizeSx, sizeSy,		\/* side in x, side in y (# pixels) *\/$/;"	m	struct:vdev
+sizeX	vogl.h	/^			sizeX, sizeY, 		\/* size of square on screen *\/$/;"	m	struct:vdev
+sizeY	vogl.h	/^			sizeX, sizeY, 		\/* size of square on screen *\/$/;"	m	struct:vdev
+small	vogl.h	/^		*small;			\/* name of small font *\/$/;"	m	struct:dev
+strwidth	text.c	/^strwidth(char *s)$/;"	f
+swapbuffers	buffer.c	/^swapbuffers(void)$/;"	f
+swaptmesh	polygons.c	/^swaptmesh(void)$/;"	f
+sync	buffer.c	/^static	int	sync = 1;$/;"	v	file:
+sync	draw.c	/^static int	sync;$/;"	v	file:
+sync	polygons.c	/^static	int	sync;$/;"	v	file:
+sync	text.c	/^static	int	sync, sc_x, sc_y;$/;"	v	file:
+sync	vogl.h	/^			sync,			\/* Do we syncronise the display *\/$/;"	m	struct:vdev
+tbasis	vogl.h	/^	Matrix		tbasis, ubasis, *bases; \/* Patch stuff *\/$/;"	m	struct:vdev
+tk	vogl.h	/^typedef union tk {$/;"	u
+tlist	objects.c	/^	TokList		*tlist;$/;"	m	struct:o
+tls	vogl.h	/^typedef struct tls {$/;"	s
+tokens	vogl.h	/^	TokList		*tokens;		\/* ptr to list of tokens for current object *\/$/;"	m	struct:vdev
+toks	vogl.h	/^	Token		*toks;$/;"	m	struct:tls
+top	vogl.h	/^	float	top;$/;"	m	struct:vp
+transformtensor	patches.c	/^transformtensor(float (*S)[4][4], float (*m)[4])$/;"	f
+translate	trans.c	/^translate(float x, float y, float z)$/;"	f
+transmat	vogl.h	/^	Mstack		*transmat;		\/* top of transformation stack *\/$/;"	m	struct:vdev
+tsegs	patches.c	/^static int	ntsegs, tsegs = 10, nusegs, usegs = 10, $/;"	v	file:
+ubasis	vogl.h	/^	Matrix		tbasis, ubasis, *bases; \/* Patch stuff *\/$/;"	m	struct:vdev
+unqdevice	queue.c	/^unqdevice(Device dev)$/;"	f
+upvector	vogl.h	/^			upvector;		\/* world up *\/$/;"	m	struct:vdev
+usegs	patches.c	/^static int	ntsegs, tsegs = 10, nusegs, usegs = 10, $/;"	v	file:
+v	vogl.h	/^	Viewport	v;$/;"	m	struct:vs
+v2d	vcalls.c	/^v2d(double *vec)$/;"	f
+v2f	vcalls.c	/^v2f(float *vec)$/;"	f
+v2i	vcalls.c	/^v2i(long int *vec)$/;"	f
+v2s	vcalls.c	/^v2s(short int *vec)$/;"	f
+v3d	vcalls.c	/^v3d(double *vec)$/;"	f
+v3f	vcalls.c	/^v3f(float *vec)$/;"	f
+v3i	vcalls.c	/^v3i(long int *vec)$/;"	f
+v3s	vcalls.c	/^v3s(short int *vec)$/;"	f
+v4d	vcalls.c	/^v4d(double *vec)$/;"	f
+v4f	vcalls.c	/^v4f(float *vec)$/;"	f
+v4i	vcalls.c	/^v4i(long int *vec)$/;"	f
+v4s	vcalls.c	/^v4s(short int *vec)$/;"	f
+vallocate	valloc.c	/^vallocate(unsigned int size)$/;"	f
+vals	yobbaray.c	/^			} vals;$/;"	m	union:YOBBA::<anonymous>
+vals	yobbarays.c	/^			} vals;$/;"	m	union:YOBBA::<anonymous>
+vcall	vcalls.c	/^vcall(float *vector, int len)$/;"	f
+vdev	vogl.h	/^typedef struct vdev {$/;"	s
+vdevice	drivers.c	/^struct vdev	vdevice;$/;"	v
+vdevindx	drivers.c	/^static	int	vdevindx = 0;$/;"	v	file:
+vdevstk	drivers.c	/^static	VDevice	vdevstk[DEVSTACK];$/;"	v	file:
+verror	drivers.c	/^verror(char *str)$/;"	f
+vflush	drivers.c	/^vflush(void)$/;"	f
+vgetdev	drivers.c	/^vgetdev(char *buf)$/;"	f
+viewport	viewp.c	/^viewport(Screencoord xlow, Screencoord xhigh, Screencoord ylow, Screencoord yhigh)$/;"	f
+viewport	vogl.h	/^	Vstack		*viewport;		\/* top of viewport stack *\/$/;"	m	struct:vdev
+vinit	drivers.c	/^vinit(char *device)$/;"	f
+viniterror	drivers.c	/^viniterror(char *str)$/;"	f
+visible	polygons.c	/^visible(int side)$/;"	f	file:
+vnewdev	drivers.c	/^vnewdev(char *device)$/;"	f
+voutput	drivers.c	/^voutput(char *path)$/;"	f
+vp	vogl.h	/^typedef struct vp {$/;"	s
+vs	vogl.h	/^typedef	struct	vs {	\/* Viewport stack entries *\/$/;"	s
+vsetflush	drivers.c	/^vsetflush(int yn)$/;"	f
+vsfree	viewp.c	/^static	Vstack	*vsfree = (Vstack *)NULL;$/;"	v	file:
+wc	clip.c	/^float wc[2][6];$/;"	v
+winattach	drivers.c	/^winattach(void)$/;"	f
+winconstraints	drivers.c	/^winconstraints(void)$/;"	f
+window	viewing.c	/^window(Coord left, Coord right, Coord bottom, Coord top, Coord hither, Coord yon)$/;"	f
+winopen	drivers.c	/^winopen(char *title)$/;"	f
+winset	drivers.c	/^winset(void)$/;"	f
+wintitle	vogl.h	/^	char		*wintitle;		\/* window title *\/$/;"	m	struct:vdev
+yobba	yobbaray.c	/^		} yobba;$/;"	m	struct:YOBBA
+yobba	yobbarays.c	/^		} yobba;$/;"	m	struct:YOBBA
+yobbaray	yobbaray.c	/^} *yobbaray;$/;"	v
+yobbaray	yobbarays.c	/^} *yobbaray;$/;"	v
+yobbarays	yobbaray.c	/^yobbarays(int onoff)$/;"	f
+yobbarays	yobbarays.c	/^yobbarays(int onoff)$/;"	f
+yobbav	yobbaray.c	/^				unsigned char yobbav;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+yobbav	yobbarays.c	/^				unsigned char yobbav;$/;"	m	struct:YOBBA::<anonymous>::<anonymous>
+yobbavals	yobbaray.c	/^			} yobbavals;$/;"	m	union:YOBBA::<anonymous>
+yobbavals	yobbarays.c	/^			} yobbavals;$/;"	m	union:YOBBA::<anonymous>

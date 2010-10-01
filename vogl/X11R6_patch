@@ -1,0 +1,19 @@
+*** ./drivers/X11.c	1997/07/25 14:50:12	1.1
+--- ./drivers/X11.c	1997/07/25 15:31:28
+***************
+*** 664,670 ****
+  
+  	*wy = (int)vdevice.sizeSy - *wy;
+  
+! 	return(mask >> 8);
+  }
+  
+  #ifdef VOGLE
+--- 664,670 ----
+  
+  	*wy = (int)vdevice.sizeSy - *wy;
+  
+! 	return((mask >> 8) & 0x0f);
+  }
+  
+  #ifdef VOGLE

@@ -1,0 +1,29 @@
+dip_simulate 100 10 1s 1s eg_source
+add noise 20
+writeasc -b orgdata.asc
+append
+Post:
+icadecomp -e 1 0
+writeasc -b weights.asc
+invert
+writeasc -b maps.asc
+calc abs
+collapse_channels -h
+writeasc -b scale.asc
+-
+readasc maps.asc
+subtract -P -C -d scale.asc
+writeasc -b maps_scaled.asc
+null_sink
+-
+readasc weights.asc
+subtract -P -C -m scale.asc
+writeasc -b weights_scaled.asc
+null_sink
+-
+!run /bin/rm scale.asc
+readasc orgdata.asc
+project -C -n -p 0 weights_scaled.asc 0
+append -l
+Post:
+posplot

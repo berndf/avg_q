@@ -1,0 +1,2 @@
+SET(SIGNATURE "avg_q is free software released under GPLv3 or later.")
+SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/GPL)

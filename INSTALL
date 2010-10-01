@@ -1,0 +1,91 @@
+avg_q: Installation notes
+-------------------------
+
+This document includes information on how to compile avg_q yourself.
+
+The current distribution uses the cmake build system: See http://www.cmake.org/
+It is recommended that an out-of-tree build is used. This has the advantage that compilation
+can be done from a single source tree for multiple architectures, or for debug and production
+builds.
+Briefly, if you have the source tree set up under /path/to/avg_q, you do the following:
+ mkdir /other/path/build; cd /other/path/build
+ cmake /path/to/avg_q
+ make
+ make install
+Flags such as switching to debug build can be set by using "ccmake /path/to/avg_q" instead
+of cmake as above.
+
+All of the actual method definitions reside in the subdirectory bf/.
+The command line driver program is on top level (avg_q.c); the user interface driver program
+in the avg_q_ui/ subdirectory.
+
+Including or excluding methods
+------------------------------
+
+To build avg_q itself, only a C (and C++) compiler is needed. avg_q is designed so that every
+method module contains all information needed by the main program (be it the commandline version or
+the GUI version), namely the method name and description, arguments, their types and descriptions etc.
+This means that it is easy to build avg_q without any given method, and it is just as easy to
+write your own method (copy a simple method such as bf/orthogonalize.c to get started).
+Each method module defines a single globally visible function select_{methodname}.
+If you have any problems with a particular method or its dependencies, you can easily comment out the
+corresponding entry in bf/method_list.c and bf/CMakeLists.txt to proceed without that method.
+
+Steps needed to add your own methods:
+ Add the source file itself below bf/
+ Add the select_{methodname} declaration to bf/bf.h 
+ Add the select_{methodname} function pointer to the list in bf/method_list.c
+ Add the source file to bf/CMakeLists.txt (either ALL_SOURCES or, if you created
+ an extra subdirectory, the subdirs list) so that cmake knows what to build.
+Finished!
+
+Internal support modules
+------------------------
+
+Many helper functions reside in bf/trafo_std.c.
+
+avg_q makes heavy use of its own 'growing_buf' data structure (bf/growing_buf.[ch]) and 
+its own vector/matrix data structure (bf/array/*).
+
+For solving the general problem that binary file headers cannot be used as C
+'struct's directly because of data alignment and byte ordering,
+mfx/read_struct.[ch] and mfx/Intel_compat.[ch] are used. This system works by
+matching file descriptions to actual C structures to whatever the current C
+compiler uses (see *_sm.c files). Mainly as a diagnostic tool, it also
+encapsulates the ability to create a descriptive text dump of the binary
+structure, with the assistance of extra information contained in *_smd.c
+modules. [TODO: Move these files to a place outside of mfx/, which is a formerly
+standalone library for the MFX data format rarely used nowadays]
+
+
+External libraries needed
+-------------------------
+
+- For the user interface (avg_q_ui): GTK+ http://www.gtk.org/
+
+- For HDF4 support (read_hdf, write_hdf): HDF4
+  http://www.hdfgroup.org/hdf4.html
+
+- For Independent Component Analysis (icadecomp; http://www.cnl.salk.edu/~enghoff/), the
+  linear algebra packages lapack and blas are needed (http://www.netlib.org/).
+
+Most Linux distributions contain packages for these libraries. To compile avg_q yourself,
+it may be necessary to install the development packages of these libraries in addition to
+their runtime versions.
+
+Third-party libraries with modifications, included in the current source tree
+-----------------------------------------------------------------------------
+
+- For plotting (needed by posplot): vogl/ http://www.autochthonous.org/eric/index.html
+
+- For sound input/output (read_sound, write_sound): sox/ http://sox.sourceforge.net/
+
+- For Independent Component Analysis (icadecomp): bf/ica/ica.[ch] http://www.cnl.salk.edu/~enghoff/
+
+Windows installation
+--------------------
+
+The current distribution is intended for cross-compilation from Linux, using
+mingw32. For HDF4, I had to compile the HDF source 4.2r1-hrepack-p4 myself, including
+its dependencies jpeg-6b, szip-2.1 and zlib-1.2.3. Similarly, I cross-compiled GTK+.
+

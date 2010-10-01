@@ -1,0 +1,39 @@
+# Copyright (C) 1998 Bernd Feige
+# 
+# This file is part of avg_q.
+# 
+# avg_q is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# avg_q is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
+#!/usr/bin/perl
+%types=(
+ 'char', 'STRUCT_MEMBER_CHAR',
+ 'short', 'STRUCT_MEMBER_INT',
+ 'int', 'STRUCT_MEMBER_INT',
+ 'long', 'STRUCT_MEMBER_INT',
+ 'float', 'STRUCT_MEMBER_FLOAT',
+ 'double', 'STRUCT_MEMBER_FLOAT'
+);
+
+while (<>) {
+ s/\s+/ /g;
+ s/^\s+//;
+ s/^unsigned //;
+ s/^signed //;
+ s/^short unsigned/short/;
+ s/^short int/short/;
+ s/^long unsigned/short/;
+ s/^long int/long/;
+ ($type, $name)=(/(\S+)\s+([^\s\[\]\;]+)/);
+ $typeenum=$types{$type};
+ print " {$typeenum, \"$name\"},\n";
+}

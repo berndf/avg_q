@@ -1,0 +1,176 @@
+This is a short description of the mfx i/o module to handle the
+multi-channel MFX (M"unster file exchange) format. The library is
+called libmfx.a (containing the modules mfx_file.o, mfx_errors.o
+and mfx_infoout.o), the include files necessary are mfx_file.h,
+mfx_header_format.h and mfx_data_format.h (the latter two derived
+from, but not necessarily identical to, the versions provided by
+Scott Hampson from the Institute for Experimental Audiology).
+					-- Bernd Feige, IEA
+
+Compatibility:
+since version 1.17 of mfx_file.c, the library handles both old-
+and new-style mfx files (with conversion_factor and shift_'factor'
+in the channel headers in addition to ymin and ymax and the 'raw'
+trigger storage instead of converted) transparently by calculating
+the missing parameters at the time an old-style file is opened.
+The MFX_FILE structure and the file and channel headers in memory
+look as defined in mfx_file.h and mfx_header_format.h (new version)
+in all cases, so that all application programs should work with all
+mfx files.
+
+Three global variables are available:
+ extern mfx_errtype mfx_lasterr;
+ extern char *mfx_errors[];
+ extern char *mfx_version;
+
+Error handling:
+mfx_lasterr holds the number of the last error occurred within an 
+mfx routine. Symbolic names for these numbers are defined in 
+mfx_file.h. You should compare an mfx error number with the 
+"No Error" number MFX_NOERR to find out whether an error has 
+occurred.
+The mfx_errors[] array, defined in mfx_errors.o, holds the 
+error message strings corresponding to the error numbers.
+
+File addressing:
+All mfx routines address the mfx file contents by data rows.
+Data row 'n' consists of the 'n'th values of all selected
+channels. If multiple data rows are requested, the data
+is stored 'multiplexed', ie all the channels from the first
+data row (in the order selected using the mfx_cselect 
+subroutine), then all the channels from the second and so on,
+each channel value in the format requested with the mfx_open
+call.
+
+MFX_FILE* 
+mfx_open(char *filename, char *filemode, enum mfx_datatypes datatype)
+returns an MFX_FILE pointer if successful, NULL otherwise.
+The output data type selected by datatype is either MFX_SHORTS, 
+MFX_FLOATS or MFX_DOUBLES. 
+filemode is the file mode to be used with the fopen() system call.
+It should be either "rb" for read-only access or "r+b" for
+read-write-append access.
+
+MFX_FILE*
+mfx_create(char *filename, int nr_of_channels, enum mfx_datatypes datatype)
+returns an MFX_FILE pointer if successful, NULL otherwise.
+The number of channels has to be determined at this stage;
+Additional file and channel information must be given using
+mfx_describefile and mfx_describechannel, BEFORE the file is closed
+or any data is written to it.
+
+mfx_errtype
+mfx_describefile(MFX_FILE* mfxfile, char *file_descriptor, float sample_period,
+		 int pts_per_epoch, float epoch_begin_latency)
+sets the file-wide description variables that can be freely set. 
+If pts_per_epoch==0, the file is set to continuous mode. At present, the
+mfx format has no explicit label for 'continuous' or 'epoch' mode: continuous
+files are files with just one epoch. Don't write epoch mode files with
+less than two epochs, for the system will think the file is in continuous
+mode if the epoch count is 1 and add new points to this single epoch instead
+of increasing the epoch count.
+Only applicable after create.
+
+mfx_errtype
+mfx_describechannel(MFX_FILE* mfxfile, int channel_nr, char *channelname, 
+		    char *yaxis_label, unsigned short data_type, 
+		    double ymin, double ymax)
+mfx_describechannel sets the channel parameters that can be freely set.
+Only applicable after create.
+
+mfx_errtype mfx_close(MFX_FILE* mfxfile) 
+closes the input stream and frees the MFX_FILE structure memory.
+If the number of points in file has changed (ie, there were points
+added), the point count in the header is calculated and saved.
+In this process, multi-epoch files are recognized and extended to
+whole epochs if necessary. Since the file headers are updated by
+mfx_close only, it is absolutely necessary to properly close mfx
+files that were just created or modified in length.
+
+int mfx_cselect(MFX_FILE* mfxfile, char* channelnames)
+is used to select the channels to be read.
+channelnames is a string of the form "A2-A5,A9, t3". Ranges are expanded
+numerically, not by appearance in the file header (i.e., you can NOT select
+channels "A2" up to "t3" as they appear in the header by "A2-t3").
+mfx_cselect returns the number of channels actually selected.
+If channelnames begins with a '?', the appearance of unavailable channel
+names is not a fatal error.
+As a special request, "ALL" means that all channels in file get selected.
+Call mfx_getchannelname with 0<=number<channels_selected to get the names
+of the channels selected.
+
+mfx_errtype mfx_read(void *tobuffer, long count, MFX_FILE *mfxfile)
+reads count values of all selected channels, transforms
+them into the requested data type and writes them into the user-supplied
+buffer. The values of the selected channels appear in the order chosen
+using mfx_cselect().
+
+mfx_errtype mfx_write(void *frombuffer, long count, MFX_FILE *mfxfile)
+writes count values of the selected channels, transforming
+the requested data type from the user-supplied buffer into mfx shorts.
+Only the selected channels of the written time slices are modified;
+the other channel values remain untouched if an existing timeslice
+is overwritten and set to zero if new timeslices are appended.
+Note that the flags for mfx_open should be "r+b" (ie, update mode)
+to use mfx_write !
+
+long mfx_tell(MFX_FILE* mfxfile)
+returns the present data row number.
+
+mfx_errtype mfx_seek(MFX_FILE* mfxfile, long offset, int whence) 
+seeks to the requested data row (whence=SEEK_SET),
+adjusts it starting from the present position (whence=SEEK_CUR)
+or from end of file (whence=SEEK_END)
+
+int mfx_eof(MFX_FILE* mfxfile) 
+returns true if read past end of file was attempted
+
+char* mfx_getchannelname(MFX_FILE* mfxfile, int number)
+returns a pointer to the name of the number'th selected channel.
+number starts with 0. Returns NULL if number is out of range.
+
+int mfx_get_channel_number(MFX_FILE* mfxfile, char* channelname)
+Returns the number of the channel named channelname, starting with 1.
+0 is returned if no such channel is in file.
+
+void* mfx_alloc(MFX_FILE* mfxfile, long count) 
+allocates enough memory to hold count entries of the requested data type
+and all selected channels
+
+int
+mfx_seektrigger(MFX_FILE* mfxfile, char* triggerchannel, int triggercode)
+Seeks to next trigger (i.e., either next trigger onset or, given NULL as
+triggerchannel name, to next epoch start as given by the file header). 
+If the current file position is ON a trigger, it seeks the NEXT trigger.
+If triggercode==0, it returns on ANY trigger; else, returns on the specified
+trigger only.
+Returns the trigger value found; 1 for fixed epochs; 0 on error.
+
+void*
+mfx_getepoch(MFX_FILE* mfxfile, long* epochlenp, long beforetrig,
+	     long aftertrig, char* triggerchannel, int triggercode)
+gets a buffer with the values of the next epoch, beforetrig values
+before epoch start and aftertrig values after (if aftertrig==0, gets
+the whole epoch up to next epoch-beforetrig; if no next epoch exists
+in the file, up to EOF-beforetrig).
+Again, if triggerchannel==NULL, the epochs are identified by the fixed
+epoch lengths given in the header.
+If the current file position is ON an trigger, gets epoch around
+THIS trigger. Else, the NEXT trigger is seeked.
+- For trigger mode, the file position is left after the epoch trigger 
+  to allow for overlapping epochs. If triggercode==0, ANY trigger
+  is used; else, the trigger code of the epoch must match triggercode.
+  If the mfx file was recorded in 'epoch mode', ie is made up of
+  discontinuous, fixed length sections of data, no epoch will be
+  returned that would span the boundary of two such sections.
+- For fixed epochs, THIS epoch is taken only if the file pointer is
+  located exactly at epoch start (ie, if mfx_tell==0, the first epoch
+  is returned), else the NEXT epoch (the second epoch if mfx_tell==1).
+  The file position is left after the epoch just read.
+The buffer memory is allocated by mfx_alloc() and can be freed by using
+the system call free().
+
+mfx_errtype mfx_infoout(MFX_FILE* mfxfile, FILE* outfile)
+dumps the contents of the file and channel headers to the stream 
+outfile (in ASCII). This function is defined by the separate
+module mfx_infoout.c.

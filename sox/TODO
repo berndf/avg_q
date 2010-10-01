@@ -1,0 +1,52 @@
+People are encouraged to pick some of these and implement it.  Send
+all patches to cbagwell@users.sourceforge.net.
+
+  o Still passing some options using CFLAGS instead of stconfig.h.
+
+  o Lots of effects are sing "double" to prevent overflow of
+    st_sample_t math.  With ststdint.h we now have a portable way
+    of detecting uin64_t...  Use that when possible to speed up
+    math (won't have to convert back and forth from int to float).
+
+  o Several files are using hard-coded #'s instead of ST_SAMPLE_MIN/MAX.
+    Change these.
+
+  o Make a global version of MIN/MAX instead of sprinkled min/max/MIN/MAX
+
+  o Make a global version of clip() instead of sprinked in all files.
+
+  o Add support to all file handlers to handle 32-bit and float
+    data types since raw functions can handle them.
+
+  o All comment code has a memory leak.  They must malloc memory to
+    store comment but its never free()'d.
+
+  o Comment strings.  Some file formats have space for embedded comments.
+    These are currently thrown away.  Printing them out, carrying them
+    forward, and an option to add new ones would be handy.
+
+  o Add support for .TXT format as Cooledit supports.  Not really fit for
+    graphing since it is only a stream of ascii sample values but some
+    program appear to like it.  Also has a much nicer header.
+    http://lab.chass.utoronto.ca/damion/audio/coolwav.htm
+
+  o Keep sox from using "fail" on errors.  Sox was supposed to be
+    a sound library called "ST" but libraries shouldn't exit a program,
+    they should return error codes for users to handle.  Initial support
+    for this has been added.  Needs to be completed.
+
+  o Enhance general robustness... For instance, malloc is called in
+    lots of places without checking its return value.  See last option
+    as well.
+
+SOX includes skeleton format files to assist you in supporting new 
+formats, sound effect loops, and special-purpose programs.
+The full skeleton format, skel.c, helps you write a driver 
+for a new format which has data structures.  Skeleff.c is
+a starting point for writing a sound effect loop.  Sox.c is
+a good starting point for new programs.  (Someone finally
+did this and told me what was wrong...)
+
+In handlers.c, note that many formats set up the header and then
+use the raw driver for reading and writing.  
+

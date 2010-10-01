@@ -1,0 +1,188 @@
+# Copyright (C) 2003 Bernd Feige
+# 
+# This file is part of avg_q.
+# 
+# avg_q is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# avg_q is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
+#!/usr/bin/perl
+
+use IPC::Open2;
+
+$testno=1;
+$nr_bad=$nr_good=0;
+sub compare_output {
+ my $endofscript_seen=0;
+ while (<RDR>) {
+  if (/^End of script/) {
+   $endofscript_seen=1;
+   last;
+  }
+  chop;
+  $shouldbe=<DATA>;
+  chop $shouldbe;
+  if (eof DATA) {
+   printf("%02d New: %s\n", $testno, $_);
+  } else {
+   if ($_ ne $shouldbe) {
+    printf("%02d Received >%s< instead of >%s<\n", $testno, $_, $shouldbe);
+    $nr_bad++;
+   } else {
+    printf("%02d Correct: %s\n", $testno, $_);
+    $nr_good++;
+   }
+  }
+ }
+ if ($endofscript_seen==0) {
+  printf("%02d Whoops - avg_q died!!\n", $testno);
+  die;
+ }
+ if (!eof DATA) {
+  $shouldbesep=<DATA>;
+  chop $shouldbesep;
+  if ($shouldbesep ne '-') {
+   print "Should be sep!\n";
+   while (<DATA>) {
+    last if /^-$/;
+   }
+  }
+ }
+ $testno++;
+}
+
+# Autoflush on AVG_Q is turned on automatically!
+($avg_q_pid=open2(\*RDR, \*AVG_Q, "LD_PRELOAD=libefence.so.0.0 avg_q stdin")) || die "Error running avg_q: $!\n";;
+
+# CNT files, triggers: Generate CNT data
+print AVG_Q <<EOF;
+dip_simulate 100 5 1s 1s eg_source
+!echo -F stdout End of script\\n
+set trigger 500ms:5
+set trigger 1500ms:1
+write_synamps -c o.cnt 1
+query -N triggers
+null_sink
+-
+EOF
+
+&compare_output;
+
+# Read CNT file - Trigger lists
+print AVG_Q <<EOF;
+read_synamps -t 1,3,7,9,5 o.cnt 100ms 400ms 
+!echo -F stdout End of script\\n
+#posplot
+query -N condition
+query -N accepted_epochs
+null_sink
+-
+EOF
+
+&compare_output;
+
+# Read CNT file - Trigger lists
+print AVG_Q <<EOF;
+read_synamps o.cnt 100ms 400ms 
+>fftspect 0 1 1
+read_synamps -f 3 o.cnt 100ms 400ms 
+>set nrofaverages 2
+>fftspect 0 1 1
+average -M -W
+Post:
+collapse_channels
+write_generic stdout string
+echo -F stdout End of script\\n
+-
+EOF
+
+&compare_output;
+
+print AVG_Q <<EOF;
+read_synamps o.cnt 100ms 400ms 
+collapse_channels A1-A15:A1bisA15 A16-A37:A16bisA37
+average
+Post:
+trim -x 0 0
+write_generic -N stdout string
+echo -F stdout End of script\\n
+-
+EOF
+
+&compare_output;
+
+close AVG_Q;
+close RDR;
+
+print "Test summary: ";
+if ($nr_bad>0) {
+ print "$nr_bad tests failed.\n";
+} else {
+ print "All tests passed!\n";
+}
+__DATA__
+triggers=File position: 0
+triggers=50 5
+150 1
+triggers=File position: 0
+triggers=50 5
+150 1
+triggers=File position: 0
+triggers=50 5
+150 1
+triggers=File position: 0
+triggers=50 5
+150 1
+triggers=File position: 0
+triggers=50 5
+150 1
+-
+condition=5
+accepted_epochs=0
+condition=1
+accepted_epochs=1
+condition=5
+accepted_epochs=2
+condition=1
+accepted_epochs=3
+condition=5
+accepted_epochs=4
+condition=1
+accepted_epochs=5
+condition=5
+accepted_epochs=6
+condition=1
+accepted_epochs=7
+condition=5
+accepted_epochs=8
+condition=1
+accepted_epochs=9
+-
+4.86859	962
+32.0764	962
+67.609	962
+72.8508	962
+2.28588	962
+2.19235	962
+1.94942	962
+2.09882	962
+2.1839	962
+2.58577	962
+1.56762	962
+2.46027	962
+1.70455	962
+1.14678	962
+2.22797	962
+1.97253	962
+-
+A1bisA15	A16bisA37
+4.69333	-2.21818
+-

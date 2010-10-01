@@ -1,0 +1,307 @@
+/*
+ * Copyright (C) 1995-1998,2000,2001,2004 Bernd Feige
+ * 
+ * This file is part of avg_q.
+ * 
+ * avg_q is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * avg_q is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/* Definition of `structure member' arrays for the synamps format
+ *			-- Bernd Feige 6.08.1995 */
+
+#include <stdio.h>
+#include <read_struct.h>
+#include "neurohdr.h"
+
+/* Global definition of subtype names */
+char *neuroscan_subtype_names[NST_LAST]={
+ "100/330 kHz continuous .cnt", "Continuous 1", "DC-MES continuous .cnt", "Synamps continuous .cnt", 
+ "Epochs .eeg", "Average .avg"
+};
+/* This tells which accept values are coded as separate triggers. Indexed
+ * directly with the Accept value, gives the trigger code, 0 if none:
+ * NAV_STARTSTOP->256, NAV_DCRESET->257, NAV_REJECT->258, NAV_ACCEPT->259
+ */
+int neuroscan_accept_translation[NAV_STARTSTOP+1]={
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 257, 258, 259, 256
+};
+
+struct_member sm_SETUP[]={
+ {sizeof(SETUP), 900, 0, 0},
+ {(long)&((SETUP *)NULL)->rev, 0, 12, 0},
+ {(long)&((SETUP *)NULL)->NextFile, 12, 4, 1},
+ {(long)&((SETUP *)NULL)->PrevFile, 16, 4, 1},
+ {(long)&((SETUP *)NULL)->type, 20, 1, 0},
+ {(long)&((SETUP *)NULL)->id, 21, 20, 0},
+ {(long)&((SETUP *)NULL)->oper, 41, 20, 0},
+ {(long)&((SETUP *)NULL)->doctor, 61, 20, 0},
+ {(long)&((SETUP *)NULL)->referral, 81, 20, 0},
+ {(long)&((SETUP *)NULL)->hospital, 101, 20, 0},
+ {(long)&((SETUP *)NULL)->patient, 121, 20, 0},
+ {(long)&((SETUP *)NULL)->age, 141, 2, 1},
+ {(long)&((SETUP *)NULL)->sex, 143, 1, 0},
+ {(long)&((SETUP *)NULL)->hand, 144, 1, 0},
+ {(long)&((SETUP *)NULL)->med, 145, 20, 0},
+ {(long)&((SETUP *)NULL)->category, 165, 20, 0},
+ {(long)&((SETUP *)NULL)->state, 185, 20, 0},
+ {(long)&((SETUP *)NULL)->label, 205, 20, 0},
+ {(long)&((SETUP *)NULL)->date, 225, 10, 0},
+ {(long)&((SETUP *)NULL)->time, 235, 12, 0},
+ {(long)&((SETUP *)NULL)->mean_age, 247, 4, 1},
+ {(long)&((SETUP *)NULL)->stdev, 251, 4, 1},
+ {(long)&((SETUP *)NULL)->n, 255, 2, 1},
+ {(long)&((SETUP *)NULL)->compfile, 257, 38, 0},
+ {(long)&((SETUP *)NULL)->SpectWinComp, 295, 4, 1},
+ {(long)&((SETUP *)NULL)->MeanAccuracy, 299, 4, 1},
+ {(long)&((SETUP *)NULL)->MeanLatency, 303, 4, 1},
+ {(long)&((SETUP *)NULL)->sortfile, 307, 46, 0},
+ {(long)&((SETUP *)NULL)->NumEvents, 353, 4, 1},
+ {(long)&((SETUP *)NULL)->compoper, 357, 1, 0},
+ {(long)&((SETUP *)NULL)->avgmode, 358, 1, 0},
+ {(long)&((SETUP *)NULL)->review, 359, 1, 0},
+ {(long)&((SETUP *)NULL)->nsweeps, 360, 2, 1},
+ {(long)&((SETUP *)NULL)->compsweeps, 362, 2, 1},
+ {(long)&((SETUP *)NULL)->acceptcnt, 364, 2, 1},
+ {(long)&((SETUP *)NULL)->rejectcnt, 366, 2, 1},
+ {(long)&((SETUP *)NULL)->pnts, 368, 2, 1},
+ {(long)&((SETUP *)NULL)->nchannels, 370, 2, 1},
+ {(long)&((SETUP *)NULL)->avgupdate, 372, 2, 1},
+ {(long)&((SETUP *)NULL)->domain, 374, 1, 0},
+ {(long)&((SETUP *)NULL)->variance, 375, 1, 0},
+ {(long)&((SETUP *)NULL)->rate, 376, 2, 1},
+ {(long)&((SETUP *)NULL)->scale, 378, 8, 1},
+ {(long)&((SETUP *)NULL)->veogcorrect, 386, 1, 0},
+ {(long)&((SETUP *)NULL)->heogcorrect, 387, 1, 0},
+ {(long)&((SETUP *)NULL)->aux1correct, 388, 1, 0},
+ {(long)&((SETUP *)NULL)->aux2correct, 389, 1, 0},
+ {(long)&((SETUP *)NULL)->veogtrig, 390, 4, 1},
+ {(long)&((SETUP *)NULL)->heogtrig, 394, 4, 1},
+ {(long)&((SETUP *)NULL)->aux1trig, 398, 4, 1},
+ {(long)&((SETUP *)NULL)->aux2trig, 402, 4, 1},
+ {(long)&((SETUP *)NULL)->heogchnl, 406, 2, 1},
+ {(long)&((SETUP *)NULL)->veogchnl, 408, 2, 1},
+ {(long)&((SETUP *)NULL)->aux1chnl, 410, 2, 1},
+ {(long)&((SETUP *)NULL)->aux2chnl, 412, 2, 1},
+ {(long)&((SETUP *)NULL)->veogdir, 414, 1, 0},
+ {(long)&((SETUP *)NULL)->heogdir, 415, 1, 0},
+ {(long)&((SETUP *)NULL)->aux1dir, 416, 1, 0},
+ {(long)&((SETUP *)NULL)->aux2dir, 417, 1, 0},
+ {(long)&((SETUP *)NULL)->veog_n, 418, 2, 1},
+ {(long)&((SETUP *)NULL)->heog_n, 420, 2, 1},
+ {(long)&((SETUP *)NULL)->aux1_n, 422, 2, 1},
+ {(long)&((SETUP *)NULL)->aux2_n, 424, 2, 1},
+ {(long)&((SETUP *)NULL)->veogmaxcnt, 426, 2, 1},
+ {(long)&((SETUP *)NULL)->heogmaxcnt, 428, 2, 1},
+ {(long)&((SETUP *)NULL)->aux1maxcnt, 430, 2, 1},
+ {(long)&((SETUP *)NULL)->aux2maxcnt, 432, 2, 1},
+ {(long)&((SETUP *)NULL)->veogmethod, 434, 1, 0},
+ {(long)&((SETUP *)NULL)->heogmethod, 435, 1, 0},
+ {(long)&((SETUP *)NULL)->aux1method, 436, 1, 0},
+ {(long)&((SETUP *)NULL)->aux2method, 437, 1, 0},
+ {(long)&((SETUP *)NULL)->AmpSensitivity, 438, 4, 1},
+ {(long)&((SETUP *)NULL)->LowPass, 442, 1, 0},
+ {(long)&((SETUP *)NULL)->HighPass, 443, 1, 0},
+ {(long)&((SETUP *)NULL)->Notch, 444, 1, 0},
+ {(long)&((SETUP *)NULL)->AutoClipAdd, 445, 1, 0},
+ {(long)&((SETUP *)NULL)->baseline, 446, 1, 0},
+ {(long)&((SETUP *)NULL)->offstart, 447, 4, 1},
+ {(long)&((SETUP *)NULL)->offstop, 451, 4, 1},
+ {(long)&((SETUP *)NULL)->reject, 455, 1, 0},
+ {(long)&((SETUP *)NULL)->rejstart, 456, 4, 1},
+ {(long)&((SETUP *)NULL)->rejstop, 460, 4, 1},
+ {(long)&((SETUP *)NULL)->rejmin, 464, 4, 1},
+ {(long)&((SETUP *)NULL)->rejmax, 468, 4, 1},
+ {(long)&((SETUP *)NULL)->trigtype, 472, 1, 0},
+ {(long)&((SETUP *)NULL)->trigval, 473, 4, 1},
+ {(long)&((SETUP *)NULL)->trigchnl, 477, 1, 0},
+ {(long)&((SETUP *)NULL)->trigmask, 478, 2, 1},
+ {(long)&((SETUP *)NULL)->trigisi, 480, 4, 1},
+ {(long)&((SETUP *)NULL)->trigmin, 484, 4, 1},
+ {(long)&((SETUP *)NULL)->trigmax, 488, 4, 1},
+ {(long)&((SETUP *)NULL)->trigdir, 492, 1, 0},
+ {(long)&((SETUP *)NULL)->Autoscale, 493, 1, 0},
+ {(long)&((SETUP *)NULL)->n2, 494, 2, 1},
+ {(long)&((SETUP *)NULL)->dir, 496, 1, 0},
+ {(long)&((SETUP *)NULL)->dispmin, 497, 4, 1},
+ {(long)&((SETUP *)NULL)->dispmax, 501, 4, 1},
+ {(long)&((SETUP *)NULL)->xmin, 505, 4, 1},
+ {(long)&((SETUP *)NULL)->xmax, 509, 4, 1},
+ {(long)&((SETUP *)NULL)->AutoMin, 513, 4, 1},
+ {(long)&((SETUP *)NULL)->AutoMax, 517, 4, 1},
+ {(long)&((SETUP *)NULL)->zmin, 521, 4, 1},
+ {(long)&((SETUP *)NULL)->zmax, 525, 4, 1},
+ {(long)&((SETUP *)NULL)->lowcut, 529, 4, 1},
+ {(long)&((SETUP *)NULL)->highcut, 533, 4, 1},
+ {(long)&((SETUP *)NULL)->common, 537, 1, 0},
+ {(long)&((SETUP *)NULL)->savemode, 538, 1, 0},
+ {(long)&((SETUP *)NULL)->manmode, 539, 1, 0},
+ {(long)&((SETUP *)NULL)->ref, 540, 10, 0},
+ {(long)&((SETUP *)NULL)->Rectify, 550, 1, 0},
+ {(long)&((SETUP *)NULL)->DisplayXmin, 551, 4, 1},
+ {(long)&((SETUP *)NULL)->DisplayXmax, 555, 4, 1},
+ {(long)&((SETUP *)NULL)->phase, 559, 1, 0},
+ {(long)&((SETUP *)NULL)->screen, 560, 16, 0},
+ {(long)&((SETUP *)NULL)->CalMode, 576, 2, 1},
+ {(long)&((SETUP *)NULL)->CalMethod, 578, 2, 1},
+ {(long)&((SETUP *)NULL)->CalUpdate, 580, 2, 1},
+ {(long)&((SETUP *)NULL)->CalBaseline, 582, 2, 1},
+ {(long)&((SETUP *)NULL)->CalSweeps, 584, 2, 1},
+ {(long)&((SETUP *)NULL)->CalAttenuator, 586, 4, 1},
+ {(long)&((SETUP *)NULL)->CalPulseVolt, 590, 4, 1},
+ {(long)&((SETUP *)NULL)->CalPulseStart, 594, 4, 1},
+ {(long)&((SETUP *)NULL)->CalPulseStop, 598, 4, 1},
+ {(long)&((SETUP *)NULL)->CalFreq, 602, 4, 1},
+ {(long)&((SETUP *)NULL)->taskfile, 606, 34, 0},
+ {(long)&((SETUP *)NULL)->seqfile, 640, 34, 0},
+ {(long)&((SETUP *)NULL)->SpectMethod, 674, 1, 0},
+ {(long)&((SETUP *)NULL)->SpectScaling, 675, 1, 0},
+ {(long)&((SETUP *)NULL)->SpectWindow, 676, 1, 0},
+ {(long)&((SETUP *)NULL)->SpectWinLength, 677, 4, 1},
+ {(long)&((SETUP *)NULL)->SpectOrder, 681, 1, 0},
+ {(long)&((SETUP *)NULL)->NotchFilter, 682, 1, 0},
+ {(long)&((SETUP *)NULL)->HeadGain, 683, 2, 1},
+ {(long)&((SETUP *)NULL)->AdditionalFiles, 685, 4, 1},
+ {(long)&((SETUP *)NULL)->unused, 689, 5, 0},
+ {(long)&((SETUP *)NULL)->FspStopMethod, 694, 2, 1},
+ {(long)&((SETUP *)NULL)->FspStopMode, 696, 2, 1},
+ {(long)&((SETUP *)NULL)->FspFValue, 698, 4, 1},
+ {(long)&((SETUP *)NULL)->FspPoint, 702, 2, 1},
+ {(long)&((SETUP *)NULL)->FspBlockSize, 704, 2, 1},
+ {(long)&((SETUP *)NULL)->FspP1, 706, 2, 1},
+ {(long)&((SETUP *)NULL)->FspP2, 708, 2, 1},
+ {(long)&((SETUP *)NULL)->FspAlpha, 710, 4, 1},
+ {(long)&((SETUP *)NULL)->FspNoise, 714, 4, 1},
+ {(long)&((SETUP *)NULL)->FspV1, 718, 2, 1},
+ {(long)&((SETUP *)NULL)->montage, 720, 40, 0},
+ {(long)&((SETUP *)NULL)->EventFile, 760, 40, 0},
+ {(long)&((SETUP *)NULL)->fratio, 800, 4, 1},
+ {(long)&((SETUP *)NULL)->minor_rev, 804, 1, 0},
+ {(long)&((SETUP *)NULL)->eegupdate, 805, 2, 1},
+ {(long)&((SETUP *)NULL)->compressed, 807, 1, 0},
+ {(long)&((SETUP *)NULL)->xscale, 808, 4, 1},
+ {(long)&((SETUP *)NULL)->yscale, 812, 4, 1},
+ {(long)&((SETUP *)NULL)->xsize, 816, 4, 1},
+ {(long)&((SETUP *)NULL)->ysize, 820, 4, 1},
+ {(long)&((SETUP *)NULL)->ACmode, 824, 1, 0},
+ {(long)&((SETUP *)NULL)->CommonChnl, 825, 1, 0},
+ {(long)&((SETUP *)NULL)->Xtics, 826, 1, 0},
+ {(long)&((SETUP *)NULL)->Xrange, 827, 1, 0},
+ {(long)&((SETUP *)NULL)->Ytics, 828, 1, 0},
+ {(long)&((SETUP *)NULL)->Yrange, 829, 1, 0},
+ {(long)&((SETUP *)NULL)->XScaleValue, 830, 4, 1},
+ {(long)&((SETUP *)NULL)->XScaleInterval, 834, 4, 1},
+ {(long)&((SETUP *)NULL)->YScaleValue, 838, 4, 1},
+ {(long)&((SETUP *)NULL)->YScaleInterval, 842, 4, 1},
+ {(long)&((SETUP *)NULL)->ScaleToolX1, 846, 4, 1},
+ {(long)&((SETUP *)NULL)->ScaleToolY1, 850, 4, 1},
+ {(long)&((SETUP *)NULL)->ScaleToolX2, 854, 4, 1},
+ {(long)&((SETUP *)NULL)->ScaleToolY2, 858, 4, 1},
+ {(long)&((SETUP *)NULL)->port, 862, 2, 1},
+ {(long)&((SETUP *)NULL)->NumSamples, 864, 4, 1},
+ {(long)&((SETUP *)NULL)->FilterFlag, 868, 1, 0},
+ {(long)&((SETUP *)NULL)->LowCutoff, 869, 4, 1},
+ {(long)&((SETUP *)NULL)->LowPoles, 873, 2, 1},
+ {(long)&((SETUP *)NULL)->HighCutoff, 875, 4, 1},
+ {(long)&((SETUP *)NULL)->HighPoles, 879, 2, 1},
+ {(long)&((SETUP *)NULL)->FilterType, 881, 1, 0},
+ {(long)&((SETUP *)NULL)->FilterDomain, 882, 1, 0},
+ {(long)&((SETUP *)NULL)->SnrFlag, 883, 1, 0},
+ {(long)&((SETUP *)NULL)->CoherenceFlag, 884, 1, 0},
+ {(long)&((SETUP *)NULL)->ContinousType, 885, 1, 0},
+ {(long)&((SETUP *)NULL)->EventTablePos, 886, 4, 1},
+ {(long)&((SETUP *)NULL)->ContinousSeconds, 890, 4, 1},
+ {(long)&((SETUP *)NULL)->ChannelOffset, 894, 4, 1},
+ {(long)&((SETUP *)NULL)->AutoCorrectFlag, 898, 1, 0},
+ {(long)&((SETUP *)NULL)->DCThreshold, 899, 1, 0},
+ {0,0,0,0}
+};
+
+struct_member sm_ELECTLOC[]={
+ {sizeof(ELECTLOC), 75, 0, 0},
+ {(long)&((ELECTLOC *)NULL)->lab, 0, 10, 0},
+ {(long)&((ELECTLOC *)NULL)->reference, 10, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->skip, 11, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->reject, 12, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->display, 13, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->bad, 14, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->n, 15, 2, 1},
+ {(long)&((ELECTLOC *)NULL)->avg_reference, 17, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->ClipAdd, 18, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->x_coord, 19, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->y_coord, 23, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->veog_wt, 27, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->veog_std, 31, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->snr, 35, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->heog_wt, 39, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->heog_std, 43, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->baseline, 47, 2, 1},
+ {(long)&((ELECTLOC *)NULL)->Filtered, 49, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->Fsp, 50, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->aux1_wt, 51, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->aux1_std, 55, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->sensitivity, 59, 4, 1},
+ {(long)&((ELECTLOC *)NULL)->Gain, 63, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->HiPass, 64, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->LoPass, 65, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->Page, 66, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->Size, 67, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->Impedance, 68, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->PhysicalChnl, 69, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->Rectify, 70, 1, 0},
+ {(long)&((ELECTLOC *)NULL)->calib, 71, 4, 1},
+ {0,0,0,0}
+};
+
+struct_member sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[]={
+ {sizeof(NEUROSCAN_EPOCHED_SWEEP_HEAD), 13, 0, 0},
+ {(long)&((NEUROSCAN_EPOCHED_SWEEP_HEAD *)NULL)->accept, 0, 1, 0},
+ {(long)&((NEUROSCAN_EPOCHED_SWEEP_HEAD *)NULL)->type, 1, 2, 1},
+ {(long)&((NEUROSCAN_EPOCHED_SWEEP_HEAD *)NULL)->correct, 3, 2, 1},
+ {(long)&((NEUROSCAN_EPOCHED_SWEEP_HEAD *)NULL)->rt, 5, 4, 1},
+ {(long)&((NEUROSCAN_EPOCHED_SWEEP_HEAD *)NULL)->response, 9, 2, 1},
+ {(long)&((NEUROSCAN_EPOCHED_SWEEP_HEAD *)NULL)->not_used, 11, 2, 1},
+ {0,0,0,0}
+};
+
+struct_member sm_TEEG[]={
+ {sizeof(TEEG), 9, 0, 0},
+ {(long)&((TEEG *)NULL)->Teeg, 0, 1, 0},
+ {(long)&((TEEG *)NULL)->Size, 1, 4, 1},
+ {(long)&((TEEG *)NULL)->p_o.Offset, 5, 4, 1},
+ {0,0,0,0}
+};
+
+struct_member sm_EVENT1[]={
+ {sizeof(EVENT1), 8, 0, 0},
+ {(long)&((EVENT1 *)NULL)->StimType, 0, 2, 1},
+ {(long)&((EVENT1 *)NULL)->KeyBoard, 2, 1, 0},
+ {(long)&((EVENT1 *)NULL)->KeyPadAccept, 3, 1, 0},
+ {(long)&((EVENT1 *)NULL)->Offset, 4, 4, 1},
+ {0,0,0,0}
+};
+
+struct_member sm_EVENT2[]={
+ {sizeof(EVENT2), 19, 0, 0},
+ {(long)&((EVENT2 *)NULL)->StimType, 0, 2, 1},
+ {(long)&((EVENT2 *)NULL)->KeyBoard, 2, 1, 0},
+ {(long)&((EVENT2 *)NULL)->KeyPadAccept, 3, 1, 0},
+ {(long)&((EVENT2 *)NULL)->Offset, 4, 4, 1},
+
+ {(long)&((EVENT2 *)NULL)->Type, 8, 2, 1},
+ {(long)&((EVENT2 *)NULL)->Code, 10, 2, 1},
+ {(long)&((EVENT2 *)NULL)->Latency, 12, 4, 1},
+ {(long)&((EVENT2 *)NULL)->EpochEvent, 16, 1, 0},
+ {(long)&((EVENT2 *)NULL)->Accept, 17, 1, 0},
+ {(long)&((EVENT2 *)NULL)->Accuracy, 18, 1, 0},
+ {0,0,0,0}
+};
