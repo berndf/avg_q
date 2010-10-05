@@ -1,0 +1,158 @@
+# Copyright (C) 2008-2010 Bernd Feige
+# This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+"""
+Utilities for the "Coherence" file format.
+"""
+
+from . import trgfile
+import struct
+import sys
+
+headerfields=[
+ (0x2C, 'ScanID'),
+ (0x13A, 'LastName'),
+ (0x16C, 'FirstName'),
+ (0x18A, 'DateOfBirth'),
+ (0x1A9, 'LabName'),
+ (0x1D0, 'SetupName'),
+ (0x2EC, 'DerivationName'),
+]
+
+unknown_marker_code= 9
+markercodes={
+ "DAY": 0,
+ "HV": 0,
+ "<IMPEDANZ-WERTE>": 0,
+ "PAUSE": 256, # NAV_STARTSTOP
+ "Auswahl": -2,
+ "Auswahl Ende": -3,
+ "Augen auf": 1,
+ "Augen zu": 2,
+ "Klopfen": 3,
+ "Bewegung": 4,
+ "schlucken": 5,
+ "husten": 6,
+ "HV START": 10,
+ "HV END": 11,
+ "post hv": 12,
+}
+
+def readstring(filehandle):
+ string=''
+ while True:
+  char=filehandle.read(1).decode('latin1')
+  if ord(char)==0: break
+  if sys.version<"3":
+   string+=char.encode('utf-8')
+  else:
+   string+=char
+ return string
+
+data_offset=5359
+bytespermarker=268
+
+class CoherenceFile(object):
+ def __init__(self,filename,sfreq=256):
+  self.filehandle=open(filename,"rb")
+  self.sfreq=sfreq
+ def getHeader(self):
+  header=[]
+  for pos,name in headerfields:
+   self.filehandle.seek(pos,0)
+   value=readstring(self.filehandle)
+   header.append((name,value))
+  return header
+ def getEvents(self):
+  events=[]
+  def push_event(pos,marker):
+   code=None
+   if marker in markercodes:
+    code=markercodes[marker]
+   else:
+    for m in markercodes:
+     if marker.startswith(m):
+      code=markercodes[m]
+   if code==None:
+    code=unknown_marker_code
+   if code!=0:
+    if self.sfreq:
+     outpos="%gs" % (float(pos)/self.sfreq)
+    events.insert(0,(outpos,code,marker))
+  self.filehandle.seek(0,2)
+  filepos=self.filehandle.tell()
+  while True:
+   filepos-=bytespermarker
+   self.filehandle.seek(filepos,0)
+   pos=self.filehandle.read(4)
+   duration=self.filehandle.read(4)
+   pos,=struct.unpack("L",pos)
+   # Duration of selected event
+   duration,=struct.unpack("L",duration)
+   # The first entry regularly is pos=2, marker="TEST"
+   if pos<=2: break
+   marker=readstring(self.filehandle)
+   if len(marker)<=2:
+    char=self.filehandle.read(3-len(marker))
+    pause_length,=struct.unpack("L", marker.encode('latin1') + b"\0" + char)
+    marker=readstring(self.filehandle)
+    if len(marker)==0:
+     hours=int(pause_length/3600.0)
+     minutes=int((pause_length-hours*3600)/60.0)
+     seconds=(pause_length-hours*3600-minutes*60.0)
+     marker="DAY TIME %02d:%02d:%02d" % (hours, minutes, seconds)
+    else:
+     if duration>0:
+      push_event(pos+duration,marker+' Ende')
+     marker+=" = %ds" % pause_length
+   push_event(pos,marker)
+  return events
+ def close(self):
+  self.filehandle.close()
+
+class CoherenceTriggers(trgfile.trgfile):
+ def __init__(self,source=None,sfreq=256):
+  if not isinstance(source,str):
+   raise Exception("CoherenceTriggers: Can only work with file names!")
+  trgfile.trgfile.__init__(self,None)
+  coherencefile=CoherenceFile(source,sfreq)
+  for name,value in coherencefile.getHeader():
+   self.preamble[name]=value
+  self.tuples=coherencefile.getEvents()
+  coherencefile.close()
+ def close(self):
+  pass
+ def reader(self):
+  pass
+ def getline(self):
+  pass
+ def rdr(self):
+  for event in self.tuples:
+   yield event
+ def gettuples(self):
+  return self.tuples
+
+from . import avg_q_file
+# Files are stored uncompressed starting with 020705AA.Eeg
+first_uncompressed='020705AA.Eeg'
+class avg_q_Coherencefile(avg_q_file):
+ def __init__(self,filename,nr_of_channels=24,sfreq=256,compressed=None):
+  self.filename=filename
+  self.nr_of_channels=nr_of_channels
+  self.sfreq=sfreq
+  if compressed==None:
+   import os
+   eegpath,eegfilename=os.path.split(filename)
+   self.compressed=eegfilename<first_uncompressed
+  else:
+   self.compressed=compressed
+  self.format="Coherence"
+  self.addmethods=None
+  getepochstart='read_generic -O %d -C %d -s %d ' % (data_offset,self.nr_of_channels,self.sfreq)
+  if self.compressed:
+   self.getepochmethod=getepochstart+'''%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s int8
+>integrate
+'''
+  else:
+   self.getepochmethod=getepochstart+'''%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s int16
+'''
+

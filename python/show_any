@@ -1,0 +1,57 @@
+#!/bin/env python
+
+import avg_q
+import sys
+import os
+
+a=avg_q.avg_q(avg_q='avg_q_ui')
+#a.debug=True
+n_files=0
+for filename_and_triggerfile in sys.argv[1:]:
+ fsplit=filename_and_triggerfile.split('+')
+ if len(fsplit)==1:
+  filename=filename_and_triggerfile
+  trgfile=None
+ else:
+  filename=fsplit[0]
+  trgfile=fsplit[1]
+ base,ext=os.path.splitext(filename)
+ addmethods=None
+ if not ext:
+  # Try to interpret this as a sleep bookno
+  import avg_q.sleep_file
+  print("Reading sleep file for bookno: %s" % filename)
+  infile=avg_q.sleep_file.sleep_file(filename)
+ else:
+  if not os.path.exists(filename):
+   print("Oops, %s doesn't exist - skipping..." % filename)
+   continue
+  print("Opening file: %s" % filename)
+  infile=avg_q.avg_q_file(filename)
+ if not trgfile:
+  if infile.fileformat=='Inomed':
+   trgfile=filename+'.tri'
+  elif infile.fileformat=='Coherence':
+   trgfile=base+'.markers'
+   if os.path.exists('channelpos.klin'):
+    addmethods=['set_channelposition -s @channelpos.klin']
+  else:
+   trgfile=base+'.trg'
+ if os.path.exists(trgfile):
+  infile.trigfile=trgfile
+ a.getcontepoch(infile, 0, 0, trigtransfer=True)
+ if addmethods:
+  for line in addmethods:
+   a.write('>'+line+'\n')
+ n_files+=1
+if n_files==0:
+ print("Oops, don't have any files to display...")
+else:
+ a.write('''
+append -l
+Post:
+posplot
+-
+''')
+ a.run()
+a.close()

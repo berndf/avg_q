@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import avg_q
+import avg_q.trgfile
+import avg_q.paradigm
+
+a=avg_q.avg_q()
+for filename in sys.argv[1:]:
+ if not os.path.exists(filename):
+  print("Oops, %s doesn't exist - skipping..." % filename)
+  continue
+ base,ext=os.path.splitext(filename)
+ if ext in ['.trg','.crs','.tri']:
+  # Assume trigger file
+  trg=avg_q.trgfile.trgfile(filename)
+ else:
+  infile=avg_q.avg_q_file(filename)
+  trg=a.get_filetriggers(infile)
+ triggers=trg.gettuples()
+ trg.close()
+ sfreq=trg.preamble.get('Sfreq')
+ if sfreq:
+  p=avg_q.paradigm.paradigm(triggers,float(sfreq))
+ else:
+  p=avg_q.paradigm.paradigm(triggers)
+ stats=p.triggerstats()
+ for code in stats:
+  if stats[code][0]<=1:
+   print("%s Code %d: %d" % ((filename, code, stats[code][0])))
+  elif stats[code][0]==2:
+   print("%s Code %d: %d [single diff %g]" % ((filename, code)+stats[code][:2]))
+  else:
+   print("%s Code %d: %d [mean %g+-%g, q0=%g q25=%g q50=%g q75=%g q100=%g]" % ((filename, code)+stats[code]))
+ if not stats:
+  print("%s: No triggers!" % filename)
+a.close()
