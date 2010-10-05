@@ -1,0 +1,23 @@
+This directory contains the python bindings for avg_q (in the
+avg_q/ subdirectory) and general scripts using these bindings.
+
+For a very first check, you can do "python avg_q/avg_q.py". If this
+gets you an output of the form "sfreq=10\nnr_of_points=20\n..." then
+avg_q is properly accessible from the avg_q python module.
+
+Note that the code is tailored to be python 3-clean. It will run with python 2
+as well, starting with version 2.6.
+
+Included scripts:
+
+show_any: Will use avg_q_ui to display whatever file(s) were given on the
+command line, using format autodetection. Each file will be read as a single
+epoch and all files are shown as "linked" epochs in posplot. Note that posplot
+has the ability to show files with different channels, sampling rates and data
+lengths simultaneously.  Special care is taken to show any triggers included in
+the input files as well.
+
+check_crossings: Count trigger codes and output statistics on temporal distances
+between triggers with the same code. It will work on avg_q style ".trg" or ".crs"
+trigger text files but will also automatically extract triggers from any known file
+format.
