@@ -14,7 +14,7 @@ triggercodes={
 
 class vmrkfile(trgfile.trgfile):
  def rdr(self):
-  version=self.getline()
+  version=self.getline().rstrip('\r\n')
   if version!="Brain Vision Data Exchange Marker File, Version 1.0":
    print("BV: This does not seem to be a VMRK file!")
    return
@@ -24,6 +24,7 @@ class vmrkfile(trgfile.trgfile):
    # EOF:
    if not isinstance(line,str):
     break
+   line=line.rstrip('\r\n')
    if len(line)==0 or line[0]==';':
     pass
    elif line[0]=='[':
