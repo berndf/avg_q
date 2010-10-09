@@ -75,6 +75,9 @@ class trgfile(object):
    if not isinstance(line,str):
     break
    line=line.rstrip('\r\n')
+   # EOF:
+   if line=='EOF':
+    break
    if line=='':
     continue
    if line[0]=='#':
