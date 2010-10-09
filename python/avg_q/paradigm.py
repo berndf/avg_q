@@ -77,21 +77,32 @@ class paradigm(object):
    if len(self.stimulus_set)==0 and len(self.response_set)==0 or code in self.stimulus_set or code in self.response_set:
     self.triggers.append((point, code, description))
   self.sfreq=sfreq
+  self.conditions=self.correct_conditions+self.error_conditions
+
+  # These are automatically computed on first access:
   # dict with key stimulus and value = count
-  self.stimulus_count={}
+  #self.stimulus_count={}
   # dict with key condition and value = list of [point1, point2, ...]
   # where each point is actually a full trigger tuple (point,code,description)
-  self.trials={}
-  self.conditions=self.correct_conditions+self.error_conditions
-  self.get_trials()
- def get_trials(self):
+  #self.trials={}
+ def __getattr__(self,name):
+  '''Lazy trial classification on first access, allowing triggers to be
+     analyzed through parse_trials or triggerstats without full classification.'''
+  if name=='stimulus_count' or name=='trials':
+   self.stimulus_count={}
+   self.trials={}
+   self.get_trials()
+   return self.__dict__[name]
+  else:
+   raise AttributeError, '\'paradigm\' object has no attribute \''+name+'\'';
+ def parse_trials(self):
+  '''Iterator to output single trials together with their classification.
+     This can be used to create output in the order of trials, rather than sorted by condition.'''
   if self.stimuli:
    for stimulus in self.stimuli:
     self.stimulus_count[stimulus]=0
   else:
    self.stimulus_count[unset_stimulus_name]=0
-  for condition in self.conditions:
-   self.trials[condition]=[]
   i=0
   while i<len(self.triggers):
    epochtriggers=[self.triggers[i]]
@@ -137,8 +148,13 @@ class paradigm(object):
     if condition:
      stimulus=self.stimcode2stimulus[code] if self.stimuli else unset_stimulus_name
      self.stimulus_count[stimulus]+=1
-     self.trials[condition].append(epochtriggers)
+     yield condition,epochtriggers
    i+=1
+ def get_trials(self):
+  for condition in self.conditions:
+   self.trials[condition]=[]
+  for condition,epochtriggers in self.parse_trials():
+   self.trials[condition].append(epochtriggers)
  def triggerstats(self):
   codes={}
   for t in self.triggers:
@@ -176,7 +192,7 @@ class paradigm(object):
   if not isinstance(assigned_stimuli,list):
    assigned_stimuli=[assigned_stimuli]
   assigned_stimulus_count=sum([self.stimulus_count[x] for x in assigned_stimuli])
-  response_latencies=[self.get_RT(r) for r in self.trials[condition]]
+  response_latencies=[self.get_RT(t) for t in self.trials[condition]]
   response_latencies=[r for r in response_latencies if r]
   if response_latencies:
    meanRT=mean(response_latencies)
