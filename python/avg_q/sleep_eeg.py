@@ -1,3 +1,4 @@
+# vim: set fileencoding=utf-8 :
 # Copyright (C) 2009 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
@@ -8,7 +9,6 @@ sleep spectral analysis.
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
-from . import avg_q_file
 import os
 
 # Helpers for the get_measures method
@@ -88,6 +88,7 @@ class sleep_eeg(avg_q.avg_q):
 >calc log
 ''' % {'collapse_args': ' '.join(collapse_args)})
  def cnt2trg(self,cntfile):
+  from . import avg_q_file
   first,ext=os.path.splitext(cntfile)
   if not ext:
    # No extension: Assume this is a book number
@@ -279,7 +280,7 @@ write_generic -P stdout string
     if varname=='nrofaverages':
      outline.append(int(value))
    else:
-    yield outline+list(map(float,line.split('\t')))
+    yield outline+[float(x) for x in line.split('\t')]
     outline=[]
  def spect_measure(self,bands=defaultbands,postprocess=''):
   """Generator yielding spectral measurements"""
@@ -299,4 +300,69 @@ null_sink
     yield spect
     spect=[]
    else:
-    spect.append(list(map(float,line.split('\t'))))
+    spect.append([float(x) for x in line.split('\t')])
+ def get_Delta_slope(self,bookno):
+  from . import sleep_file
+  from . import trgfile
+  try:
+   f=sleep_file.sleep_file(bookno)
+  except:
+   print("Raw file for %s can't be located!" % bookno)
+   return None
+  self.getcontepoch(f,'0','0')
+  self.write('''
+remove_channel -k ?C3,EEGC3,EEG_C3,EEG\\ C3,EEG\\ C3\\-A2,EEG1
+# Bandpass 0.5-2.0Hz
+add negpointmean
+fftfilter 0 0 0.4Hz 0.5Hz 2.0Hz 2.1Hz 1 1
+write_crossings -E ALL 0 stdout
+# Terminate the first crossings list:
+echo -F stdout EOF\\n
+differentiate
+write_crossings -E ALL 0 stdout
+null_sink
+--
+''')
+  rdr=self.runrdr()
+  trg=trgfile.trgfile(rdr)
+  crs=trg.gettuples()
+  sfreq=float(trg.preamble['Sfreq'])
+  dif=trgfile.trgfile(rdr).gettuples() # Differential extrema
+
+  lastneg=None
+  intervening_pos=[]
+  difindex=0
+  #print("\t".join(('Time','nPos','Amp','SlopePlus','SlopeMinus','SlopeMax','SlopeMin')))
+  values=[]
+  for point,code,amplitude in crs:
+   amplitude=float(amplitude)
+   #print("%gs %d %g" % (point/sfreq,code,amplitude))
+   if code== -1:
+    if lastneg and intervening_pos:
+     # Positive wave detected...
+     # Find the maximum and minimum slope within the wave
+     while difindex<len(dif) and dif[difindex][0]<lastneg[0]: difindex+=1
+     if difindex==len(dif):
+      mindif=maxdif=None
+     else:
+      mindif=maxdif=float(dif[difindex][2])
+      difindex+=1
+      while True:
+       amp=float(dif[difindex][2])
+       if   amp<mindif: mindif=amp
+       elif amp>maxdif: maxdif=amp
+       difindex+=1
+       if difindex>=len(dif) or dif[difindex][0]>=point: break
+     # Find the maximum positivity in the wave
+     maxindex=max(range(len(intervening_pos)),key=lambda i: intervening_pos[i][1])
+     #print("\t".join([str(x) for x in lastneg+(len(intervening_pos),)+intervening_pos[maxindex]+(point,amplitude,mindif,maxdif)]))
+     # Time[s] Amp[µV] SlopePlus[µV/s] SlopeMinus[µV/s] SlopeMax[µV/s] SlopeMin[µV/s]
+     maxpospoint,maxposamp=intervening_pos[maxindex]
+     #print("%.3f\t%d\t%g\t%g\t%g\t%g\t%g" % (maxpospoint/sfreq,len(intervening_pos),maxposamp,(maxposamp-lastneg[1])/((maxpospoint-lastneg[0])/sfreq),(maxposamp-amp)/((maxpospoint-point)/sfreq),maxdif*sfreq,mindif*sfreq))
+     values.append([maxpospoint/sfreq,len(intervening_pos),maxposamp,(maxposamp-lastneg[1])/((maxpospoint-lastneg[0])/sfreq),(maxposamp-amp)/((maxpospoint-point)/sfreq),maxdif*sfreq,mindif*sfreq])
+     intervening_pos=[]
+    lastneg=(point,amplitude)
+   else:
+    if lastneg:
+     intervening_pos.append((point,amplitude))
+  return values

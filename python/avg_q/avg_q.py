@@ -321,7 +321,7 @@ write_generic stdout string
    ypos.append(float(y))
   z=[]
   for r in rdr:
-   z.append(list(map(float,r.split())))
+   z.append([float(x) for x in r.split()])
   mapplot(np.array(xpos),np.array(ypos),np.array(z))
  def plot_traces(self, vmin=None, vmax=None, rest_of_script='\nnull_sink\n-\n'):
   import numpy as np
@@ -354,7 +354,7 @@ write_generic stdout string
    if r=='Epoch Start':
     point=0
    else:
-    channels=list(map(float,r.split()))
+    channels=[float(x) for x in r.split()]
     for channel in range(0,len(channels)):
      if len(z)<=channel:
       z.append([[channels[channel]]])

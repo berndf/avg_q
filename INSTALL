@@ -68,6 +68,10 @@ External libraries needed
 
 - For Independent Component Analysis (icadecomp; http://www.cnl.salk.edu/~enghoff/), the
   linear algebra packages lapack and blas are needed (http://www.netlib.org/).
+  Additionally, f2c.h is needed and best provided by installing libf2c (http://www.netlib.org/f2c/).
+
+- For sound input/output (sox library, see below): GSM library
+  (http://packages.qa.debian.org/libg/libgsm.html)
 
 Most Linux distributions contain packages for these libraries. To compile avg_q yourself,
 it may be necessary to install the development packages of these libraries in addition to
