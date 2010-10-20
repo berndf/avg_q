@@ -473,6 +473,18 @@ select_channels(struct posplot_storage * const local_arg, channel_map_entry * se
   entry_number++;
  }
 }
+LOCAL channel_map_entry *
+get_first_selected_channel(struct posplot_storage * const local_arg) {
+ int const n_entries= local_arg->channel_map.current_length/sizeof(channel_map_entry);
+ int entry_number=0;
+ channel_map_entry * entry=(channel_map_entry *)local_arg->channel_map.buffer_start;
+ while (entry_number<n_entries) {
+  if (entry->selected) return entry;
+  entry++;
+  entry_number++;
+ }
+ return (channel_map_entry *)NULL;
+}
 /*}}}  */
 
 /*{{{  first_x, last_x, get_selectedpoint*/
@@ -2169,7 +2181,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        if (whichpoint<0) {
 	local_arg->lastsel_entry=NULL;
        } else {
-	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=(channel_map_entry *)local_arg->channel_map.buffer_start;
+	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=get_first_selected_channel(local_arg);
 	local_arg->lastselected=tinfo_to_use->xdata[whichpoint];
        }
        }
@@ -2206,7 +2218,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        if (whichpoint<0) {
 	local_arg->lastsel_entry=NULL;
        } else {
-	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=(channel_map_entry *)local_arg->channel_map.buffer_start;
+	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=get_first_selected_channel(local_arg);
 	local_arg->lastselected=tinfo_to_use->xdata[whichpoint];
        }
        }
@@ -2609,7 +2621,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	 local_arg->lastselected=(DATATYPE)atof(inputbuffer);
          local_arg->lastsel_pos=find_pointnearx(tinfo_to_use, local_arg->lastselected);
         }
-	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=(channel_map_entry *)local_arg->channel_map.buffer_start;
+	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=get_first_selected_channel(local_arg);
         lastsel_changed=1;
         /*}}}  */
         dev=KEYBD;
