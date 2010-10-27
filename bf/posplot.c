@@ -626,7 +626,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->itempart=0;
  local_arg->fov=200;	/* Field of vision, 20 deg initially */
  local_arg->azimuth=0; local_arg->incidence=0; local_arg->twist=0;
- local_arg->plfact=0.8;	/* Factor for the plotting rectangle size */
+ local_arg->plfact=3.3/sqrt(tinfo->nr_of_channels);	/* Factor for the plotting rectangle size */
  local_arg->displaysign=1.0; /* Plot negative down by default */
  local_arg->showcoordsys=FALSE;
  local_arg->shownames=TRUE;
