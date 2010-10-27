@@ -36,7 +36,7 @@ extern "C" {
 #include <stdio.h>
 #include <vogl.h>
 
-extern _wxwin_devcpy();
+extern _wxwin_devcpy(void);
 }
 
 extern wxFrame *vogl_MainFrame;	// To be set by the main program !
@@ -58,7 +58,7 @@ static struct {
 } wxwin;
 
 static int
-wxwin_init() {
+wxwin_init(void) {
  wxwin.SmallFont = new wxFont(8, wxROMAN, wxNORMAL, wxNORMAL);
  wxwin.LargeFont = new wxFont(16, wxROMAN, wxNORMAL, wxNORMAL);
  wxwin.CurrentFont=wxwin.SmallFont;
@@ -100,19 +100,19 @@ wxwin_init() {
  * 
  */
 static int 
-wxwin_frontbuffer() {
+wxwin_frontbuffer(void) {
  printf("wxwin_frontbuffer\n");
  return (0);
 }
 
 static int 
-wxwin_backbuffer() {
+wxwin_backbuffer(void) {
  printf("wxwin_backbuffer\n");
  return (0);
 }
 
 static int 
-wxwin_swapbuffers() {
+wxwin_swapbuffers(void) {
  printf("wxwin_swapbuffers\n");
  return (0);
 }
@@ -123,7 +123,7 @@ wxwin_swapbuffers() {
  * Clear the viewport to current colour
  */
 static int
-wxwin_vclear() {
+wxwin_vclear(void) {
  unsigned int    vw = vdevice.maxVx - vdevice.minVx;
  unsigned int    vh = vdevice.maxVy - vdevice.minVy;
  wxDC *dc = wxwin.canvas->GetDC();
@@ -148,7 +148,7 @@ wxwin_vclear() {
  * 
  */
 static
-wxwin_exit() {
+wxwin_exit(void) {
  int i;
  printf("wxwin_exit\n");
  delete wxwin.canvas;
@@ -165,13 +165,13 @@ wxwin_exit() {
 }
 
 static int 
-wxwin_sync() {
+wxwin_sync(void) {
  printf("wxwin_sync\n");
  return (1);
 };
 
 static int
-noop() {
+noop(void) {
  return (-1);
 }
 
@@ -310,7 +310,7 @@ wxwin_fill(int sides, int *x, int *y) {
 };
 
 static int
-wxwin_checkkey() {
+wxwin_checkkey(void) {
  //printf("wxwin_checkkey\n");
  return c;
 }
@@ -368,7 +368,8 @@ static DevEntry wxwindev = {
  * 
  * copy the pc device into vdevice.dev. (as listed in drivers.c)
  */
-_wxwin_devcpy() {
+int
+_wxwin_devcpy(void) {
  vdevice.dev = wxwindev;
  return (0);
 }

@@ -77,7 +77,7 @@ arc(Coord x, Coord y, Coord radius, Angle sang, Angle eang)
 		return;
 	}
 
-	if (sync = vdevice.sync)
+	if ((sync = vdevice.sync)!=0)
 		vdevice.sync = 0;
 
 	/* calculates initial point on arc */
@@ -253,7 +253,7 @@ circ(Coord x, Coord y, Coord radius)
 	cx = x + radius;
 	cy = y;
 
-	if (sync = vdevice.sync)
+	if ((sync = vdevice.sync)!=0)
 		vdevice.sync = 0;
 
 	move2(cx, cy);

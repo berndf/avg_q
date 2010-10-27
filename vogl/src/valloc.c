@@ -1,4 +1,6 @@
 #include "vogl.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 /*
  * vallocate

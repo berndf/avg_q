@@ -1345,8 +1345,7 @@ static DevEntry VGUIdev = {
  * 
  * copy the pc device into vdevice.dev. (as listed in drivers.c)
  */
-int
+void
 _VGUI_devcpy(void) {
  vdevice.dev = VGUIdev;
- return (0);
 }

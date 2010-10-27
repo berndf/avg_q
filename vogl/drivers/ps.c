@@ -11,6 +11,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #ifdef VOGLE
 #include "vogle.h"
 #else
@@ -22,9 +23,6 @@ typedef struct {
 } Coltab;
 
 static Coltab	*coltab;
-extern char	*vallocate();
-
-extern FILE	*_voutfile();
 
 static int	ps_first_time = 1, drawn = 0,
 		curcol = 0,			/* black */
@@ -289,13 +287,13 @@ PS_pnt(int x, int y)
  * load in small or large - could be improved.
  */
 static int
-PS_font(char *font)
+PS_font(char *psfont)
 {
-	if (strcmp(font, "small") == 0) {
+	if (strcmp(psfont, "small") == 0) {
 		vdevice.hwidth = 22.0;
 		vdevice.hheight = vdevice.hwidth * 1.833;
 		fprintf(fp, "%d h\n", (int)vdevice.hheight);
-	} else if (strcmp(font, "large") == 0) {
+	} else if (strcmp(psfont, "large") == 0) {
 		vdevice.hwidth = 35.0;
 		vdevice.hheight = vdevice.hwidth * 1.833;
 		fprintf(fp, "%d h\n", (int)vdevice.hheight);
@@ -461,7 +459,7 @@ PS_setls(int lss)
 
 	if (ls == 0xffff) {
 		fprintf(fp, "[] 0 setdash\n");
-		return;
+		return(0);
 	}
 
 	fputc('[', fp);
@@ -552,14 +550,12 @@ static DevEntry psdev = {
  *	copy the postscript device into vdevice.dev.
  * 	Set it so we can use colours.
  */
-int
+void
 _CPS_devcpy(void)
 {
 	vdevice.dev = psdev;
 	vdevice.dev.devname = "cps";
 	colour = 1;
-
-	return(0);
 }
 
 /*
@@ -567,12 +563,10 @@ _CPS_devcpy(void)
  *
  *	copy the postscript device into vdevice.dev.
  */
-int
+void
 _PS_devcpy(void)
 {
 	vdevice.dev = psdev;
-
-	return(0);
 }
 
 /*
@@ -580,14 +574,12 @@ _PS_devcpy(void)
  *
  *	copy the postscript portrait device into vdevice.dev.
  */
-int
+void
 _PSP_devcpy(void)
 {
 	vdevice.dev = psdev;
 	vdevice.dev.Vinit = PSP_init;
 	vdevice.dev.devname = "ppostscript";
-
-	return(0);
 }
 
 /*
@@ -596,15 +588,13 @@ _PSP_devcpy(void)
  *	copy the portrait postscript device into vdevice.dev.
  * 	Set it so we can use colours.
  */
-int
+void
 _PCPS_devcpy(void)
 {
 	vdevice.dev = psdev;
 	vdevice.dev.Vinit = PSP_init;
 	vdevice.dev.devname = "pcps";
 	colour = 1;
-
-	return(0);
 }
 
 
@@ -676,7 +666,7 @@ LASER_exit()
  *
  *	copy the postscript portrait device into vdevice.dev.
  */
-int
+void
 _LASER_devcpy()
 {
 	vdevice.dev = psdev;
@@ -684,7 +674,5 @@ _LASER_devcpy()
 	vdevice.dev.Vexit = LASER_exit;
 	vdevice.dev.devname = "laser";
 	colour = 1;	/* If you have a colour printer */
-
-	return(0);
 }
 #endif

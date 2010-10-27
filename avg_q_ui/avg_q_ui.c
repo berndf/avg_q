@@ -1171,7 +1171,7 @@ MethodInstance_build_dialog(void) {
      case T_ARGS_TAKES_SELECTION: {
       GtkWidget * const combo=gtk_combo_new();
       GList *strings=NULL;
-      char **choice=argument_descriptor->choices;
+      const char *const *choice=argument_descriptor->choices;
 
       while (*choice!=NULL) {
        strings=g_list_append(strings, *choice);

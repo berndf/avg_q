@@ -3,8 +3,6 @@
 static	int	nsegs = 15;
 static	Matrix	e;
 
-void 	drcurve(int n, float (*r)[4]);
-
 /*
  * curvebasis
  *
@@ -156,7 +154,7 @@ drcurve(int n, float (*r)[4])
 {
 	int	it, vx, vy, sync;
 
-	if (sync = vdevice.sync)                /* We'll sync at the end */
+	if ((sync = vdevice.sync)!=0)                /* We'll sync at the end */
 		vdevice.sync = 0;
 
 	vdevice.cpVvalid = 0;		/* we start loop with a "move" */

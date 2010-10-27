@@ -16,12 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "vogl.h"
 /*
  * _VGUI_devcpy
  * 
  * copy the pc device into vdevice.dev. (as listed in drivers.c)
  */
-int
-_VGUI_devcpy() {
- return (0);
+void
+_VGUI_devcpy(void) {
 }

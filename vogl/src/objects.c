@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "vogl.h"
 
@@ -211,7 +213,7 @@ callobj(long int ob)
 	if (o == (VObject *)NULL)
 		return;
 
-	if (sync = vdevice.sync)
+	if ((sync = vdevice.sync)!=0)
 		vdevice.sync = 0;
 
 	for (tl = o->tlist; tl != (TokList *)NULL; tl = tl->next) {

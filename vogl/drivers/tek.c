@@ -3,6 +3,8 @@
  *	Driver for tekronix 401x or equivalent
  */
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #ifdef BSD
 #include <sgtty.h>
 #else
@@ -10,7 +12,6 @@
 #endif
 #include "vogl.h"
 
-extern	FILE	*_voutfile();
 static	FILE	*fp;
 
 #define         MASK            037
@@ -37,7 +38,7 @@ static int	click;			/* to emulate a mouse click */
  *      do nothing but return -1
  */
 static int
-noop(void)
+noop()
 {
 	return(-1);
 }
@@ -47,6 +48,7 @@ noop(void)
  *
  *	set up the graphics mode.
  */
+static int
 TEK_init(void)
 {
 	/*
@@ -74,6 +76,7 @@ TEK_init(void)
  *
  *	cleans up before going back to normal mode
  */
+static int
 TEK_exit(void)
 {
 	fputc(US, fp);
@@ -81,6 +84,7 @@ TEK_exit(void)
 
 	if (fp != stdout)
 		fclose(fp);
+	return(0);
 }
 
 /*
@@ -88,7 +92,7 @@ TEK_exit(void)
  *
  *	output 2 optomized bytes to the terminal
  */
-static
+static void
 out_bytes(int x, int y)
 {
 	int HiY, LoY, HiX, LoX;
@@ -133,6 +137,7 @@ out_bytes(int x, int y)
  *
  *	draw from the current graphics position to the new one (x, y)
  */
+static int
 TEK_draw(int x, int y)
 {
 	if (tlstx != vdevice.cpVx || tlsty != vdevice.cpVy) {
@@ -146,6 +151,7 @@ TEK_draw(int x, int y)
 	tlsty = y;
 
 	fflush(fp);
+	return(0);
 }
 
 /*
@@ -153,7 +159,7 @@ TEK_draw(int x, int y)
  *
  *	return the next key typed.
  */
-int
+static int
 TEK_getkey(void)
 {
 #ifdef BSD
@@ -199,11 +205,11 @@ TEK_getkey(void)
  * In this case the keys 1 to 9 are used, with each one returning a power of
  * two.
  */
-int
+static int
 TEK_locator(int *x, int *y)
 {
 	char		buf[5];
-	int		c, i;
+	int		i;
 #ifdef BSD
 	struct sgttyb   oldtty, newtty;
 #else
@@ -296,6 +302,7 @@ TEK_locator(int *x, int *y)
  *	(for 9600 baud rate)
  *
  */
+static int
 TEK_clear(void)
 {
 	fputc(US, fp);
@@ -311,6 +318,7 @@ TEK_clear(void)
 			fputc(0, fp);
 	} else
 		sleep(2); /* for tekronix slow erase */
+	return(0);
 }
 
 /*
@@ -318,14 +326,14 @@ TEK_clear(void)
  *
  *	set for large or small mode.
  */
-int
-TEK_font(char *font)
+static int
+TEK_font(char *tekfont)
 {
-	if (strcmp(font, "small") == 0) {
+	if (strcmp(tekfont, "small") == 0) {
 		fprintf(fp, "\033:");
 		vdevice.hwidth = 8.0;
 		vdevice.hheight = 15.0;
-	} else if (strcmp(font, "large") == 0) {
+	} else if (strcmp(tekfont, "large") == 0) {
 		fprintf(fp, "\0338");
 		vdevice.hwidth = 14.0;
 		vdevice.hheight = 17.0;
@@ -342,6 +350,7 @@ TEK_font(char *font)
  *
  *	outputs one char
  */
+static int
 TEK_char(char c)
 {
 	if (tlstx != vdevice.cpVx || tlsty != vdevice.cpVy) {
@@ -356,6 +365,7 @@ TEK_char(char c)
 	tlstx = tlsty = -1;
 
 	fflush(fp);
+	return(0);
 }
 
 /*
@@ -363,6 +373,7 @@ TEK_char(char c)
  *
  *	outputs a string
  */
+static int
 TEK_string(char *s)
 {
 	if (tlstx != vdevice.cpVx || tlsty != vdevice.cpVy) {	/* move to start */
@@ -377,6 +388,7 @@ TEK_string(char *s)
 	tlstx = tlsty = -1;
 
 	fflush(fp);
+	return(0);
 }
 
 /*
@@ -384,6 +396,7 @@ TEK_string(char *s)
  *
  *      "fill" a polygon
  */
+static int
 TEK_fill(int n, int *x, int *y)
 {
 	int     i;
@@ -403,6 +416,7 @@ TEK_fill(int n, int *x, int *y)
 
 	tlstx = vdevice.cpVx = x[n - 1];
 	tlsty = vdevice.cpVy = y[n - 1];
+	return(0);
 }
 
 /*
@@ -438,6 +452,7 @@ static DevEntry	tekdev = {
  *
  *      copy the tektronix device into vdevice.dev.
  */
+void
 _TEK_devcpy(void)
 {
         vdevice.dev = tekdev;

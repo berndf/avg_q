@@ -5,11 +5,9 @@
 
 #include <stdio.h>
 #include "vogl.h"
+#include <math.h>
 
 static	int	sync;
-
-extern	double	cos(double);
-extern	double	sin(double);
 
 #define MAX(x, y)	((x) > (y) ? (x) : (y))
 #define MIN(x, y)	((x) < (y) ? (x) : (y))
@@ -111,7 +109,7 @@ dopoly(int n)
 		verror(buf);
 	}
 
-	if (sync = vdevice.sync)
+	if ((sync = vdevice.sync)!=0)
 		vdevice.sync = 0;
 
 	if (!vdevice.clipoff) {
@@ -659,7 +657,6 @@ void
 pdr(Coord x, Coord y, Coord z)
 {
 	char	buf[100];
-	Token	*t;
 
 	numv++;
 
@@ -1001,7 +998,7 @@ shclose(int side)
 	}
 }
 
-static
+static int
 intersect(int side, register float *Ip, register float *Pnt)
 {
 	register	float	wc1, wc2, a;
@@ -1050,7 +1047,7 @@ intersect(int side, register float *Ip, register float *Pnt)
 	return(0);
 }
 
-static
+static int
 visible(int side)
 {
 	float	wc;
@@ -1096,7 +1093,7 @@ bgnpolygon(void)
 	vdevice.fill = polymodeflag;
 	vdevice.save = 1;
 	vdevice.inpolygon = 1;
-        if (sync = vdevice.sync)
+	if ((sync = vdevice.sync)!=0)
                 vdevice.sync = 0;
 }
 
@@ -1114,93 +1111,4 @@ endpolygon(void)
 	vdevice.fill = 0;
 	vdevice.inpolygon = 0;
 	vdevice.save = 0;
-}
-
-/*
- * bgntmesh
- *
- *	Set a flag so that we know what to do with v*() calls.
- */
-void
-bgntmesh(void)
-{
-	if (vdevice.bgnmode != NONE)
-		verror("vogl: bgntmesh mode already belongs to some other bgn routine");
-
-	vdevice.bgnmode = VTMESH;
-	vdevice.fill = polymodeflag;
-	vdevice.save = 0;
-	vdevice.inpolygon = 1;
-        if (sync = vdevice.sync)
-                vdevice.sync = 0;
-}
-
-/*
- * swaptmesh
- *
- *    cause v* calls to save in the new register 
- */
-void
-swaptmesh(void)
-{
-	if (vdevice.bgnmode != VTMESH)
-	  verror("vogl: swaptmesh called outside bgntmesh/endtmesh ");
-	if( vdevice.save < 2)
-	  verror("vogl: swaptmesh called before first triangle was defined ");
-	vdevice.save++;
-}
-/*
- * endtmesh
- *
- *	Set a flag so that we know what to do with v*() calls.
- */
-void
-endtmesh(void)
-{
-	vdevice.bgnmode = NONE;
-	vdevice.fill = 0;
-	vdevice.inpolygon = 0;
-	vdevice.save = 0;
-	if (sync) {
-		vdevice.sync = 1;
-		(*vdevice.dev.Vsync)();
-	}
-}
-
-/*
- * bgnqstrip
- *
- *	Set a flag so that we know what to do with v*() calls.
- */
-void
-bgnqstrip(void)
-{
-	if (vdevice.bgnmode != NONE)
-		verror("vogl: bgnqstrip mode already belongs to some other bgn routine");
-
-	vdevice.bgnmode = VQSTRIP;
-	vdevice.fill = polymodeflag;
-	vdevice.save = 0;
-	vdevice.inpolygon = 1;
-        if (sync = vdevice.sync)
-                vdevice.sync = 0;
-}
-
-/*
- * endqstrip
- *
- *	Set a flag so that we know what to do with v*() calls.
- */
-void
-endqstrip(void)
-{
-	vdevice.bgnmode = NONE;
-	vdevice.fill = 0;
-	vdevice.inpolygon = 0;
-	vdevice.save = 0;
-	if (sync) {
-		vdevice.sync = 1;
-		(*vdevice.dev.Vsync)();
-	}
-
 }

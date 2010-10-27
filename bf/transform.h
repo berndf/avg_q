@@ -137,8 +137,8 @@ struct transform_methods_struct {
  METHOD(int, seek_trigger, (transform_info_ptr tinfo, int trigcode));
  METHOD(void, get_filestrings, (transform_info_ptr tinfo));
 
- char *method_name;
- char *method_description;
+ char const *method_name;
+ char const *method_description;
  enum method_types method_type;
  int nr_of_arguments;	/* Filled by method_select */
  transform_argument_descriptor *argument_descriptors; /* Filled by method_select */

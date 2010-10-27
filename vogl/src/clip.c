@@ -1,8 +1,9 @@
 #include "vogl.h"
 
 static int planes[] = {'\01', '\02', '\04', '\010', '\020', '\040'};
+static int MakeEdgeCoords(int i, float *p);
 
-float wc[2][6];
+static float wc[2][6];
 
 /*
  * clip
@@ -71,7 +72,7 @@ clip(register float *p0, register float *p1)
  * clipping coordinates. Return code if on outside of any clipping plane
  *
  */
-int
+static int
 MakeEdgeCoords(int i, float *p)
 {
 	int	j, k = 0;

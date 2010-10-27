@@ -4,13 +4,12 @@
  *	DXY & HPGL Driver for vogle/vogl.
  */
 #include <stdio.h>
+#include <string.h>
 #ifdef VOGLE
 #include "vogle.h"
 #else
 #include "vogl.h"
 #endif
-
-extern FILE	*_voutfile();
 
 static int	plotlstx, plotlsty;	/* position of last draw */
 
@@ -31,7 +30,7 @@ static FILE	*fp;
  * Changed to the delimiters to commas and removed spaces (for older plotter).
  * (mike@penguin.gatech.edu) 
  */
-static char	*hpgl[] = {
+static const char * const hpgl[] = {
 	"DF;\n",
 	"PU%d,%d;\n",
 	"PD%d,%d;\n",
@@ -44,7 +43,7 @@ static char	*hpgl[] = {
 /*
  * basic commands for dxy
  */
-static char	*dxy[] = {
+static const char * const dxy[] = {
 	"",
 	"M %d,%d\n",
 	"D %d,%d\n",
@@ -54,7 +53,7 @@ static char	*dxy[] = {
 	"J %d\n"
 };
 
-static char	**plotcmds;
+static const char *const *plotcmds;
 
 /*
  * noop
@@ -62,7 +61,7 @@ static char	**plotcmds;
  *      do nothing but return-1
  */
 static int
-noop(void)
+noop()
 {
 	return(-1);
 }
@@ -193,7 +192,7 @@ DXY_init(void)
  *	print the commands to draw a line from the current graphics position
  * to (x, y).
  */
-static
+static int
 PLOT_draw(int x, int y)
 {
 	if (plotlstx != vdevice.cpVx || plotlsty != vdevice.cpVy)
@@ -202,6 +201,7 @@ PLOT_draw(int x, int y)
 	fprintf(fp, plotcmds[P_DRAW], x, y);
 	plotlstx = x;
 	plotlsty = y;
+	return(0);
 }
 
 /*
@@ -210,7 +210,7 @@ PLOT_draw(int x, int y)
  *	exit from vogle printing the command to put away the pen and flush
  * the buffer.
  */
-static
+static int
 PLOT_exit(void)
 {
 	fprintf(fp, plotcmds[P_PEN], 0);
@@ -219,6 +219,7 @@ PLOT_exit(void)
 
 	if (fp != stdout)
 		fclose(fp);
+	return(0);
 }
 
 /*
@@ -226,10 +227,11 @@ PLOT_exit(void)
  *
  *	change the current pen number.
  */
-static
+static int
 PLOT_color(int i)
 { 
 	fprintf(fp, plotcmds[P_PEN], i);
+	return(0);
 }
 
 /*
@@ -238,13 +240,13 @@ PLOT_color(int i)
  *	load in large or small
  */
 static int
-HPGL_font(char *font)
+HPGL_font(char *hpfont)
 {
-	if (strcmp(font, "small") == 0) {
+	if (strcmp(hpfont, "small") == 0) {
 		vdevice.hwidth = 97.01;	/* Size in plotter resolution units */
 		vdevice.hheight = vdevice.hwidth * 2.0;
 		fprintf(fp, plotcmds[P_TXTSIZE], 0.16, 0.32);
-	} else if (strcmp(font, "large") == 0) {
+	} else if (strcmp(hpfont, "large") == 0) {
 		vdevice.hwidth = 145.5;
 		vdevice.hheight = vdevice.hwidth * 2.0;
 		fprintf(fp, plotcmds[P_TXTSIZE], 0.24, 0.48);
@@ -260,13 +262,13 @@ HPGL_font(char *font)
  *	load in large or small.
  */
 static int
-DXY_font(char *font)
+DXY_font(char *dxyfont)
 {
-	if (strcmp(font, "small") == 0) {
+	if (strcmp(dxyfont, "small") == 0) {
 		vdevice.hwidth = 24.25;
 		vdevice.hheight = vdevice.hwidth * 2.0;
 		fprintf(fp, plotcmds[P_TXTSIZE], 3);
-	} else if (strcmp(font, "large") == 0) {
+	} else if (strcmp(dxyfont, "large") == 0) {
 		vdevice.hwidth = 36.375;
 		vdevice.hheight = vdevice.hwidth * 2.0;
 		fprintf(fp, plotcmds[P_TXTSIZE], 5);
@@ -281,11 +283,9 @@ DXY_font(char *font)
  *
  *	draw a character.
  */
-static
+static int
 PLOT_char(char c)
 {
-	int	dy, dx;
-
 	if (plotlstx != vdevice.cpVx || plotlsty != vdevice.cpVy)
 		fprintf(fp, plotcmds[P_MOVE], vdevice.cpVx, vdevice.cpVy);
 
@@ -296,6 +296,7 @@ PLOT_char(char c)
 	fprintf(fp, plotcmds[P_ENDTXT]);
 
 	plotlstx = plotlsty = -1111111;
+	return(0);
 }
 
 /*
@@ -303,11 +304,9 @@ PLOT_char(char c)
  *
  *	output a string.
  */
-static
+static int
 PLOT_string(char *s)
 {
-	int		dy, dx;
-
 	if (plotlstx != vdevice.cpVx || plotlsty != vdevice.cpVy)
 		fprintf(fp, plotcmds[P_MOVE], vdevice.cpVx, vdevice.cpVy);
 
@@ -318,6 +317,7 @@ PLOT_string(char *s)
 	fprintf(fp, plotcmds[P_ENDTXT]);
 
 	plotlstx = plotlsty = -1111111;
+	return(0);
 }
 
 /*
@@ -325,7 +325,7 @@ PLOT_string(char *s)
  *
  *      "fill" a polygon
  */
-static
+static int
 PLOT_fill(int n, int *x, int *y)
 {
 	int     i;
@@ -340,6 +340,7 @@ PLOT_fill(int n, int *x, int *y)
 
 	plotlstx = vdevice.cpVx = x[n - 1];
 	plotlsty = vdevice.cpVy = y[n - 1];
+	return(0);
 }
 
 static DevEntry hpgldev = {
@@ -374,6 +375,7 @@ static DevEntry hpgldev = {
  *
  *	copy the HPGL device into vdevice.dev.
  */
+void
 _HPGL_A2_devcpy(void)
 {
 /* if you don't have structure assignment ...
@@ -389,18 +391,21 @@ _HPGL_A2_devcpy(void)
 	vdevice.dev = hpgldev;
 }
 
+void
 _HPGL_A3_devcpy(void)
 {
 	vdevice.dev = hpgldev;
 	vdevice.dev.Vinit = HPGL_A3_init;
 }
 
+void
 _HPGL_A4_devcpy(void)
 {
 	vdevice.dev = hpgldev;
 	vdevice.dev.Vinit = HPGL_A4_init;
 }
 
+void
 _HPGL_A1_devcpy(void)
 {
 	vdevice.dev = hpgldev;
@@ -439,6 +444,7 @@ static DevEntry dxydev = {
  *
  *	copy the DXY device into vdevice.dev.
  */
+void
 _DXY_devcpy(void)
 {
 	vdevice.dev = dxydev;

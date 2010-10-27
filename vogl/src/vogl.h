@@ -1,15 +1,11 @@
-
-#ifdef PC	/* Stupid pox head crap */
-char	*vallocate();
-char	*malloc();
-#endif
-
 /*
  * VOGL is always defined if a header file is from the 
  * VOGL library. In cases where you do use some VOGL
  * initialisation routines like vinit, just put #ifdef VOGL...
  * around.
  */
+#include <stdio.h>
+
 #ifndef VOGL
 #define	VOGL
 #endif
@@ -260,8 +256,6 @@ typedef struct vdev {
 			sync,			/* Do we syncronise the display */
 			inbackbuffer,		/* are we in the backbuffer */
 			clipplanes;		/* active clipping planes */
-	void		(*pmove)(),		/* Polygon moves */
-			(*pdraw)();		/* Polygon draws */
 	TokList		*tokens;		/* ptr to list of tokens for current object */
 	Mstack		*transmat;		/* top of transformation stack */
 	Astack		*attr;			/* top of attribute stack */
@@ -468,6 +462,7 @@ extern void	patchcurves(long int nt, long int nu);
 extern void	patchprecision(long int tseg, long int useg);
 extern void	patch(float (*geomx)[4], float (*geomy)[4], float (*geomz)[4]);
 extern void	rpatch(float (*geomx)[4], float (*geomy)[4], float (*geomz)[4], float (*geomw)[4]);
+extern void drpatch(float (*R)[4][4], int ntcurves, int nucurves, int ntsegs, int nusegs, int ntiter, int nuiter);
 
 /*
  * point routines
@@ -561,6 +556,7 @@ extern void multtensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4]);
 extern void copytensor(float (*b)[4][4], float (*a)[4][4]);
 extern void premulttensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4]);
 extern void copytensortrans(float (*b)[4][4], float (*a)[4][4]);
+extern void transformtensor(float (*S)[4][4], float (*m)[4]);
 
 /*
  * text routines
@@ -620,6 +616,7 @@ extern void	backbuffer(int yes);
 extern void	frontbuffer(int yes);
 extern void	swapbuffers(void);
 extern void	doublebuffer(void);
+extern void	singlebuffer(void);
 
 /*
  * routines for window sizing and positioning
@@ -632,6 +629,16 @@ extern void	prefposition(long int x1, long int x2, long int y1, long int y2);
  */
 extern void	vsetflush(int yn);
 extern void	vflush(void);
+extern char * vallocate(unsigned int size);
+extern void getprefposandsize(int *x, int *y, int *xs, int *ys);
+
+extern void drcurve(int n, float (*r)[4]);
+extern void quickclip(register float *p0, register float *p1);
+extern void clip(register float *p0, register float *p1);
+extern void polyobj(int n, Token *dp, int fill);
+extern FILE *_voutfile(void);
+extern void linewidth(short int w);
+extern void linewidthf(float w);
 
 /*
  * Hershey functions
@@ -656,3 +663,30 @@ void hrightjustify (int onoff);
 void hleftjustify (int onoff);
 void hfixedwidth (int onoff);
 void htextang (float ang);
+
+/*
+ * Driver entry points
+ */
+extern void _SUN_devcpy(void);
+extern void _PIXRECT_devcpy(void);
+extern void _X11_devcpy(void);
+extern void _DECX11_devcpy(void);
+extern void _NeXT_devcpy(void);
+extern void _PS_devcpy(void);
+extern void _PSP_devcpy(void);
+extern void _CPS_devcpy(void);
+extern void _PCPS_devcpy(void);
+extern void _HPGL_A1_devcpy(void);
+extern void _HPGL_A2_devcpy(void);
+extern void _HPGL_A3_devcpy(void);
+extern void _HPGL_A4_devcpy(void);
+extern void _DXY_devcpy(void);
+extern void _TEK_devcpy(void);
+extern void _grx_devcpy(void);
+extern void _VGUI_devcpy(void);
+extern void _hgc_devcpy(void);
+extern void _mswin_devcpy(void);
+extern void _cga_devcpy(void);
+extern void _ega_devcpy(void);
+extern void _vga_devcpy(void);
+extern void _sigma_devcpy(void);

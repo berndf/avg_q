@@ -56,28 +56,27 @@ static	char		*smallf, *largef;
 static	char		use_toolkit_win = 0;
 
 /* Functions */
-int X11_init(void);
-int X11_exit(void);
-int X11_draw(int x, int y);
-int X11_pnt(int x, int y);
-int X11_getkey(void);
-int X11_checkkey(void);
-int X11_locator(int *wx, int *wy);
-int X11_clear(void);
-int X11_color(int ind);
-int X11_mapcolor(int i, int r, int g, int b);
-int X11_font(char *fontfile);
-int X11_char(char c);
-int X11_string(char s[]);
-int X11_fill(int n, int x[], int y[]);
-int X11_backbuf(void);
-int X11_swapbuf(void);
-int X11_frontbuf(void);
-int X11_sync(void);
-int X11_setlw(int w);
-int X11_setls(int lss);
+static int X11_init(void);
+static int X11_exit(void);
+static int X11_draw(int x, int y);
+static int X11_pnt(int x, int y);
+static int X11_getkey(void);
+static int X11_checkkey(void);
+static int X11_locator(int *wx, int *wy);
+static int X11_clear(void);
+static int X11_color(int ind);
+static int X11_mapcolor(int i, int r, int g, int b);
+static int X11_font(char *fontfile);
+static int X11_char(char c);
+static int X11_string(char s[]);
+static int X11_fill(int n, int x[], int y[]);
+static int X11_backbuf(void);
+static int X11_swapbuf(void);
+static int X11_frontbuf(void);
+static int X11_sync(void);
+static int X11_setlw(int w);
+static int X11_setls(int lss);
 void _X11_devcpy(void);
-
 
 /*
  * vo_xt_set_win
@@ -279,7 +278,7 @@ vo_xt_set_GC(GC gc)
  *
  *	initialises X11 display.
  */
-int
+static int
 X11_init(void)
 {
 	int		i;
@@ -560,7 +559,7 @@ X11_init(void)
  *
  *	cleans up before returning the window to normal.
  */
-int
+static int
 X11_exit(void)
 {
 	if (back_used) 
@@ -607,7 +606,7 @@ X11_exit(void)
  * Note: (0, 0) is defined as the top left of the window in X (easy
  * to forget).
  */
-int
+static int
 X11_draw(int x, int y)
 {
 	if (x == vdevice.cpVx && y == vdevice.cpVy)
@@ -636,7 +635,7 @@ X11_draw(int x, int y)
 	return(0);
 }
 
-int
+static int
 X11_pnt(int x, int y)
 {
 	XDrawPoint(display,
@@ -656,7 +655,7 @@ X11_pnt(int x, int y)
  *
  *	grab a character from the keyboard - blocks until one is there.
  */
-int
+static int
 X11_getkey(void)
 {
 	char	c;
@@ -683,7 +682,7 @@ X11_getkey(void)
 /* Need one empty loop at the beginning for the exposure to be correctly
  * processed. Three appear to be necessary for do_p -R to work... */
 static int need_empty_loops=3;
-int
+static int
 X11_checkkey(void)
 {
 	char	c;
@@ -708,7 +707,7 @@ X11_checkkey(void)
  *	return the window location of the cursor, plus which mouse button,
  * if any, is been pressed.
  */
-int
+static int
 X11_locator(int *wx, int *wy)
 {
 	Window		rootw, childw;
@@ -732,7 +731,7 @@ X11_locator(int *wx, int *wy)
  *
  * Clear the screen (or current buffer )to current colour
  */
-int
+static int
 X11_clear(void)
 {
 	XSetBackground(display, theGC, colour);
@@ -758,7 +757,7 @@ X11_clear(void)
  *
  * Clear the screen (or current buffer )to current colour
  */
-int
+static int
 X11_clear(void)
 {
 	unsigned int	w = vdevice.maxVx - vdevice.minVx;
@@ -787,7 +786,7 @@ X11_clear(void)
  *
  *	set the current drawing color index.
  */
-int
+static int
 X11_color(int ind)
 {
 	colour = carray[ind];
@@ -801,7 +800,7 @@ X11_color(int ind)
  *
  *	change index i in the color map to the appropriate r, g, b, value.
  */
-int
+static int
 X11_mapcolor(int i, int r, int g, int b)
 {
 	int	stat;
@@ -848,7 +847,7 @@ X11_mapcolor(int i, int r, int g, int b)
  *   Set up a hardware font. Return 1 on success 0 otherwise.
  *
  */
-int
+static int
 X11_font(char *fontfile)
 {
 	XGCValues	xgcvals;
@@ -897,7 +896,7 @@ X11_font(char *fontfile)
  *
  *	 outputs one char - is more complicated for other devices
  */
-int
+static int
 X11_char(char c)
 {
 	XDrawString(display, theDrawable, theGC, vdevice.cpVx, (int)(vdevice.sizeSy - vdevice.cpVy), &c, 1);
@@ -913,7 +912,7 @@ X11_char(char c)
  *
  *	Display a string at the current drawing position.
  */
-int
+static int
 X11_string(char s[])
 {
 	XDrawString(display, theDrawable, theGC, vdevice.cpVx, (int)(vdevice.sizeSy - vdevice.cpVy), s, strlen(s));
@@ -928,7 +927,7 @@ X11_string(char s[])
  *
  *	fill a polygon
  */
-int
+static int
 X11_fill(int n, int x[], int y[])
 {
 	char	buf[BUFSIZ];
@@ -962,7 +961,7 @@ X11_fill(int n, int x[], int y[])
  *	Set up double buffering by allocating the back buffer and
  *	setting drawing into it.
  */
-int
+static int
 X11_backbuf(void)
 {
 	if (!back_used) {
@@ -990,7 +989,7 @@ X11_backbuf(void)
  *	Swap the back and from buffers. (Really, just copy the
  *	back buffer to the screen).
  */
-int
+static int
 X11_swapbuf(void)
 {
 	XCopyArea(display,
@@ -1012,7 +1011,7 @@ X11_swapbuf(void)
  *
  *	Make sure we draw to the screen.
  */
-int
+static int
 X11_frontbuf(void)
 {
 	theDrawable = (Drawable)winder;
@@ -1023,7 +1022,7 @@ X11_frontbuf(void)
 /*
  * Syncronise the display with what we think has been sent to it...
  */
-int
+static int
 X11_sync(void)
 {
 	XSync(display, 0);
@@ -1144,6 +1143,7 @@ X11_dump_pixmap(char *filename, int dx, int dy, int dw, int dh)
  *
  *	Set the line width....
  */
+static int
 X11_setlw(int w)
 {
 	XGCValues vals;
@@ -1160,6 +1160,7 @@ X11_setlw(int w)
  *	Set the line style....
  */
 
+static int
 X11_setls(int lss)
 {
 	unsigned ls = lss;
@@ -1168,7 +1169,7 @@ X11_setls(int lss)
 
 	if (ls == 0xffff) {
 		XSetLineAttributes(display, theGC, vdevice.attr->a.lw, LineSolid, CapButt, JoinMiter);
-		return;
+		return(0);
 	}
 
 	for (i = 0; i < 16; i++)
@@ -1214,7 +1215,7 @@ X11_setls(int lss)
  *
  *	Set the line width....THICK or THIN
  */
-int
+static int
 X11_setlw(int w)
 {
 	XGCValues vals;

@@ -10,7 +10,7 @@
  *
  *	Specify a generic point.
  */
-void
+static void
 vcall(float *vector, int len)
 {
 	Vector	vec;

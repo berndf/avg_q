@@ -57,7 +57,7 @@ enum add_value_type {
 
  ADD_VALUE
 };
-LOCAL char *add_value_typenames[]={
+LOCAL const char *const add_value_typenames[]={
  "negmean",
  "negpointmean",
  "negmin",

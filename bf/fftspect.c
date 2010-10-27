@@ -36,7 +36,7 @@ enum norm_types {
  NORM_PHASEALIGNED,
  NORM_CROSS_SPECTRUM
 };
-LOCAL char *refchannel_analyses[]={
+LOCAL const char *const refchannel_analyses[]={
  "-cc", "-c", "-cs", NULL
 };
 enum ARGS_ENUM {
@@ -49,10 +49,10 @@ enum ARGS_ENUM {
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
- {T_ARGS_TAKES_STRING_WORD, "padto: Zero-pad the window to padto points before fft", "p", ARGDESC_UNUSED, (char **)"1s"},
+ {T_ARGS_TAKES_STRING_WORD, "padto: Zero-pad the window to padto points before fft", "p", ARGDESC_UNUSED, (char const *const *)"1s"},
  {T_ARGS_TAKES_SELECTION, "Complex spectra: coherence, phase aligned, cross-spectrum", " 1", 0, refchannel_analyses},
  {T_ARGS_TAKES_STRING_WORD, "refchannel", " ", ARGDESC_UNUSED, NULL},
- {T_ARGS_TAKES_STRING_WORD, "windowsize", "", ARGDESC_UNUSED, (char **)"1s"},
+ {T_ARGS_TAKES_STRING_WORD, "windowsize", "", ARGDESC_UNUSED, (char const *const *)"1s"},
  {T_ARGS_TAKES_LONG, "nrofshifts", "", 1, NULL},
  {T_ARGS_TAKES_LONG, "overlaps", "", 1, NULL}
 };

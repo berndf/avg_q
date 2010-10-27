@@ -14,11 +14,6 @@ static Matrix	et, eu,
 			};
 			
 
-void		premulttensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4]), multtensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4]), 
-		copytensor(float (*b)[4][4], float (*a)[4][4]), copytensortrans(float (*b)[4][4], float (*a)[4][4]),
-		drpatch(float (*R)[4][4], int ntcurves, int nucurves, int ntsegs, int nusegs, int ntiter, int nuiter), drcurve(int n, float (*r)[4]), rpatch(float (*geomx)[4], float (*geomy)[4], float (*geomz)[4], float (*geomw)[4]),
-		transformtensor(float (*S)[4][4], float (*m)[4]);
-
 static float		addemup(float (*m)[4]);
 static void		makeprec(void), iterate(register float (*R)[4][4], int n), extract(register float (*b)[4], register float (*a)[4][4], register int k), replace(float (*a)[4][4], float (*b)[4], int k);
 
@@ -326,7 +321,7 @@ replace(float (*a)[4][4], float (*b)[4], int k)
  *	Actually does the work of drawing a patch.
  */
 void
-drpatch(float (*R)[4][4], int ntcurves, int nucurves, int ntsegs, int nusegs, int ntiter, int nuiter)
+drpatch(float (*R)[4][4], int thisntcurves, int thisnucurves, int thisntsegs, int thisnusegs, int thisntiter, int thisnuiter)
 {
 	Tensor	S;
 	Matrix	tmp;
@@ -337,19 +332,19 @@ drpatch(float (*R)[4][4], int ntcurves, int nucurves, int ntsegs, int nusegs, in
          */
 	copytensortrans(S, R);
 
-	for (i = 0; i < ntcurves; i++) {
+	for (i = 0; i < thisntcurves; i++) {
 		extract(tmp, R, 0);
-		drcurve(ntsegs, tmp);
-		iterate(R, nuiter);
+		drcurve(thisntsegs, tmp);
+		iterate(R, thisnuiter);
 	}
 
 	/*
 	 * Now using S...
 	 */
-	for (i = 0; i < nucurves; i++) {
+	for (i = 0; i < thisnucurves; i++) {
 		extract(tmp, S, 0);
-		drcurve(nusegs, tmp);
-		iterate(S, ntiter);
+		drcurve(thisnusegs, tmp);
+		iterate(S, thisntiter);
 	}
 }
 

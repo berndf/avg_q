@@ -4,7 +4,7 @@ SET(voglsources
 arcs.c attr.c buffer.c clip.c curves.c draw.c drivers.c
 viewing.c viewp.c mapping.c matrix.c move.c objects.c patches.c
 points.c polygons.c rect.c tensor.c text.c newtokens.c trans.c
-scale.c getgp.c valloc.c yobbarays.c pref.c vcalls.c
+scale.c getgp.c valloc.c pref.c vcalls.c
 queue.c lines.c
 )
 # -DPOSTSCRIPT	../drivers/ps.o

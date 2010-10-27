@@ -1,15 +1,6 @@
 #include <stdio.h>
+#include <string.h>
 
-#ifdef PC
-#include <string.h>
-#else
-#ifdef SYS5
-#include <string.h>
-#define rindex strrchr
-#else
-#include <strings.h>
-#endif
-#endif
 #include "vogl.h"
 
 static	Vector	cpos;	/* Current character position */
@@ -75,7 +66,7 @@ charstr(char *str)
 		return;
 	}
 
-	if (sync = vdevice.sync)
+	if ((sync = vdevice.sync)!=0)
 		vdevice.sync = 0;
 
 	cx = vdevice.cpVx;

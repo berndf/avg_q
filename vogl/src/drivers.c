@@ -1,16 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "vogl.h"
 #include "vodevice.h"
-
-extern char	*getenv(const char *);
 
 struct vdev	vdevice;
 
 static FILE	*fp = NULL;
 
 static int	allocated = 0;
-
-void		gexit(void);
 
 /* device-independent function routines */
 
@@ -62,13 +60,6 @@ verror(char *str)
 
 	fprintf(stderr, "%s\n", str);
 #endif
-	exit(1);
-}
-
-void
-viniterror(char *str)
-{
-	fprintf(stderr, "%s: vogl not initialised\n", str);
 	exit(1);
 }
 
@@ -405,57 +396,6 @@ gconfig(void)
 }
 
 /*
- * Hacky new device changing routines...
- */
-#define	DEVSTACK	8
-static	VDevice	vdevstk[DEVSTACK];
-static	int	vdevindx = 0;
-
-void
-pushdev(char *device)
-{
-	/*
-	 * Save the old vdevice structure
-	 */
-	pushattributes();
-	pushviewport();
-
-	if (vdevindx < DEVSTACK)
-		vdevstk[vdevindx++] = vdevice;
-	else
-		verror("vogl: pushdev: Device stack overflow");
-
-	vdevice.initialised = 0;
-
-	getdevice(device);
-
-	(*vdevice.dev.Vinit)();
-
-	vdevice.initialised = 1;
-
-	popviewport();
-	popattributes();
-}
-
-void
-popdev(void)
-{
-	/*
-	 * Restore the old vdevice structure
-	 */
-	pushattributes();
-	pushviewport();
-
-	(*vdevice.dev.Vexit)();
-	if (vdevindx > 0)
-		vdevice = vdevstk[--vdevindx];
-	else
-		verror("vogl: popdev: Device stack underflow");
-
-	popviewport();
-	popattributes();
-}
-/*
  * vnewdev
  *
  * reinitialize vogl to use a new device but don't change any
@@ -643,12 +583,6 @@ color(int i)
 	(*vdevice.dev.Vcolor)(i);
 }
 
-long
-getcolor(void)
-{
-	return((long)vdevice.attr->a.color);
-}
-
 /*
  * mapcolor
  *
@@ -703,33 +637,6 @@ reshapeviewport(void)
 }
 
 /*
- * winconstraints
- *		- does nothing
- */
-void
-winconstraints(void)
-{
-}
-
-/*
- * keepaspect
- *		- does nothing
- */
-void
-keepaspect(void)
-{
-}
-
-/*
- * shademodel
- *		- does nothing
- */
-void
-shademodel(long int model)
-{
-}
-
-/*
  * getgdesc
  *
  *	Inquire about some stuff....
@@ -755,15 +662,6 @@ getgdesc(long int inq)
 	default:
 		return(-1L);
 	}
-}
-
-/*
- * foregound
- * 		Dummy - does nothing.
- */
-void
-foreground(void)
-{
 }
 
 /*
@@ -803,35 +701,3 @@ vflush(void)
 
 	(*vdevice.dev.Vsync)();
 }
-
-
-/* 
- * getorigin
- *
- *	Returns the origin of the window. This is a dummy.
- */
-void
-getorigin(long int *x, long int *y)
-{
-	*x = *y = 0;
-}
-
-/*
- * getsize
- *
- *	Returns the approximate size of the window (some window managers
- *	stuff around with your borders).
- */
-void
-getsize(long int *x, long int *y)
-{
-	*x = (long)vdevice.sizeSx;
-	*y = (long)vdevice.sizeSy;
-}
-
-winattach(void)
-{}
-
-winset(void)
-{}
-

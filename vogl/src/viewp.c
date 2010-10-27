@@ -99,7 +99,7 @@ void
 viewport(Screencoord xlow, Screencoord xhigh, Screencoord ylow, Screencoord yhigh)
 {
 	Token	*tok;
-	char	buf[35];
+	char	buf[80];
 
 	if (!vdevice.initialised) 
 		verror("viewport: vogl not initialised");
