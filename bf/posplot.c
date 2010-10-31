@@ -2731,7 +2731,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
      /*{{{  */
      if (val==0) break;
      if (local_arg->replay_file!=NULL) {
-      fscanf(local_arg->replay_file, "%hd %hd", &mousex, &mousey);
+      if (fscanf(local_arg->replay_file, "%hd %hd", &mousex, &mousey)!=2) break;
      } else {
       mousex=getvaluator(MOUSEX);
       mousey=getvaluator(MOUSEY);

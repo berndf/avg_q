@@ -95,9 +95,15 @@ array_undump(FILE *fp, array *thisarray) {
   case ARRAY_ASCII:
   case ARRAY_MATLAB:
    if (format==ARRAY_ASCII) {
-    fscanf(fp, "# %d %d\n", &thisarray->nr_of_elements, &thisarray->nr_of_vectors);
+    if (fscanf(fp, "# %d %d\n", &thisarray->nr_of_elements, &thisarray->nr_of_vectors)!=2) {
+     thisarray->message=ARRAY_ERROR;
+     return;
+    }
    } else {
-    fscanf(fp, "# type: matrix\n# rows: %d\n# columns: %d\n", &thisarray->nr_of_vectors, &thisarray->nr_of_elements);
+    if (fscanf(fp, "# type: matrix\n# rows: %d\n# columns: %d\n", &thisarray->nr_of_vectors, &thisarray->nr_of_elements)!=2) {
+     thisarray->message=ARRAY_ERROR;
+     return;
+    }
    }
    thisarray->element_skip=1;
    if (thisarray->nr_of_elements<=0 || thisarray->nr_of_vectors<=0 ||
@@ -106,7 +112,10 @@ array_undump(FILE *fp, array *thisarray) {
     return;
    }
    do {
-    fscanf(fp, "%g", &inval);
+    if (fscanf(fp, "%g", &inval)!=1) {
+     thisarray->message=ARRAY_ERROR;
+     return;
+    }
     array_write(thisarray, inval);
     if (thisarray->message!=ARRAY_CONTINUE) {
      fscanf(fp, "%*[^\n]");	/* Gobble up anything up to \n */

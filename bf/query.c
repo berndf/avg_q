@@ -366,7 +366,9 @@ query(transform_info_ptr tinfo) {
    }
    break;
   case C_CWD:
-   getcwd(inbuf,OUTPUT_LINE_LENGTH-(inbuf-buffer)-3);
+   if (getcwd(inbuf,OUTPUT_LINE_LENGTH-(inbuf-buffer)-3)==NULL) {
+    strcpy(inbuf,"ERROR");
+   }
    inbuf+=strlen(inbuf);
    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s", local_arg->delimiter); myflush(tinfo, buffer);
    break;

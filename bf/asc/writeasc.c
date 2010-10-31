@@ -312,7 +312,7 @@ writeasc(transform_info_ptr calltinfo) {
   for (channel=0; channel<tinfo->nr_of_channels; channel++) {
    char buffer[MAX_CHANNEL_LEN+1], *inbuf;
    strncpy(buffer, tinfo->channelnames[channel], MAX_CHANNEL_LEN);
-   buffer[MAX_CHANNEL_LEN+1]='\0';
+   buffer[MAX_CHANNEL_LEN]='\0';
    /* Some characters can become hazardous, so we change them... */
    for (inbuf=buffer; *inbuf!='\0'; inbuf++) {
     if (strchr(" \t\n", *inbuf)!=NULL) *inbuf='_';

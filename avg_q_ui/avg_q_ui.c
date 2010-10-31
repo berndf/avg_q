@@ -224,8 +224,8 @@ getNextLine(void) {
   if (thischar=='\n' || thischar==0) {
    break;
   }
-  thisgcharlength=g_unichar_to_utf8(thischar,&thisgchar);
-  thislocalechar=g_locale_from_utf8(&thisgchar,thisgcharlength,NULL,&thislocalecharlength,NULL);
+  thisgcharlength=g_unichar_to_utf8(thischar,(gchar *)&thisgchar);
+  thislocalechar=g_locale_from_utf8((gchar *)&thisgchar,thisgcharlength,NULL,&thislocalecharlength,NULL);
   growing_buf_append(&static_linebuf, thislocalechar, thislocalecharlength);
   free_pointer((void **)&thislocalechar);
  }
@@ -331,7 +331,7 @@ Notice(gchar *message) {
 /*{{{ Handle error and trace messages*/
 #define ERROR_STATUS 1
 #define ERRORMESSAGE_SIZE 1024
-LOCAL volatile char errormessage[ERRORMESSAGE_SIZE];
+LOCAL char errormessage[ERRORMESSAGE_SIZE];
 LOCAL void
 error_exit(const external_methods_ptr emeth, const char *msgtext) {
  char * newlinepos;
@@ -466,7 +466,7 @@ file_sel_cancel(GtkButton *button, GtkFileSelection *fs) {
 /*{{{ Change directory */
 LOCAL void
 change_dir_sel_ok(GtkButton *button, GtkFileSelection *fs) {
- gchar * const name=gtk_file_selection_get_filename (GTK_FILE_SELECTION (fs));
+ const gchar * const name=gtk_file_selection_get_filename (GTK_FILE_SELECTION (fs));
 
  if (chdir(name)==0) {
   snprintf(errormessage, ERRORMESSAGE_SIZE, "Current directory is %s", name);
@@ -633,7 +633,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_LONG: {
       GtkWidget * const entry=dialog_widgets[active_widget++];
-      char * const text=gtk_entry_get_text(GTK_ENTRY(entry));
+      const char * const text=gtk_entry_get_text(GTK_ENTRY(entry));
       if (*text!='\0') {
        argument->arg.i=strtol(text, &endptr, 10);
        if (*endptr=='\0') argument->is_set=TRUE;
@@ -642,7 +642,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_DOUBLE: {
       GtkWidget * const entry=dialog_widgets[active_widget++];
-      char * const text=gtk_entry_get_text(GTK_ENTRY(entry));
+      const char * const text=gtk_entry_get_text(GTK_ENTRY(entry));
       if (*text!='\0') {
        argument->arg.d=get_value(text, &endptr);
        if (*endptr=='\0') argument->is_set=TRUE;
@@ -653,7 +653,7 @@ MethodInstance_config_from_dialog(void) {
      case T_ARGS_TAKES_SENTENCE:
      case T_ARGS_TAKES_FILENAME: {
       GtkWidget * const entry=dialog_widgets[active_widget++];
-      gchar * const text=gtk_entry_get_text(GTK_ENTRY(entry));
+      const gchar * const text=gtk_entry_get_text(GTK_ENTRY(entry));
       gsize thislocalelength;
 
       if (*text!='\0') {
@@ -664,7 +664,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_SELECTION: {
       GtkWidget * const combo=dialog_widgets[active_widget++];
-      char * const text=gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
+      const char * const text=gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
       if (text==NULL) {
        /* This should be only a security precaution... */
        TRACEMS(tinfostruc.emethods, 0, "Combo box selection is NULL!\n");
@@ -942,7 +942,7 @@ typedef struct {
 } method_file_sel_data;
 LOCAL void
 method_file_sel_ok(GtkButton *button, method_file_sel_data *data) {
- gchar * const name=gtk_file_selection_get_filename (GTK_FILE_SELECTION (data->fs));
+ const gchar * const name=gtk_file_selection_get_filename (GTK_FILE_SELECTION (data->fs));
 
  gtk_entry_set_text(GTK_ENTRY(*data->in_dialog_widgets), name);
 
@@ -954,7 +954,7 @@ method_file_sel_ok(GtkButton *button, method_file_sel_data *data) {
 }
 LOCAL void
 method_fileselect_all(method_file_sel_data *data) {
- char * const text=gtk_entry_get_text(GTK_ENTRY(*data->in_dialog_widgets));
+ const char * const text=gtk_entry_get_text(GTK_ENTRY(*data->in_dialog_widgets));
 
  data->fs=(GtkFileSelection *)gtk_file_selection_new("Select a file");
  gtk_window_set_position (GTK_WINDOW (data->fs), GTK_WIN_POS_MOUSE);
@@ -997,7 +997,7 @@ method_fileselect_optional(GtkWidget *select_button, GtkWidget **in_dialog_widge
 LOCAL gint
 Run_Keypress_Now(gpointer data) {
  GtkWidget **in_dialog_widgets=(GtkWidget **)data;
- char * const text=gtk_entry_get_text(GTK_ENTRY(*in_dialog_widgets));
+ const char * const text=gtk_entry_get_text(GTK_ENTRY(*in_dialog_widgets));
  gtk_idle_remove(Avg_q_Run_Keypress_Now_Tag);
  Avg_q_Run_Keypress_Now_Tag=0;
 
@@ -1174,7 +1174,7 @@ MethodInstance_build_dialog(void) {
       const char *const *choice=argument_descriptor->choices;
 
       while (*choice!=NULL) {
-       strings=g_list_append(strings, *choice);
+       strings=g_list_append(strings, (gpointer)*choice);
        choice++;
       }
       gtk_box_pack_start (GTK_BOX(hbox), combo, FALSE, FALSE, 0);
@@ -1568,9 +1568,9 @@ Load_Next_Subscript(gpointer data) {
   if (thischar==0x04) giostatus=G_IO_STATUS_EOF; /* Interpret ^D as EOF */
   if (giostatus!=G_IO_STATUS_EOF) {
    gchar thisgchar[6];
-   gsize const thisgcharlength=g_unichar_to_utf8(thischar,&thisgchar);
+   gsize const thisgcharlength=g_unichar_to_utf8(thischar,(gchar *)&thisgchar);
    growing_buf_append(&static_linebuf, thisgchar, thisgcharlength);
-   gtk_text_buffer_insert_at_cursor(CurrentScriptBuffer, &thisgchar, thisgcharlength);
+   gtk_text_buffer_insert_at_cursor(CurrentScriptBuffer, (gchar *)&thisgchar, thisgcharlength);
   }
   if (giostatus==G_IO_STATUS_EOF || thischar=='\n') {
    growing_buf_appendchar(&static_linebuf, '\0');
@@ -1666,8 +1666,8 @@ save_file(GtkWidget *menuitem) {
    if (thischar==0) {
     break;
    }
-   thisgcharlength=g_unichar_to_utf8(thischar,&thisgchar);
-   fwrite(thisgchar, thisgcharlength, 1, outfile);
+   thisgcharlength=g_unichar_to_utf8(thischar,(gchar *)&thisgchar);
+   fwrite((void *)&thisgchar, thisgcharlength, 1, outfile);
    lastchar=thischar;
    gtk_text_iter_forward_char(&current_iter);
   }
@@ -1682,7 +1682,7 @@ save_file(GtkWidget *menuitem) {
 }
 LOCAL void
 save_file_sel_ok(GtkButton *button, GtkFileSelection *fs) {
- gchar * const name=gtk_file_selection_get_filename(GTK_FILE_SELECTION (fs));
+ const gchar * const name=gtk_file_selection_get_filename(GTK_FILE_SELECTION (fs));
 
  strncpy(filename, name, FilenameLength);
  gtk_widget_destroy(GTK_WIDGET(fs));
@@ -1915,7 +1915,7 @@ Quit_avg_q(GtkWidget *menuitem) {
 
 LOCAL void
 dump_file_sel_ok (GtkButton *button, GtkFileSelection *fs) {
- gchar * const dumpfilename=gtk_file_selection_get_filename(GTK_FILE_SELECTION (fs));
+ const gchar * const dumpfilename=gtk_file_selection_get_filename(GTK_FILE_SELECTION (fs));
 
  if ((dumpfile=fopen(dumpfilename, "w"))!=NULL) {
   dumponly=TRUE;

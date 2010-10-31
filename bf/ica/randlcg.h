@@ -23,8 +23,8 @@ unsigned long int randlcg();
 
 #else
 long         set_seed(long);
-long         get_seed(long);
-unsigned long int randlcg();
+long         get_seed(void);
+unsigned long int randlcg(void);
 
 #endif
 

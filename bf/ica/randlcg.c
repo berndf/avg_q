@@ -7,6 +7,7 @@ static char rcsid[] = "@(#)randlcg.c	1.1 15:48:15 11/21/94   EFC";
 
 #include <math.h>
 #include <limits.h>
+#include "randlcg.h"
 
 #define ALL_BITS     0xffffffff
 
@@ -20,13 +21,13 @@ long set_seed(long int sd)
         return seed_val = sd;
 }
 
-long get_seed()
+long get_seed(void)
 {
         return seed_val;
 }
 
 
-unsigned long int randlcg()       /* returns a random unsigned integer */
+unsigned long int randlcg(void)       /* returns a random unsigned integer */
 {
         if ( seed_val <= quotient )
                 seed_val = (seed_val * 16807L) % LONG_MAX;
