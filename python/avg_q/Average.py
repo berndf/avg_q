@@ -12,7 +12,7 @@ first average.
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>, Tanja Schmitt <schmitt.tanja@web.de>"
 
 class Average(object):
- def __init__(self,avg_q_object,infile,paradigm_instance,conditions=None,event_indices=0):
+ def __init__(self,avg_q_object,infile,paradigm_instance,conditions=None,event_indices=0,event0index=0):
   '''
   event_indices can either be a scalar or list, or a dict of lists where the keys correspond
   to the conditions.
@@ -26,6 +26,7 @@ class Average(object):
   else:
    self.conditions=self.paradigm_instance.conditions
   self.event_indices=event_indices
+  self.event0index=event0index
 
  def get_event_indices(self,condition):
   t=type(self.event_indices)
@@ -35,6 +36,13 @@ class Average(object):
    return self.event_indices
   else:
    return self.event_indices.get(condition, [])
+
+ def get_event0index(self,condition):
+  t=type(self.event0index)
+  if t==int:
+   return self.event0index
+  else:
+   return self.event0index.get(condition, 0)
 
  def calc_shiftwidth(self, list_of_latencies):
   '''
@@ -113,7 +121,7 @@ calc -i 2 neg
    if len(event_indices)==0 or len(self.paradigm_instance.trials[condition])==0:
     # Nothing to average...
     continue
-   event0index=event_indices[0]
+   event0index=self.get_event0index(condition)
    for eventindex in event_indices:
     shiftwidth_points=self.read_epochs_around_condition(condition,event0index,eventindex,beforetrig,aftertrig,preprocess)
     # Now average the epochs
@@ -169,20 +177,18 @@ class GrandAverage(object):
     self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_object.get_description(f,('sfreq','nr_of_points','beforetrig'))
    self.alltuples[avgfile]=self.avg_q_object.get_filetriggers(f).gettuples()
    self.infiles.append(avgfile)
- def set_outfile(self,outfile,append=False):
-  '''Arranges for the standard use of writing the result to an ASC file.
-     Note that if this isn't used, you'll have to add the rest of a post-processing queue
-     plus the script separator and run() yourself.'''
-  self.outfile=outfile
-  self.append=append
- def single_average(self,condition,eventindex=None):
-  condstr=condition+' event %d' % eventindex if eventindex!=None else condition
+ def get_averages(self,condition,eventindex=None):
+  '''Get all single averages, properly aligned and ready for averaging.
+     The caller has to issue a collect method etc. if the returned
+     number of averages is not zero.
+  '''
+  self.condstr=condition+' event %d' % eventindex if eventindex!=None else condition
   session_shift_points=[]
   n_averages=0 # Bail out if no averages are available at all
   for avgfile in self.infiles:
    f=avg_q_file(avgfile)
    tuples=self.alltuples[avgfile]
-   for position,code,description in [(position,code,description) for position,code,description in tuples if condstr in description]:
+   for position,code,description in [(position,code,description) for position,code,description in tuples if self.condstr in description]:
     #print position,code,description
     self.avg_q_object.getepoch(f,fromepoch=position+1,epochs=1)
     n_averages+=1
@@ -199,7 +205,17 @@ class GrandAverage(object):
      'epochlength_points': self.epochlength_points,
      'beforetrig_points': self.beforetrig_points,
      })
-  if n_averages==0: return
+  if eventindex!=None and eventindex!=self.event0index:
+   print("%s Mean shift points: %g" % (self.condstr,float(sum(session_shift_points))/len(session_shift_points)))
+  return n_averages
+ def set_outfile(self,outfile,append=False):
+  '''Arranges for single_average to write the result to an ASC file.
+     Note that if this isn't used, you'll have to add the rest of a post-processing queue
+     plus the script separator and run() yourself.'''
+  self.outfile=outfile
+  self.append=append
+ def single_average(self,condition,eventindex=None):
+  if self.get_averages(condition,eventindex)==0: return
   self.avg_q_object.write('''
 extract_item 0
 average -W -t
@@ -208,7 +224,7 @@ calc -i 2 log10
 calc -i 2 neg
 set_comment %(condstr)s
 ''' % {
-  'condstr': condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex!=None and eventindex!=self.event0index else 0)) if eventindex!=None else condstr,
+  'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex!=None and eventindex!=self.event0index else 0)) if eventindex!=None else self.condstr,
   })
   if self.outfile:
    self.avg_q_object.write('''
@@ -220,5 +236,3 @@ writeasc %(append)s -b %(outfile)s
    })
    self.avg_q_object.run()
    self.append=True
-  if eventindex!=None and eventindex!=self.event0index:
-   print("%s Mean shift points: %g" % (condstr,float(sum(session_shift_points))/len(session_shift_points)))

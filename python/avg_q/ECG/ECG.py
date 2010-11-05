@@ -56,8 +56,11 @@ null_sink
 -
 ''')
  def average_ECG(self):
+  '''Average ECG events with rejection.
+     Returns the number of accepted ECGs.'''
   if os.path.exists(self.avgECGfile):
-   return
+   ascfile=avg_q.avg_q_file(self.avgECGfile)
+   return self.avg_q_object.get_description(ascfile,'nrofaverages')
   self.detect_ECG()
   self.avg_q_object.get_epoch_around_add(self.infile, self.ECGtriggers, self.ECG_beforetrig, self.ECG_aftertrig)
   if len(self.protect_channels)>0:
@@ -73,12 +76,17 @@ baseline_subtract
 reject_bandwidth %(reject_bandwidth)f
 average
 Post:
+query nrofaverages stdout
 writeasc -b %(avgECGfile)s
 -
 ''' % {
   'reject_bandwidth': self.ECG_reject_bandwidth, 
   'avgECGfile': self.avgECGfile})
-  self.avg_q_object.run()
+  rdr=self.avg_q_object.runrdr()
+  nrofaverages=0
+  for line in rdr:
+   nrofaverages=int(line)
+  return nrofaverages
  def sessionaverage_ECG(self,ECGfiles):
   '''Average the ECG files. The output file self.sessionaverage_ECGfile is default_sessionaverage_ECGfile
   in the current directory, unless set differently by the caller.'''

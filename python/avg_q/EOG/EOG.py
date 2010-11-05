@@ -54,8 +54,11 @@ null_sink
   'VEOG_minamp': self.VEOG_minamp,
  }, maxvalue=self.VEOG_maxamp)
  def average_EOG(self):
+  '''Average EOG events with strict checks for duration and surroundings.
+     Returns the number of accepted EOGs.'''
   if os.path.exists(self.avgEOGfile):
-   return
+   ascfile=avg_q.avg_q_file(self.avgEOGfile)
+   return self.avg_q_object.get_description(ascfile,'nrofaverages')
   self.detect_VEOG()
   self.avg_q_object.get_epoch_around_add(self.infile, self.VEOGtriggers, self.VEOG_beforetrig, self.VEOG_aftertrig, offset=self.VEOG_offset)
   if len(self.protect_channels)>0:
@@ -77,13 +80,18 @@ reject_bandwidth -m %(max_VEOG_amp_outside_window)f
 pop
 average
 Post:
+query nrofaverages stdout
 writeasc -b %(avgEOGfile)s
 -
 ''' % {
   'get_VEOG_script': self.get_VEOG_script, 
   'max_VEOG_amp_outside_window': self.VEOG_minamp, 
   'avgEOGfile': self.avgEOGfile})
-  self.avg_q_object.run()
+  rdr=self.avg_q_object.runrdr()
+  nrofaverages=0
+  for line in rdr:
+   nrofaverages=int(line)
+  return nrofaverages
  def sessionaverage_EOG(self,EOGfiles):
   '''Average the EOG files. The output file self.sessionaverage_EOGfile is default_sessionaverage_EOGfile
   in the current directory, unless set differently by the caller.'''

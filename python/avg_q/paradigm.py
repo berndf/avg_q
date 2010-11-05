@@ -193,7 +193,7 @@ class paradigm(object):
    assigned_stimuli=[assigned_stimuli]
   assigned_stimulus_count=sum([self.stimulus_count[x] for x in assigned_stimuli])
   response_latencies=[self.get_RT(t) for t in self.trials[condition]]
-  response_latencies=[r for r in response_latencies if r]
+  response_latencies=[r for r in response_latencies if r is not None]
   if response_latencies:
    meanRT=mean(response_latencies)
    sdRT=sdev(response_latencies)

@@ -18,7 +18,7 @@ class T_avgs(Detector.Detector):
  '''
 uses the Detector module to evaluate crossings of z-scores, calculated from the t-averages
  '''
- def detect_z_crossings(self,theta,itempart=1): 
+ def detect_z_crossings(self,theta,itempart=1,raw=False): 
   '''
   detects the crossings of IC's z_scores above threshold
   this is done for the positive and negative threshold in two steps
@@ -26,11 +26,15 @@ uses the Detector module to evaluate crossings of z-scores, calculated from the 
   outtuples=self.detect('''
 fftfilter -i %(itempart)s 0.5 0.55 1 1
 trim -x 0 Inf
-scale_by -i %(itempart)s invsqrtnrofaverages
+%(scale)s
 write_crossings -x -i %(itempart)s ALL %(threshold)f stdout
 null_sink
 -
-''' % {'threshold': theta, 'itempart': itempart})   
+''' % {
+   'threshold': theta,
+   'itempart': itempart,
+   'scale': '' if raw else 'scale_by -i %s invsqrtnrofaverages' % itempart,
+  })   
   return outtuples
 
  def get_ranges(self,outtuples,theta):
@@ -97,18 +101,21 @@ null_sink
    values.append(results)
   return values
 
- def measure_z(self,infile,available_epochs,IC_latrange_list):
+ def measure_z(self,infile,available_epochs,IC_latrange_list,itempart=1,raw=False):
   '''
   for latency intervals of the ICs in each condition, extract the t-values of all the conditions,e.g.{1: {'39': ['5.14966', '5.26555'
   and calculate z-scores
   '''
     
   return self.measure_ranges(infile,available_epochs,IC_latrange_list,'''
-extract_item 1
-scale_by invsqrtnrofaverages
-''')
+extract_item %(itempart)d
+%(scale)s
+''' % {
+   'itempart': itempart,
+   'scale': '' if raw else 'scale_by invsqrtnrofaverages',
+  })
  
- def measure_conditions(self,ascfile,conditions,zthreshold):
+ def measure_conditions(self,ascfile,conditions,zthreshold,itempart=1,raw=False):
   infile=avg_q_file(ascfile) # Take care not to call set_infile on tdetector since we do the get_epoch ourself!
   triggers=self.avg_q_object.get_filetriggers(infile).gettuples()
 
@@ -122,9 +129,9 @@ scale_by invsqrtnrofaverages
   for condition_index,condition in enumerate(conditions):
    for fromepoch in available_epochs[condition_index]:
     position,code,description=triggers[fromepoch-1]
-    for theta in zthreshold,-zthreshold:  
-     self.avg_q_object.getepoch(infile,fromepoch=fromepoch,epochs=1) 
-     outtuples=self.detect_z_crossings(theta)
+    for theta in zthreshold,-zthreshold:
+     self.avg_q_object.getepoch(infile,fromepoch=fromepoch,epochs=1)
+     outtuples=self.detect_z_crossings(theta,itempart,raw)
      if outtuples:
       IC_latrange_list.extend(self.get_ranges(outtuples, theta))
 
@@ -168,8 +175,8 @@ scale_by invsqrtnrofaverages
     if index!=None: outlist.append(IC_latrange_list[index])
   IC_latrange_list=outlist
 
-  z_scores=self.measure_z(infile,available_epochs,IC_latrange_list)
-  header=['IC_no','crossing_lat_ms_start','crossing_lat_ms_end']
+  z_scores=self.measure_z(infile,available_epochs,IC_latrange_list,itempart,raw)
+  header=['component','crossing_lat_ms_start','crossing_lat_ms_end']
   for epochs in available_epochs:
    for epoch in epochs:
     header.append('z_'+triggers[epoch-1][2].replace(' ','_'))

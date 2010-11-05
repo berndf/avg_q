@@ -9,6 +9,7 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 class Measure(object):
  def __init__(self,avg_q_object):
   self.avg_q_object=avg_q_object
+  self.sum_range=False # If set, measure the sum, not the average of each range
  def get_measurescript(self,channels_and_lat_ranges):
   script=""
   for channel,lat_ranges in channels_and_lat_ranges:
@@ -31,13 +32,14 @@ scale_by -i 1 invpointsum
 scale_by -i 1 xdata
 # This arranges for item 1 to actually be SUMMED:
 set leaveright 1
-trim -a 0 0
+trim %(average_or_sum)s 0 0
 query -t accepted_epochs stdout
 query -t channelnames stdout
 echo -F stdout %(lower)g %(upper)g\\t
 write_generic stdout string
 pop
 """ % {
+    'average_or_sum': '-s' if self.sum_range else '-a',
     'lower': lat_range[0],
     'upper': lat_range[1],
     }

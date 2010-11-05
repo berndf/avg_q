@@ -9,7 +9,7 @@ import struct
 import sys
 
 headerfields=[
- (0x2C, 'ScanID'),
+ (0x2B, 'ScanID'),
  (0x13A, 'LastName'),
  (0x16C, 'FirstName'),
  (0x18A, 'DateOfBirth'),
