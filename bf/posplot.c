@@ -626,7 +626,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->itempart=0;
  local_arg->fov=200;	/* Field of vision, 20 deg initially */
  local_arg->azimuth=0; local_arg->incidence=0; local_arg->twist=0;
- local_arg->plfact=3.3/sqrt(tinfo->nr_of_channels);	/* Factor for the plotting rectangle size */
+ local_arg->plfact=0.0; /* Set when number of channels in channel map is known */
  local_arg->displaysign=1.0; /* Plot negative down by default */
  local_arg->showcoordsys=FALSE;
  local_arg->shownames=TRUE;
@@ -1061,6 +1061,8 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
   add_channel_map_entries(local_arg, tinfoptr);
   ndatasets++;
  }
+ /* Heuristic to set the plotting rectangle size depending on the number of channels displayed */
+ if (local_arg->plfact==0.0) local_arg->plfact=3.3/sqrt(local_arg->channel_map.current_length/sizeof(channel_map_entry));
  nr_of_selected_channels=count_selected_channels(local_arg);
  /* Possibly extend the dataset selection buffer */
  while (local_arg->selection.current_length/(int)(2*sizeof(Bool))<ndatasets) {
