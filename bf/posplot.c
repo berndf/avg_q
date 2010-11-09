@@ -2777,7 +2777,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	entry=locate_channel_map_entry_with_position(local_arg, tinfo_to_use, channel);
        } else {
 	entry=NULL;
-	*inputbuffer!=(char)0;
+	*inputbuffer=(char)0;
        }
       } else {
        entry=locate_channel_map_entry(local_arg, inputbuffer);
