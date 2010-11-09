@@ -1698,11 +1698,11 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
   /*}}}  */
 
   if (!postscript_output) swapbuffers();
-  *inputbuffer=(char)0;	/* Mark input buffer as empty */
 
   while (!leave) {
    /*{{{  The main event loop*/
    short val;
+   if (dev!=KEYBD && !get_string) *inputbuffer=(char)0;	/* Mark input buffer as empty */
    if (postscript_output) {
     char * const interactive_dev=getenv("VDEVICE");
     vnewdev(interactive_dev);	/* Select interactive device again */
@@ -1830,6 +1830,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       /*}}}  */
       break;
      }
+     if (*inputbuffer!='\0') show_Input_line(inputbuffer);
 
      dev=REDRAW;
      if (val>='0' && val<='9' && dataset_toggle_shown(tinfo, val-'0'+(val=='0' ? 10 : 0))) {
@@ -2658,8 +2659,9 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
         /*{{{  Set the sampling step using the input buffer*/
         /* Note: Subsampling will only affect data display. Undisplayed points may
          * be selected by pointing or #input anyway. */
-	i=atoi(inputbuffer);
-	if (i>0) local_arg->sampling_step=i;
+	char *endptr;
+	i=strtol(inputbuffer+1,&endptr,10);
+	if (*endptr=='\0' && i>0) local_arg->sampling_step=i;
 	local_arg->auto_subsampling=FALSE;
         /*}}}  */
        } else {
@@ -2678,8 +2680,11 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        /* Toggle channel selection */
        if (*inputbuffer!=(char)0) {
         if (*inputbuffer=='#') {
-	 channel=atoi(inputbuffer+1);
-         entry=locate_channel_map_entry_with_position(local_arg, tinfo_to_use, channel);
+	 char *endptr;
+	 channel=strtol(inputbuffer+1,&endptr,10);
+	 if (*endptr=='\0' && channel>=0 && channel<tinfo_to_use->nr_of_channels) {
+          entry=locate_channel_map_entry_with_position(local_arg, tinfo_to_use, channel);
+	 }
 	} else {
          entry=locate_channel_map_entry(local_arg, inputbuffer);
 	}
@@ -2766,8 +2771,14 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 
      if (*inputbuffer!=(char)0) {
       if (*inputbuffer=='#') {
-       channel=atoi(inputbuffer+1);
-       entry=locate_channel_map_entry_with_position(local_arg, tinfo_to_use, channel);
+       char *endptr;
+       channel=strtol(inputbuffer+1,&endptr,10);
+       if (*endptr=='\0' && channel>=0 && channel<tinfo_to_use->nr_of_channels) {
+	entry=locate_channel_map_entry_with_position(local_arg, tinfo_to_use, channel);
+       } else {
+	entry=NULL;
+	*inputbuffer!=(char)0;
+       }
       } else {
        entry=locate_channel_map_entry(local_arg, inputbuffer);
       }
