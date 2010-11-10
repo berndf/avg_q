@@ -1494,7 +1494,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
    }
   }
   color(FOREGROUND);
-#  define XPOS_C 0.05
+#  define XPOS_C 0.065
 #  define XLEN_C 0.05
 #  define YPOS_C 0.05
 #  define YLEN_C 0.05
@@ -1502,8 +1502,8 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
   rdr2((Coord)XLEN_C, (Coord)0);
   rmv2((Coord)-XLEN_C, (Coord)(-YLEN_C/2));
   rdr2((Coord)0, (Coord)YLEN_C);
-  cmov2((Coord)(XPOS_C-0.05), (Coord)YPOS_C);
   snprintf(stringbuffer, STRBUFLEN, "%6g", xdmin);
+  cmov2((Coord)(XPOS_C-((float)strwidth(stringbuffer))/(maxx-minx)), (Coord)YPOS_C);
   charstr(stringbuffer);
   cmov2((Coord)(XPOS_C+XLEN_C), (Coord)YPOS_C);
   snprintf(stringbuffer, STRBUFLEN, "%g", xdmax);
