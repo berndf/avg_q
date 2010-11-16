@@ -40,14 +40,32 @@ swap_xz(transform_info_ptr tinfo) {
  transform_info_ptr newtinfo, tinfoptr;
  DATATYPE *xdata, *ydata;
  int i, xsize, channel, point, itempart;
+ int nr_of_channels=0, nr_of_points=0, itemsize=0;
  char *const newxchannelname=(tinfo->z_label==NULL ? (char *)"Dataset" : tinfo->z_label);
 
+ /* Count how many tinfo structs there are in the input (our x values),
+  * ensuring that the geometry of all data sets is identical: */
+ for (xsize=0, tinfoptr=tinfo; tinfoptr!=NULL; xsize++, tinfoptr=tinfoptr->next) {
+  if (nr_of_channels==0) {
+   nr_of_channels=tinfoptr->nr_of_channels;
+  } else if (tinfoptr->nr_of_channels!=nr_of_channels) {
+   ERREXIT(tinfo->emethods, "swap_xz: varying nr_of_channels!\n");
+  }
+  if (nr_of_points==0) {
+   nr_of_points=tinfoptr->nr_of_points;
+  } else if (tinfoptr->nr_of_points!=nr_of_points) {
+   ERREXIT(tinfo->emethods, "swap_xz: varying nr_of_points!\n");
+  }
+  if (itemsize==0) {
+   itemsize=tinfoptr->itemsize;
+  } else if (tinfoptr->itemsize!=itemsize) {
+   ERREXIT(tinfo->emethods, "swap_xz: varying itemsize!\n");
+  }
+ }
  /*{{{  Allocate the memory areas*/
  if ((newtinfo=(struct transform_info_struct *)malloc(tinfo->nr_of_points*sizeof(struct transform_info_struct)))==NULL) {
   ERREXIT(tinfo->emethods, "swap_xz: Error malloc'ing tinfo structs\n");
  }
- /* Count how many tinfo structs there are in the input (our x values): */
- for (xsize=0, tinfoptr=tinfo; tinfoptr!=NULL; xsize++) tinfoptr=tinfoptr->next;
  if ((xdata=(DATATYPE *)malloc(xsize*sizeof(DATATYPE)+strlen(newxchannelname)+1))==NULL) {
   ERREXIT(tinfo->emethods, "swap_xz: Error malloc'ing xdata array\n");
  }
