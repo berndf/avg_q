@@ -28,7 +28,7 @@ class fMRI_Correct(object):
   self.overviewfilename=None
   self.templatefilename=None
   self.upsample=1 # Must be integer. Don't upsample by default - It's not necessary for SyncBox measurements.
-  self.template_length=12.4 # 31 points at 5kHz
+  self.template_length=12.4 # 62 points at 5kHz
   self.refine_length=2.4 # 12 points
   self.template_points=None
   self.refine_points=None

@@ -94,23 +94,30 @@ writeasc -b %(avgEOGfile)s
   return nrofaverages
  def sessionaverage_EOG(self,EOGfiles):
   '''Average the EOG files. The output file self.sessionaverage_EOGfile is default_sessionaverage_EOGfile
-  in the current directory, unless set differently by the caller.'''
+  in the current directory, unless set differently by the caller.
+  Returns the total number of averages.'''
   if not self.sessionaverage_EOGfile:
    self.sessionaverage_EOGfile=os.path.join(self.indir,default_sessionaverage_EOGfile)
   if os.path.exists(self.sessionaverage_EOGfile):
-   return
+   ascfile=avg_q.avg_q_file(self.sessionaverage_EOGfile)
+   return self.avg_q_object.get_description(ascfile,'nrofaverages')
   readasc=''
   for EOGfile in EOGfiles:
    if os.path.exists(EOGfile):
     readasc+='readasc %s\n' % EOGfile
+  nrofaverages=0
   if readasc!='':
    self.avg_q_object.write(readasc+'''
 average -W
 Post:
+query nrofaverages stdout
 writeasc -b %s
 -
 ''' % self.sessionaverage_EOGfile)
-   self.avg_q_object.run()
+   rdr=self.avg_q_object.runrdr()
+   for line in rdr:
+    nrofaverages=int(line)
+  return nrofaverages
  def get_Gratton_map(self,avgEOGfile):
   self.mapfile,ext=os.path.splitext(avgEOGfile)
   self.mapfile+='map.asc'
