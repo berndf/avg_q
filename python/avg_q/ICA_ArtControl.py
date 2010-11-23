@@ -146,8 +146,25 @@ null_sink
    if value>relative_cutoff:
     components.append(component)
   return components
+ def get_trim_from_components(self,components):
+  '''Utility function to get the 'trim' statement for selecting points corresponding to components.
+  Note that this selection is positive, ie includes points for these components, therefore the
+  order is important (we use sorted(components) here).'''
+  if len(components)==0:
+   trim=''
+  else:
+   trim='trim '+' '.join(['%d 1' % (x-1) for x in sorted(components)])
+  return trim
+ def get_remove_channels_from_components(self,components):
+  '''Utility function to get the 'trim' statement for removing channels corresponding to components.
+  Note that this selection is negative, ie removes channels for these components, therefore the
+  order is not important.'''
+  if len(components)==0:
+   remove_channel=''
+  else:
+   remove_channel='remove_channel -n '+','.join(["%d" % comp for comp in components])
+  return remove_channel
  def get_backproject_script(self):
-  trim='trim '+' '.join(['%d 1' % (x-1) for x in self.notArtComponents()])
   self.avg_q_object.write('''
 readasc %(base)s_weights_scaled.asc
 %(trim)s
@@ -161,7 +178,7 @@ null_sink
 -
 ''' % {
   'base': self.base,
-  'trim': trim,
+  'trim': self.get_trim_from_components(self.notArtComponents()),
   })
   self.tmpfiles.extend(['%s_weights_scaled_tmpproject.asc' % self.base, '%s_maps_scaled_tmpproject.asc' % self.base])
   return '''
@@ -171,6 +188,25 @@ project -C -n -p 0 -m %(base)s_maps_scaled_tmpproject.asc 0
 ''' % {
   'remove_channels': self.get_remove_channels(),
   'base': self.base,
-  'trim': trim,
+  }
+ def get_reconstruct_script(self):
+  '''Only the second step of backprojection, start with traces.'''
+  self.avg_q_object.write('''
+readasc %(base)s_maps_scaled.asc
+%(trim)s
+writeasc -b %(base)s_maps_scaled_tmpproject.asc
+null_sink
+-
+''' % {
+  'base': self.base,
+  'trim': self.get_trim_from_components(self.notArtComponents()),
+  })
+  self.tmpfiles.extend(['%s_maps_scaled_tmpproject.asc' % self.base])
+  return '''
+%(remove_channels)s
+project -C -n -p 0 -m %(base)s_maps_scaled_tmpproject.asc 0
+''' % {
+  'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
+  'base': self.base,
   }
 

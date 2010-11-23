@@ -205,7 +205,7 @@ class GrandAverage(object):
      'epochlength_points': self.epochlength_points,
      'beforetrig_points': self.beforetrig_points,
      })
-  if eventindex!=None and eventindex!=self.event0index:
+  if n_averages>0 and eventindex!=None and eventindex!=self.event0index:
    print("%s Mean shift points: %g" % (self.condstr,float(sum(session_shift_points))/len(session_shift_points)))
   return n_averages
  def set_outfile(self,outfile,append=False):
