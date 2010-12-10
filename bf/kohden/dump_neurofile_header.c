@@ -76,7 +76,10 @@ main(int argc, char **argv) {
   exit(1);
  }
 
- read_struct((char *)&seq, sm_sequence, dsc);
+ if (read_struct((char *)&seq, sm_sequence, dsc)==0) {
+  fprintf(stderr, "%s: Header read error on file %s\n", argv[0], filename);
+  exit(1);
+ }
  fclose(dsc);
 #ifndef LITTLE_ENDIAN
  change_byteorder((char *)&seq, sm_sequence);

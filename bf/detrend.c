@@ -152,17 +152,30 @@ detrend(transform_info_ptr tinfo) {
  DATATYPE *data;
 
  if (tinfo->data_type==FREQ_DATA) {
-  points=tinfo->nrofshifts;
-  ds=tinfo->nroffreq;	/* Number of 'data sets' */
-  ds_skip=tinfo->itemsize;	/* Skip from one freq to the next */
-  channel_skip=ds*ds_skip;	/* Skip from one channel to the next */
-  point_skip=tinfo->nr_of_channels*channel_skip;	/* From one LR point to the next */
+  if (tinfo->nrofshifts>1) {
+   /* Detrend across shifts for each frequency */
+   points=tinfo->nrofshifts;
+   ds=tinfo->nroffreq;	/* Number of data sets */
+   ds_skip=tinfo->itemsize;	/* Skip from one freq to the next */
+   channel_skip=ds*ds_skip;	/* Skip from one channel to the next */
+   point_skip=tinfo->nr_of_channels*channel_skip;	/* From one point to the next */
+  } else {
+   /* Detrend across frequencies */
+   points=tinfo->nroffreq;
+   ds=tinfo->nrofshifts;	/* Number of data sets */
+   point_skip=tinfo->itemsize;	/* From one point to the next */
+   channel_skip=points*point_skip;	/* Skip from one freq to the next */
+   ds_skip=tinfo->nr_of_channels*channel_skip;	/* Skip from one shift to the next */
+  }
  } else {
   nonmultiplexed(tinfo);
   ds=1;
   points=tinfo->nr_of_points;
   point_skip=tinfo->itemsize;
   channel_skip=points*point_skip;
+ }
+ if (args[ARGS_LATENCY].is_set && local_arg->detrend_where>=points) {
+  ERREXIT2(tinfo->emethods, "detrend: latency %d >= nr_of_points %d\n", MSGPARM(local_arg->detrend_where), MSGPARM(points));
  }
 
  /* Do this whenever the number of points seen changes (and at the start, where last_points is -1): */

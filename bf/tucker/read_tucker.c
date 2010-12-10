@@ -259,7 +259,9 @@ read_tucker_init(transform_info_ptr tinfo) {
  if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s,"rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_tucker_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
- read_struct((char *)&local_arg->header, sm_tucker, local_arg->infile);
+ if (read_struct((char *)&local_arg->header, sm_tucker, local_arg->infile)==0) {
+  ERREXIT1(tinfo->emethods, "read_tucker_init: Can't read header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+ }
 #ifdef LITTLE_ENDIAN
  change_byteorder((char *)&local_arg->header, sm_tucker);
 #endif

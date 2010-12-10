@@ -192,8 +192,14 @@ write_synamps_init(transform_info_ptr tinfo) {
  strcpy(local_arg->EEG.label, "Unspecified");
  {short dd, mm, yy, yyyy, hh, mi, ss;
  if (comment2time(tinfo->comment, &dd, &mm, &yy, &yyyy, &hh, &mi, &ss)) {
-  sprintf(local_arg->EEG.date, "%02d/%02d/%04d", mm, dd, yyyy);
-  sprintf(local_arg->EEG.time, "%02d:%02d:%02d", hh, mi, ss);
+  char buffer[16]; /* Must be long enough to fit date (10) and time (12) +1 */
+  /* This is necessary because the date field was devised for 2-digit years.
+   * With 4-digit years it uses all 10 bytes and the trailing zero
+   * does not fit in any more. */
+  snprintf(buffer, 16, "%02d/%02d/%04d", mm, dd, yyyy);
+  strncpy(local_arg->EEG.date, buffer, sizeof(local_arg->EEG.date));
+  snprintf(buffer, 16, "%02d:%02d:%02d", hh, mi, ss);
+  strncpy(local_arg->EEG.time, buffer, sizeof(local_arg->EEG.time));
  }
  }
  local_arg->EEG.rejectcnt = 0;
@@ -351,7 +357,9 @@ write_synamps_init(transform_info_ptr tinfo) {
  } else {
   /*{{{  Append to file*/
   enum NEUROSCAN_SUBTYPES SubType;
-  read_struct((char *)&local_arg->EEG, sm_SETUP, local_arg->SCAN);
+  if (read_struct((char *)&local_arg->EEG, sm_SETUP, local_arg->SCAN)==0) {
+   ERREXIT(tinfo->emethods, "write_synamps_init: Can't read file header.\n");
+  }
 #  ifndef LITTLE_ENDIAN
   change_byteorder((char *)&local_arg->EEG, sm_SETUP);
 #  endif
@@ -362,7 +370,9 @@ write_synamps_init(transform_info_ptr tinfo) {
   }
   /*}}}  */
   for (channel=0; channel<NoOfChannels; channel++) {
-   read_struct((char *)&local_arg->Channels[channel], sm_ELECTLOC, local_arg->SCAN);
+   if (read_struct((char *)&local_arg->Channels[channel], sm_ELECTLOC, local_arg->SCAN)==0) {
+    ERREXIT(tinfo->emethods, "write_synamps_init: Can't read channel headers.\n");
+   }
 #  ifndef LITTLE_ENDIAN
    change_byteorder((char *)&local_arg->Channels[channel], sm_ELECTLOC);
 #  endif

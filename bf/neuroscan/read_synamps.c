@@ -329,7 +329,7 @@ read_synamps_build_trigbuffer(transform_info_ptr tinfo) {
     fseek(local_arg->SCAN,local_arg->EEG.EventTablePos,SEEK_SET);
     /* Here we face two evils in one header: Coding enums as chars and
      * allowing longs at odd addresses. Well... */
-    if (1==read_struct((char *)&TagType, sm_TEEG, local_arg->SCAN)) {
+    if (read_struct((char *)&TagType, sm_TEEG, local_arg->SCAN)==1) {
 #    ifndef LITTLE_ENDIAN
      change_byteorder((char *)&TagType, sm_TEEG);
 #    endif
@@ -343,7 +343,7 @@ read_synamps_build_trigbuffer(transform_info_ptr tinfo) {
        long trigger_position=0;
        int TrigVal=0, KeyPad=0, KeyBoard=0;
        enum NEUROSCAN_ACCEPTVALUES Accept=(enum NEUROSCAN_ACCEPTVALUES)0;
-       if (1!=read_struct((char *)&event, sm_EVENT, local_arg->SCAN)) {
+       if (read_struct((char *)&event, sm_EVENT, local_arg->SCAN)==0) {
 	ERREXIT(tinfo->emethods, "read_synamps_build_trigbuffer: Can't read an event table entry.\n");
 	break;
        }
@@ -475,7 +475,9 @@ read_synamps_init(transform_info_ptr tinfo) {
   ERREXIT1(tinfo->emethods, "read_synamps_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
 
- read_struct((char *)&local_arg->EEG, sm_SETUP, SCAN);
+ if (read_struct((char *)&local_arg->EEG, sm_SETUP, SCAN)==0) {
+  ERREXIT1(tinfo->emethods, "read_synamps_init: File header read error in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+ }
 #ifndef LITTLE_ENDIAN
  change_byteorder((char *)&local_arg->EEG, sm_SETUP);
 #endif
@@ -489,7 +491,9 @@ read_synamps_init(transform_info_ptr tinfo) {
   * there for all the channels... */
  NoOfChannels = (local_arg->EEG.minor_rev<4 ? 32 : local_arg->EEG.nchannels);
  for (channel=0; channel<NoOfChannels; channel++) {
-  read_struct((char *)&local_arg->Channels[channel], sm_ELECTLOC, SCAN);
+  if (read_struct((char *)&local_arg->Channels[channel], sm_ELECTLOC, SCAN)==0) {
+   ERREXIT1(tinfo->emethods, "read_synamps_init: Channel header read error in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+  }
 #ifndef LITTLE_ENDIAN
   change_byteorder((char *)&local_arg->Channels[channel], sm_ELECTLOC);
 #endif
@@ -751,7 +755,9 @@ read_synamps(transform_info_ptr tinfo) {
      if (local_arg->current_trigger>=local_arg->EEG.compsweeps) return NULL;
      /* sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[0].offset is sizeof(NEUROSCAN_EPOCHED_SWEEP_HEAD) on those other systems... */
      fseek(local_arg->SCAN,local_arg->current_trigger*(sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[0].offset+local_arg->EEG.pnts*local_arg->EEG.nchannels*sizeof(short))+local_arg->SizeofHeader,SEEK_SET);
-     read_struct((char *)&sweephead, sm_NEUROSCAN_EPOCHED_SWEEP_HEAD, local_arg->SCAN);
+     if (read_struct((char *)&sweephead, sm_NEUROSCAN_EPOCHED_SWEEP_HEAD, local_arg->SCAN)==0) {
+      ERREXIT1(tinfo->emethods, "read_synamps_init: Sweep header read error in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+     }
 #   ifndef LITTLE_ENDIAN
      change_byteorder((char *)&sweephead, sm_NEUROSCAN_EPOCHED_SWEEP_HEAD);
 #   endif

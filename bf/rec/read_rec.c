@@ -135,7 +135,9 @@ read_rec_init(transform_info_ptr tinfo) {
   ERREXIT1(tinfo->emethods, "read_rec_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
  /*{{{  Read the file header and build comment*/
- read_struct((char *)&fileheader, sm_REC_file, local_arg->infile);
+ if (read_struct((char *)&fileheader, sm_REC_file, local_arg->infile)==0) {
+  ERREXIT(tinfo->emethods, "read_rec_init: Error reading file header.\n");
+ }
 # ifndef LITTLE_ENDIAN
  change_byteorder((char *)&fileheader, sm_REC_file);
 # endif

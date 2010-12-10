@@ -249,7 +249,9 @@ read_freiburg_init(transform_info_ptr tinfo) {
    if (args[ARGS_REPAIR_OFFSET].is_set) {
     fseek(infile, args[ARGS_REPAIR_OFFSET].arg.i, SEEK_SET);
    } else {
-   read_struct((char *)&local_arg->btfile, sm_BT_file, infile);
+   if (read_struct((char *)&local_arg->btfile, sm_BT_file, infile)==0) {
+    ERREXIT1(tinfo->emethods, "read_freiburg_init: Header read error in file %s\n", MSGPARM(co_name));
+   }
 #  ifndef LITTLE_ENDIAN
    change_byteorder((char *)&local_arg->btfile, sm_BT_file);
 #  endif
@@ -385,7 +387,9 @@ read_freiburg_init(transform_info_ptr tinfo) {
    if (args[ARGS_REPAIR_OFFSET].is_set) {
     fseek(infile, args[ARGS_REPAIR_OFFSET].arg.i, SEEK_SET);
    } else {
-   read_struct((char *)&local_arg->btfile, sm_BT_file, infile);
+   if (read_struct((char *)&local_arg->btfile, sm_BT_file, infile)==0) {
+    ERREXIT1(tinfo->emethods, "read_freiburg_init: Header read error in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+   }
 #  ifdef LITTLE_ENDIAN
    change_byteorder((char *)&local_arg->btfile, sm_BT_file);
 #  endif

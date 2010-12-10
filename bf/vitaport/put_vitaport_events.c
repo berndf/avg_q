@@ -91,7 +91,10 @@ main(int argc, char **argv) {
   exit(1);
  }
 
- read_struct((char *)&fileheader, sm_vitaport_fileheader, infile);
+ if (read_struct((char *)&fileheader, sm_vitaport_fileheader, infile)==0) {
+  fprintf(stderr, "%s: Read error on file %s\n", argv[0], filename);
+  exit(1);
+ }
 #ifdef LITTLE_ENDIAN
  change_byteorder((char *)&fileheader, sm_vitaport_fileheader);
 #endif
@@ -101,14 +104,20 @@ main(int argc, char **argv) {
  }
  switch (fileheader.hdtyp) {
   case HDTYP_VITAPORT1:
-   read_struct((char *)&fileheaderI, sm_vitaportI_fileheader, infile);
+   if (read_struct((char *)&fileheaderI, sm_vitaportI_fileheader, infile)==0) {
+    fprintf(stderr, "%s: Read error on file %s\n", argv[0], filename);
+    exit(1);
+   }
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&fileheaderI, sm_vitaportI_fileheader);
 #endif
    Intel_short((unsigned short *)&fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
    break;
   case HDTYP_VITAPORT2:
-   read_struct((char *)&fileheaderII, sm_vitaportII_fileheader, infile);
+   if (read_struct((char *)&fileheaderII, sm_vitaportII_fileheader, infile)==0) {
+    fprintf(stderr, "%s: Read error on file %s\n", argv[0], filename);
+    exit(1);
+   }
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&fileheaderII, sm_vitaportII_fileheader);
 #endif
@@ -124,7 +133,10 @@ main(int argc, char **argv) {
      break;
     case 36:
      vitaport_filetype=VITAPORT2_FILE;
-     read_struct((char *)&fileext, sm_vitaportII_fileext, infile);
+     if (read_struct((char *)&fileext, sm_vitaportII_fileext, infile)==0) {
+      fprintf(stderr, "%s: Read error on file %s\n", argv[0], filename);
+      exit(1);
+     }
 #ifdef LITTLE_ENDIAN
      change_byteorder((char *)&fileext, sm_vitaportII_fileext);
 #endif
@@ -143,7 +155,10 @@ main(int argc, char **argv) {
   struct vitaport_channelheader channelheader;
   struct vitaportIIrchannelheader channelheaderII;
   long channellen_ms;
-  read_struct((char *)&channelheader, sm_vitaport_channelheader, infile);
+  if (read_struct((char *)&channelheader, sm_vitaport_channelheader, infile)==0) {
+   fprintf(stderr, "%s: Channel header read error on file %s\n", argv[0], filename);
+   exit(1);
+  }
 #ifdef LITTLE_ENDIAN
   change_byteorder((char *)&channelheader, sm_vitaport_channelheader);
 #endif
@@ -151,7 +166,10 @@ main(int argc, char **argv) {
    case VITAPORT1_FILE:
     break;
    case VITAPORT2_FILE:
-    read_struct((char *)&channelheaderII, sm_vitaportIIrchannelheader, infile);
+    if (read_struct((char *)&channelheaderII, sm_vitaportIIrchannelheader, infile)==0) {
+     fprintf(stderr, "%s: Channel header read error on file %s\n", argv[0], filename);
+     exit(1);
+    }
 #ifdef LITTLE_ENDIAN
     change_byteorder((char *)&channelheaderII, sm_vitaportIIrchannelheader);
 #endif

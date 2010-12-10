@@ -110,7 +110,9 @@ main(int argc, char **argv) {
  printf("EDF file %s\n\n", filename);
 
  /*{{{  Read the file header and build comment*/
- read_struct((char *)&fileheader, sm_REC_file, infile);
+ if (read_struct((char *)&fileheader, sm_REC_file, infile)==0) {
+  ERREXIT(tinfo->emethods, "dump_edf_header: Error reading file header.\n");
+ }
 # ifndef LITTLE_ENDIAN
  change_byteorder((char *)&fileheader, sm_REC_file);
 # endif

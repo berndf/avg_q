@@ -179,7 +179,9 @@ read_neurofile_init(transform_info_ptr tinfo) {
  if((dsc=fopen(filename, "rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_neurofile_init: Can't open dsc file >%s<\n", MSGPARM(filename));
  }
- read_struct((char *)&local_arg->seq, sm_sequence, dsc);
+ if (read_struct((char *)&local_arg->seq, sm_sequence, dsc)==0) {
+  ERREXIT1(tinfo->emethods, "read_neurofile_init: Can't read header in file >%s<\n", MSGPARM(filename));
+ }
  fclose(dsc);
 #ifndef LITTLE_ENDIAN
  change_byteorder((char *)&local_arg->seq, sm_sequence);

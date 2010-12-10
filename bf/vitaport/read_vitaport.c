@@ -356,7 +356,9 @@ read_vitaport_init(transform_info_ptr tinfo) {
  if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s,"rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
- read_struct((char *)&local_arg->fileheader, sm_vitaport_fileheader, local_arg->infile);
+ if (read_struct((char *)&local_arg->fileheader, sm_vitaport_fileheader, local_arg->infile)==0) {
+  ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't read header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+ }
 #ifdef LITTLE_ENDIAN
  change_byteorder((char *)&local_arg->fileheader, sm_vitaport_fileheader);
 #endif
@@ -366,7 +368,9 @@ read_vitaport_init(transform_info_ptr tinfo) {
  switch (local_arg->fileheader.hdtyp) {
   case HDTYP_VITAPORT1:
    TRACEMS1(tinfo->emethods, 1, "Opening VitaPort I file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
-   read_struct((char *)&local_arg->fileheaderI, sm_vitaportI_fileheader, local_arg->infile);
+   if (read_struct((char *)&local_arg->fileheaderI, sm_vitaportI_fileheader, local_arg->infile)==0) {
+    ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't read header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+   }
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&local_arg->fileheaderI, sm_vitaportI_fileheader);
 #endif
@@ -375,7 +379,9 @@ read_vitaport_init(transform_info_ptr tinfo) {
   case HDTYP_VITAPORT2:
   case HDTYP_VITAPORT2P1:
    TRACEMS1(tinfo->emethods, 1, "Opening VitaPort II file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
-   read_struct((char *)&local_arg->fileheaderII, sm_vitaportII_fileheader, local_arg->infile);
+   if (read_struct((char *)&local_arg->fileheaderII, sm_vitaportII_fileheader, local_arg->infile)==0) {
+    ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't read header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+   }
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&local_arg->fileheaderII, sm_vitaportII_fileheader);
 #endif
@@ -392,7 +398,9 @@ read_vitaport_init(transform_info_ptr tinfo) {
      break;
     case 36:
      local_arg->vitaport_filetype=((local_arg->fileheader.hdlen&511)==0 ? VITAPORT2RFILE : VITAPORT2_FILE);
-     read_struct((char *)&local_arg->fileext, sm_vitaportII_fileext, local_arg->infile);
+     if (read_struct((char *)&local_arg->fileext, sm_vitaportII_fileext, local_arg->infile)==0) {
+      ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't read header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+     }
 #ifdef LITTLE_ENDIAN
      change_byteorder((char *)&local_arg->fileext, sm_vitaportII_fileext);
 #endif
@@ -418,7 +426,9 @@ read_vitaport_init(transform_info_ptr tinfo) {
  for (channel=0; channel<NoOfChannels; channel++) {
   unsigned int this_sfac,this_size;
 
-  read_struct((char *)&local_arg->channelheaders[channel], sm_vitaport_channelheader, local_arg->infile);
+  if (read_struct((char *)&local_arg->channelheaders[channel], sm_vitaport_channelheader, local_arg->infile)==0) {
+   ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't read channel header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+  }
 #ifdef LITTLE_ENDIAN
   change_byteorder((char *)&local_arg->channelheaders[channel], sm_vitaport_channelheader);
 #endif
@@ -455,7 +465,9 @@ read_vitaport_init(transform_info_ptr tinfo) {
     break;
    case VITAPORT2_FILE:
    case VITAPORT2RFILE:
-    read_struct((char *)&local_arg->channelheadersII[channel], sm_vitaportIIrchannelheader, local_arg->infile);
+    if (read_struct((char *)&local_arg->channelheadersII[channel], sm_vitaportIIrchannelheader, local_arg->infile)==0) {
+     ERREXIT1(tinfo->emethods, "read_vitaport_init: Can't read channel header in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+    }
 #ifdef LITTLE_ENDIAN
     change_byteorder((char *)&local_arg->channelheadersII[channel], sm_vitaportIIrchannelheader);
 #endif

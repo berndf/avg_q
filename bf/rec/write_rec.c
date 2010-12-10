@@ -133,7 +133,9 @@ write_rec_open_file(transform_info_ptr tinfo) {
  if (local_arg->appendmode) {
   /* Read rather than write header in append mode */
   fseek(outfptr, 0L, SEEK_SET);
-  read_struct((char *)&local_arg->fheader, sm_REC_file, outfptr);
+  if (read_struct((char *)&local_arg->fheader, sm_REC_file, outfptr)==0) {
+   ERREXIT1(tinfo->emethods, "write_rec_open_file: Can't read header in file %s\n", MSGPARM(args[ARGS_OFILE].arg.s));
+  }
 # ifndef LITTLE_ENDIAN
   change_byteorder((char *)&local_arg->fheader, sm_REC_file);
 # endif

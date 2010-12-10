@@ -190,7 +190,9 @@ void RGetHead(struct Rheader *Rhd,int qalloc)
 {
     int m;
 /* Read header base */
-    read_struct((char *)Rhd, sm_Rheader, Rhd->filehandle);
+    if (read_struct((char *)Rhd, sm_Rheader, Rhd->filehandle)==0) {
+     Rperror("Could not read file header.");
+    }
 #   ifndef LITTLE_ENDIAN
     change_byteorder((char *)Rhd, sm_Rheader);
 #   endif
@@ -581,7 +583,9 @@ void RGetTrialBase(int trial, struct Rtrial *Rtr)
     Rbsize = TRIALBSIZE;	/* Will be used as offset within file */
     if(Roldtrialbsize)
         Rbsize -= 2;
-    read_struct((char *)Rtr, sm_Rtrial, Rtr->filehandle);
+    if (read_struct((char *)Rtr, sm_Rtrial, Rtr->filehandle)==0) {
+     Rperror("Could not read trial header.");
+    }
 #   ifndef LITTLE_ENDIAN
     change_byteorder((char *)Rtr, sm_Rtrial);
 #   endif
