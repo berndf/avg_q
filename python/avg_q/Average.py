@@ -214,16 +214,24 @@ class GrandAverage(object):
      plus the script separator and run() yourself.'''
   self.outfile=outfile
   self.append=append
- def single_average(self,condition,eventindex=None):
+ def single_average(self,condition,eventindex=None,test_options='-t'):
   if self.get_averages(condition,eventindex)==0: return
-  self.avg_q_object.write('''
-extract_item 0
-average -W -t
-Post:
+  if '-t' in test_options and not '-u' in test_options:
+   calclog='''
 calc -i 2 log10
 calc -i 2 neg
+'''
+  else:
+   calclog=''
+  self.avg_q_object.write('''
+extract_item 0
+average -W %(test_options)s
+Post:
+%(calclog)s
 set_comment %(condstr)s
 ''' % {
+  'test_options': test_options,
+  'calclog': calclog,
   'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex!=None and eventindex!=self.event0index else 0)) if eventindex!=None else self.condstr,
   })
   if self.outfile:
