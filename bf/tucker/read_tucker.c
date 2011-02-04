@@ -83,7 +83,7 @@ struct read_tucker_storage {
  long current_triggerpoint;
  char *EventCodes;
  long SizeofHeader;
- long NumSamples;
+ long points_in_file;
  long bytes_per_point;
  long beforetrig;
  long aftertrig;
@@ -147,7 +147,7 @@ read_tucker_get_singlepoint(transform_info_ptr tinfo, array *toarray) {
  struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
  unsigned short *pdata=local_arg->buffer;
 
- if (local_arg->current_point>=local_arg->NumSamples) return -1;
+ if (local_arg->current_point>=local_arg->points_in_file) return -1;
  read_tucker_seek_point(tinfo, local_arg->current_point);
 
  do {
@@ -223,7 +223,7 @@ read_tucker_nexttrigger(transform_info_ptr tinfo, long *trigpoint) {
   return code;
  }
 
- while (local_arg->current_triggerpoint<local_arg->NumSamples && code==0) {
+ while (local_arg->current_triggerpoint<local_arg->points_in_file && code==0) {
   read_tucker_seek_point(tinfo, local_arg->current_triggerpoint);
   pdata=local_arg->buffer+local_arg->header.NChan;
 
@@ -286,8 +286,8 @@ read_tucker_init(transform_info_ptr tinfo) {
 
  local_arg->bytes_per_point=(local_arg->header.NChan+local_arg->header.NEvents)*sizeof(short);
  fstat(fileno(local_arg->infile),&statbuff);
- local_arg->NumSamples = (statbuff.st_size-local_arg->SizeofHeader)/local_arg->bytes_per_point;
- tinfo->points_in_file=local_arg->NumSamples;
+ local_arg->points_in_file = (statbuff.st_size-local_arg->SizeofHeader)/local_arg->bytes_per_point;
+ tinfo->points_in_file=local_arg->points_in_file;
  local_arg->Factor=((DATATYPE)local_arg->header.Range)/(1<<local_arg->header.Bits);
  if ((local_arg->buffer=(unsigned short *)malloc(local_arg->bytes_per_point))==NULL) {
   ERREXIT(tinfo->emethods, "read_tucker_init: Error allocating buffer memory\n");
@@ -303,7 +303,7 @@ read_tucker_init(transform_info_ptr tinfo) {
  if (local_arg->beforetrig==0 && local_arg->aftertrig==0) {
   if (args[ARGS_CONTINUOUS].is_set) {
    /* Read the whole file as one epoch: */
-   local_arg->aftertrig=local_arg->NumSamples;
+   local_arg->aftertrig=local_arg->points_in_file;
    TRACEMS1(tinfo->emethods, 1, "read_tucker_init: Reading ALL data (%d points)\n", MSGPARM(local_arg->aftertrig));
   } else {
    ERREXIT(tinfo->emethods, "read_tucker_init: Zero epoch length.\n");
@@ -381,7 +381,7 @@ read_tucker(transform_info_ptr tinfo) {
    file_start_point=file_end_point+1;
    trigger_point=file_start_point+tinfo->beforetrig;
    file_end_point=trigger_point+tinfo->aftertrig-1;
-   if (file_end_point>=local_arg->NumSamples) return NULL;
+   if (file_end_point>=local_arg->points_in_file) return NULL;
    local_arg->current_trigger++;
    local_arg->current_point+=tinfo->nr_of_points;
    tinfo->condition=0;
@@ -406,7 +406,7 @@ read_tucker(transform_info_ptr tinfo) {
     }
    }
    local_arg->current_trigger++;
-  } while (not_correct_trigger || file_start_point<0 || file_end_point>=local_arg->NumSamples);
+  } while (not_correct_trigger || file_start_point<0 || file_end_point>=local_arg->points_in_file);
  } while (--local_arg->fromepoch>0);
  TRACEMS3(tinfo->emethods, 1, "read_tucker: Reading around tag %d at %d, condition=%d\n", MSGPARM(local_arg->current_trigger), MSGPARM(trigger_point), MSGPARM(tinfo->condition));
  fseek(infile, file_start_point*local_arg->bytes_per_point, SEEK_SET);

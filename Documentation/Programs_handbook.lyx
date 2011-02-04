@@ -1,4 +1,4 @@
-#LyX 1.6.7 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.8 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -116,7 +116,7 @@ mailto:bernd.feige@uniklinik-freiburg.de
 \begin_layout Standard
 \noindent
 \align center
-Version 4.4.0
+Version 4.5.0
 \end_layout
 
 \begin_layout Standard
@@ -2825,8 +2825,8 @@ Options:
 \end_layout
 
 \begin_layout Description
--c: Continuous: Read a continuous file in adjacent chunks of the given size
- disregarding triggers 
+-c: Continuous: Read the file in adjacent chunks of the given size disregarding
+ triggers 
 \end_layout
 
 \begin_layout Description
@@ -3392,6 +3392,15 @@ Options:
 
 \begin_deeper
 \begin_layout Description
+-c: Continuous: Read the file in adjacent chunks of the given size disregarding
+ triggers 
+\end_layout
+
+\begin_layout Description
+-T: Transfer a list of triggers within the read epoch 
+\end_layout
+
+\begin_layout Description
 -R
 \begin_inset space ~
 \end_inset
@@ -3528,30 +3537,28 @@ dards
 read_rec
 \series default
  thus arranges the channels on a grid.
- Data is stored in blocks called records here, but these are not intended
- as epochs.
- Also, no trigger conventions exist, so that 
-\series bold
-read_rec
-\series default
- will treat REC files as continuous by default, i.e.
- the record size just corresponds to the unit in which 
-\series bold
-read_rec
-\series default
- reads the file but is not visible to the user.
- The REC format allows for different sampling rates for different channels,
- but 
-\series bold
-avg_q
-\series default
- internally does not; thus, the maximum sampling rate present is used, and
- values sampled slower are extended by replication.
+ Data is internally stored in blocks called records in order to accomodate
+ different sampling rates for different channels.
+ avg_q uses the maximum sampling rate present in the file for all channels,
+ and values sampled slower are extended by replication.
+ Presently, avg_q does not know about triggers stored within REC files;
+ such triggers can only be supplied using a trigger file.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Note that read_rec arguments have changed in version 4.5, adding full support
+ for triggered reading.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_deeper
 \begin_layout Description
-Arguments: Inputfile epochlength
+Arguments: Inputfile beforetrig aftertrig
 \end_layout
 
 \begin_layout Description
@@ -3559,6 +3566,50 @@ Options:
 \end_layout
 
 \begin_deeper
+\begin_layout Description
+-c: Continuous: Read the file in adjacent chunks of the given size disregarding
+ triggers 
+\end_layout
+
+\begin_layout Description
+-T: Transfer a list of triggers within the read epoch 
+\end_layout
+
+\begin_layout Description
+-R
+\begin_inset space ~
+\end_inset
+
+trigger_file: Read trigger points and codes from file trigger_file in the
+ format described in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+, page 
+\begin_inset CommandInset ref
+LatexCommand pageref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Description
+-t
+\begin_inset space ~
+\end_inset
+
+trigger_list: Restrict epochs to those marked with a condition code contained
+ in the trigger_list.
+ The list consists of comma-separated integer values, for example: 5,2,3.
+ This is only useful in conjunction with the -R option.
+\end_layout
+
 \begin_layout Description
 -f
 \begin_inset space ~

@@ -107,10 +107,8 @@ class sleep_eeg(avg_q.avg_q):
    print("Can't locate sl file for %s" % bookno)
    return
   print("Found %s" % sl.filename)
-  sltuples=slfile.add_remcycle(sl.gettuples())
-  sl.close()
 
-  c=avg_q_file.avg_q_file(cntfile)
+  c=avg_q_file(cntfile)
   collapse_args=self.get_channel_collapse_args(c,bands=self.rejection_bands)
   self.get_cntbands(c,collapse_args)
   self.write('''
@@ -167,12 +165,13 @@ null_sink
    checkmarks=[0 for i in range(nr_of_bands)]
    if point<0:
     time,stage,checks,arousals,myos,eyemovements,remcycle,nremcycle=-1,0,0,0,0,0,-1,-1
-   elif sl_pos>=len(sltuples):
+   elif sl_pos>=len(sl.tuples):
     # Let the REM cycle remain on the last value it had, otherwise we'd always
     # be averaging wake phases at the beginning and end of the night...
     time, stage, checks, arousals, myos, eyemovements=-1, 0, 0, 0, 0, 0
    else:
-    time, stage, checks, arousals, myos, eyemovements, remcycle, nremcycle=sltuples[sl_pos]
+    time, stage, checks, arousals, myos, eyemovements=sl.tuples[sl_pos]
+    remcycle, nremcycle=sl.remcycles[sl_pos]
     for i in range(nr_of_bands):
      if abs(bands[i][point]-medbands[i][point])>diff_threshold[i]:
       checkmark+= 1<<i+3
@@ -192,6 +191,7 @@ null_sink
   f=open(tfile,"w")
   t.writetuples(tuples,f)
   f.close()
+  sl.close()
  def spect_from_cnt(self,cntfile,checkpoint,postprocess,average_options=''):
   """Average epoch spectra using .trg file.
   checkpoint is a callback function deciding which points to average

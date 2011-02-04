@@ -25,7 +25,7 @@ class ECG(avg_q.Detector.Detector):
   self.avgECGfile=self.base+'_ECG.asc'
   self.channelnames=self.avg_q_object.get_description(self.infile,'channelnames')
   self.protect_channels=[x for x in protect_channels if x in self.channelnames]
- def detect_ECG(self):
+ def detect_ECG(self,outtrigfile=None,maxvalue=None):
   # self.ECGtriggers will be reused if already set
   if self.ECGtriggers is not None:
    return
@@ -42,7 +42,7 @@ scale_by invpointquantile 0.9
 write_crossings -E -R 0.5s ECG 1 stdout
 null_sink
 -
-''' % {'ECGtemplate': self.ECGtemplate})
+''' % {'ECGtemplate': self.ECGtemplate}, outtrigfile, maxvalue)
   else:
    self.ECGtriggers=self.detect(self.get_ECG_script+'''
 set_channelposition -s ECG 0 0 0
@@ -54,7 +54,7 @@ scale_by invpointquantile 0.99
 write_crossings -E -R 0.5s ECG 1 stdout
 null_sink
 -
-''')
+''', outtrigfile, maxvalue)
  def average_ECG(self):
   '''Average ECG events with rejection.
      Returns the number of accepted ECGs.'''

@@ -92,7 +92,7 @@ struct read_vitaport_storage {
  long current_point;
  long current_triggerpoint;
  long SizeofHeader;
- long NumSamples;
+ long points_in_file;
  long beforetrig;
  long aftertrig;
  long offset;
@@ -247,7 +247,7 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
     int code=0;
     TRACEMS(tinfo->emethods, 1, "read_vitaport_build_trigbuffer: Analyzing marker channel\n");
     fseek(local_arg->infile, local_arg->SizeofHeader+local_arg->channelheadersII[marker_channel].doffs+lastpoint*this_size, SEEK_SET);
-    while (current_triggerpoint<local_arg->NumSamples) {
+    while (current_triggerpoint<local_arg->points_in_file) {
      switch (this_size) {
       case 1: {
        unsigned char s;
@@ -269,7 +269,7 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
      }
      if (code!=0) {
       push_trigger(&local_arg->triggers, current_triggerpoint, code, NULL);
-      while (current_triggerpoint<local_arg->NumSamples) {
+      while (current_triggerpoint<local_arg->points_in_file) {
        do {
 	current_triggerpoint++;
 	thispoint=((float)current_triggerpoint)/sstep;
@@ -516,7 +516,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
   case VITAPORT2_FILE:
    /* If fileheaderII.dlen was always filled out correctly, we could as well
     * use the statement for VITAPORT2RFILE below... */
-   local_arg->NumSamples=max_NumSamples/local_arg->min_sfac;
+   local_arg->points_in_file=max_NumSamples/local_arg->min_sfac;
    break;
   case VITAPORT2RFILE:
    if (!args[ARGS_CONTINUOUS].is_set || local_arg->fromepoch!=1) {
@@ -526,7 +526,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
     ERREXIT(tinfo->emethods, "read_vitaport_init: Trigger transfer is not currently supported on RAW files!\n");
    }
    /* Looks strange, eh? But for long files, the `long' data type can overflow within this operation... */
-   local_arg->NumSamples=(long)rint(((double)local_arg->fileheaderII.dlen-local_arg->fileheader.hdlen)*local_arg->max_sfac/local_arg->min_sfac/local_arg->bytes_per_max_sfac);
+   local_arg->points_in_file=(long)rint(((double)local_arg->fileheaderII.dlen-local_arg->fileheader.hdlen)*local_arg->max_sfac/local_arg->min_sfac/local_arg->bytes_per_max_sfac);
    /* For VITAPORT2RFILE, this deviates from the current file position... */
    local_arg->SizeofHeader = local_arg->fileheader.hdlen;
    TRACEMS(tinfo->emethods, 1, " We'll assume that this is a RAW file...\n");
@@ -536,7 +536,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
    fseek(local_arg->infile, local_arg->SizeofHeader, SEEK_SET);
    break;
  }
- tinfo->points_in_file=local_arg->NumSamples;
+ tinfo->points_in_file=local_arg->points_in_file;
 
  /*{{{  Allocate and fill local arrays*/
  if ((local_arg->channelnames=(char **)malloc(NoOfChannels*sizeof(char *)))==NULL ||
@@ -569,7 +569,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
  if (local_arg->beforetrig==0 && local_arg->aftertrig==0) {
   if (args[ARGS_CONTINUOUS].is_set) {
    /* Read the whole file as one epoch: */
-   local_arg->aftertrig=local_arg->NumSamples;
+   local_arg->aftertrig=local_arg->points_in_file;
    TRACEMS1(tinfo->emethods, 1, "read_vitaport_init: Reading ALL data (%d points)\n", MSGPARM(local_arg->aftertrig));
   } else {
    ERREXIT(tinfo->emethods, "read_vitaport_init: Zero epoch length.\n");
@@ -645,7 +645,7 @@ read_vitaport(transform_info_ptr tinfo) {
    file_start_point=file_end_point+1;
    trigger_point=file_start_point+tinfo->beforetrig;
    file_end_point=trigger_point+tinfo->aftertrig-1;
-   if (file_end_point>=local_arg->NumSamples) return NULL;
+   if (file_end_point>=local_arg->points_in_file) return NULL;
    local_arg->current_trigger++;
    local_arg->current_point+=tinfo->nr_of_points;
    tinfo->condition=0;
@@ -669,7 +669,7 @@ read_vitaport(transform_info_ptr tinfo) {
      trigno++;
     }
    }
-  } while (not_correct_trigger || file_start_point<0 || file_end_point>=local_arg->NumSamples);
+  } while (not_correct_trigger || file_start_point<0 || file_end_point>=local_arg->points_in_file);
  } while (--local_arg->fromepoch>0);
  TRACEMS3(tinfo->emethods, 1, "read_vitaport: Reading around tag %d at %d, condition=%d\n", MSGPARM(local_arg->current_trigger), MSGPARM(trigger_point), MSGPARM(tinfo->condition));
 

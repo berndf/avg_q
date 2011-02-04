@@ -37,7 +37,7 @@ class EOG(avg_q.Detector.Detector):
   self.avgEOGfile=self.base+'_EOG.asc'
   self.channelnames=self.avg_q_object.get_description(self.infile,'channelnames')
   self.protect_channels=[x for x in protect_channels if x in self.channelnames]
- def detect_VEOG(self):
+ def detect_VEOG(self,outtrigfile=None):
   # self.VEOGtriggers will be reused if already set
   if self.VEOGtriggers is not None:
    return
@@ -52,7 +52,7 @@ null_sink
 -
 ''' % {
   'VEOG_minamp': self.VEOG_minamp,
- }, maxvalue=self.VEOG_maxamp)
+ }, outtrigfile, maxvalue=self.VEOG_maxamp)
  def average_EOG(self):
   '''Average EOG events with strict checks for duration and surroundings.
      Returns the number of accepted EOGs.'''

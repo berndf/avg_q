@@ -164,7 +164,9 @@ null_sink
   else:
    remove_channel='remove_channel -n '+','.join(["%d" % comp for comp in components])
   return remove_channel
- def get_backproject_script(self):
+ def get_backproject_script(self,components=None):
+  if components is None:
+   components=self.notArtComponents()
   self.avg_q_object.write('''
 readasc %(base)s_weights_scaled.asc
 %(trim)s
@@ -178,7 +180,7 @@ null_sink
 -
 ''' % {
   'base': self.base,
-  'trim': self.get_trim_from_components(self.notArtComponents()),
+  'trim': self.get_trim_from_components(components),
   })
   self.tmpfiles.extend(['%s_weights_scaled_tmpproject.asc' % self.base, '%s_maps_scaled_tmpproject.asc' % self.base])
   return '''
@@ -189,8 +191,10 @@ project -C -n -p 0 -m %(base)s_maps_scaled_tmpproject.asc 0
   'remove_channels': self.get_remove_channels(),
   'base': self.base,
   }
- def get_reconstruct_script(self):
+ def get_reconstruct_script(self,components=None):
   '''Only the second step of backprojection, start with traces.'''
+  if components is None:
+   components=self.notArtComponents()
   self.avg_q_object.write('''
 readasc %(base)s_maps_scaled.asc
 %(trim)s
@@ -199,7 +203,7 @@ null_sink
 -
 ''' % {
   'base': self.base,
-  'trim': self.get_trim_from_components(self.notArtComponents()),
+  'trim': self.get_trim_from_components(components),
   })
   self.tmpfiles.extend(['%s_maps_scaled_tmpproject.asc' % self.base])
   return '''
