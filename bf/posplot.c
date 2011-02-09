@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2010 Bernd Feige
+ * Copyright (C) 1996-2011 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -644,7 +644,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->linestyle_type=0; 
  local_arg->function=TS_RAW;
  local_arg->dev=NEWBORDER;
- local_arg->red_message="This is posplot (c) 1993-2010 by Bernd Feige.";
+ local_arg->red_message="This is posplot (c) 1993-2011 by Bernd Feige.";
 
  if (tinfo->data_type==FREQ_DATA) tinfo->nr_of_points=tinfo->nroffreq;
  local_arg->lastselected= 0.0;
@@ -2059,14 +2059,17 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	/* First find out whether the marker is placed on an existing trigger */
         int const whichpoint=get_selectedpoint(tinfo_to_use);
         struct trigger *intrig=(struct trigger *)tinfo_to_use->triggers.buffer_start;
-	while (intrig!=NULL && (++intrig)->code!=0 && intrig->position!=whichpoint);
+	if (intrig!=NULL) {
+	 for (intrig++; intrig->code!=0 && intrig->position!=whichpoint; intrig++);
+	}
 	if (intrig!=NULL && intrig->code!=0) {
 	 snprintf(local_arg->messagebuffer, MESSAGELEN, "Deleted trigger at %ld code %d", intrig->position, intrig->code);
 	 /* Delete a marker */
-	 while (intrig->code!=0) {
-	  *intrig= *(intrig+1);
+	 do {
 	  intrig++;
-	 }
+	  *(intrig-1)= *intrig;
+	 } while (intrig->code!=0);
+	 tinfo_to_use->triggers.current_length-=sizeof(struct trigger);
 	} else {
 	 int const code=(*inputbuffer!='\0' ? atoi(inputbuffer) : 1);
 	 if (code!=0) {
@@ -2075,7 +2078,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	   push_trigger(&tinfo_to_use->triggers, 0L, -1, NULL);
 	  } else {
 	   /* Delete the end marker */
-	   if (tinfo_to_use->triggers.current_length>2*sizeof(struct trigger)) {
+	   if (tinfo_to_use->triggers.current_length>=2*sizeof(struct trigger)) {
 	    tinfo_to_use->triggers.current_length-=sizeof(struct trigger);
 	   }
 	  }

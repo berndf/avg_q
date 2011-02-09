@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998-2000,2003,2007 Bernd Feige
+ * Copyright (C) 1996,1998-2000,2003,2007,2011 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -46,7 +46,7 @@ growing_buf_init(growing_buf *buf) {
 
 Bool 
 growing_buf_allocate(growing_buf *buf, long length) {
- long new_length=(length<MIN_INITIAL_SIZE ? MIN_INITIAL_SIZE : length);
+ long const new_length=(length<MIN_INITIAL_SIZE ? MIN_INITIAL_SIZE : length);
  growing_buf_free(buf);
  if ((buf->buffer_start=(char *)malloc(new_length))==NULL) return FALSE;
  buf->buffer_end=buf->buffer_start+new_length;
@@ -70,8 +70,8 @@ growing_buf_takethis(growing_buf *buf, char const *str) {
 
 Bool
 growing_buf_append(growing_buf *buf, char const *from, int length) {
- long current_size=buf->buffer_end-buf->buffer_start;
- long future_length=buf->current_length+length;
+ long const current_size=buf->buffer_end-buf->buffer_start;
+ long const future_length=buf->current_length+length;
  long future_size=current_size;
 
  if (!buf->can_be_freed) return FALSE;

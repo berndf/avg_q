@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2010 Bernd Feige
+ * Copyright (C) 1999-2011 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -37,7 +37,7 @@
 
 LOCAL char const * const sig=
  "avg_q multichannel (EEG/MEG) data processing tool\n"
- "(c) 1992-2010 by Bernd Feige, Bernd.Feige@gmx.net\n"
+ "(c) 1992-2011 by Bernd Feige, Bernd.Feige@gmx.net\n"
  "This version (" VERSION ", " FLOAT_SIZE ") was compiled on " DATE ".\n"
  SIGNATURE;
 
