@@ -528,24 +528,38 @@ comment2time(char *comment, short *dd, short *mm, short *yy, short *yyyy, short 
 /*}}}  */
 
 /*{{{  read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint)*/
-#define TRIGGER_LINEBUFFERLENGTH 80
-
 GLOBAL int
 read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, char **descriptionp) {
- char buffer[TRIGGER_LINEBUFFERLENGTH];
+ growing_buf buffer;
  int code=0;
 
+ growing_buf_init(&buffer);
+ growing_buf_allocate(&buffer,0);
+ buffer.delimiters="\t\r\n";
  /* The do while (1) is here to be able to skip comment lines */
  do {
+  int c;
   /* The trigger file format is  point code  on a line by itself. Lines starting
    * with '#' are ignored. The `point' string may be a floating point number
    * and may have 's' or 'ms' appended to denote seconds or milliseconds. */
-  if (fgets(buffer, TRIGGER_LINEBUFFERLENGTH, triggerfile)!=NULL) {
-   char *inbuffer=buffer;
-   char *descstart;
-   double trigpos;
+  growing_buf_clear(&buffer);
+  do {
+   c=fgetc(triggerfile);
+   if (c=='\n' || c==EOF) break;
+   growing_buf_appendchar(&buffer,c);
+  } while (1);
+ 
+  if (buffer.current_length==0) {
+   if (c==EOF) break;
+   else continue;
+  }
+  if (*buffer.buffer_start=='#') continue;
 
-   if (*buffer=='#' || *buffer=='\n') continue;
+  growing_buf_appendchar(&buffer,'\0');
+  growing_buf_firsttoken(&buffer);
+  if (buffer.have_token) {
+   double trigpos;
+   char *inbuffer=buffer.current_token;
    trigpos=strtod(inbuffer, &inbuffer);
    if (*inbuffer=='m') {
     trigpos/=1000.0;
@@ -553,25 +567,30 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
    }
    if (*inbuffer=='s') {
     trigpos*=sfreq;
-    inbuffer++;
    }
    *trigpoint=(long)rint(trigpos);
-   code=strtol(inbuffer, &inbuffer, 10);
-   if (descriptionp!=NULL) {
-    while (*inbuffer==' ' || *inbuffer=='\t') inbuffer++;
-    descstart=inbuffer;
-    while (*inbuffer!='\0' && *inbuffer!='\n') inbuffer++;
-    if (inbuffer>descstart) {
-     *descriptionp=(char *)malloc(inbuffer-descstart+1);
-     strncpy(*descriptionp,descstart,inbuffer-descstart);
-     (*descriptionp)[inbuffer-descstart]='\0';
-    } else {
-     *descriptionp=NULL;
+
+   growing_buf_nexttoken(&buffer);
+   if (buffer.have_token) {
+    inbuffer=buffer.current_token;
+    code=strtol(inbuffer, &inbuffer, 10);
+    growing_buf_nexttoken(&buffer);
+    if (descriptionp!=NULL) {
+     if (buffer.have_token) {
+      *descriptionp=(char *)malloc(strlen(buffer.current_token)+1);
+      strcpy(*descriptionp,buffer.current_token);
+     } else {
+      *descriptionp=NULL;
+     }
     }
+   } else {
+    code=1;
    }
+   break;
   }
-  break;
  } while (1);
+
+ growing_buf_free(&buffer);
 
  return code;
 }

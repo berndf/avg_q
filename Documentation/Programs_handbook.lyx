@@ -8508,10 +8508,10 @@ basefreq
 trigger
 \shape default
  will insert a trigger into the epoch's trigger memory.
- The value is of the form [x=]point[:code], where point is the offset in
- points, counted from the epoch start (can be followed by `s' or `ms' specifiers
- as usual) or, if preceded by x=, the x value of the point on which to set
- the trigger, and code is the trigger code.
+ The value is of the form [x=]point[:code[:description]], where point is
+ the offset in points, counted from the epoch start (can be followed by
+ `s' or `ms' specifiers as usual) or, if preceded by x=, the x value of
+ the point on which to set the trigger, and code is the trigger code.
  If the colon and code part is left out, code is set to 1.
  Value can also be DELETE, which will clear the epoch trigger memory.
  A trigger code of 0 will not actually be inserted into the trigger list

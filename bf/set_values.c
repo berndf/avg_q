@@ -94,6 +94,7 @@ struct set_storage {
  FILE *trigfile;
  long trigpoint;
  long trigcode;
+ char *description;
  long total_points;
 };
 /*}}}  */
@@ -108,6 +109,7 @@ set_init(transform_info_ptr tinfo) {
  local_arg->trigfile=NULL;
  local_arg->trigpoint= -1;	/* This tells that no value has been read yet */
  local_arg->trigcode=0;
+ local_arg->description=NULL;
  local_arg->total_points=0;
 
  if ((enum variables_choice)args[ARGS_VARNAME].arg.i==C_TRIGGERS_FROM_TRIGFILE) {
@@ -269,6 +271,7 @@ set(transform_info_ptr tinfo) {
    growing_buf buf;
    long pos;
    int code=1;
+   char *description=NULL;
    growing_buf_init(&buf);
    growing_buf_takethis(&buf, args[ARGS_VALUE].arg.s);
    buf.delimiters=":";
@@ -281,6 +284,10 @@ set(transform_info_ptr tinfo) {
    }
    if (growing_buf_nexttoken(&buf)) {
     code=atoi(buf.current_token);
+   }
+   if (growing_buf_nexttoken(&buf)) {
+    description=(char *)malloc(strlen(buf.current_token)+1);
+    strcpy(description,buf.current_token);
    }
    if (pos<0) pos=0;
    if (pos>=tinfo->nr_of_points) pos=tinfo->nr_of_points-1;
@@ -295,7 +302,7 @@ set(transform_info_ptr tinfo) {
     /* Remove the old end marker */
     tinfo->triggers.current_length-=sizeof(struct trigger);
    }
-   push_trigger(&tinfo->triggers, pos, code, NULL);
+   push_trigger(&tinfo->triggers, pos, code, description);
    push_trigger(&tinfo->triggers, 0L, 0, NULL); /* End of list */
    /* Set file start point of current epoch */
    ((struct trigger *)tinfo->triggers.buffer_start)->position=local_arg->total_points;
@@ -322,11 +329,11 @@ set(transform_info_ptr tinfo) {
      /* Be sure to allow this route of entering the loop only once */
      local_arg->trigpoint=0;
     } else {
-     push_trigger(&tinfo->triggers, local_arg->trigpoint-local_arg->total_points, local_arg->trigcode, NULL);
+     push_trigger(&tinfo->triggers, local_arg->trigpoint-local_arg->total_points, local_arg->trigcode, local_arg->description);
      /* Set file start point of current epoch */
      ((struct trigger *)tinfo->triggers.buffer_start)->position=local_arg->total_points;
     }
-    local_arg->trigcode=read_trigger_from_trigfile(local_arg->trigfile, tinfo->sfreq, &local_arg->trigpoint, NULL);
+    local_arg->trigcode=read_trigger_from_trigfile(local_arg->trigfile, tinfo->sfreq, &local_arg->trigpoint, &local_arg->description);
    }
    push_trigger(&tinfo->triggers, 0, 0, NULL); /* End of list */
    break;
