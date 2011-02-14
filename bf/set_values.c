@@ -266,7 +266,7 @@ set(transform_info_ptr tinfo) {
    break;
   case C_TRIGGER:
    if (strcmp(args[ARGS_VALUE].arg.s, "DELETE")==0) {
-    growing_buf_clear(&tinfo->triggers);
+    clear_triggers(&tinfo->triggers);
    } else {
    growing_buf buf;
    long pos;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003-2008,2010 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003-2008,2010-2011 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -124,7 +124,6 @@ add_channels_or_points(transform_info_ptr const to_tinfo, transform_info_ptr con
  int new_nr_of_channels, new_nr_of_points, new_itemsize;
  array myarray, sidearray, newarray;
  struct transform_info_struct newtinfo;
- struct transform_info_struct tmptinfo;
 
  /* Below, nr_of_points is used for calculations, but tinfo_array knows about FREQ_DATA
   * and will use nroffreq instead, therefore we always keep the two identical below! */
@@ -148,16 +147,9 @@ add_channels_or_points(transform_info_ptr const to_tinfo, transform_info_ptr con
   ERREXIT(to_tinfo->emethods, "add_channels: File sizes do not match.\n");
  }
 
- /* We want to use deepcopy_tinfo to create a fresh copy of all of those memory portions
-  * which do not need to be constructed specially below. These are set to NULL in tmptinfo */
- memcpy(&tmptinfo, to_tinfo, sizeof(struct transform_info_struct));
- if (type==ADD_CHANNELS) {
-  tmptinfo.channelnames=NULL;
-  tmptinfo.probepos=NULL;
- } else /* type==ADD_POINTS */ {
-  tmptinfo.xdata=NULL;
- }
- deepcopy_tinfo(&newtinfo,&tmptinfo);
+ /* Actually to_tinfo must contain the resulting tinfo at the end. 
+  * newtinfo is only used to prepare the combined data epoch. */
+ memcpy(&newtinfo, to_tinfo, sizeof(struct transform_info_struct));
 
  newtinfo.nr_of_channels=new_nr_of_channels;
  newtinfo.nr_of_points=newtinfo.nroffreq=new_nr_of_points;
@@ -231,56 +223,56 @@ add_channels_or_points(transform_info_ptr const to_tinfo, transform_info_ptr con
 
  switch (type) {
   case ADD_CHANNELS: {
-  /*{{{  Copy channel names and positions*/
-  char **new_channelnames=(char **)malloc(new_nr_of_channels*sizeof(char *));
-  double *new_probepos=(double *)malloc(3*new_nr_of_channels*sizeof(double));
+   /*{{{  Copy channel names and positions*/
+   char **new_channelnames=(char **)malloc(new_nr_of_channels*sizeof(char *));
+   double *new_probepos=(double *)malloc(3*new_nr_of_channels*sizeof(double));
 
-  if (to_tinfo->channelnames!=NULL && from_tinfo->channelnames!=NULL) {
-   int new_channel, stringsize=0;
-   char *new_channelstrings, *in_strings;
-   for (channel=0; channel<to_tinfo->nr_of_channels; channel++) {
-    stringsize+=strlen(to_tinfo->channelnames[channel])+1;
+   if (to_tinfo->channelnames!=NULL && from_tinfo->channelnames!=NULL) {
+    int new_channel, stringsize=0;
+    char *new_channelstrings, *in_strings;
+    for (channel=0; channel<to_tinfo->nr_of_channels; channel++) {
+     stringsize+=strlen(to_tinfo->channelnames[channel])+1;
+    }
+    for (channel=0; channel<channels_in_fromtinfo; channel++) {
+     stringsize+=strlen(from_tinfo->channelnames[channellist==NULL ? channel : channellist[channel]-1])+1;
+    }
+    if (new_channelnames==NULL || (in_strings=new_channelstrings=(char *)malloc(stringsize))==NULL) {
+     ERREXIT(to_tinfo->emethods, "add_channels: Error allocating channel name memory.\n");
+    }
+    for (channel=new_channel=0; channel<to_tinfo->nr_of_channels; channel++, new_channel++) {
+     new_channelnames[new_channel]=in_strings;
+     strcpy(in_strings, to_tinfo->channelnames[channel]);
+     in_strings+=strlen(in_strings)+1;
+    }
+    for (channel=0; channel<channels_in_fromtinfo; channel++, new_channel++) {
+     new_channelnames[new_channel]=in_strings;
+     strcpy(in_strings, from_tinfo->channelnames[channellist==NULL ? channel : channellist[channel]-1]);
+     in_strings+=strlen(in_strings)+1;
+    }
+    free_pointer((void **)&to_tinfo->channelnames[0]);
+    free_pointer((void **)&to_tinfo->channelnames);
+    to_tinfo->channelnames=new_channelnames;
    }
-   for (channel=0; channel<channels_in_fromtinfo; channel++) {
-    stringsize+=strlen(from_tinfo->channelnames[channellist==NULL ? channel : channellist[channel]-1])+1;
+   if (to_tinfo->probepos!=NULL && from_tinfo->probepos!=NULL) {
+    int new_channel;
+    if (new_probepos==NULL) {
+     ERREXIT(to_tinfo->emethods, "add_channels: Error allocating probe position memory.\n");
+    }
+    for (channel=new_channel=0; channel<to_tinfo->nr_of_channels; channel++, new_channel++) {
+     new_probepos[3*new_channel  ]=to_tinfo->probepos[3*channel  ];
+     new_probepos[3*new_channel+1]=to_tinfo->probepos[3*channel+1];
+     new_probepos[3*new_channel+2]=to_tinfo->probepos[3*channel+2];
+    }
+    for (channel=0; channel<channels_in_fromtinfo; channel++, new_channel++) {
+     int const fromchannel=(channellist==NULL ? channel : channellist[channel]-1);
+     new_probepos[3*new_channel  ]=from_tinfo->probepos[3*fromchannel  ];
+     new_probepos[3*new_channel+1]=from_tinfo->probepos[3*fromchannel+1];
+     new_probepos[3*new_channel+2]=from_tinfo->probepos[3*fromchannel+2];
+    }
+    free_pointer((void **)&to_tinfo->probepos);
+    to_tinfo->probepos=new_probepos;
    }
-   if (new_channelnames==NULL || (in_strings=new_channelstrings=(char *)malloc(stringsize))==NULL) {
-    ERREXIT(to_tinfo->emethods, "add_channels: Error allocating channel name memory.\n");
-   }
-   for (channel=new_channel=0; channel<to_tinfo->nr_of_channels; channel++, new_channel++) {
-    new_channelnames[new_channel]=in_strings;
-    strcpy(in_strings, to_tinfo->channelnames[channel]);
-    in_strings+=strlen(in_strings)+1;
-   }
-   for (channel=0; channel<channels_in_fromtinfo; channel++, new_channel++) {
-    new_channelnames[new_channel]=in_strings;
-    strcpy(in_strings, from_tinfo->channelnames[channellist==NULL ? channel : channellist[channel]-1]);
-    in_strings+=strlen(in_strings)+1;
-   }
-   free_pointer((void **)&to_tinfo->channelnames[0]);
-   free_pointer((void **)&to_tinfo->channelnames);
-   to_tinfo->channelnames=new_channelnames;
-  }
-  if (to_tinfo->probepos!=NULL && from_tinfo->probepos!=NULL) {
-   int new_channel;
-   if (new_probepos==NULL) {
-    ERREXIT(to_tinfo->emethods, "add_channels: Error allocating probe position memory.\n");
-   }
-   for (channel=new_channel=0; channel<to_tinfo->nr_of_channels; channel++, new_channel++) {
-    new_probepos[3*new_channel  ]=to_tinfo->probepos[3*channel  ];
-    new_probepos[3*new_channel+1]=to_tinfo->probepos[3*channel+1];
-    new_probepos[3*new_channel+2]=to_tinfo->probepos[3*channel+2];
-   }
-   for (channel=0; channel<channels_in_fromtinfo; channel++, new_channel++) {
-    int const fromchannel=(channellist==NULL ? channel : channellist[channel]-1);
-    new_probepos[3*new_channel  ]=from_tinfo->probepos[3*fromchannel  ];
-    new_probepos[3*new_channel+1]=from_tinfo->probepos[3*fromchannel+1];
-    new_probepos[3*new_channel+2]=from_tinfo->probepos[3*fromchannel+2];
-   }
-   free_pointer((void **)&to_tinfo->probepos);
-   to_tinfo->probepos=new_probepos;
-  }
-  /*}}}  */
+   /*}}}  */
    }
    break;
   case ADD_POINTS:
@@ -301,26 +293,26 @@ add_channels_or_points(transform_info_ptr const to_tinfo, transform_info_ptr con
    /*}}}  */
    /*{{{  Join triggers*/
    if (from_tinfo->triggers.buffer_start!=NULL) {
-    growing_buf triggers;
     struct trigger *intrig;
 
-    growing_buf_init(&triggers);
-    growing_buf_allocate(&triggers, 0);
-    if (to_tinfo->triggers.buffer_start!=NULL) {
-     for (intrig=(struct trigger *)to_tinfo->triggers.buffer_start; intrig->code!=0; intrig++) {
-      growing_buf_append(&triggers, (char *)intrig, sizeof(struct trigger));
-     }
-     free_pointer((void **)&to_tinfo->triggers);
-    } else {
+    if (to_tinfo->triggers.buffer_start==NULL) {
+     growing_buf_allocate(&to_tinfo->triggers, 0);
      /* Record the file position... */
-     growing_buf_append(&triggers, from_tinfo->triggers.buffer_start, sizeof(struct trigger));
+     growing_buf_append(&to_tinfo->triggers, from_tinfo->triggers.buffer_start, sizeof(struct trigger));
+    } else {
+     /* Delete the end marker */
+     to_tinfo->triggers.current_length-=sizeof(struct trigger);
     }
     for (intrig=(struct trigger *)from_tinfo->triggers.buffer_start+1; intrig->code!=0; intrig++) {
-     push_trigger(&triggers, intrig->position+to_tinfo->nr_of_points, intrig->code, intrig->description);
+     char *description=intrig->description;
+     if (description!=NULL) {
+      description=(char *)malloc(strlen(intrig->description)+1);
+      strcpy(description,intrig->description);
+     }
+     push_trigger(&to_tinfo->triggers, intrig->position+to_tinfo->nr_of_points, intrig->code, description);
     }
     /* Write end marker */
-    push_trigger(&triggers, 0, 0, NULL);
-    to_tinfo->triggers=triggers;
+    push_trigger(&to_tinfo->triggers, 0, 0, NULL);
    }
    /*}}}  */
    break;

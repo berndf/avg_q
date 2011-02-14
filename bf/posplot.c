@@ -2065,6 +2065,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	if (intrig!=NULL && intrig->code!=0) {
 	 snprintf(local_arg->messagebuffer, MESSAGELEN, "Deleted trigger at %ld code %d", intrig->position, intrig->code);
 	 /* Delete a marker */
+	 free_pointer((void *)&intrig->description);
 	 do {
 	  intrig++;
 	  *(intrig-1)= *intrig;
@@ -2078,9 +2079,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	   push_trigger(&tinfo_to_use->triggers, 0L, -1, NULL);
 	  } else {
 	   /* Delete the end marker */
-	   if (tinfo_to_use->triggers.current_length>=2*sizeof(struct trigger)) {
-	    tinfo_to_use->triggers.current_length-=sizeof(struct trigger);
-	   }
+	   tinfo_to_use->triggers.current_length-=sizeof(struct trigger);
 	  }
 	  push_trigger(&tinfo_to_use->triggers, whichpoint, code, NULL);
 	  push_trigger(&tinfo_to_use->triggers, 0L, 0, NULL); /* End of list */

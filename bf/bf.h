@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2009 Bernd Feige
+ * Copyright (C) 1996-2009,2011 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -277,6 +277,7 @@ void free_pointer(void **ptr);
 int comment2time(char *comment, short *dd, short *mm, short *yy, short *yyyy, short *hh, short *mi, short *ss);
 int read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, char **descriptionp);
 void push_trigger(growing_buf *triggersp, long position, int code, char *description);
+void clear_triggers(growing_buf *triggersp);
 void fprint_cstring(FILE *outfile, char const *string);
 void tinfo_array(transform_info_ptr tinfo, array *thisarray);
 void tinfo_array_setshift(transform_info_ptr tinfo, array *thisarray, int shift);

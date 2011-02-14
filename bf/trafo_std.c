@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993-2004,2006,2007,2009 Bernd Feige
+ * Copyright (C) 1993-2004,2006,2007,2009,2011 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -385,6 +385,15 @@ deepcopy_tinfo(transform_info_ptr to_tinfo, transform_info_ptr from_tinfo) {
  growing_buf_init(&to_tinfo->triggers);
  if (from_tinfo->triggers.buffer_start!=NULL) {
   growing_buf_takewithlength(&to_tinfo->triggers, from_tinfo->triggers.buffer_start, from_tinfo->triggers.current_length);
+  {struct trigger *intrig=(struct trigger *)to_tinfo->triggers.buffer_start;
+   for (; intrig->code!=0; intrig++) {
+    if (intrig->description!=NULL) {
+     char * const descriptionp=(char *)malloc(strlen(intrig->description)+1);
+     strcpy(descriptionp,intrig->description);
+     intrig->description=descriptionp;
+    }
+   }
+  }
  }
 }
 /*}}}  */
@@ -404,6 +413,7 @@ deepfree_tinfo(transform_info_ptr tinfo) {
  free_pointer((void **)&tinfo->xdata);
  tinfo->xchannelname=NULL;
  tinfo->z_label=NULL;
+ clear_triggers(&tinfo->triggers);
  growing_buf_free(&tinfo->triggers);
 }
 GLOBAL void
@@ -596,7 +606,7 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
 }
 /*}}}  */
 
-/*{{{  push_trigger(transform_info_ptr tinfo, long pos, int code, char *description)*/
+/*{{{  push_trigger(growing_buf *triggersp, long position, int code, char *description)*/
 GLOBAL void
 push_trigger(growing_buf *triggersp, long position, int code, char *description) {
  struct trigger trig;
@@ -607,6 +617,20 @@ push_trigger(growing_buf *triggersp, long position, int code, char *description)
  trig.code=code;
  trig.description=description;
  growing_buf_append(triggersp, (char *)&trig, sizeof(struct trigger));
+}
+/*}}}  */
+
+/*{{{  clear_triggers(growing_buf *triggersp)*/
+GLOBAL void
+clear_triggers(growing_buf *triggersp) {
+ if (triggersp!=NULL && triggersp->buffer_start!=NULL) {
+  struct trigger *intrig=(struct trigger *)triggersp->buffer_start;
+  /* Traverse the trigger list to free all descriptions */
+  for (; intrig->code!=0; intrig++) free_pointer((void *)&intrig->description);
+  growing_buf_clear(triggersp);
+  push_trigger(triggersp, 0L, -1, NULL); /* File position entry */
+  push_trigger(triggersp, 0L, 0, NULL); /* End of list */
+ }
 }
 /*}}}  */
 
