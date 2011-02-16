@@ -126,10 +126,13 @@ static struct {
  GdkColor palette[MAXCOLOR];
  cairo_t *cr;
  cairo_antialias_t antialias;
+ Bool backbuffer;
  Bool paint_started;
 } VGUI;
 
 // ----------------------- VOGL part ----------------------------
+
+static int VGUI_frontbuffer(void); /* Forward declaration */
 
 static void
 my_set_font(cairo_t *cr) {
@@ -343,6 +346,13 @@ window_destroy_event(GtkWidget *windowp, gpointer data, GtkWidget *widget) {
  return TRUE;
 }
 static void
+toggle_backbuffer(GtkWidget *menuitem, gpointer data) {
+ VGUI_frontbuffer(); /* Be sure to finish buffered drawing */
+ VGUI.backbuffer=gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menuitem));
+ Keyboard_Buffer_push('');	// queue a redraw command
+ notify_input();
+}
+static void
 toggle_antialias(GtkWidget *menuitem, gpointer data) {
  VGUI.antialias=gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menuitem)) ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE;
  Keyboard_Buffer_push('');	// queue a redraw command
@@ -483,6 +493,12 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
+ gtk_widget_show (menuitem);
+
+ menuitem=gtk_check_menu_item_new_with_label("Use screen backbuffer");
+ gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
+ g_signal_connect (G_OBJECT (menuitem), "toggled", G_CALLBACK(toggle_backbuffer), NULL);
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -1004,6 +1020,7 @@ VGUI_init(void) {
  VGUI.cr=NULL;
  /* Antialiasing doesn't look nice with lines */
  VGUI.antialias=CAIRO_ANTIALIAS_NONE;
+ VGUI.backbuffer=TRUE;
 
  cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
  my_set_font(cr);
@@ -1049,8 +1066,10 @@ VGUI_backbuffer(void) {
  //printf("VGUI_backbuffer\n");
  GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
  if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
- gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
- VGUI.paint_started=TRUE;
+ if (VGUI.backbuffer) {
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
+  VGUI.paint_started=TRUE;
+ }
  return (0);
 }
 
