@@ -201,6 +201,7 @@ void Boundary::print() {
 void Boundary::display(int colour) {
  color(colour);
  Boundary* inboundary=(Boundary*)first();
+ bgnline();
  move(inboundary->point()->x, inboundary->point()->y, inboundary->point()->z);
  inboundary=(Boundary*)inboundary->next();
  while (inboundary!=(Boundary*)Empty) {
@@ -209,6 +210,7 @@ void Boundary::display(int colour) {
  }
  inboundary=(Boundary*)first();
  draw(inboundary->point()->x, inboundary->point()->y, inboundary->point()->z);
+ endline();
 }
 void Boundary::write_to_file(FILE *outfile) {
  Boundary* inpoint=(Boundary*)first();

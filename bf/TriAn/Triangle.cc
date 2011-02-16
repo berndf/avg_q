@@ -149,8 +149,10 @@ void Triangle::print() {
 }
 void Triangle::display(int const colour) {
  color(colour);
+ bgnline();
  move(p1->x, p1->y, p1->z);
  draw(p2->x, p2->y, p2->z);
  draw(p3->x, p3->y, p3->z);
  draw(p1->x, p1->y, p1->z);
+ endline();
 }

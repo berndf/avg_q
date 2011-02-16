@@ -243,6 +243,7 @@ typedef struct dev {
 		(*Vsetlw)(int),		/* Set linewidth */
 		(*Vstring)(char *),		/* Draw a hardware string */
 		(*Vswapb)(void),		/* Swap front and back buffers */
+		(*Vbegin)(void),		/* Begin recording drawing events */
 		(*Vsync)(void);		/* Sync display */
 } DevEntry;
 
@@ -569,10 +570,8 @@ extern void	cmovi(Icoord x, Icoord y, Icoord z);
 extern void	cmovs(Scoord x, Scoord y, Scoord z);
 extern void	cmov2i(Icoord x, Icoord y);
 extern void	cmov2s(Scoord x, Scoord y);
-#ifdef OLD_GL
-extern long	getwidth();
-#endif
 extern long	getheight(void);
+extern long	getwidth(void);
 extern long	strwidth(char *s);
 extern void	getcpos(Scoord *cx, Scoord *cy);
 

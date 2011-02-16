@@ -567,6 +567,7 @@ static DevEntry DECX11dev = {
 	noop,
 	DECX11_string,
 	DECX11_swapbuf,
+	noop,
 	noop
 };
 

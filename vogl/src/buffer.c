@@ -26,11 +26,10 @@ backbuffer(int yes)
 		return;
 
 	if (yes) {
-		if ((*vdevice.dev.Vbackb)() < 0)
-			verror("device doesn't support double buffering\n");
-		
-		vdevice.inbackbuffer = 1;
-		vdevice.sync = 0;
+		if ((*vdevice.dev.Vbackb)() >= 0) {
+		 vdevice.inbackbuffer = 1;
+		 vdevice.sync = 0;
+		}
 	} else
 		vdevice.inbackbuffer = 0;
 	
@@ -88,14 +87,15 @@ swapbuffers(void)
 	if (!vdevice.initialised)
 		verror("swapbuffers: vogl not initialised.");
 
-/* TEST HACK
+#if 0
+	/* These aborts don't really help... */
 	if (vdevice.inbackbuffer != 1)
 		verror("swapbuffers: double buffering not initialised.\n");
-*/
 
 	if ((*vdevice.dev.Vswapb)() < 0)
 		verror("swapbuffers device doesn't support double buffering\n");
-
+#endif
+	(*vdevice.dev.Vswapb)();
 }
 
 /*
@@ -110,12 +110,11 @@ doublebuffer(void)
 	if (!vdevice.initialised)
 		verror("doublebuffer: vogl not initialised.");
 
-	if ((*vdevice.dev.Vbackb)() < 0)
-		verror("device doesn't support double buffering\n");
-
-	vdevice.inbackbuffer = 1;
-	sync = vdevice.sync;
-	vdevice.sync = 0;
+	if ((*vdevice.dev.Vbackb)() >= 0) {
+	 vdevice.inbackbuffer = 1;
+	 sync = vdevice.sync;
+	 vdevice.sync = 0;
+	}
 }
 
 /*

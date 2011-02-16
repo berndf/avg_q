@@ -243,6 +243,8 @@ bgnline(void)
 	vdevice.save = 1;
 	sync = vdevice.sync;
 	vdevice.sync = 0;
+	/* Inform the device to start a line */
+	(*vdevice.dev.Vbegin)();
 }
 
 /*
@@ -254,12 +256,12 @@ bgnline(void)
 void
 endline(void)
 {
-	vdevice.bgnmode = NONE;
 	vdevice.save = 0;
-	if (sync) {
-		vdevice.sync = 1;
+	//if (sync) {
+	//	vdevice.sync = 1;
 		(*vdevice.dev.Vsync)();
-	}
+	//}
+	vdevice.bgnmode = NONE;
 }
 
 /*

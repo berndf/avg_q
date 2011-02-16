@@ -53,8 +53,10 @@ class sleep_file(avg_q_file):
    raise Exception("Unknown sleep file %s" % filename)
   self.fileformat=self.f.fileformat
   self.addmethods=None
+  self.trigfile=None
  def getepoch(self, beforetrig='0', aftertrig='30s', continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
   self.f.addmethods=self.addmethods
+  self.f.trigfile=self.trigfile
   # This indicates sleep-lab epoch reading
   # Note that we also want to be useable as target for avg_q.get_description(), so we cannot
   # simply assume sleeplab type reading.
@@ -86,6 +88,7 @@ class sleep_file(avg_q_file):
      # stager, so the same happens in the second section of data.
      f=avg_q_file(contfile,fileformat='freiburg')
      f.addmethods=self.addmethods
+     f.trigfile=self.trigfile
      retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
    retval+='''
  set sfreq 102.4
@@ -103,6 +106,7 @@ class sleep_file(avg_q_file):
      # stager, so the same happens in the second section of data.
      f=avg_q_file(contfile,fileformat='rec')
      f.addmethods=self.addmethods
+     f.trigfile=self.trigfile
      retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
   elif self.ext.lower()=='.eeg':
    retval+='''
@@ -116,5 +120,6 @@ class sleep_file(avg_q_file):
      # stager, so the same happens in the second section of data.
      f=avg_q_file(contfile,fileformat='neurofile')
      f.addmethods=self.addmethods
+     f.trigfile=self.trigfile
      retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
   return retval

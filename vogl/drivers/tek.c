@@ -444,6 +444,7 @@ static DevEntry	tekdev = {
 	noop,
 	TEK_string,
 	noop,
+	noop,
 	noop
 };
 

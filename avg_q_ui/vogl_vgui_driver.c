@@ -118,15 +118,23 @@ static struct {
  int top;
  int width;
  int height;
+ int line_width;
+ int line_style;
  GtkWidget *window;
  GtkWidget *canvas;
- GdkPixmap *pixmap;
- GdkGC *fg;
- GdkColormap *cmap;
+ int fg;
  GdkColor palette[MAXCOLOR];
+ cairo_t *cr;
+ Bool paint_started;
 } VGUI;
 
 // ----------------------- VOGL part ----------------------------
+
+static void
+my_set_font(cairo_t *cr) {
+ cairo_select_font_face(cr, "Sans 20", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+ cairo_set_font_size(cr, 10);
+}
 
 static GtkWidget *Notice_window=NULL;
 LOCAL void
@@ -153,7 +161,7 @@ Notice(gchar *message) {
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
  box1 = gtk_vbox_new (FALSE, 0);
- gtk_box_pack_start (GTK_BOX (GTK_DIALOG (Notice_window)->action_area), box1, FALSE, FALSE, 0);
+ gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
  label = gtk_label_new (message);
@@ -162,7 +170,7 @@ Notice(gchar *message) {
 
  button = gtk_button_new_with_label ("Okay");
  g_signal_connect_object (G_OBJECT (button), "clicked", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window), G_CONNECT_AFTER);
- GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+ gtk_widget_set_can_default (button, TRUE);
  gtk_box_pack_start (GTK_BOX(box1), button, FALSE, FALSE, 0);
  gtk_widget_grab_default (button);
  gtk_widget_show (button);
@@ -215,65 +223,65 @@ key_press_event(GtkWidget *widget, GdkEventKey *event) {
   char keysym='\0';
   //printf("Key without string: value %d, state %d->shift %d\n", event->keyval, event->state, (event->state&GDK_SHIFT_MASK));
   switch(event->keyval) {
-   case GDK_Return:
-   case GDK_KP_Enter:
+   case GDK_KEY_Return:
+   case GDK_KEY_KP_Enter:
     keysym=RETKEY;
     break;
-   case GDK_BackSpace:
+   case GDK_KEY_BackSpace:
     keysym=BACKSPACEKEY;
     break;
-   case GDK_Home:
+   case GDK_KEY_Home:
     keysym='c';
     break;
-   case GDK_Left:
+   case GDK_KEY_Left:
     keysym=((event->state&GDK_SHIFT_MASK) ? 'H' : 'h');
     break;
-   case GDK_Right:
+   case GDK_KEY_Right:
     keysym=((event->state&GDK_SHIFT_MASK) ? 'L' : 'l');
     break;
-   case GDK_Down:
+   case GDK_KEY_Down:
     keysym=((event->state&GDK_SHIFT_MASK) ? 'J' : 'j');
     break;
-   case GDK_Up:
+   case GDK_KEY_Up:
     keysym=((event->state&GDK_SHIFT_MASK) ? 'K' : 'k');
     break;
-   case GDK_Page_Up:
+   case GDK_KEY_Page_Up:
     keysym='(';
     break;
-   case GDK_Page_Down:
+   case GDK_KEY_Page_Down:
     keysym=')';
     break;
-   case GDK_KP_Left:
+   case GDK_KEY_KP_Left:
     keysym='t';
     break;
-   case GDK_KP_Right:
+   case GDK_KEY_KP_Right:
     keysym='T';
     break;
-   case GDK_KP_Up:
+   case GDK_KEY_KP_Up:
     keysym='+';
     break;
-   case GDK_KP_Down:
+   case GDK_KEY_KP_Down:
     keysym='-';
     break;
-   case GDK_KP_Home:
+   case GDK_KEY_KP_Home:
     keysym='[';
     break;
-   case GDK_KP_End:
+   case GDK_KEY_KP_End:
     keysym=']';
     break;
-   case GDK_KP_Add:
+   case GDK_KEY_KP_Add:
     keysym='i';
     break;
-   case GDK_KP_Subtract:
+   case GDK_KEY_KP_Subtract:
     keysym='I';
     break;
-   case GDK_KP_Multiply:
+   case GDK_KEY_KP_Multiply:
     keysym='m';
     break;
-   case GDK_KP_Page_Up:
+   case GDK_KEY_KP_Page_Up:
     keysym='}';
     break;
-   case GDK_KP_Page_Down:
+   case GDK_KEY_KP_Page_Down:
     keysym='{';
     break;
    default:
@@ -297,25 +305,20 @@ window_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
 }
 static Bool
 canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
+ GtkAllocation allocation;
  //printf("canvas_configure_event\n");
- if (VGUI.pixmap) gdk_pixmap_unref(VGUI.pixmap);
+ gtk_widget_get_allocation(widget,&allocation);
 
- VGUI.pixmap = gdk_pixmap_new(widget->window,
-			      widget->allocation.width,
-			      widget->allocation.height,
-			      -1);
- /* It is not precisely necessary, but good practice to clear the pixmap anyway */
- gdk_draw_rectangle(VGUI.pixmap,
-		    widget->style->white_gc,
-		    TRUE,
-		    0, 0,
-		    widget->allocation.width,
-		    widget->allocation.height);
-
- vdevice.sizeSx = vdevice.sizeX = VGUI.canvas->allocation.width;
- vdevice.sizeSy = vdevice.sizeY = VGUI.canvas->allocation.height;
+ vdevice.sizeSx = vdevice.sizeX = allocation.width;
+ vdevice.sizeSy = vdevice.sizeY = allocation.height;
  vdevice.depth = 3;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
+ if (VGUI.paint_started) {
+  GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
+  gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
+  VGUI.paint_started=TRUE;
+ }
 
  Keyboard_Buffer_push('');	// queue a redraw command
  notify_input();
@@ -323,13 +326,10 @@ canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
 }
 static Bool
 canvas_exposure_event(GtkWidget *widget, GdkEventExpose *event) {
- //printf("canvas_exposure_event\n");
- gdk_draw_pixmap(widget->window,
-		 widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-		 VGUI.pixmap,
-		 event->area.x, event->area.y,
-		 event->area.x, event->area.y,
-		 event->area.width, event->area.height);
+#if 0
+ if (widget==VGUI.canvas) {
+ }
+#endif
 
  return FALSE;
 }
@@ -360,7 +360,7 @@ static void
 posplot_about (GtkWidget *menuitem) {
  Notice(
   "posplot/VOGL GUI driver\n"
-  "(c) 2002-2007 by Bernd Feige, Bernd.Feige@gmx.net\n"
+  "(c) 2002-2007,2011 by Bernd Feige, Bernd.Feige@gmx.net\n"
   "Using the free GTK library: See http://www.gtk.org/"
  );
 }
@@ -382,7 +382,6 @@ set_palette_entry(int n, gushort r, gushort g, gushort b) {
  VGUI.palette[n].red=r;
  VGUI.palette[n].green=g;
  VGUI.palette[n].blue=b;
- gdk_color_alloc(VGUI.cmap, &VGUI.palette[n]);
 }
 static int
 VGUI_init(void) {
@@ -391,6 +390,9 @@ VGUI_init(void) {
  GtkWidget *menubar, *submenu, *menuitem;
  GtkWidget *topitem;
  GSList *colorgroup;
+ GtkAllocation allocation;
+ cairo_t *cr;
+ cairo_text_extents_t te;
 
 #ifdef USE_THREADING
  block_thread=g_cond_new();
@@ -400,7 +402,6 @@ VGUI_init(void) {
  gdk_threads_enter();
 
  Keyboard_Buffer_init();
- VGUI.pixmap=NULL;
 
  VGUI.window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
  gtk_window_set_wmclass (GTK_WINDOW (VGUI.window), "posplot", "avg_q");
@@ -414,7 +415,6 @@ VGUI_init(void) {
  }
  g_signal_connect_object (G_OBJECT (VGUI.window), "delete_event", G_CALLBACK(window_destroy_event), G_OBJECT(VGUI.window), G_CONNECT_SWAPPED);
  g_signal_connect (G_OBJECT (VGUI.window), "configure_event", G_CALLBACK (window_configure_event), NULL);
- gtk_container_border_width (GTK_CONTAINER (VGUI.window), 0);
 
  box1 = gtk_vbox_new (FALSE, 0);
  gtk_container_add (GTK_CONTAINER (VGUI.window), box1);
@@ -432,42 +432,42 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("quit, accept epoch (q)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"q");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Quit, reject epoch (Q)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"Q");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Quit, reject epoch+stop iterated queue (V)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"V");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Stop (X)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"X");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("About");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(posplot_about), NULL);
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  topitem= gtk_menu_item_new_with_label("Quitting");
  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_bar_append (GTK_MENU_BAR (menubar), topitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
  gtk_widget_show (topitem);
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -476,64 +476,64 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Start entering an argument (=)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"=");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Insert trigger (N)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"N");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Record interactions (r)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"r");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Replay interactions (R)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"R");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Landscape postscript dump (o)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"o");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Portrait postscript dump (O)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"O");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_radio_menu_item_new_with_label(NULL, "Color postscript");
- colorgroup=gtk_radio_menu_item_group(GTK_RADIO_MENU_ITEM(menuitem));
+ colorgroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_postscriptcolor), (gpointer)TRUE);
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_radio_menu_item_new_with_label(colorgroup, "B/W postscript");
- colorgroup=gtk_radio_menu_item_group(GTK_RADIO_MENU_ITEM(menuitem));
+ colorgroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_postscriptcolor), (gpointer)FALSE);
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  { char * const post_dev=getenv(POSTSCRIPT_ENVNAME);
@@ -543,72 +543,72 @@ VGUI_init(void) {
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Dump current point as ARRAY_ASCII (y)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"y");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Dump current point full (Y)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"Y");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Write datasets (W)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"W");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Grid channels (G)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"G");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Enter pos modify mode");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"=change\n_");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Leave/switch pos mode (_)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"_");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Zero current point ($)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"$");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Detrend datasets (D)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"D");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Differentiate datasets (%)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"%");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Integrate datasets (&)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"&");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  topitem= gtk_menu_item_new_with_label("Commands");
  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_bar_append (GTK_MENU_BAR (menubar), topitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
  gtk_widget_show (topitem);
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -617,52 +617,52 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Plots (p)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"p");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Axes (x)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"x");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Names (n)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"n");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Marker (m)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"m");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Triggers (M)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"M");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Grayscale (d)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"d");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Info (?)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"?");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Triangulation (z)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"z");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  topitem= gtk_menu_item_new_with_label("Show");
  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_bar_append (GTK_MENU_BAR (menubar), topitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
  gtk_widget_show (topitem);
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -671,97 +671,97 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Point by argument (.)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)".");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Next point (i)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"i");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Previous point (I)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"I");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Left interval boundary ([)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"[");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Right interval boundary (])");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"]");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Dataset by argument (,)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)",");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Toggle datasets (*)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"*");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Datasets up '('");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"(");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Datasets down ')'");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)")");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Next item (})");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"}");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Previous item ({)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"{");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("One channel (ENTER)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"\n");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Hide channel (BACKSPACE)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("All channels (C)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"C");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  topitem= gtk_menu_item_new_with_label("Select");
  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_bar_append (GTK_MENU_BAR (menubar), topitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
  gtk_widget_show (topitem);
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -770,48 +770,48 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
 
  menuitem=gtk_menu_item_new_with_label("Exponential (e)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"e");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Logarithm (E)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"E");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Single item mode (')");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"'");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Absolute values (a)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"a");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Power values (P)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"P");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Phase values (A)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"A");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  topitem= gtk_menu_item_new_with_label("Transform");
  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_bar_append (GTK_MENU_BAR (menubar), topitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
  gtk_widget_show (topitem);
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -820,132 +820,132 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Redraw (^L)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Vertical scale lock (v)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"v");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Set/Toggle subsampling (@)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"@");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Toggle black/white background (b)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"b");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Line style mode (u)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"u");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Set first line style (U)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"U");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Swap plus/minus (~)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"~");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Swap x-z (S)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"S");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  /* Separator: */
  menuitem=gtk_menu_item_new();
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Position mode (_)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"_");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Center channel (Z)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"Z");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Nearer (+)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"+");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Farther (-)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"-");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Turn l (h)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"h");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Turn r (l)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"l");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Turn u (k)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"k");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Turn d (j)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"j");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Twist l (t)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"t");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Twist r (T)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"T");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Enlarge FOV (/)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"/");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Decrease FOV (\\)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"\\");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Enlarge plots (>)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)">");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Shrink plots (<)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"<");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  menuitem=gtk_menu_item_new_with_label("Reset parameters (c)");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"c");
- gtk_menu_append (GTK_MENU (submenu), menuitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
  topitem= gtk_menu_item_new_with_label("View");
  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_bar_append (GTK_MENU_BAR (menubar), topitem);
+ gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
  gtk_widget_show (topitem);
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
@@ -953,11 +953,11 @@ VGUI_init(void) {
 
  VGUI.canvas = gtk_drawing_area_new ();
  gtk_widget_set_name (VGUI.canvas, "posplot");
- VGUI.canvas->style=gtk_style_new();
- VGUI.canvas->style->font_desc=pango_font_description_from_string("Sans 10");
+ gtk_widget_set_double_buffered (VGUI.canvas, FALSE);
+
  gtk_box_pack_start (GTK_BOX (box1), VGUI.canvas, TRUE, TRUE, 0);
  /* Otherwise, a DrawingArea cannot receive key presses: */
- GTK_WIDGET_SET_FLAGS(VGUI.canvas, GTK_CAN_FOCUS);
+ gtk_widget_set_can_focus(VGUI.canvas, TRUE);
  gtk_widget_set_events(VGUI.canvas, GDK_EXPOSURE_MASK
 		      | GDK_BUTTON_PRESS_MASK
 		      | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
@@ -978,24 +978,24 @@ VGUI_init(void) {
 
  /* This is here for security, since a configure_event should have already
   * occurred at this point (actually at the creation of the canvas) */
- vdevice.sizeSx = vdevice.sizeX = VGUI.canvas->allocation.width;
- vdevice.sizeSy = vdevice.sizeY = VGUI.canvas->allocation.height;
+ gtk_widget_get_allocation(VGUI.canvas, &allocation);
+ vdevice.sizeSx = vdevice.sizeX = allocation.width;
+ vdevice.sizeSy = vdevice.sizeY = allocation.height;
  vdevice.depth = 3;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
+ VGUI.cr=NULL;
 
-#ifdef __MINGW32__
- /* Win32 GTK still has a bug with too large values returned for font heights */
- //vdevice.hheight = gdk_char_height(VGUI.canvas->style->font, 'A')-8; /* Use with Helvetica */
- vdevice.hheight = gdk_char_height(gtk_style_get_font(VGUI.canvas->style), 'A')-11; /* Use with 14-pt Courier New */
-#else
- vdevice.hheight = gdk_char_height(gtk_style_get_font(VGUI.canvas->style), 'A');
-#endif
- vdevice.hwidth = gdk_char_width(gtk_style_get_font(VGUI.canvas->style), 'A');
+ cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
+ my_set_font(cr);
+ cairo_text_extents (cr, "A", &te);
+ vdevice.hheight = te.height;
+ vdevice.hwidth = te.x_advance;
+ VGUI.line_width=1;
+ cairo_destroy (cr);
+ gdk_threads_leave();
 
- VGUI.fg = gdk_gc_new(VGUI.canvas->window);
-
- /* Allocate the colors */
- VGUI.cmap = gdk_colormap_get_system();
+ /* Set the colors */
+ VGUI.fg = BLACK;
  set_palette_entry(BLACK, 0, 0, 0);
  set_palette_entry(RED, 0xffff, 0, 0);
  set_palette_entry(GREEN, 0, 0xffff, 0);
@@ -1005,7 +1005,8 @@ VGUI_init(void) {
  set_palette_entry(CYAN, 0, 0xffff, 0xffff);
  set_palette_entry(WHITE, 0xffff, 0xffff, 0xffff);
 
- gdk_threads_leave();
+ VGUI.paint_started=FALSE;
+
  //printf("VGUI_init end\n");
 
  return (1);
@@ -1018,29 +1019,28 @@ VGUI_init(void) {
 static int 
 VGUI_frontbuffer(void) {
  //printf("VGUI_frontbuffer\n");
+ if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
+ VGUI.paint_started=FALSE;
  return (0);
 }
 
 static int 
 VGUI_backbuffer(void) {
  //printf("VGUI_backbuffer\n");
+ GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
+ if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
+ gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
+ VGUI.paint_started=TRUE;
  return (0);
 }
 
 static int 
 VGUI_swapbuffers(void) {
- //printf("VGUI_swapbuffers\n");
- gdk_threads_enter();
- gdk_draw_pixmap(VGUI.canvas->window,
-		 VGUI.canvas->style->fg_gc[GTK_WIDGET_STATE (VGUI.canvas)],
-		 VGUI.pixmap,
-		 0, 0,
-		 0, 0,
-		 VGUI.canvas->allocation.width, VGUI.canvas->allocation.height);
- /* No idea why this is necessary in the threaded version - possibly a bug
-  * that prevents the redraw to be queued automatically after draw_pixmap */
- gtk_widget_queue_draw(VGUI.canvas);
- gdk_threads_leave();
+ if (vdevice.inbackbuffer) {
+  //printf("VGUI_swapbuffers\n");
+  if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
+  VGUI.paint_started=FALSE;
+ }
  return (0);
 }
 
@@ -1053,13 +1053,14 @@ static int
 VGUI_vclear(void) {
  int const vw = vdevice.maxVx - vdevice.minVx + 1;
  int const vh = vdevice.maxVy - vdevice.minVy + 1;
-
  gdk_threads_enter();
+ cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
+
  //printf("VGUI_vclear Clear %d %d - %d %d\n", vw, vh, vdevice.sizeSx, vdevice.sizeSy);
- gdk_draw_rectangle(VGUI.pixmap,
-		    VGUI.fg,
-		    TRUE,
-		    vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
+ gdk_cairo_set_source_color(cr,&VGUI.palette[VGUI.fg]);
+ cairo_rectangle(cr, vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
+ cairo_fill(cr);
+ cairo_destroy (cr);
  gdk_threads_leave();
  return (1);
 }
@@ -1074,6 +1075,10 @@ VGUI_exit(void) {
  //printf("VGUI_exit\n");
 
  gdk_threads_enter();
+ if (VGUI.paint_started) {
+  gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
+  VGUI.paint_started=FALSE;
+ }
  gtk_widget_destroy (VGUI.window);
  gdk_threads_leave();
 #ifdef USE_THREADING
@@ -1084,8 +1089,70 @@ VGUI_exit(void) {
 }
 
 static int 
+VGUI_begin(void) {
+ //printf("VGUI_begin\n");
+ if (vdevice.bgnmode == VLINE) {
+  VGUI.cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
+  /* Antialiasing doesn't look nice with lines */
+  cairo_set_antialias(VGUI.cr,CAIRO_ANTIALIAS_NONE);
+  /* Dash transfer was shamelessly copied from the VOGL X11.c driver... */
+  //65535=solid
+  if (VGUI.line_style != 0xffff) {
+   double dashes[16];
+   int     i, n, a, b, offset;
+
+   for (i = 0; i < 16; i++) dashes[i] = 0;
+
+   for (i = 0; i < 16; i++)        /* Over 16 bits */
+    if ((VGUI.line_style & (1 << i))) break;
+
+   offset = i;
+
+#define ON  1
+#define OFF 0
+
+   a = b = OFF;
+   if (VGUI.line_style & (1 << 0)) a = b = ON;
+
+   n = 0;
+   for (i = 0; i < 16; i++) {      /* Over 16 bits */
+    if (VGUI.line_style & (1 << i)) a = ON;
+    else               a = OFF;
+
+    if (a != b) {
+     b = a;
+     n++;
+    }
+    dashes[n]++;
+   }
+   n++;
+
+#undef ON
+#undef OFF
+   cairo_set_dash (VGUI.cr,dashes,n,0);
+#if 0
+  } else {
+   /* Solid lines are the default anyway */
+   gdk_threads_enter();
+   cairo_set_dash (VGUI.cr,NULL,0,0);
+   gdk_threads_leave();
+#endif
+  }
+
+  gdk_cairo_set_source_color(VGUI.cr,&VGUI.palette[VGUI.fg]);
+  cairo_set_line_width(VGUI.cr,VGUI.line_width);
+ }
+ return (1);
+};
+
+static int 
 VGUI_sync(void) {
  //printf("VGUI_sync\n");
+ if (vdevice.bgnmode == VLINE) {
+  cairo_stroke (VGUI.cr);
+  cairo_destroy (VGUI.cr);
+  VGUI.cr=NULL;
+ }
  return (1);
 };
 
@@ -1107,15 +1174,16 @@ static int VGUI_font(char *name)
 
 static int VGUI_char(char c)
 {
- char const cc=c;
+ char const s[2]={c, '\0'};
  //printf("VGUI_char %c %d %d\n", c, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
 
  gdk_threads_enter();
- gdk_draw_text(VGUI.pixmap,
-	       gtk_style_get_font(VGUI.canvas->style),
-	       VGUI.fg,
-	       vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy,
-	       &cc, 1);
+ cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
+ gdk_cairo_set_source_color(cr,&VGUI.palette[VGUI.fg]);
+ my_set_font(cr);
+ cairo_move_to (cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+ cairo_show_text(cr, s);
+ cairo_destroy (cr);
  gdk_threads_leave();
 
  return (1);
@@ -1126,10 +1194,12 @@ static int VGUI_string(char *s)
  //printf("VGUI_string %s %d %g (vdevice.sizeSy=%d, vdevice.cpVy=%d, vdevice.hheight=%g)\n", s, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy - vdevice.hheight, vdevice.sizeSy, vdevice.cpVy, vdevice.hheight);
 
  gdk_threads_enter();
- gdk_draw_string(VGUI.pixmap,
-		 gtk_style_get_font(VGUI.canvas->style),
-		 VGUI.fg,
-		 vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy, s);
+ cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
+ gdk_cairo_set_source_color(cr,&VGUI.palette[VGUI.fg]);
+ my_set_font(cr);
+ cairo_move_to (cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+ cairo_show_text(cr, s);
+ cairo_destroy (cr);
  gdk_threads_leave();
 
  return (1);
@@ -1144,10 +1214,10 @@ static int VGUI_solid(int x, int y)
  //printf("VGUI_solid %d %d\n", x, y);
 
  gdk_threads_enter();
- gdk_draw_line(VGUI.pixmap,
-	       VGUI.fg,
-               x, vdevice.sizeSy - y,  
-	       vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+ if (VGUI.cr!=NULL) {
+  cairo_move_to (VGUI.cr, x, vdevice.sizeSy - y);
+  cairo_line_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+ }
  gdk_threads_leave();
 
  vdevice.cpVx = x;
@@ -1159,15 +1229,13 @@ static int VGUI_solid(int x, int y)
 static int
 VGUI_colour(int i)
 {
- gdk_threads_enter();
  if (i < MAXCOLOR) {
-  gdk_gc_set_foreground(VGUI.fg, &VGUI.palette[i]);
+  VGUI.fg=i;
   //printf("VGUI_colour set to %d %d %d\n", VGUI.palette[i].red, VGUI.palette[i].green, VGUI.palette[i].blue);
  } else {
-  gdk_gc_set_foreground(VGUI.fg, &VGUI.palette[BLACK]);
+  VGUI.fg=BLACK;
   //printf("VGUI_colour %d: Setting to BLACK\n", i);
  }
- gdk_threads_leave();
  return (0);
 };
 
@@ -1180,10 +1248,7 @@ static int VGUI_mapcolor(int c, int r, int g, int b)
 {
  //printf("VGUI_mapcolor c=%d (%d %d %d)\n", c, r,g,b);
  if (c >= MAXCOLOR || vdevice.depth == 1) return (-1);
-
- gdk_threads_enter();
  set_palette_entry(c, ((gushort)r)<<8, ((gushort)g)<<8, ((gushort)b)<<8);
- gdk_threads_leave();
 
  return 1;
 }
@@ -1258,60 +1323,13 @@ static int VGUI_lwidth(int w)
 {
  //printf("VGUI_lwidth %d\n", w);
 
- //VGUI.pensolid.SetWidth(w);
+ VGUI.line_width=w;
  return 0;
 }
 
-/* This was shamelessly copied from the VOGL X11.c driver... */
 static int VGUI_lstyle(int s)
 {
- unsigned ls = s;
- gint8    dashes[16];
- int     i, n, a, b, offset;
-
- //65535=solid
- //printf("VGUI_lstyle %d\n", s);
-
- if (ls == 0xffff) {
-  gdk_threads_enter();
-  gdk_gc_set_line_attributes(VGUI.fg, /*line_width*/1, GDK_LINE_SOLID, GDK_CAP_NOT_LAST, GDK_JOIN_MITER);
-  gdk_threads_leave();
-  return 0;
- }
-
- for (i = 0; i < 16; i++) dashes[i] = 0;
-
- for (i = 0; i < 16; i++)        /* Over 16 bits */
-  if ((ls & (1 << i))) break;
-
- offset = i;
-
-#define ON  1
-#define OFF 0
-
- a = b = OFF;
- if (ls & (1 << 0)) a = b = ON;
-
- n = 0;
- for (i = 0; i < 16; i++) {      /* Over 16 bits */
-  if (ls & (1 << i)) a = ON;
-  else               a = OFF;
-
-  if (a != b) {
-   b = a;
-   n++;
-  }
-  dashes[n]++;
- }
- n++;
-
-#undef ON
-#undef OFF
-
- gdk_threads_enter();
- gdk_gc_set_line_attributes(VGUI.fg, /*line_width*/1, GDK_LINE_ON_OFF_DASH, GDK_CAP_NOT_LAST, GDK_JOIN_MITER);
- gdk_gc_set_dashes(VGUI.fg, offset, dashes, n);
- gdk_threads_leave();
+ VGUI.line_style=s;
  return 0;
 }
 
@@ -1337,6 +1355,7 @@ static DevEntry VGUIdev = {
  VGUI_lwidth,  /* set line width */
  VGUI_string,  /* draw string of chars */
  VGUI_swapbuffers, /* swap buffers */
+ VGUI_begin, /* begin recording */
  VGUI_sync  /* sync display */
 };
 

@@ -241,10 +241,6 @@ getheight(void)
 	return((long)vdevice.hheight);
 }
 
-#ifdef OLD_GL
-	/* This seem to have disappeared from GL 
-	 * No.. wonder, it's in the C library under SYSV
-	 */
 /*
  * getwidth
  *
@@ -260,7 +256,6 @@ getwidth(void)
 
 	return((long)vdevice.hwidth);
 }
-#endif
 
 /*
  * getcpos

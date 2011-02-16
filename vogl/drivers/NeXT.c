@@ -74,6 +74,16 @@ int back_used;
 id drawable; /* the thing we're drawing in (a View or an NXImage) */
 
 /*
+ * noop
+ *
+ *      do nothing but return-1
+ */
+static int
+noop()
+{
+	return(-1);
+}
+/*
  * NeXT_init()
  * initializes the NeXT display.
  */
@@ -556,6 +566,7 @@ static DevEntry NeXTdev = {
 	NeXT_setlw,
 	NeXT_string,
 	NeXT_swapbuf, 
+	noop,
 	NeXT_sync
 };
 

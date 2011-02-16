@@ -541,6 +541,7 @@ static DevEntry psdev = {
 	PS_setlw,
 	PS_string,
 	noop,
+	noop,
 	noop
 };
 

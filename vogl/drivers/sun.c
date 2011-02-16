@@ -168,6 +168,16 @@ vo_sunview_canvas(canvas, cw, ch)
 }
 
 /*
+ * noop
+ *
+ *      do nothing but return-1
+ */
+static int
+noop()
+{
+	return(-1);
+}
+/*
  * SUN_init
  *
  *	initialises drawing canvas to occupy current window
@@ -893,6 +903,7 @@ static DevEntry sundev = {
 #endif
 	SUN_string,
 	SUN_swapb,
+	noop,
 	SUN_sync
 };
 

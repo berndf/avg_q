@@ -18,8 +18,9 @@ PROJECT(avg_q_ui)
 
 IF(WIN32)
  SET(GTKPATH ${CMAKE_SOURCE_DIR}/wingtk2)
- SET(GTK2_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
- SET(GTK2_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)
+ SET(GTK2_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
+ SET(GTK2_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
+  -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)
  IF(${WIN32_THREADED})
   SET(GTHREAD_CFLAGS -I${GTKPATH}/include/glib-2.0)
   SET(USE_THREADING -DUSE_THREADING)
@@ -46,7 +47,7 @@ pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
 #message(STATUS "link dir: -${GTK2_LINK_DIR}")
 ENDIF(WIN32)
 
-ADD_DEFINITIONS(${GTK2_CFLAGS})
+ADD_DEFINITIONS(${GTK2_CFLAGS} -DGTK_DISABLE_SINGLE_INCLUDES -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED -DGSEAL_ENABLE)
 ADD_DEFINITIONS(${GTHREAD_CFLAGS} ${USE_THREADING})
 
 ADD_LIBRARY(vogl_vgui STATIC vogl_vgui_driver.c)

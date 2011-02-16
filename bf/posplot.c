@@ -553,6 +553,7 @@ show_Input_line(char * const inputbuffer) {
  int newminx, newminy;
  Screencoord minx, maxx, miny, maxy;
 
+ frontbuffer(1);
  getviewport(&minx, &maxx, &miny, &maxy);
  pushviewport();
  pushmatrix();
@@ -561,15 +562,14 @@ show_Input_line(char * const inputbuffer) {
  newminx=minx+(maxx-minx)/2;
  newminy=miny+(maxy-miny)/20;
  viewport(newminx, maxx, newminy, (Screencoord)(newminy+getheight()));
- ortho2((Coord)newminx, (Coord)maxx, (Coord)newminy, (Coord)newminy+getheight());
- cmov2((Coord)newminx+strwidth("I"), (Coord)newminy);
+ ortho2((Coord)newminx, (Coord)maxx, (Coord)newminy, (Coord)(newminy+getheight()));
+ cmov2((Coord)(newminx+getwidth()), (Coord)newminy);
  color(BACKGROUND);
  clear();
  color(FOREGROUND);
  charstr("INPUT:>");
  charstr(inputbuffer);
  charstr("<");
- swapbuffers();
  popattributes();
  popmatrix();
  popviewport();
@@ -1018,7 +1018,7 @@ posplot(transform_info_ptr tinfo) {
  DATATYPE dipole_pos[3]={0.0, 0.0, 0.0}, dipole_vec[3];
 #endif
  struct transform_methods_struct swap_methods_struct, *org_methods_ptr;
- const int char_width=strwidth("0"), char_height=getheight();
+ const int char_width=getwidth(), char_height=getheight();
  channel_map_entry *entry;
  unsigned int entry_number;
  /*}}}  */
@@ -1220,6 +1220,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
    local_arg->sampling_step=rint(((float)npoints)/plotlength+0.5);
   }
 
+  backbuffer(1);
   color(BACKGROUND);
   clear();
 
@@ -1309,6 +1310,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 
     if (local_arg->showtriggers) {
      /*{{{  */
+     bgnline();
      for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
       struct trigger *intrig=(struct trigger *)tinfoptr->triggers.buffer_start+1;
       if (tinfoptr->triggers.buffer_start==NULL || !dataset_is_shown(current_dataset)) continue;
@@ -1327,6 +1329,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        intrig++;
       }
      }
+     endline();
      /*}}}  */
     }
 
@@ -1334,6 +1337,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
      /*{{{  */
      DATATYPE barpos;
      color(COORDSYSTEM);
+     bgnline();
      move2((Coord)0, (Coord)local_arg->ydmin);
      draw2((Coord)0, (Coord)local_arg->ydmax);
 
@@ -1348,14 +1352,17 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
      } else barpos=0;
      move2((Coord)xdmin, (Coord)barpos);
      draw2((Coord)xdmax, (Coord)barpos);
+     endline();
      /*}}}  */
     }
 
     if (local_arg->showmarker && local_arg->lastsel_entry!=NULL && local_arg->lastselected>=xdmin && local_arg->lastselected<=xdmax) {
      /*{{{  */
      color(BLUE);
+     bgnline();
      move2((Coord)local_arg->lastselected, (Coord)local_arg->ydmin);
      draw2((Coord)local_arg->lastselected, (Coord)local_arg->ydmax);
+     endline();
      /*}}}  */
     }
 
@@ -1498,10 +1505,12 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 #  define XLEN_C 0.05
 #  define YPOS_C 0.05
 #  define YLEN_C 0.05
+  bgnline();
   move2((Coord)XPOS_C, (Coord)YPOS_C);
   rdr2((Coord)XLEN_C, (Coord)0);
   rmv2((Coord)-XLEN_C, (Coord)(-YLEN_C/2));
   rdr2((Coord)0, (Coord)YLEN_C);
+  endline();
   snprintf(stringbuffer, STRBUFLEN, "%6g", xdmin);
   cmov2((Coord)(XPOS_C-((float)strwidth(stringbuffer))/(maxx-minx)), (Coord)YPOS_C);
   charstr(stringbuffer);
@@ -1528,6 +1537,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 #   define HEADMID_Y 0.1;
 
    color(FOREGROUND);
+   bgnline();
    if (rightleftview==2) xfactor*= -1.0; /* Let Head look to the left */
    for (i = 0; i < HEAD_OUTLINE_SIZE; i++) {
     tmpcurve[i][0]=head_outline[i][0]*xfactor+HEADMID_X;
@@ -1535,6 +1545,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
     tmpcurve[i][2]=(Coord)0;
    }
    crvn(HEAD_OUTLINE_SIZE, tmpcurve);
+   endline();
 #   undef HEADMID_X
 #   undef HEADMID_Y
    /*}}}  */
@@ -2139,9 +2150,9 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
      	local_arg->center_pos[0]=local_arg->lastsel_entry->pos[0];
      	local_arg->center_pos[1]=local_arg->lastsel_entry->pos[1];
      	local_arg->center_pos[2]=local_arg->lastsel_entry->pos[2];
+	snprintf(local_arg->messagebuffer, MESSAGELEN, "Centered channel %s.", local_arg->lastsel_entry->channelname_to_show);
+	local_arg->red_message=local_arg->messagebuffer;
        }
-       snprintf(local_arg->messagebuffer, MESSAGELEN, "Centered channel %s.", local_arg->lastsel_entry->channelname_to_show);
-       local_arg->red_message=local_arg->messagebuffer;
        break;
       case 'z':
        if (have_triangulation) {
@@ -2857,22 +2868,20 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
   if (!postscript_output) {
    /*{{{  Show "Plotting..."*/
    int newminx, newminy;
-   swapbuffers();
+   frontbuffer(1);
    pushviewport();
    pushmatrix();
    newminx=minx;
    newminy=(maxy-3*CHAR_HEIGHT);
-   viewport(newminx, maxx, newminy, (Screencoord)(newminy+char_height));
-   ortho2((Coord)newminx, (Coord)maxx, (Coord)newminy, (Coord)newminy+char_height);
-   cmov2((Coord)newminx+strwidth("I"), (Coord)newminy);
+   viewport(newminx, maxx, newminy, (Screencoord)(newminy+CHAR_HEIGHT));
+   ortho2((Coord)newminx, (Coord)maxx, (Coord)newminy, (Coord)(newminy+CHAR_HEIGHT));
+   cmov2((Coord)(newminx+CHAR_WIDTH), (Coord)newminy);
    color(BACKGROUND);
    clear();
    color(RED);
    charstr("Plotting...");
    popmatrix();
    popviewport();
-   swapbuffers();
-   /*}}}  */
   }
  } while (dev==REDRAW);
 } while (dev==NEWBORDER || dev==NEWDATA);

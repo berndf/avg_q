@@ -436,6 +436,7 @@ static DevEntry dxydev = {
 #endif
 	PLOT_string,
 	noop,
+	noop,
 	noop
 };
 

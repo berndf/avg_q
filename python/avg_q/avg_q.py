@@ -197,8 +197,8 @@ null_sink
     t.writetuples(trigpoints,self)
    else:
     for trigpoint in trigpoints:
-     self.write(str(trigpoint) + ' 1\n')
-   self.write('0 0\n')
+     self.write(str(trigpoint) + '\t1\n')
+   self.write('0\t0\n')
   self.recorded_trigpoints=[]
  def get_description(self,infile,getvars):
   if not isinstance(getvars,tuple):

@@ -644,6 +644,7 @@ static DevEntry grxdev = {
 #endif
 	grx_lwidth,		/* set line width */
 	grx_string,		/* draw string of chars */
+	noop,
 	grx_swapbuffers,	/* swap buffers */
 	grx_sync		/* sync display */
 };

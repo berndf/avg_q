@@ -578,6 +578,7 @@ static DevEntry apdev = {
 	noop,
 	APOLLO_string,
 	APOLLO_swapb,
+	noop,
 	noop
 };
 
