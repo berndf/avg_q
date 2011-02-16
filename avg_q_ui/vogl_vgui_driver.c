@@ -17,7 +17,7 @@
  * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * GTK driver for VOGL (c) 1999 by Bernd Feige (Feige@ukl.uni-freiburg.de)
+ * GTK driver for VOGL (c) 1998-2002,2004,2006-2009,2011 by Bernd Feige (Feige@ukl.uni-freiburg.de)
  * 
  * To compile:
  * 
@@ -125,6 +125,7 @@ static struct {
  int fg;
  GdkColor palette[MAXCOLOR];
  cairo_t *cr;
+ cairo_antialias_t antialias;
  Bool paint_started;
 } VGUI;
 
@@ -342,6 +343,12 @@ window_destroy_event(GtkWidget *windowp, gpointer data, GtkWidget *widget) {
  return TRUE;
 }
 static void
+toggle_antialias(GtkWidget *menuitem, gpointer data) {
+ VGUI.antialias=gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menuitem)) ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE;
+ Keyboard_Buffer_push('');	// queue a redraw command
+ notify_input();
+}
+static void
 set_postscriptcolor(GtkWidget *menuitem, gpointer data) {
  Bool const usecolor=(Bool)data;
  static char *envbuffer=NULL;
@@ -476,6 +483,17 @@ VGUI_init(void) {
  submenu=gtk_menu_new();
 
  menuitem=gtk_tearoff_menu_item_new();
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
+ gtk_widget_show (menuitem);
+
+ menuitem=gtk_check_menu_item_new_with_label("Antialias screen plot lines");
+ gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
+ g_signal_connect (G_OBJECT (menuitem), "toggled", G_CALLBACK(toggle_antialias), NULL);
+ gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
+ gtk_widget_show (menuitem);
+
+ /* Separator: */
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -984,6 +1002,8 @@ VGUI_init(void) {
  vdevice.depth = 3;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
  VGUI.cr=NULL;
+ /* Antialiasing doesn't look nice with lines */
+ VGUI.antialias=CAIRO_ANTIALIAS_NONE;
 
  cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
  my_set_font(cr);
@@ -1093,8 +1113,7 @@ VGUI_begin(void) {
  //printf("VGUI_begin\n");
  if (vdevice.bgnmode == VLINE) {
   VGUI.cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
-  /* Antialiasing doesn't look nice with lines */
-  cairo_set_antialias(VGUI.cr,CAIRO_ANTIALIAS_NONE);
+  cairo_set_antialias(VGUI.cr,VGUI.antialias);
   /* Dash transfer was shamelessly copied from the VOGL X11.c driver... */
   //65535=solid
   if (VGUI.line_style != 0xffff) {
