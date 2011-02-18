@@ -127,7 +127,7 @@ null_sink
 -
 ''' % self.overviewfilename)
   rdr=self.avg_q_object.runrdr()
-  overview_points=int(rdr.next())
+  overview_points=int(next(rdr))
   trgfile_overview=trgfile.trgfile(rdr)
   scanpoints=trgfile_overview.gettuples()
   # These two vars are modified in add_start_end() below:

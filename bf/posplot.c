@@ -1310,7 +1310,6 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 
     if (local_arg->showtriggers) {
      /*{{{  */
-     bgnline();
      for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
       struct trigger *intrig=(struct trigger *)tinfoptr->triggers.buffer_start+1;
       if (tinfoptr->triggers.buffer_start==NULL || !dataset_is_shown(current_dataset)) continue;
@@ -1322,14 +1321,15 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        } else {
 	/* Stimuli are shown as CYAN, responses as MAGENTA and keyboard markers FOREGROUND */
 	color(intrig->code>0 ? CYAN : (intrig->code<= -16 ? FOREGROUND : MAGENTA));
+	bgnline();
 	data=tinfoptr->xdata[intrig->position];
 	move2((Coord)data, (Coord)local_arg->ydmin);
 	draw2((Coord)data, (Coord)local_arg->ydmax);
+	endline();
        }
        intrig++;
       }
      }
-     endline();
      /*}}}  */
     }
 
