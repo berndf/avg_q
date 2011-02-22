@@ -2673,7 +2673,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
         /* Note: Subsampling will only affect data display. Undisplayed points may
          * be selected by pointing or #input anyway. */
 	char *endptr;
-	i=strtol(inputbuffer+1,&endptr,10);
+	i=strtol(inputbuffer,&endptr,10);
 	if (*endptr=='\0' && i>0) local_arg->sampling_step=i;
 	local_arg->auto_subsampling=FALSE;
         /*}}}  */

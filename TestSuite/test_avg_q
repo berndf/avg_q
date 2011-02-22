@@ -89,7 +89,7 @@ EOF
 
 &compare_output;
 
-# Read CNT file - Trigger lists
+# Sub-scripts, fftspect, averaging
 print AVG_Q <<EOF;
 read_synamps o.cnt 100ms 400ms 
 >fftspect 0 1 1
