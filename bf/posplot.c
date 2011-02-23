@@ -1713,7 +1713,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
   while (!leave) {
    /*{{{  The main event loop*/
    short val;
-   if (dev!=KEYBD && !get_string) *inputbuffer=(char)0;	/* Mark input buffer as empty */
+   if (dev!=KEYBD && !get_string) *inputbuffer='\0';	/* Mark input buffer as empty */
    if (postscript_output) {
     char * const interactive_dev=getenv("VDEVICE");
     vnewdev(interactive_dev);	/* Select interactive device again */
@@ -1829,11 +1829,11 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        int inputlen=strlen(inputbuffer);
        switch (val) {
         case BACKSPACEKEY:
-         if (inputlen>0) inputbuffer[inputlen-1]=(char)0;
+         if (inputlen>0) inputbuffer[inputlen-1]='\0';
          break;
         default:
          inputbuffer[inputlen]=(char)val;
-         inputbuffer[inputlen+1]=(char)0;
+         inputbuffer[inputlen+1]='\0';
          break;
        }
        if (local_arg->replay_file==NULL) show_Input_line(inputbuffer);
@@ -1911,12 +1911,12 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 #     ifndef SGI
       case 'o':
       case 'O': {
-       char const * const postscript_outfile=(*inputbuffer!=(char)0 ? inputbuffer : POSTSCRIPT_OUTFILE);
+       char const * const postscript_outfile=(*inputbuffer!='\0' ? inputbuffer : POSTSCRIPT_OUTFILE);
        char const * const post_dev=getenv(POSTSCRIPT_ENVNAME);
        /* This sets the VOGL system up to output postscript to POSTSCRIPT_OUTFILE */
        voutput(postscript_outfile);
        if (val=='o') {
-        *stringbuffer=(char)0;
+        *stringbuffer='\0';
        } else {
         strcpy(stringbuffer, "p");	/* Prefix for postscript mode */
        }
@@ -1973,7 +1973,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        }
        break;
       case 'v':
-       if (local_arg->lock_vscale!=NO_VSCALE_LOCK && *inputbuffer==(char)0) {	/* Unlock vert. scale on second press of 'v' */
+       if (local_arg->lock_vscale!=NO_VSCALE_LOCK && *inputbuffer=='\0') {	/* Unlock vert. scale on second press of 'v' */
 	if (local_arg->lock_vscale==INCREMENTAL_VSCALE_LOCK) {
          local_arg->lock_vscale=FIXED_VSCALE_LOCK;
 	} else {
@@ -1983,7 +1983,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
         break;
        }
        local_arg->lock_vscale=INCREMENTAL_VSCALE_LOCK;
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
 	/* The check for 'i' is for compatibility with earlier behavior */
      	if (*inputbuffer!='i') {
      	 char *endpointer;
@@ -2120,7 +2120,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        local_arg->displaysign*= -1.0;
        break;
       case 'c':
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
 	/* Set the condition code */
 	tinfo_to_use->condition=atoi(inputbuffer);
 	snprintf(local_arg->messagebuffer, MESSAGELEN, "Epoch condition code set to %d", tinfo_to_use->condition);
@@ -2242,7 +2242,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        dev=KEYBD;
        break;
       case '[':
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         /*{{{  Set lowxboundary using the input buffer*/
         if (*inputbuffer=='#') {
 	 i=gettimeslice(tinfo_to_use, inputbuffer+1);
@@ -2266,7 +2266,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        } else dev=KEYBD;
        break;
       case ']':
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         /*{{{  Set highxboundary using the input buffer*/
         if (*inputbuffer=='#') {
 	 i=gettimeslice(tinfo_to_use, inputbuffer+1);
@@ -2396,7 +2396,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        dev=NEWDATA; leave=TRUE;
        break;
       case 'W': {
-       char const * const writeasc_outfile=(*inputbuffer!=(char)0 ? inputbuffer : WRITEASC_OUTFILE);
+       char const * const writeasc_outfile=(*inputbuffer!='\0' ? inputbuffer : WRITEASC_OUTFILE);
        int n_written=0;
        growing_buf buf;
        growing_buf_init(&buf);
@@ -2513,7 +2513,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        break;
       case 'G':
        free_pointer((void **)&tinfo_to_use->probepos);
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         create_channelgrid_ncols(tinfo_to_use, atoi(inputbuffer));
        } else {
         create_channelgrid(tinfo_to_use);
@@ -2599,7 +2599,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        } else if (local_arg->replay_file!=NULL) {
         close_replay_file(tinfo);
        } else {
-	char const * const filename=(*inputbuffer!=(char)0 ? inputbuffer : RECORD_FILENAME);
+	char const * const filename=(*inputbuffer!='\0' ? inputbuffer : RECORD_FILENAME);
 	if (open_record_file(tinfo, filename)==NULL) {
          dev=REDRAW;
         }
@@ -2612,7 +2612,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        } else if (local_arg->record_file!=NULL) {
         local_arg->red_message="Replay not possible while recording!";
        } else {
-	char const * const filename=(*inputbuffer!=(char)0 ? inputbuffer : RECORD_FILENAME);
+	char const * const filename=(*inputbuffer!='\0' ? inputbuffer : RECORD_FILENAME);
 	if (open_replay_file(tinfo, filename)==NULL) {
 	 dev=REDRAW;
         }
@@ -2620,12 +2620,12 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        break;
       case '=':	/* Initialize gathering of a new string in inputbuffer */
        get_string=TRUE;
-       *inputbuffer=(char)0;
+       *inputbuffer='\0';
        if (local_arg->replay_file==NULL) show_Input_line(inputbuffer);
        dev=KEYBD;
        break;
       case '.':
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         /*{{{  Set lastselected using the input buffer*/
         if (*inputbuffer=='#') {
 	 i=gettimeslice(tinfo_to_use, inputbuffer+1);
@@ -2646,7 +2646,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        }
        break;
       case ',':
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         /*{{{  Select dataset using the input buffer*/
         if (*inputbuffer=='#') {
          current_dataset=atoi(inputbuffer+1)-1;
@@ -2668,7 +2668,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        }
        break;
       case '@':
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         /*{{{  Set the sampling step using the input buffer*/
         /* Note: Subsampling will only affect data display. Undisplayed points may
          * be selected by pointing or #input anyway. */
@@ -2691,7 +2691,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        break;
       case BACKSPACEKEY:
        /* Toggle channel selection */
-       if (*inputbuffer!=(char)0) {
+       if (*inputbuffer!='\0') {
         if (*inputbuffer=='#') {
 	 char *endptr;
 	 channel=strtol(inputbuffer+1,&endptr,10);
@@ -2782,7 +2782,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       /*}}}  */
      }
 
-     if (*inputbuffer!=(char)0) {
+     if (*inputbuffer!='\0') {
       if (*inputbuffer=='#') {
        char *endptr;
        channel=strtol(inputbuffer+1,&endptr,10);
@@ -2790,7 +2790,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	entry=locate_channel_map_entry_with_position(local_arg, tinfo_to_use, channel);
        } else {
 	entry=NULL;
-	*inputbuffer=(char)0;
+	*inputbuffer='\0';
        }
       } else {
        entry=locate_channel_map_entry(local_arg, inputbuffer);

@@ -121,13 +121,13 @@ int main(int argc, char **argv) {
     binary_output=TRUE;
     break;
    case 'I':
-    if (inargs[0][2]!=(char)0) {
+    if (inargs[0][2]!='\0') {
      itempart=atoi(*inargs+2);
     }
     break;
    case 'i':
     interpolate_only=TRUE;
-    if (inargs[0][2]!=(char)0) {
+    if (inargs[0][2]!='\0') {
      external_value=atof(*inargs+2);
     }
     break;

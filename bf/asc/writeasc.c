@@ -219,7 +219,7 @@ writeasc(transform_info_ptr calltinfo) {
   fwrite((void *)&tinfo->itemsize, sizeof(int), 1, outfptr);
   fwrite((void *)&tinfo->multiplexed, sizeof(int), 1, outfptr);
 
-  *outbuf=(char)0;
+  *outbuf='\0';
   inoutbuf=outbuf;
   if (tinfo->nrofaverages>0) {
    snprintf(inoutbuf, OUTBUFSIZE-(inoutbuf-outbuf), "Nr_of_averages=%d;", tinfo->nrofaverages);

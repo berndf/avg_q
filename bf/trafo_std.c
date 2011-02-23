@@ -358,7 +358,7 @@ deepcopy_tinfo(transform_info_ptr to_tinfo, transform_info_ptr from_tinfo) {
 
  to_tinfo->channelnames=NULL; to_tinfo->probepos=NULL;
  copy_channelinfo(to_tinfo, from_tinfo->channelnames, from_tinfo->probepos);
- *new_comment=(char)0;
+ *new_comment='\0';
  if (from_tinfo->comment!=NULL) {
   strcpy(new_comment, from_tinfo->comment);
   to_tinfo->comment=new_comment;

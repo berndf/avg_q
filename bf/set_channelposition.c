@@ -317,7 +317,7 @@ set_channelposition_init(transform_info_ptr tinfo) {
    for (ininbuf=inbuf; isspace(*ininbuf); ininbuf++);
    selection->channelnames[channel]=innames;
    while (!isspace(*ininbuf)) *innames++ = *ininbuf++;
-   *innames++=(char)0;
+   *innames++='\0';
    for (i=0; i<3; i++) {
     while (isspace(*ininbuf)) ininbuf++;
     selection->positions[3*channel+i]=atof(ininbuf);

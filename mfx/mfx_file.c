@@ -435,7 +435,7 @@ nextexpand(void) {
  while (1) {
   /* Skip white space, commas and hyphens we were possibly left on */
   while (*current && strchr(" \t,-", *current)) current++;
-  if (*current==(char)0) {
+  if (*current=='\0') {
    /* expandinfo.count is set if the starting value of a range was read */
    mfx_lasterr=(expandinfo.count==0 ? MFX_NOERR : MFX_EXPANDUNTERMINATED);
    return (char*)NULL;
@@ -444,7 +444,7 @@ nextexpand(void) {
   {int escaped=FALSE;
   for (tobuf=expandinfo.outbuf, expandinfo.numpos=NULL; 
        (escaped==TRUE || strchr("-,", *current)==NULL)
-	&& *current!=(char)0; current++) {
+	&& *current!='\0'; current++) {
    if (escaped==FALSE && *current=='\\') {
     escaped=TRUE;
     continue;
@@ -461,10 +461,10 @@ nextexpand(void) {
   }
   }
   /* Terminate tobuf string and decide what to do */
-  *tobuf=(char)0;
+  *tobuf='\0';
   expandinfo.currpos=current;
   switch (*current) {
-   case (char)0:
+   case '\0':
    case ',':
     /* Was there a range started ? If not, just return outbuf */
     if (expandinfo.count==0) {
