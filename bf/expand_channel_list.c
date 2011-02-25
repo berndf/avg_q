@@ -49,8 +49,9 @@ LOCAL char *expand_errors[]={
  */
 static struct {
  char const *currpos;	/* The interpreter position in the input sring */
+ int  current_count;
  int  endcount;
- int  count;
+ int  fromlen;	/* The number of characters in the 'from' number */
  char *numpos;	/* The position at which numbers are printed in outbuf */
  char outbuf[80];
 } expandinfo;
@@ -58,28 +59,33 @@ static struct {
 static void
 startexpand(char const * inlist) {
  expandinfo.currpos=inlist;
- expandinfo.endcount=0;	/* This signals that no expansion occurs now */
+ expandinfo.endcount= -1;	/* This signals that no expansion occurs now */
 }
 static char*
 nextexpand(void) {
  char const *current;
  char *tobuf;
 
- if (expandinfo.endcount) {	/* Expansion in progress */
-  sprintf(expandinfo.numpos, "%d", expandinfo.count);
-  if (expandinfo.count++==expandinfo.endcount) expandinfo.endcount=0;
+ if (expandinfo.endcount!= -1) {	/* Expansion in progress */
+  int numlen=snprintf(NULL, 0, "%d", expandinfo.current_count);
+  char *pos;
+  /* Write leading zeros */
+  for (pos=expandinfo.numpos; numlen<expandinfo.fromlen; numlen++, pos++) *pos='0';
+  sprintf(pos, "%d", expandinfo.current_count);
+  if (expandinfo.current_count++ ==expandinfo.endcount) expandinfo.endcount= -1;
   expand_lasterr=EXPAND_NOERR;
   return expandinfo.outbuf;
  }
  /* Normal reading: */
  current=expandinfo.currpos;
- expandinfo.count=0;
+ expandinfo.current_count= -1;
  while (1) {
+  char *endptr;
   /* Skip white space, commas and hyphens we were possibly left on */
   while (*current && strchr(" \t,-", *current)) current++;
   if (*current=='\0') {
-   /* expandinfo.count is set if the starting value of a range was read */
-   expand_lasterr=(expandinfo.count==0 ? EXPAND_NOERR : EXPAND_UNTERMINATED);
+   /* expandinfo.current_count is set if the starting value of a range was read */
+   expand_lasterr=(expandinfo.current_count== -1 ? EXPAND_NOERR : EXPAND_UNTERMINATED);
    return (char*)NULL;
   }
   /* Now copy characters to outbuf up to next delimiter */
@@ -109,7 +115,7 @@ nextexpand(void) {
    case '\0':
    case ',':
     /* Was there a range started ? If not, just return outbuf */
-    if (expandinfo.count==0) {
+    if (expandinfo.current_count== -1) {
      expand_lasterr=EXPAND_NOERR;
      return expandinfo.outbuf;
     }
@@ -119,7 +125,7 @@ nextexpand(void) {
      return (char*)NULL;
     }
     expandinfo.endcount=atoi(expandinfo.numpos);
-    if (expandinfo.endcount<expandinfo.count) {
+    if (expandinfo.endcount<expandinfo.current_count) {
      expand_lasterr=EXPAND_INTERVAL;
      return (char*)NULL;
     }
@@ -130,7 +136,8 @@ nextexpand(void) {
      expand_lasterr=EXPAND_NONUM;
      return (char*)NULL;
     }
-    expandinfo.count=atoi(expandinfo.numpos);
+    expandinfo.current_count=strtol(expandinfo.numpos,&endptr,10);
+    expandinfo.fromlen=endptr-expandinfo.numpos;
     break;
   }
  }

@@ -14,6 +14,7 @@ formats_and_extensions=[
  ('Inomed', ['.emg','.trg']),
  ('sound', ['.wav','.WAV','.au','.AU','.snd','.SND']),
  ('Coherence', ['.Eeg']),
+ ('Konstanz', ['.sum', '.SUM', '.raw', '.RAW']),
 ]
 
 class avg_q_file(object):
@@ -59,12 +60,16 @@ read_inomed %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %
 '''
   elif fileformat=='sound':
    self.getepochmethod='''
-read_sound %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftertrig)s
+read_sound %(fromepoch_arg)s %(offset_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftertrig)s
 '''
   elif fileformat=='Coherence':
    from . import Coherence
    coherencefile=Coherence.avg_q_Coherencefile(filename)
    self.getepochmethod=coherencefile.getepochmethod
+  elif fileformat=='Konstanz':
+   self.getepochmethod='''
+read_kn %(offset_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(triglist_arg)s
+'''
   else:
    raise Exception("Unknown fileformat %s" % fileformat)
  def __str__(self):

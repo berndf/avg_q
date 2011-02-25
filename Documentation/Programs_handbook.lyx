@@ -1,4 +1,4 @@
-#LyX 1.6.8 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.9 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -1839,6 +1839,14 @@ Normally, it is a fatal error if any of the named channels does not exist.
  mark.
  For example, `?M12,E30-E128' selects any of the named channels that are
  found.
+\end_layout
+
+\begin_layout Standard
+The expansion of numbers in channel names zero-pads each output number to
+ the length of the first number, so that `E001-E200' yields the expected
+ result.
+ `E001-E1000' is zero-padded only up to length 3 but not to length 4, just
+ as `E1-E29' is not padded.
 \end_layout
 
 \begin_layout Standard
