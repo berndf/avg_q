@@ -2187,10 +2187,13 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	 local_arg->red_message=local_arg->messagebuffer;
 	}
        } else {
-	if (whichpoint+local_arg->sampling_step<=left+((right-left)/local_arg->sampling_step)*local_arg->sampling_step) {
-	 whichpoint+=local_arg->sampling_step;
-	} else {
-	 whichpoint= -1;
+	/* Jump to the next data point */
+	if (local_arg->lastsel_entry!=NULL) {
+	 if (whichpoint+local_arg->sampling_step<=left+((right-left)/local_arg->sampling_step)*local_arg->sampling_step) {
+	  whichpoint+=local_arg->sampling_step;
+	 } else {
+	  whichpoint= -1;
+	 }
 	}
        }
        local_arg->lastsel_pos=whichpoint;
@@ -2224,10 +2227,13 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	 local_arg->red_message=local_arg->messagebuffer;
 	}
        } else {
-	if (whichpoint-local_arg->sampling_step>=left) {
-	 whichpoint-=local_arg->sampling_step;
-	} else {
-	 whichpoint= -1;
+	/* Jump to the previous data point */
+	if (local_arg->lastsel_entry!=NULL) {
+	 if (whichpoint-local_arg->sampling_step>=left) {
+	  whichpoint-=local_arg->sampling_step;
+	 } else {
+	  whichpoint= -1;
+	 }
 	}
        }
        local_arg->lastsel_pos=whichpoint;
