@@ -26,7 +26,7 @@ uses the Detector module to evaluate crossings of z-scores, calculated from the 
  def detect_z_crossings(self,theta,raw=False): 
   '''
   detects the crossings of IC's z_scores above threshold
-  this is done for the positive and negative threshold in two steps
+  this must be called for the positive and negative threshold separately if desired
   ''' 
   outtuples=self.detect('''
 %(filtercmd)s
@@ -43,46 +43,6 @@ null_sink
   })   
   return outtuples
 
- def get_ranges(self,outtuples,theta):
-  '''
-  takes the triggertuples and sorts the conditions
-  returns a trigger_dict sorted by key=condition, values=dicts of ICs with their lat and slope of crossing as values: {1:{'39': [[110.0, 1]...]}, 2:...}
-  here the no_cond is taken from the triggers, which is also done later on, check if consistent!
-  '''
-  #print outtuples
-  expected_slope=1 if theta>0 else -1
-  
-  ###sort triggers####
-  trigger_dict={}  
-  for outtuple in outtuples:
-   #print outtuple
-   lat,slope,description=[x for x in outtuple] 
-   condition, IC= description.split(' ')
-   trigger_dict.setdefault(IC,[]).append([lat,slope]) 
-
-  IC_latrange_list=[]
-  for IC_key, entry in trigger_dict.items():
-   ###check and delete single crossings###
-   if entry[-1][-1]==expected_slope:  
-    del entry[-1]
-   if entry==[]:# if IC was only crossing at one point and after deletion, no cross is left-> delete key 
-    del trigger_dict[IC_key]
-   else:
-    if not entry[0][1]==expected_slope:
-     del entry[0]
-   
-   # Build a [[start, end],...] list; if two latency windows are only separated by 1 sampling point, fuse them
-   lastend=None
-   for x in range(0,len(entry),2):
-    start,end=entry[x][0],entry[x+1][0]
-    if lastend and (start-lastend)*self.sfreq/1000.0<=1:
-     # Modify the last entry, extending it to the new end
-     IC_latrange_list[-1]=[IC_key, [IC_latrange_list[-1][1][0],end]]
-    else:
-     IC_latrange_list.append([IC_key, [start,end]])
-    lastend=end
-  return IC_latrange_list
-  
  def measure_ranges(self,infile,available_epochs,IC_latrange_list,process='extract_item 0'):
   '''
   for latency intervals of the ICs in each condition, extract the means in the

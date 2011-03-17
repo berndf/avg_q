@@ -104,7 +104,7 @@ null_sink
   """Close input and output handles, terminate avg_q."""
   self.avg_q.stdin.close()
   self.avg_q.stdout.close()
- # Helper functions accepting avg_q style time designations ('12s', '330ms', 533) and a float in the target unit
+ # Helper functions accepting avg_q style time designations ('12s', '330ms', 533) and returning a float in the target unit
  def time_to_any(self,time,lambdas):
   if type(time)==int or type(time)==float:
    condition=0
@@ -306,6 +306,7 @@ null_sink
 
   self.write('''
 query channelpositions stdout
+extract_item 0
 echo -F stdout Data:\\n
 write_generic stdout string
 ''')

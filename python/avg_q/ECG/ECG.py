@@ -48,7 +48,7 @@ null_sink
 set_channelposition -s ECG 0 0 0
 fftfilter 0 0 10Hz 11Hz
 recode -Inf 0 0 0
-scale_by invpointquantile 0.99
+scale_by invpointquantile 0.98
 #write_crossings -E -R 0.5s ECG 1 triggers
 #posplot
 write_crossings -E -R 0.5s ECG 1 stdout
