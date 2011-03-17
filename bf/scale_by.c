@@ -226,10 +226,10 @@ scale_by(transform_info_ptr tinfo) {
    local_arg->factor= 1.0/tinfo->sfreq;
    break;
   case SCALE_BY_NR_OF_POINTS:
-   local_arg->factor= tinfo->nr_of_points;
+   local_arg->factor= (tinfo->data_type==FREQ_DATA ? tinfo->nroffreq : tinfo->nr_of_points);
    break;
   case SCALE_BY_INVNR_OF_POINTS:
-   local_arg->factor= 1.0/tinfo->nr_of_points;
+   local_arg->factor= 1.0/(tinfo->data_type==FREQ_DATA ? tinfo->nroffreq : tinfo->nr_of_points);
    break;
   case SCALE_BY_NR_OF_CHANNELS:
    local_arg->factor= tinfo->nr_of_channels;
@@ -368,6 +368,14 @@ select_scale_by(transform_info_ptr tinfo) {
   " - ~ of the sum of all points within each channel (factor==invpointsum)\n"
   " - ~ of the maximum of all values in each map (factor==invmax)\n"
   " - ~ of the maximum of all points within each channel (factor==invpointmax)\n"
+  " - ~ of the absolute maximum of all values in each map (factor==invmaxabs)\n"
+  " - ~ of the absolute maximum of all points within each channel (factor==invpointmaxabs)\n"
+  " - ~ of the given quantile of all values in each map (eg median: factor==invquantile 0.5)\n"
+  " - ~ of the given quantile of all points within each channel (eg median: factor==invpointquantile 0.5)\n"
+  " - the x value for each point (factor==xdata)\n"
+  " - the inverse x value for each point (factor==invxdata)\n"
+  " - The following dataset-global values or their inverse:\n"
+  "pi, sfreq, nr_of_points, nr_of_channels, nrofaverages, sqrtnrofaverages\n"
   " - a constant factor\n";
  tinfo->methods->local_storage_size=sizeof(struct scale_by_storage);
  tinfo->methods->nr_of_arguments=NR_OF_ARGUMENTS;

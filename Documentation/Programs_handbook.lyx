@@ -8218,6 +8218,11 @@ of the sum of squares; command=`invsquarenorm'), by the inverse of the map
 \begin_inset Newline newline
 \end_inset
 
+Note that nr_of_points is the number of frequencies for frequency (spectral)
+ data.
+\begin_inset Newline newline
+\end_inset
+
 A hint for one of the several uses: Since 
 \series bold
 scale_by invpointmaxabs
