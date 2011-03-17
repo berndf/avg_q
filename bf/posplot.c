@@ -777,7 +777,7 @@ dataset_toggle_fixed(transform_info_ptr tinfo, unsigned int dataset) {
 LOCAL DATATYPE
 tsdata(transform_info_ptr tinfo, int itempart, tsdata_function function, int channel, int point) {
  struct posplot_storage * const local_arg=(struct posplot_storage * const)tinfo->methods->local_storage;
- DATATYPE *datap=tinfo->tsdata+(channel*tinfo->nr_of_points+point)*tinfo->itemsize+itempart;
+ DATATYPE * const datap=tinfo->tsdata+(tinfo->multiplexed ? (point*tinfo->nr_of_channels+channel) : (channel*tinfo->nr_of_points+point))*tinfo->itemsize+itempart;
  DATATYPE value;
 
  switch (function) {
@@ -1075,8 +1075,6 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
  xposmax=yposmax=zposmax= -FLT_MAX;
 
  for (i=1, tinfoptr=tinfo; tinfoptr!=NULL; i++, tinfoptr=tinfoptr->next) {
-  nonmultiplexed(tinfoptr);
-
   if (tinfoptr->xdata==NULL) create_xaxis(tinfoptr);
   if (tinfoptr->z_label==NULL) {
    tinfoptr->z_label="Nr";

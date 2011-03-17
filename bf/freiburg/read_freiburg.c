@@ -149,52 +149,52 @@ freiburg_get_segment(transform_info_ptr tinfo, array *toarray) {
   /* If this is FALSE at the start, it will never become TRUE... */
   int everything_was_zero=args[ARGS_ZEROCHECK].is_set;
 
- /* NOTE: The first time through, the values in last_values_buf are not
-  * initialized. It should be assumed that the values in the very first point 
-  * read are NOT marked as differences, but with BT's Nxxx files, it's 
-  * different at the start of a `Block' if there was saturation as well... */
- short *in_last_values_buf=local_arg->last_values_buf;
- const Bool no_last_values=local_arg->no_last_values;
+  /* NOTE: The first time through, the values in last_values_buf are not
+   * initialized. It should be assumed that the values in the very first point 
+   * read are NOT marked as differences, but with BT's Nxxx files, it's 
+   * different at the start of a `Block' if there was saturation as well... */
+  short *in_last_values_buf=local_arg->last_values_buf;
+  const Bool no_last_values=local_arg->no_last_values;
 
- do {
-  short oldword= *in_last_values_buf;
-  int nextchar=fgetc(local_arg->infile);
-  unsigned short word;
-  DATATYPE floatval;
+  do {
+   short oldword= *in_last_values_buf;
+   int nextchar=fgetc(local_arg->infile);
+   unsigned short word;
+   DATATYPE floatval;
 
-  if (nextchar==EOF) return -1;
-  if (nextchar&0x0080 || no_last_values) {
-   /* data is a whole short */
-   word=(((unsigned int)nextchar)<<8)+(((unsigned int)fgetc(local_arg->infile))&0x00ff);
-   if ((word&0x4000)==0) {
-    word&=0x7fff;	/* Make positive if bit 14 clear */
-   }
-  } else {
-   /* data is relative to oldword */
-   unsigned short byte=(unsigned short)nextchar;
-
-   if (byte&0x0040) {
-    /* Negative difference */
-    byte|=0xffc0;
+   if (nextchar==EOF) return -1;
+   if (nextchar&0x0080 || no_last_values) {
+    /* data is a whole short */
+    word=(((unsigned int)nextchar)<<8)+(((unsigned int)fgetc(local_arg->infile))&0x00ff);
+    if ((word&0x4000)==0) {
+     word&=0x7fff;	/* Make positive if bit 14 clear */
+    }
    } else {
-    /* Positive difference */
-    byte&=0x003f;
-   }
-   word=(unsigned short)((short)oldword+(short)byte); /* Signed addition */
-  }
-  if (word!=0) everything_was_zero=FALSE;
-  *(unsigned short *)in_last_values_buf=word;
+    /* data is relative to oldword */
+    unsigned short byte=(unsigned short)nextchar;
 
-  floatval= *in_last_values_buf++;
-  if (local_arg->uV_per_bit!=NULL) floatval*=local_arg->uV_per_bit[toarray->current_element];
-  array_write(toarray, floatval);
- } while (toarray->message==ARRAY_CONTINUE);
- if (everything_was_zero) {
-  array_previousvector(toarray);
-  local_arg->zero_idiotism_encountered=TRUE;
- } else {
-  break;
- }
+    if (byte&0x0040) {
+     /* Negative difference */
+     byte|=0xffc0;
+    } else {
+     /* Positive difference */
+     byte&=0x003f;
+    }
+    word=(unsigned short)((short)oldword+(short)byte); /* Signed addition */
+   }
+   if (word!=0) everything_was_zero=FALSE;
+   *(unsigned short *)in_last_values_buf=word;
+
+   floatval= *in_last_values_buf++;
+   if (local_arg->uV_per_bit!=NULL) floatval*=local_arg->uV_per_bit[toarray->current_element];
+   array_write(toarray, floatval);
+  } while (toarray->message==ARRAY_CONTINUE);
+  if (everything_was_zero) {
+   array_previousvector(toarray);
+   local_arg->zero_idiotism_encountered=TRUE;
+  } else {
+   break;
+  }
  } while (TRUE);
  local_arg->current_point++;
  local_arg->no_last_values=FALSE;
@@ -350,27 +350,30 @@ read_freiburg_init(transform_info_ptr tinfo) {
     fstat(fileno(infile),&statbuf);
     //printf("File size is %ld\n", statbuf.st_size);
     //printf("Last segment (EOF) at %ld\n", ((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1]);
-    while (local_arg->segment_table.current_length>=1 && ((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1]>statbuf.st_size) {
+    while (local_arg->segment_table.current_length>=1 && ((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1]>=statbuf.st_size) {
      //printf("%ld - Removing last segment!\n", ((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1]);
      local_arg->segment_table.current_length--;
     }
-    tinfo->points_in_file=local_arg->segment_table.current_length/sizeof(long)*SEGMENT_LENGTH;
-    /* We don't need to count the points in the last segment if we have a match already */
-    if (((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1]<statbuf.st_size) {
+    /* Size without the last segment */
+    tinfo->points_in_file=(local_arg->segment_table.current_length/sizeof(long)-1)*SEGMENT_LENGTH;
+    /* Count the points in the last segment */
+    {
      array myarray;
+     int length_of_last_segment=0;
      myarray.element_skip=tinfo->itemsize=1;
-     myarray.nr_of_vectors=SEGMENT_LENGTH;
+     myarray.nr_of_vectors=1;
      myarray.nr_of_elements=local_arg->nr_of_channels;
      if (array_allocate(&myarray)==NULL) {
       ERREXIT(tinfo->emethods, "read_freiburg_init: Error allocating myarray\n");
      }
      fseek(infile, ((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1], SEEK_SET);
      //printf("Seeking to %ld\n", ((long *)local_arg->segment_table.buffer_start)[local_arg->segment_table.current_length/sizeof(long)-1]);
+     tinfo->nr_of_channels=local_arg->nr_of_channels; /* This is used by freiburg_get_segment_init! */
      freiburg_get_segment_init(tinfo);
-     freiburg_get_segment(tinfo, &myarray);
+     while (freiburg_get_segment(tinfo, &myarray)==0) length_of_last_segment++;
      freiburg_get_segment_free(tinfo);
-     tinfo->points_in_file+=myarray.current_vector;
-     TRACEMS1(tinfo->emethods, 1, "read_freiburg_init: Last segment has %ld points\n",myarray.current_vector);
+     tinfo->points_in_file+=length_of_last_segment;
+     TRACEMS1(tinfo->emethods, 1, "read_freiburg_init: Last segment has %ld points\n",length_of_last_segment);
      array_free(&myarray);
     }
    }
@@ -502,7 +505,8 @@ read_freiburg(transform_info_ptr tinfo) {
      int const segment=local_arg->current_point/SEGMENT_LENGTH;
      long const nr_of_segments=local_arg->segment_table.current_length/sizeof(long);
      if (segment>=nr_of_segments) {
-      ERREXIT1(tinfo->emethods, "read_freiburg: Attempt to access more than %d segments\n", MSGPARM(nr_of_segments));
+      array_free(&myarray);
+      return NULL;
      }
      fseek(infile, ((long *)local_arg->segment_table.buffer_start)[segment], SEEK_SET);
      local_arg->no_last_values=TRUE;
