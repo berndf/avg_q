@@ -117,10 +117,13 @@ writeasc -b %s
  def get_fromto_from_overview(self):
   '''Analyze scans using the overview.'''
   self.get_overview()
+  # We used to do scale_by invpointmax below but sometimes there are
+  # strong spikes... Assuming that scanning spans more than half of the
+  # recorded time, using the median should give the typical scanning amplitude...
   self.avg_q_object.write('''
 readasc %s
 add negpointmin
-scale_by invpointmax
+scale_by invpointquantile 0.5
 query nr_of_points stdout
 write_crossings collapsed 0.5 stdout
 null_sink
