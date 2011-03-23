@@ -16,6 +16,12 @@ rawfile_paths=(
  '/usermount/charly/sleepdata/01/',
  '/usermount/charly/sleepdata/EDF_Axxx/',
  '/usermount/charly/sleepdata2/A3000_Axxxx/',
+ '/usermount/charly/sleepdata2/A4000_Axxxx/',
+ '/usermount/charly/sleepdata2/A5000_Axxxx/',
+ '/usermount/charly/sleepdata2/A6000_Axxxx/',
+ '/usermount/charly/sleepdata2/A7000_Axxxx/',
+ '/usermount/charly/sleepdata2/A8000_Axxxx/',
+ '/usermount/charly/sleepdata2/A9000_Axxxx/',
 )
 
 import idircache
