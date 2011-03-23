@@ -223,6 +223,28 @@ class paradigm(object):
     else:
      s+="\n"
   return s
+ def write_onsets_mat(self,filename,fMRI_onset_s=0.0,TR_s=1.0):
+  '''Write a SPM cell array .mat file containing the names and onsets of all events.
+     fMRI_onset_s is the difference between the time basis of the paradigm and that 
+     of the fMRI (including dummy scans) in seconds.
+     TR_s is a divisor for the output - the default of 1.0 will write onsets in seconds,
+     if you set this to the actual TR in seconds, output will be in units of scans.
+  '''
+  import scipy
+  import scipy.io
+  names=[]
+  onsets=[]
+  durations=[]
+  for condition in self.conditions:
+   names.append(condition)
+   onsets.append([(x[0][0]/self.sfreq-fMRI_onset_s)/TR_s for x in self.trials[condition]])
+   durations.append([0.0]*len(self.trials[condition]))
+  ons={
+   'names': scipy.array([ [[x] for x in names] ],dtype=object), 
+   'onsets': scipy.array([ [[x] for x in onsets] ],dtype=object), 
+   'durations': scipy.array([ [[x] for x in durations] ],dtype=object)}
+  scipy.io.savemat(filename,ons)
+
  # These need to be overridden by the concrete class:
  def classify_responsetrial(self,point,code,rcode,response_latency_ms):
   pass
