@@ -63,11 +63,14 @@ outtuple=[]
 collectvalue=None
 listvalue=[]
 class avg_q(object):
- def __init__(self,avg_q="avg_q_vogl",endstring="End of script"):
+ def __init__(self,avg_q="avg_q_vogl",endstring="End of script",tracelevel=0):
   """Start avg_q."""
   self.endstring=endstring
   self.querymatch=re.compile('^([^=]+)=(.+)$')
-  self.avg_q=subprocess.Popen([avg_q,'stdin'], shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+  call=[avg_q,'stdin']
+  if tracelevel>0:
+   call.insert(1,'-t %d' % tracelevel)
+  self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
   self.recorded_trigpoints=[]
   self.debug=False
  def __del__(self):
