@@ -1,7 +1,8 @@
-# Copyright (C) 2008-2010 Bernd Feige
+# Copyright (C) 2008-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
-Paradigm base class to classify an event train into trial types
+Paradigm base class to classify an event train into trial types.
+A trial is a sequence of events each characterized by a trigger (time,code,description) tuple.
 """
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
@@ -105,7 +106,7 @@ class paradigm(object):
    self.stimulus_count[unset_stimulus_name]=0
   i=0
   while i<len(self.triggers):
-   epochtriggers=[self.triggers[i]]
+   trial=[self.triggers[i]]
    (point, code, description)=self.triggers[i]
    if code in self.stimulus_set:
     def is_valid_continuation(seq,j):
@@ -117,16 +118,16 @@ class paradigm(object):
       if type(sequence)==dict:
        if not is_valid_continuation(sequence,sequencedepth+1):
 	# Bail out, sequence doesn't fit
-        epochtriggers=[self.triggers[i]]
+        trial=[self.triggers[i]]
 	break
        sequencedepth+=1
-       epochtriggers.append(self.triggers[i+sequencedepth])
+       trial.append(self.triggers[i+sequencedepth])
        sequence=sequence[self.triggers[i+sequencedepth][1]]
       else:
        # Successful match
        code=sequence
        i+=sequencedepth
-       #print("Sequence %s->%d" % (str(epochtriggers),code))
+       #print("Sequence %s->%d" % (str(trial),code))
        break
     condition=None
     if i+1<len(self.triggers):
@@ -140,7 +141,7 @@ class paradigm(object):
        condition=self.classify_nonresponsetrial(point,code)
       else:
        condition=self.classify_responsetrial(point,code,rcode,response_latency_ms)
-       epochtriggers.append(self.triggers[i+1])
+       trial.append(self.triggers[i+1])
      else:
       condition=self.classify_nonresponsetrial(point,code)
     else:
@@ -148,13 +149,13 @@ class paradigm(object):
     if condition:
      stimulus=self.stimcode2stimulus[code] if self.stimuli else unset_stimulus_name
      self.stimulus_count[stimulus]+=1
-     yield condition,epochtriggers
+     yield condition,trial
    i+=1
  def get_trials(self):
   for condition in self.conditions:
    self.trials[condition]=[]
-  for condition,epochtriggers in self.parse_trials():
-   self.trials[condition].append(epochtriggers)
+  for condition,trial in self.parse_trials():
+   self.trials[condition].append(trial)
  def triggerstats(self):
   codes={}
   for t in self.triggers:
@@ -169,17 +170,17 @@ class paradigm(object):
    else:
     stats[code]=(len(codes[code]),)+(None,)*7
   return stats
- def get_RT(self,epochtriggers):
+ def get_RT(self,trial):
   Stim_index=None
   Response_index=None
-  for i in range(len(epochtriggers)):
-   code=epochtriggers[i][1]
+  for i in range(len(trial)):
+   code=trial[i][1]
    if Stim_index==None and code in self.stimulus_set:
     Stim_index=i
    elif Response_index==None and code in self.response_set:
     Response_index=i
   if Stim_index!=None and Response_index!=None:
-   return (epochtriggers[Response_index][0]-epochtriggers[Stim_index][0])/self.sfreq*1000.0
+   return (trial[Response_index][0]-trial[Stim_index][0])/self.sfreq*1000.0
   else:
    return None
  def get_totalN(self):

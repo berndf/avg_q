@@ -1,4 +1,4 @@
-# Copyright (C) 2008,2009 Bernd Feige
+# Copyright (C) 2008-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Class to classify and project out artifacts by using ICA
@@ -156,7 +156,7 @@ null_sink
    trim='trim '+' '.join(['%d 1' % (x-1) for x in sorted(components)])
   return trim
  def get_remove_channels_from_components(self,components):
-  '''Utility function to get the 'trim' statement for removing channels corresponding to components.
+  '''Utility function to get the 'remove_channel' statement for removing channels corresponding to components.
   Note that this selection is negative, ie removes channels for these components, therefore the
   order is not important.'''
   if len(components)==0:

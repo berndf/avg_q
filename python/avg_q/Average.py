@@ -1,7 +1,7 @@
-# Copyright (C) 2009,2010 Bernd Feige
+# Copyright (C) 2009-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
-Average class working together with paradigm.py-derived epochtriggers lists.
+Average class working together with paradigm.py-derived trial lists.
 In particular, we abstract here the idea of averaging separately around
 several different events within the epochs (eg Stimulus, Response) while
 referring to the same baseline (before the first event) and shifting the
@@ -65,11 +65,11 @@ class Average(object):
   aftertrig_points =self.avg_q_object.time_to_points(aftertrig,self.sfreq)
 
   if eventindex==event0index:
-   point_list=[epochtriggers[eventindex] for epochtriggers in self.paradigm_instance.trials[condition]] 
+   point_list=[trial[eventindex] for trial in self.paradigm_instance.trials[condition]] 
    self.avg_q_object.get_epoch_around_add(self.infile, point_list, beforetrig, aftertrig, branch=preprocess)
    shiftwidth_points=0
   else:
-   latency_points=[epochtriggers[eventindex][0]-epochtriggers[event0index][0] for epochtriggers in self.paradigm_instance.trials[condition]]
+   latency_points=[trial[eventindex][0]-trial[event0index][0] for trial in self.paradigm_instance.trials[condition]]
    shiftwidth_points=round(self.calc_shiftwidth(latency_points))
    # Warn if our desired shift point is not within the averaged epoch
    if aftertrig_points<=shiftwidth_points:
@@ -78,9 +78,9 @@ class Average(object):
    trimlength=beforetrig_points+aftertrig_points
    win_before_trig_points=shiftwidth_points+beforetrig_points
    win_after_trig_points=trimlength-win_before_trig_points
-   for epochtriggers in self.paradigm_instance.trials[condition]:
-    go_point=epochtriggers[event0index][0]
-    secondpoint=epochtriggers[eventindex][0]
+   for trial in self.paradigm_instance.trials[condition]:
+    go_point=trial[event0index][0]
+    secondpoint=trial[eventindex][0]
     pointdiff=secondpoint-go_point
      
     winstart_points = beforetrig_points+pointdiff-win_before_trig_points
