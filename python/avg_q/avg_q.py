@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2010 Bernd Feige
+# Copyright (C) 2007-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Python interface to avg_q.
@@ -139,7 +139,8 @@ null_sink
  def get_epoch_around_add(self, infile, trigpoints, beforetrig, aftertrig, offset=None, branch=None):
   '''get_epoch_around allows to directly specify the points around which to read.
      We need to record the trigpoints from multiple _add calls since they are read from
-     stdin just as the script itself and thus must go after the sub-script.'''
+     stdin just as the script itself and thus must go after the sub-script.
+     ***Deprecated: This will be removed, please use Epochsource/Script in new code***'''
   if not isinstance(trigpoints,list):
    # Allow a single point to be specified
    trigpoints=[trigpoints]
@@ -369,6 +370,109 @@ write_generic stdout string
        z[channel][point].append(channels[channel])
     point+=1
   traceplot(z)
+
+class Epochsource(object):
+ '''This class contains everything necessary for representing an epoch source.
+    This includes the ability to read from triggers contained in the file, contained in an external file (trigfile) 
+    or reading around explicitly specified points (trigpoints).
+ '''
+ def __init__(self, infile, beforetrig=0, aftertrig=0, continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
+  self.infile=infile
+  self.beforetrig=beforetrig
+  self.aftertrig=aftertrig
+  self.continuous=continuous
+  self.fromepoch=fromepoch
+  self.epochs=epochs
+  self.offset=offset
+  self.triglist=triglist
+  self.trigfile=trigfile
+  self.trigtransfer=trigtransfer
+  self.branch=None
+  self.trigpoints=None
+ def set_branch(self,branch):
+  self.branch=branch
+ def set_trigpoints(self,trigpoints):
+  if self.trigfile is not None:
+   raise Exception("Epochsource: cannot specify both trigpoints and trigfile!")
+  self.trigfile="stdin"
+  if isinstance(trigpoints,list):
+   self.trigpoints=trigpoints
+  else:
+   # Allow a single point to be specified
+   self.trigpoints=[trigpoints]
+ def send(self,avg_q_instance):
+  if self.infile.fileformat=='asc':
+   # Allow 'trigger' lists to be used for 'asc' files just as in
+   # self.get_filetriggers, namely with (epoch number-1) as position value
+   for trigpoint in self.trigpoints:
+    epoch=(trigpoint[0] if isinstance(trigpoint,tuple) else trigpoint)+1
+    avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, offset=self.offset, fromepoch=epoch, epochs=1)
+   self.trigpoints=None
+  else:
+   avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, continuous=self.continuous, fromepoch=self.fromepoch, epochs=self.epochs, offset=self.offset, triglist=self.triglist, trigfile=self.trigfile, trigtransfer=self.trigtransfer)
+  if self.branch:
+   # Send a branch script fragment applying only to epochs from this epoch source.
+   # Will accept lines already preceded by the branch mark '>' but otherwise will add '>'.
+   for methodline in self.branch.split('\n'):
+    methodline=methodline.strip()
+    if methodline=='': continue
+    if methodline.startswith('>'):
+     avg_q_instance.write(methodline+'\n')
+    else:
+     avg_q_instance.write('>'+methodline+'\n')
+ def send_trigpoints(self,avg_q_instance):
+  if self.trigpoints is not None:
+   if len(self.trigpoints)>0 and isinstance(self.trigpoints[0],tuple):
+    from . import trgfile
+    t=trgfile.trgfile()
+    t.writetuples(self.trigpoints,avg_q_instance)
+   else:
+    for trigpoint in self.trigpoints:
+     avg_q_instance.write(str(trigpoint) + '\t1\n')
+   avg_q_instance.write('0\t0\n')
+
+class Script(object):
+ '''Script class to represent the concept of an avg_q (sub-)script as a whole.
+    We collect all parts within this object and only send the complete thing to avg_q.
+    This constitutes a higher-level interface allowing more error checking while
+    constructing input for avg_q. It also encapsulates the technical means necessary
+    to read epochs around supplied points, which requires sending the full script followed
+    by triggers read by the get_epoch methods.
+ '''
+ def __init__(self,avg_q_instance):
+  self.avg_q_instance=avg_q_instance
+  self.Epochsource_list=[]
+  self.transforms=[]
+  self.collect='null_sink'
+  self.postprocess_transforms=[]
+ def add_Epochsource(self, Epochsource):
+  self.Epochsource_list.append(Epochsource)
+ def add_transform(self,transform):
+  self.transforms.append(transform)
+ def set_collect(self,collect):
+  self.collect=collect
+ def add_postprocess(self,transform):
+  self.postprocess_transforms.append(transform)
+ def runrdr(self):
+  for Epochsource in self.Epochsource_list:
+   Epochsource.send(self.avg_q_instance)
+  for transform in self.transforms:
+   self.avg_q_instance.write(transform+"\n")
+  self.avg_q_instance.write(self.collect+"\n")
+  if len(self.postprocess_transforms)>0:
+   self.avg_q_instance.write("Post:\n")
+   for transform in self.postprocess_transforms:
+    self.avg_q_instance.write(transform+"\n")
+  self.avg_q_instance.write("-\n")
+  for Epochsource in self.Epochsource_list:
+   Epochsource.send_trigpoints(self.avg_q_instance)
+  return self.avg_q_instance.runrdr()
+ def __iter__(self):
+  return self.runrdr()
+ def run(self):
+  """Run script, printing the output."""
+  for line in self:
+   print(line)
 
 if __name__ == '__main__':
  # A simple self-contained test case: Run 5 scripts with varying sampling frequencies
