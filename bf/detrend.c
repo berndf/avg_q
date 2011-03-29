@@ -59,6 +59,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 /*{{{  struct detrend_storage {*/
 struct detrend_storage {
  int *channel_list;
+ Bool have_channel_list;
  int fromitem;
  int toitem;
  int nr_of_omitargs;
@@ -120,9 +121,13 @@ detrend_init(transform_info_ptr tinfo) {
   /*}}}  */
  }
 
- local_arg->channel_list=NULL;
  if (args[ARGS_BYNAME].is_set) {
+  /* Note that this is NULL if no channel matched, which is why we need have_channel_list as well... */
   local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_BYNAME].arg.s);
+  local_arg->have_channel_list=TRUE;
+ } else {
+  local_arg->channel_list=NULL;
+  local_arg->have_channel_list=FALSE;
  }
 
  local_arg->fromitem=0;
@@ -212,7 +217,7 @@ detrend(transform_info_ptr tinfo) {
   for (; ds>0; ds--) {
    /*{{{  Detrend one data set*/
    for (channel=channelstart=0; channel<tinfo->nr_of_channels; channel++, channelstart+=channel_skip) {
-    if (local_arg->channel_list!=NULL && !is_in_channellist(channel+1, local_arg->channel_list)) {
+    if (local_arg->have_channel_list && !is_in_channellist(channel+1, local_arg->channel_list)) {
      continue;
     }
     for (itempart=local_arg->fromitem; itempart<=local_arg->toitem; itempart++) {

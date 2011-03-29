@@ -121,6 +121,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 
 struct scale_by_storage {
  int *channel_list;
+ Bool have_channel_list;
  enum scale_by_type type;
  double factor;
  int fromitem;
@@ -154,12 +155,16 @@ scale_by_init(transform_info_ptr tinfo) {
   }
  }
 
- local_arg->channel_list=NULL;
  if (args[ARGS_BYNAME].is_set) {
-  local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_BYNAME].arg.s);
   if (local_arg->type==SCALE_BY_INVQUANTILE) {
    ERREXIT(tinfo->emethods, "scale_by_init: Channel name list does not work with invquantile!\n");
   }
+  /* Note that this is NULL if no channel matched, which is why we need have_channel_list as well... */
+  local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_BYNAME].arg.s);
+  local_arg->have_channel_list=TRUE;
+ } else {
+  local_arg->channel_list=NULL;
+  local_arg->have_channel_list=FALSE;
  }
 
  local_arg->fromitem=0;
@@ -197,7 +202,7 @@ scale_by(transform_info_ptr tinfo) {
   case SCALE_BY_INVMAXABS:
   case SCALE_BY_INVQUANTILE:
    array_transpose(&indata);	/* Vectors are maps */
-   if (local_arg->channel_list!=NULL) {
+   if (local_arg->have_channel_list) {
     ERREXIT(tinfo->emethods, "scale_by: Channel subsets are not supported for map operations.\n");
    }
    break;
@@ -254,7 +259,7 @@ scale_by(transform_info_ptr tinfo) {
  for (itempart=local_arg->fromitem; itempart<=local_arg->toitem; itempart++) {
   array_use_item(&indata, itempart);
   do {
-   if (local_arg->channel_list!=NULL && !is_in_channellist(indata.current_vector+1, local_arg->channel_list)) {
+   if (local_arg->have_channel_list && !is_in_channellist(indata.current_vector+1, local_arg->channel_list)) {
     array_nextvector(&indata);
     continue;
    }

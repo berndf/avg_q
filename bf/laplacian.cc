@@ -104,6 +104,7 @@ private:
 
 struct laplacian_storage {
  int *channel_list;
+ Bool have_channel_list;
  /* This lists the active channels in the order they are added to tp; used
   * to transform the channel numbers in tp back into input channel numbers:
   * (Can't use channel_list because that could contain duplicates) */
@@ -349,9 +350,13 @@ laplacian_init(transform_info_ptr tinfo) {
  int channel, tpoint;
  TPoints* tp;
 
- local_arg->channel_list=NULL;
  if (args[ARGS_CHANNELNAMES].is_set) {
+  /* Note that this is NULL if no channel matched, which is why we need have_channel_list as well... */
   local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_CHANNELNAMES].arg.s);
+  local_arg->have_channel_list=TRUE;
+ } else {
+  local_arg->channel_list=NULL;
+  local_arg->have_channel_list=FALSE;
  }
  if (args[ARGS_METHOD_CHOICE].is_set) {
   laplacian_variant=(enum laplacian_variants_enum)args[ARGS_METHOD_CHOICE].arg.i;
@@ -363,7 +368,7 @@ laplacian_init(transform_info_ptr tinfo) {
  tpoint=0;
  local_arg->nr_of_copied_channels=0;
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-  if (local_arg->channel_list==NULL || is_in_channellist(channel+1, local_arg->channel_list)) {
+  if (!local_arg->have_channel_list || is_in_channellist(channel+1, local_arg->channel_list)) {
    tpoint++;
   } else {
    local_arg->nr_of_copied_channels++;
@@ -380,7 +385,7 @@ laplacian_init(transform_info_ptr tinfo) {
  local_arg->tp=(TPoints*)Empty;
  tpoint=0;
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-  if (local_arg->channel_list==NULL || is_in_channellist(channel+1, local_arg->channel_list)) {
+  if (!local_arg->have_channel_list || is_in_channellist(channel+1, local_arg->channel_list)) {
    local_arg->tp=(TPoints*)local_arg->tp->addmember(new TPoints(tinfo->probepos[3*channel], tinfo->probepos[3*channel+1], tinfo->probepos[3*channel+2]));
    local_arg->active_channels_list[tpoint]=channel;
    tpoint++;
@@ -393,7 +398,7 @@ laplacian_init(transform_info_ptr tinfo) {
  tp=(TPoints*)local_arg->tp->first();
  local_arg->laplacian_channels=(LaplacianChannels*)Empty;
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-  if (local_arg->channel_list==NULL || is_in_channellist(channel+1, local_arg->channel_list)) {
+  if (!local_arg->have_channel_list || is_in_channellist(channel+1, local_arg->channel_list)) {
    Boundary* surrounding=(Boundary*)Empty;
    Triangles* tr=((Triangles*)local_arg->cm->tr->first())->find(tp);
    if (tr==(Triangles*)Empty) {
@@ -448,7 +453,7 @@ laplacian_init(transform_info_ptr tinfo) {
    fprintf(outfile, " %s", tinfo->channelnames[laplacian_channels->channel]);
    laplacian_channels=(LaplacianChannels*)laplacian_channels->next();
   } while (laplacian_channels!=(LaplacianChannels*)Empty);
-  if (local_arg->channel_list!=NULL) {
+  if (local_arg->have_channel_list) {
    for (channel=0; channel<tinfo->nr_of_channels; channel++) {
     if (!is_in_channellist(channel+1, local_arg->channel_list)) {
      fprintf(outfile, " %s", tinfo->channelnames[channel]);
@@ -467,7 +472,7 @@ laplacian_init(transform_info_ptr tinfo) {
   local_arg->laplacian_channels->construct_matrix(&D);
   /* construct_matrix will only fill the LaplacianChannel part of the matrix: */
   for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-   if (local_arg->channel_list!=NULL && !is_in_channellist(channel+1, local_arg->channel_list)) {
+   if (!local_arg->have_channel_list && !is_in_channellist(channel+1, local_arg->channel_list)) {
     D.current_element=channel;
     WRITE_ELEMENT(&D, 1.0);
     array_nextvector(&D);
@@ -502,7 +507,7 @@ laplacian(transform_info_ptr tinfo) {
   stringlength+=strlen(tinfo->channelnames[laplacian_channels->channel])+1;
   laplacian_channels=(LaplacianChannels*)laplacian_channels->next();
  } while (laplacian_channels!=(LaplacianChannels*)Empty);
- if (local_arg->channel_list!=NULL) {
+ if (local_arg->have_channel_list) {
   for (channel=0; channel<tinfo->nr_of_channels; channel++) {
    if (!is_in_channellist(channel+1, local_arg->channel_list)) {
     stringlength+=strlen(tinfo->channelnames[channel])+1;
@@ -534,7 +539,7 @@ laplacian(transform_info_ptr tinfo) {
   laplacian_channels=(LaplacianChannels*)laplacian_channels->next();
  } while (laplacian_channels!=(LaplacianChannels*)Empty);
 
- if (local_arg->channel_list!=NULL) {
+ if (local_arg->have_channel_list) {
   for (channel=0; channel<tinfo->nr_of_channels; channel++) {
    if (!is_in_channellist(channel+1, local_arg->channel_list)) {
     new_channelnames[output_channel]=in_buffer;
@@ -556,7 +561,7 @@ laplacian(transform_info_ptr tinfo) {
  do {
   /* Fill the data array by doing backsubstitution with the SVD info */
   laplacian_channels->write_laplacian(&indata, &outdata);
-  if (local_arg->channel_list!=NULL) {
+  if (local_arg->have_channel_list) {
    for (channel=0; channel<tinfo->nr_of_channels; channel++) {
     if (!is_in_channellist(channel+1, local_arg->channel_list)) {
      indata.current_element=channel;

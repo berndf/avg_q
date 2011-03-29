@@ -391,6 +391,9 @@ add_channels(transform_info_ptr tinfo) {
 
  if (args[ARGS_BYNAME].is_set) {
   channel_list=expand_channel_list(side_tinfo, args[ARGS_BYNAME].arg.s);
+  if (channel_list==NULL) {
+   ERREXIT(tinfo->emethods, "add_channels_init: Zero channels were selected by -n!\n");
+  }
  }
 
  newtsdata=add_channels_or_points(tinfo, side_tinfo, channel_list, local_arg->type, FALSE);

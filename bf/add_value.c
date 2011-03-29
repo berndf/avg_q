@@ -90,6 +90,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 
 struct add_value_storage {
  int *channel_list;
+ Bool have_channel_list;
  enum add_value_type type;
  double value;
  int fromitem;
@@ -121,12 +122,16 @@ add_value_init(transform_info_ptr tinfo) {
   }
  }
 
- local_arg->channel_list=NULL;
  if (args[ARGS_BYNAME].is_set) {
-  local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_BYNAME].arg.s);
   if (local_arg->type==ADD_VALUE_NEGQUANTILE) {
    ERREXIT(tinfo->emethods, "add_value_init: Channel name list does not work with negquantile!\n");
   }
+  /* Note that this is NULL if no channel matched, which is why we need have_channel_list as well... */
+  local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_BYNAME].arg.s);
+  local_arg->have_channel_list=TRUE;
+ } else {
+  local_arg->channel_list=NULL;
+  local_arg->have_channel_list=FALSE;
  }
 
  local_arg->fromitem=0;
@@ -176,7 +181,7 @@ add_value(transform_info_ptr tinfo) {
  for (itempart=local_arg->fromitem; itempart<=local_arg->toitem; itempart++) {
   array_use_item(&indata, itempart);
   do {
-   if (!work_on_maps && local_arg->channel_list!=NULL && !is_in_channellist(indata.current_vector+1, local_arg->channel_list)) {
+   if (!work_on_maps && local_arg->have_channel_list && !is_in_channellist(indata.current_vector+1, local_arg->channel_list)) {
     array_nextvector(&indata);
     continue;
    }
@@ -185,7 +190,7 @@ add_value(transform_info_ptr tinfo) {
      long n_elements=0;
      value=0.0;
      do {
-      if (local_arg->channel_list!=NULL && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
+      if (local_arg->have_channel_list && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
        array_advance(&indata);
       } else {
        value+=array_scan(&indata);
@@ -203,7 +208,7 @@ add_value(transform_info_ptr tinfo) {
     case ADD_VALUE_NEGMIN:
      value= FLT_MAX;
      do {
-      if (local_arg->channel_list!=NULL && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
+      if (local_arg->have_channel_list && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
        array_advance(&indata);
       } else {
        DATATYPE const hold=array_scan(&indata);
@@ -220,7 +225,7 @@ add_value(transform_info_ptr tinfo) {
     case ADD_VALUE_NEGMAX:
      value= -FLT_MAX;
      do {
-      if (local_arg->channel_list!=NULL && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
+      if (local_arg->have_channel_list && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
        array_advance(&indata);
       } else {
        DATATYPE const hold=array_scan(&indata);
@@ -271,7 +276,7 @@ add_value(transform_info_ptr tinfo) {
      continue;
    }
    do {
-    if (work_on_maps && local_arg->channel_list!=NULL && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
+    if (work_on_maps && local_arg->have_channel_list && !is_in_channellist(indata.current_element+1, local_arg->channel_list)) {
      array_advance(&indata);
     } else {
      array_write(&indata, READ_ELEMENT(&indata)+value);

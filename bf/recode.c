@@ -59,6 +59,7 @@ struct blockdef {
 struct recode_storage {
  struct blockdef *blockdefs;
  int *channel_list;
+ Bool have_channel_list;
  int fromitem;
  int toitem;
 };
@@ -73,9 +74,13 @@ recode_init(transform_info_ptr tinfo) {
  int nr_of_blocks=0, block;
  Bool havearg;
 
- local_arg->channel_list=NULL;
  if (args[ARGS_BYNAME].is_set) {
+  /* Note that this is NULL if no channel matched, which is why we need have_channel_list as well... */
   local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_BYNAME].arg.s);
+  local_arg->have_channel_list=TRUE;
+ } else {
+  local_arg->channel_list=NULL;
+  local_arg->have_channel_list=FALSE;
  }
 
  local_arg->fromitem=0;
@@ -153,7 +158,7 @@ recode(transform_info_ptr tinfo) {
    for (itempart=local_arg->fromitem; itempart<=local_arg->toitem; itempart++) {
     array_use_item(&myarray, itempart);
     do {
-     if (local_arg->channel_list!=NULL && !is_in_channellist(myarray.current_vector+1, local_arg->channel_list)) {
+     if (local_arg->have_channel_list && !is_in_channellist(myarray.current_vector+1, local_arg->channel_list)) {
       array_nextvector(&myarray);
       continue;
      }
