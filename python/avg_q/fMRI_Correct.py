@@ -1,9 +1,10 @@
-# Copyright (C) 2008-2010 Bernd Feige
+# Copyright (C) 2008-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Module to detect and subtract fMRI gradient artifacts
 """
 
+import avg_q
 from . import avg_q_file
 from . import trgfile
 from . import BrainVision
@@ -12,8 +13,8 @@ import math
 import glob
 
 class fMRI_Correct(object):
- def __init__(self,avg_q_object):
-  self.avg_q_object=avg_q_object
+ def __init__(self,avg_q_instance):
+  self.avg_q_instance=avg_q_instance
   self.infile=None
   self.base=None
   self.indir=None
@@ -52,7 +53,7 @@ class fMRI_Correct(object):
   self.indir,name=os.path.split(self.base)
   if not self.indir:
    self.indir='.'
-  self.sfreq,self.points_in_file=self.avg_q_object.get_description(self.infile,('sfreq','points_in_file'))
+  self.sfreq,self.points_in_file=self.avg_q_instance.get_description(self.infile,('sfreq','points_in_file'))
   if not self.sfreq:
    raise Exception("Oops, can't determine sfreq for %s" % self.base)
   if not self.points_in_file:
@@ -102,9 +103,9 @@ fftfilter %(filter_start)g %(filter_zerostart)g 1 1
    print("Reusing %s." % self.overviewfilename)
   else:
    print("Generating %s..." % self.overviewfilename)
-   self.avg_q_object.getcontepoch(self.infile, 0, self.TR_points)
-   self.avg_q_object.write(self.collapseit)
-   self.avg_q_object.write('''
+   self.avg_q_instance.getcontepoch(self.infile, 0, self.TR_points)
+   self.avg_q_instance.write(self.collapseit)
+   self.avg_q_instance.write('''
 trim -a 0 0
 append
 Post:
@@ -113,14 +114,14 @@ set xdata 0
 writeasc -b %s
 -
 ''' % (1000.0/self.TR,self.overviewfilename))
-   self.avg_q_object.run()
+   self.avg_q_instance.run()
  def get_fromto_from_overview(self):
   '''Analyze scans using the overview.'''
   self.get_overview()
   # We used to do scale_by invpointmax below but sometimes there are
   # strong spikes... Assuming that scanning spans more than half of the
   # recorded time, using the median should give the typical scanning amplitude...
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 readasc %s
 add negpointmin
 scale_by invpointquantile 0.5
@@ -129,7 +130,7 @@ write_crossings collapsed 0.5 stdout
 null_sink
 -
 ''' % self.overviewfilename)
-  rdr=self.avg_q_object.runrdr()
+  rdr=self.avg_q_instance.runrdr()
   overview_points=int(next(rdr))
   trgfile_overview=trgfile.trgfile(rdr)
   scanpoints=trgfile_overview.gettuples()
@@ -176,29 +177,31 @@ null_sink
  def getTemplate(self,trigpoint):
   if not self.haveTemplate:
    # The template is normalized so that 1 should be obtained when convolved with the original trace
-   script='''
+   get_template_script='''
 scale_by invpointsquarenorm
 scale_by nr_of_points
 writeasc -b %(templatefilename)s
 ''' % { 'templatefilename': self.templatefilename }
-   self.avg_q_object.get_epoch_around_add(self.infile,trigpoint,self.template_points/2,self.template_points/2)
-   self.avg_q_object.write(self.collapseit)
-   self.avg_q_object.write(self.upsampleit)
-   self.avg_q_object.write(script)
-   self.avg_q_object.get_epoch_around_finish()
-   self.avg_q_object.run()
+   script=avg_q.Script(self.avg_q_instance)
+   epochsource=avg_q.Epochsource(self.infile,self.template_points/2,self.template_points/2)
+   epochsource.set_trigpoints(trigpoint)
+   script.add_Epochsource(epochsource)
+   script.add_transform(self.collapseit)
+   script.add_transform(self.upsampleit)
+   script.add_transform(get_template_script)
+   script.run()
    self.haveTemplate=True
  def get_threshold(self,start_s):
-   self.avg_q_object.getcontepoch(self.infile, '0s', '1s', fromepoch=start_s, epochs=5)
-   self.avg_q_object.write(self.collapseit)
-   self.avg_q_object.write('''
+   self.avg_q_instance.getcontepoch(self.infile, '0s', '1s', fromepoch=start_s, epochs=5)
+   self.avg_q_instance.write(self.collapseit)
+   self.avg_q_instance.write('''
 trim -h 0 0
 minmax
 Post:
 write_generic stdout string
 -
 ''')
-   for line in self.avg_q_object.runrdr():
+   for line in self.avg_q_instance.runrdr():
     minval,maxval=line.split()
     self.threshold=float(maxval)*0.5
     print("Automatically set threshold to %g" % self.threshold)
@@ -233,8 +236,8 @@ write_generic stdout string
    outtuples=trgfile.HighresTriggers(self.upsample)
 
    # First, only look for the first EPI peak and extract a short template
-   self.avg_q_object.getcontepoch(self.infile, '0s', '%gms' % self.TR, fromepoch=fromepoch, epochs=epochs)
-   script='''
+   self.avg_q_instance.getcontepoch(self.infile, '0s', '%gms' % self.TR, fromepoch=fromepoch, epochs=epochs)
+   detect_first_EPI_script='''
 write_crossings -E -R %(refractory_time)gms collapsed %(threshold)g triggers
 %(posplot)s
 query triggers_for_trigfile stdout
@@ -246,9 +249,9 @@ null_sink
    'threshold': self.threshold,
    'posplot': 'posplot' if self.checkmode else ''
    }
-   self.avg_q_object.write(self.collapseit)
-   self.avg_q_object.write(script)
-   trgfile_crs=trgfile.trgfile(self.avg_q_object.runrdr())
+   self.avg_q_instance.write(self.collapseit)
+   self.avg_q_instance.write(detect_first_EPI_script)
+   trgfile_crs=trgfile.trgfile(self.avg_q_instance.runrdr())
    trgpoints=trgfile_crs.gettuples()
    if len(trgpoints)==0:
     print("Can't find a single trigger in %s, continuing..." % self.base)
@@ -262,7 +265,7 @@ null_sink
    correct_correct=None
    while not end_s or trigpoint<end_s*self.sfreq:
     readpoint,trimcorrection=trgfile.get_ints(trigpoint,self.upsample)
-    script='''
+    epi_detection_script='''
 convolve %(templatefilename)s 1
 trim %(trimstart)f %(trimlength)f
 write_crossings -E collapsed %(convolvethreshold)g stdout
@@ -275,12 +278,14 @@ write_crossings -E collapsed %(convolvethreshold)g stdout
     'posplot': 'set_comment Detecting EPI...\nposplot' if self.checkmode else ''
     }
     before=int((self.template_points+self.refine_points)/2)
-    self.avg_q_object.get_epoch_around_add(self.infile,readpoint,before,before+1)
-    self.avg_q_object.write(self.collapseit)
-    self.avg_q_object.write(self.upsampleit)
-    self.avg_q_object.write(script)
-    self.avg_q_object.get_epoch_around_finish()
-    trgfile_crs=trgfile.trgfile(self.avg_q_object.runrdr())
+    script=avg_q.Script(self.avg_q_instance)
+    epochsource=avg_q.Epochsource(self.infile,before,before+1)
+    epochsource.set_trigpoints(readpoint)
+    script.add_Epochsource(epochsource)
+    script.add_transform(self.collapseit)
+    script.add_transform(self.upsampleit)
+    script.add_transform(epi_detection_script)
+    trgfile_crs=trgfile.trgfile(script.runrdr())
     trgpoints=trgfile_crs.gettuples()
     if len(trgpoints)==0: break; # Trigger position beyond file length
     correction=float(trgpoints[0][0])/self.upsample-self.refine_points/2
@@ -295,7 +300,7 @@ write_crossings -E collapsed %(convolvethreshold)g stdout
     trigpoint+=self.TR_points
 
    # Check the end of the scan - does it fit with TR?
-   script='''
+   epi_end_detection_script='''
 scale_by invpointmax
 write_crossings -E collapsed 0.75 stdout
 #write_crossings -E collapsed 0.75 triggers
@@ -306,11 +311,13 @@ write_crossings -E collapsed 0.75 stdout
    # Sigh... Detect whether the EEG was stopped *immediately* after the scan
    if readpoint+points_to_read>self.points_in_file:
     points_to_read=self.points_in_file-readpoint
-   self.avg_q_object.get_epoch_around_add(self.infile,readpoint,0,points_to_read)
-   self.avg_q_object.write(self.collapseit)
-   self.avg_q_object.write(script)
-   self.avg_q_object.get_epoch_around_finish()
-   trgfile_crs=trgfile.trgfile(self.avg_q_object.runrdr())
+   script=avg_q.Script(self.avg_q_instance)
+   epochsource=avg_q.Epochsource(self.infile,0,points_to_read)
+   epochsource.set_trigpoints(readpoint)
+   script.add_Epochsource(epochsource)
+   script.add_transform(self.collapseit)
+   script.add_transform(epi_end_detection_script)
+   trgfile_crs=trgfile.trgfile(script.runrdr())
    trgpoints=trgfile_crs.gettuples()
    point,code,description=trgpoints[-1]
    deviation=(point-self.TS_points)/self.TS_points
@@ -354,10 +361,13 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
   'sensitivity': 10,
   }
 
-  self.avg_q_object.get_epoch_around_add(self.infile, sectionstart, sectionbefore, sectionafter)
-  self.avg_q_object.write(doscript)
-  self.avg_q_object.write(writefile)
-  self.avg_q_object.get_epoch_around_finish()
+  script=avg_q.Script(self.avg_q_instance)
+  epochsource=avg_q.Epochsource(self.infile,sectionbefore,sectionafter)
+  epochsource.set_trigpoints(sectionstart)
+  script.add_Epochsource(epochsource)
+  script.add_transform(doscript)
+  script.add_transform(writefile)
+  script.run()
  def subtract_EPI(self):
   for crsfile in glob.glob(self.base+'[0-9][0-9].crs'):
    runindex=int(crsfile[-6:-4])
@@ -371,7 +381,7 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
     print("Processing %s, %s->%s" % (self.infile.filename,crsfile,self.correctedfile+'.hdf'))
 
    # Average EPI (avgEPI will test whether the average already exists)
-   myEPI=avgEPI(self.avg_q_object,self.base,self.infile,self.sfreq,self.upsample)
+   myEPI=avgEPI(self.avg_q_instance,self.base,self.infile,self.sfreq,self.upsample)
    # Pass parameters to avgEPI()
    if self.avgEPI_Amplitude_Reject_fraction:
     myEPI.avgEPI_Amplitude_Reject_fraction=self.avgEPI_Amplitude_Reject_fraction
@@ -430,7 +440,7 @@ subtract %(avgEPIfile)s.asc
     'avgEPIfile': myEPI.tmpEPIfile if myEPI.upsample!=1 else myEPI.avgEPIfile,
     'lefttrim': lefttrim
     })
-    self.avg_q_object.run()
+    self.avg_q_instance.run()
     self.append=True
     lastpoint=readpoint
    # Read some section of EEG after the last EPI.
@@ -440,7 +450,7 @@ subtract %(avgEPIfile)s.asc
    if readpoint+points_to_read>self.points_in_file:
     points_to_read=self.points_in_file-readpoint
    self.transferSection(readpoint, 0, points_to_read)
-   self.avg_q_object.run()
+   self.avg_q_instance.run()
    outfile_endpoint=readpoint+points_to_read
 
    # Create a trigger file fitting the current run
@@ -461,8 +471,8 @@ subtract %(avgEPIfile)s.asc
    trgout.close()
 
 class avgEPI(object):
- def __init__(self,avg_q_object,base,infile,sfreq,upsample):
-  self.avg_q_object=avg_q_object
+ def __init__(self,avg_q_instance,base,infile,sfreq,upsample):
+  self.avg_q_instance=avg_q_instance
   self.base=base
   self.infile=infile
   self.sfreq=sfreq
@@ -526,7 +536,7 @@ class avgEPI(object):
  def CheckIfAvgEPICompatible(self):
   # See whether the available average is compatible with the current run
   epifile=avg_q_file(self.avgEPIfile,'asc')
-  avg_sfreq,nr_of_points=self.avg_q_object.get_description(epifile,('sfreq','nr_of_points'))
+  avg_sfreq,nr_of_points=self.avg_q_instance.get_description(epifile,('sfreq','nr_of_points'))
   avg_sfreq=round(avg_sfreq)
   expected_sfreq=self.sfreq*self.upsample
   if avg_sfreq!=expected_sfreq:
@@ -541,7 +551,7 @@ class avgEPI(object):
    return False
   else:
    return True
- def getEPIepoch_add(self,EPI):
+ def EPI_Epochsource(self,EPI):
   if self.upsample==1:
    trimcorrection=0
    beforetrig,aftertrig=self.beforetrig_points,self.aftertrig_points
@@ -558,7 +568,7 @@ class avgEPI(object):
    }
    # We need 2 points to each side as 'trim space', once for averaging, second before subtraction
    beforetrig,aftertrig=self.beforetrig_points+2,self.aftertrig_points+2
-  script='''
+  branch='''
 >detrend -0
 %(upsampleit)s
 %(trimit)s
@@ -566,8 +576,10 @@ class avgEPI(object):
   'upsampleit': self.upsampleit,
   'trimit': trimit,
   }
-  self.avg_q_object.get_epoch_around_add(self.infile, EPI[0], beforetrig, aftertrig)
-  self.avg_q_object.write(script)
+  epochsource=avg_q.Epochsource(self.infile,beforetrig,aftertrig)
+  epochsource.set_trigpoints(EPI[0])
+  epochsource.set_branch(branch)
+  return epochsource
  def avgEPI(self,crsfile,runindex):
   self.set_crsfile(crsfile)
   self.avgEPIfile=self.base + '_AvgEPI%02d' % runindex
@@ -586,20 +598,18 @@ class avgEPI(object):
   while True:
    print("Using EPI template epoch %d" % singleEPIepoch)
    # Get the single epoch specimen and its amplitude
-   self.getEPIepoch_add(self.EPIs[singleEPIepoch-1])
-   self.avg_q_object.get_epoch_around_finish('''
+   script=avg_q.Script(self.avg_q_instance)
+   script.add_Epochsource(self.EPI_Epochsource(self.EPIs[singleEPIepoch-1]))
+   script.add_transform('''
 writeasc -b -c %(singleEPIfile)s.asc
 calc abs
 trim -h 0 0
 writeasc -b %(singleEPIfile)s_Amplitude.asc
-null_sink
--
 ''' % {
    'singleEPIfile': singleEPIfile,
    })
-   for line in self.avg_q_object.runrdr():
-    print(line)
-    '''
+   script.run()
+   '''
 #add_channels -l %(singleEPIfile)s.asc
 #posplot
 #link_order 2
@@ -624,32 +634,31 @@ pop
    'residualsfile': residualsfile,
    'avgEPI_Amplitude_Reject_fraction': self.avgEPI_Amplitude_Reject_fraction,
    }
+   script=avg_q.Script(self.avg_q_instance)
    for EPI in self.EPIs:
-    self.getEPIepoch_add(EPI)
+    script.add_Epochsource(self.EPI_Epochsource(EPI))
    if self.checkmode:
-    script='''
+    script.add_transform('''
 set beforetrig 0
 set xdata 1
 append -l
 Post:
 posplot
 -
-'''
+''')
+    script.set_collect('append -l')
+    script.add_postprocess('posplot')
    else:
-    script='''
-%(rejection)s
-average
-Post:
+    script.add_transform(rejection_script)
+    script.set_collect('average')
+    script.add_postprocess('''
 writeasc -b %(avgEPIfile)s.asc
 query accepted_epochs stdout
 query rejected_epochs stdout
--
 ''' % {
-    'rejection': rejection_script,
     'avgEPIfile': self.avgEPIfile,
-    }
-   self.avg_q_object.get_epoch_around_finish(script)
-   lines=self.avg_q_object.runrdr()
+    })
+   lines=script.runrdr()
    accepted_epochs=int(next(lines))
    rejected_epochs=int(next(lines))
    # Empty the line buffer just in case
@@ -682,7 +691,7 @@ query rejected_epochs stdout
   if os.path.exists(self.avgEPIfile + '_Best.asc'):
    os.unlink(self.avgEPIfile + '_Best.asc')
  def get_tmpEPI(self,trimcorrection):
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 readasc %(avgEPIfile)s.asc
 trim %(trimstart)f %(trimlength)f
 sliding_average 1 %(upsample)d

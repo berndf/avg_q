@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Bernd Feige
+# Copyright (C) 2010-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Measure class.
@@ -6,22 +6,24 @@ Measure class.
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
-class Measure(object):
- def __init__(self,avg_q_object):
-  self.avg_q_object=avg_q_object
+import avg_q
+
+class Measure(avg_q.Script):
+ def __init__(self,avg_q_instance):
+  avg_q.Script.__init__(self,avg_q_instance)
   self.sum_range=False # If set, measure the sum, not the average of each range
- def get_measurescript(self,channels_and_lat_ranges):
-  script=""
+ def measure(self,channels_and_lat_ranges):
+  self.transforms=[]
   for channel,lat_ranges in channels_and_lat_ranges:
-   script+="""
+   self.add_transform("""
 extract_item 0
 push
 remove_channel -k %(channel)s
 """ % {
  'channel': channel,
-   }
+   })
    for lat_range in lat_ranges:
-    script+="""
+    self.add_transform("""
 push
 trim -x %(lower)g %(upper)g
 extract_item 0 0
@@ -42,27 +44,11 @@ pop
     'average_or_sum': '-s' if self.sum_range else '-a',
     'lower': lat_range[0],
     'upper': lat_range[1],
-    }
-   script+="""
-pop
-"""
-  script+="""
-null_sink
--
-"""
-  return script
- def read_result(self):
-  rdr=self.avg_q_object.runrdr()
+    })
+   self.add_transform('pop')
+  rdr=self.runrdr()
   result=[]
   for l in rdr:
    epoch,channelname,rangename,amp,lat=l.split('\t')
    result.append((int(epoch)+1,channelname,rangename,float(amp),float(lat)))
   return result
- def measure(self,channels_and_lat_ranges):
-  self.avg_q_object.write(self.get_measurescript(channels_and_lat_ranges))
-  return self.read_result()
- def measure_finish(self,channels_and_lat_ranges,preprocess=''):
-  '''Measure version to be used after get_epoch_around_add.
-  This allows to read arbitrary sections from a continuous file and measure them.'''
-  self.avg_q_object.get_epoch_around_finish(preprocess+self.get_measurescript(channels_and_lat_ranges))
-  return self.read_result()

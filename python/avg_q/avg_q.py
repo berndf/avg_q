@@ -136,33 +136,6 @@ null_sink
   self.write(infile.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer))
  def getcontepoch(self, infile, beforetrig, aftertrig, fromepoch=None, epochs=None, trigfile=None, trigtransfer=False):
   self.getepoch(infile, beforetrig, aftertrig, continuous=True, fromepoch=fromepoch, epochs=epochs, trigfile=trigfile, trigtransfer=trigtransfer)
- def get_epoch_around_add(self, infile, trigpoints, beforetrig, aftertrig, offset=None, branch=None):
-  '''get_epoch_around allows to directly specify the points around which to read.
-     We need to record the trigpoints from multiple _add calls since they are read from
-     stdin just as the script itself and thus must go after the sub-script.
-     ***Deprecated: This will be removed, please use Epochsource/Script in new code***'''
-  if not isinstance(trigpoints,list):
-   # Allow a single point to be specified
-   trigpoints=[trigpoints]
-  if infile.fileformat=='asc':
-   # Allow 'trigger' lists to be used for 'asc' files just as in
-   # self.get_filetriggers, namely with (epoch number-1) as position value
-   for trigpoint in trigpoints:
-    epoch=(trigpoint[0] if isinstance(trigpoint,tuple) else trigpoint)+1
-    self.getepoch(infile, beforetrig, aftertrig, offset=offset, fromepoch=epoch, epochs=1)
-  else:
-   self.getepoch(infile, beforetrig, aftertrig, offset=offset, trigfile='stdin')
-   self.recorded_trigpoints.append(trigpoints)
-  if branch:
-   # Send a branch script fragment applying only to epochs from this get_epoch_around_add.
-   # Will accept lines already preceded by the branch mark '>' but otherwise will add '>'.
-   for methodline in branch.split('\n'):
-    methodline=methodline.strip()
-    if methodline=='': continue
-    if methodline.startswith('>'):
-     self.write(methodline+'\n')
-    else:
-     self.write('>'+methodline+'\n')
  def get_file_sections_excluding_breakpoints(self,start_point,end_point,breakpoints,margin_points):
   '''Iterator of (startsegment,endsegment) avoiding breakpoints by margin_points'''
   br=[point for point in breakpoints] # Copy the points
@@ -174,36 +147,6 @@ null_sink
    if endsegment>startsegment:
     yield (startsegment,endsegment)
    startsegment=point+margin_points
- def get_contfile_excluding_breakpoints_add(self,infile,start_point,end_point,breakpoints,margin_points,nr_of_points=None):
-  '''Read a continuous file in segments, from start_point to end_point, excluding margin_points on
-     either side of every point in the breakpoints list.
-     Returns the number of valid segments; This must be checked for 0, in which case no get_epoch
-     method was sent at all.
-     If nr_of_points is not set, epochs of varying length will be returned; otherwise, all epochs will
-     have exactly this number of points.'''
-  n_segments=0
-  for startsegment,endsegment in self.get_file_sections_excluding_breakpoints(start_point,end_point,breakpoints,margin_points):
-   if nr_of_points is None or nr_of_points<=0:
-    self.get_epoch_around_add(infile, startsegment, 0, endsegment-startsegment)
-    n_segments+=1
-   else:
-    while endsegment-nr_of_points>=startsegment:
-     self.get_epoch_around_add(infile, startsegment, 0, nr_of_points)
-     n_segments+=1
-     startsegment+=nr_of_points
-  return n_segments
- def get_epoch_around_finish(self, rest_of_script='\nnull_sink\n-\n'):
-  self.write(rest_of_script)
-  for trigpoints in self.recorded_trigpoints:
-   if len(trigpoints)>0 and isinstance(trigpoints[0],tuple):
-    from . import trgfile
-    t=trgfile.trgfile()
-    t.writetuples(trigpoints,self)
-   else:
-    for trigpoint in trigpoints:
-     self.write(str(trigpoint) + '\t1\n')
-   self.write('0\t0\n')
-  self.recorded_trigpoints=[]
  def get_description(self,infile,getvars):
   if not isinstance(getvars,tuple):
    getvars=(getvars,)
@@ -377,7 +320,12 @@ class Epochsource(object):
     or reading around explicitly specified points (trigpoints).
  '''
  def __init__(self, infile, beforetrig=0, aftertrig=0, continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
-  self.infile=infile
+  # For convenience, allow infile to be passed as a file name
+  if isinstance(infile,str):
+   from . import avg_q_file
+   self.infile=avg_q_file(infile)
+  else:
+   self.infile=infile
   self.beforetrig=beforetrig
   self.aftertrig=aftertrig
   self.continuous=continuous
@@ -401,9 +349,9 @@ class Epochsource(object):
    # Allow a single point to be specified
    self.trigpoints=[trigpoints]
  def send(self,avg_q_instance):
-  if self.infile.fileformat=='asc':
+  if self.infile.fileformat=='asc' and self.trigpoints is not None:
    # Allow 'trigger' lists to be used for 'asc' files just as in
-   # self.get_filetriggers, namely with (epoch number-1) as position value
+   # avg_q.get_filetriggers, namely with (epoch number-1) as position value
    for trigpoint in self.trigpoints:
     epoch=(trigpoint[0] if isinstance(trigpoint,tuple) else trigpoint)+1
     avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, offset=self.offset, fromepoch=epoch, epochs=1)
@@ -445,8 +393,30 @@ class Script(object):
   self.transforms=[]
   self.collect='null_sink'
   self.postprocess_transforms=[]
- def add_Epochsource(self, Epochsource):
-  self.Epochsource_list.append(Epochsource)
+ def add_Epochsource(self, epochsource):
+  self.Epochsource_list.append(epochsource)
+ def add_Epochsource_contfile_excluding_breakpoints(self,infile,start_point,end_point,breakpoints,margin_points,nr_of_points=None):
+  '''Read a continuous file in segments, from start_point to end_point, excluding margin_points on
+     either side of every point in the breakpoints list.
+     Returns the number of valid segments; This must be checked for 0, in which case no epoch source
+     method was added.
+     If nr_of_points is not set, epochs of varying length will be returned; otherwise, all epochs will
+     have exactly this number of points.'''
+  n_segments=0
+  for startsegment,endsegment in self.avg_q_instance.get_file_sections_excluding_breakpoints(start_point,end_point,breakpoints,margin_points):
+   if nr_of_points is None or nr_of_points<=0:
+    epochsource=Epochsource(infile, 0, endsegment-startsegment)
+    epochsource.set_trigpoints(startsegment)
+    self.add_Epochsource(epochsource)
+    n_segments+=1
+   else:
+    while endsegment-nr_of_points>=startsegment:
+     epochsource=Epochsource(infile, 0, nr_of_points)
+     epochsource.set_trigpoints(startsegment)
+     self.add_Epochsource(epochsource)
+     n_segments+=1
+     startsegment+=nr_of_points
+  return n_segments
  def add_transform(self,transform):
   self.transforms.append(transform)
  def set_collect(self,collect):
@@ -454,8 +424,10 @@ class Script(object):
  def add_postprocess(self,transform):
   self.postprocess_transforms.append(transform)
  def runrdr(self):
-  for Epochsource in self.Epochsource_list:
-   Epochsource.send(self.avg_q_instance)
+  if len(self.Epochsource_list)==0:
+   raise Exception("Script: No epoch source given!")
+  for epochsource in self.Epochsource_list:
+   epochsource.send(self.avg_q_instance)
   for transform in self.transforms:
    self.avg_q_instance.write(transform+"\n")
   self.avg_q_instance.write(self.collect+"\n")
@@ -464,8 +436,8 @@ class Script(object):
    for transform in self.postprocess_transforms:
     self.avg_q_instance.write(transform+"\n")
   self.avg_q_instance.write("-\n")
-  for Epochsource in self.Epochsource_list:
-   Epochsource.send_trigpoints(self.avg_q_instance)
+  for epochsource in self.Epochsource_list:
+   epochsource.send_trigpoints(self.avg_q_instance)
   return self.avg_q_instance.runrdr()
  def __iter__(self):
   return self.runrdr()

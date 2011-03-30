@@ -54,8 +54,8 @@ null_sink
    trim="%g %g" % (latrange[0],latrange[1])
    for epochs in available_epochs: 
     for epoch in epochs:
-     self.avg_q_object.getepoch(infile,fromepoch=epoch,epochs=1) 
-   self.avg_q_object.write('''
+     self.avg_q_instance.getepoch(infile,fromepoch=epoch,epochs=1) 
+   self.avg_q_instance.write('''
 remove_channel -k %(IC)s
 %(process)s
 trim -a -x %(trim)s
@@ -63,7 +63,7 @@ write_generic stdout string
 null_sink
 -
  '''%{'IC':IC, 'process': process, 'trim':trim})
-   results=[float(x) for x in self.avg_q_object.runrdr()]
+   results=[float(x) for x in self.avg_q_instance.runrdr()]
    values.append(results)
   return values
 
@@ -83,7 +83,7 @@ extract_item %(itempart)d
  
  def measure_conditions(self,ascfile,conditions,zthreshold,raw=False):
   infile=avg_q_file(ascfile) # Take care not to call set_infile on tdetector since we do the get_epoch ourself!
-  triggers=self.avg_q_object.get_filetriggers(infile).gettuples()
+  triggers=self.avg_q_instance.get_filetriggers(infile).gettuples()
 
   available_epochs=[]
   for condition in conditions:
@@ -96,7 +96,7 @@ extract_item %(itempart)d
    for fromepoch in available_epochs[condition_index]:
     position,code,description=triggers[fromepoch-1]
     for theta in zthreshold,-zthreshold:
-     self.avg_q_object.getepoch(infile,fromepoch=fromepoch,epochs=1)
+     self.avg_q_instance.getepoch(infile,fromepoch=fromepoch,epochs=1)
      outtuples=self.detect_z_crossings(theta,raw)
      if outtuples:
       IC_latrange_list.extend(self.get_ranges(outtuples, theta))

@@ -11,13 +11,15 @@ first average.
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>, Tanja Schmitt <schmitt.tanja@web.de>"
 
+from . import Paradigm_Script
+
 class Average(object):
- def __init__(self,avg_q_object,infile,paradigm_instance,conditions=None,event_indices=0,event0index=0):
+ def __init__(self,avg_q_instance,infile,paradigm_instance,conditions=None,event_indices=0,event0index=0):
   '''
   event_indices can either be a scalar or list, or a dict of lists where the keys correspond
   to the conditions.
   '''
-  self.avg_q_object=avg_q_object
+  self.avg_q_instance=avg_q_instance
   self.infile=infile
   self.paradigm_instance=paradigm_instance
   self.sfreq=self.paradigm_instance.sfreq
@@ -44,61 +46,6 @@ class Average(object):
   else:
    return self.event0index.get(condition, 0)
 
- def calc_shiftwidth(self, list_of_latencies):
-  '''
-  this is needed in average_trials(),
-  calculate a shiftwidth around which the response avgs will be shifted in order
-  to plot equivalent sections of the component over each other. 
-  '''
-  import math
-  return math.exp(sum([math.log(x) for x in list_of_latencies])/len(list_of_latencies))
-
- def read_epochs_around_condition(self,condition,event0index,eventindex,beforetrig='0.2s',aftertrig='1s',preprocess='baseline_subtract'):
-  '''
-  This encapsulates reading and shifting all single epochs of a given condition and eventindex, ready for averaging.
-  event0index is the 'reference' event around which the epochs are actually read, baseline subtracted
-  and then recentered around event eventindex.
-  If event0index==eventindex, obviously, epochs are read normally without shift.
-  shiftwidth_points is returned, giving amount by which the re-centered event was shifted.
-  '''
-  beforetrig_points=self.avg_q_object.time_to_points(beforetrig,self.sfreq)
-  aftertrig_points =self.avg_q_object.time_to_points(aftertrig,self.sfreq)
-
-  if eventindex==event0index:
-   point_list=[trial[eventindex] for trial in self.paradigm_instance.trials[condition]] 
-   self.avg_q_object.get_epoch_around_add(self.infile, point_list, beforetrig, aftertrig, branch=preprocess)
-   shiftwidth_points=0
-  else:
-   latency_points=[trial[eventindex][0]-trial[event0index][0] for trial in self.paradigm_instance.trials[condition]]
-   shiftwidth_points=round(self.calc_shiftwidth(latency_points))
-   # Warn if our desired shift point is not within the averaged epoch
-   if aftertrig_points<=shiftwidth_points:
-    print("Warning: shiftwidth_points=%d but aftertrig_points=%d!" % (shiftwidth_points,aftertrig_points))
-   # This is the total target epoch length:
-   trimlength=beforetrig_points+aftertrig_points
-   win_before_trig_points=shiftwidth_points+beforetrig_points
-   win_after_trig_points=trimlength-win_before_trig_points
-   for trial in self.paradigm_instance.trials[condition]:
-    go_point=trial[event0index][0]
-    secondpoint=trial[eventindex][0]
-    pointdiff=secondpoint-go_point
-     
-    winstart_points = beforetrig_points+pointdiff-win_before_trig_points
-    winend_points   = beforetrig_points+pointdiff+win_after_trig_points
-    # Numerically, if the response is sufficiently earlier than the shift width, we get a negative epoch
-    # length for reading. Don't do this.
-    if winend_points<=0:
-     print("Warning: Not reading epoch completely outside of target window!")
-     continue
-    
-    branch_text = preprocess+'''
-trim %(winstart_points)d %(trimlength)d
-set beforetrig %(beforetrig)s
-set xdata 1
-''' % {'winstart_points': winstart_points,'trimlength':trimlength,'beforetrig':beforetrig}
-    self.avg_q_object.get_epoch_around_add(self.infile,go_point,beforetrig_points,winend_points-beforetrig_points,branch=branch_text)
-  return shiftwidth_points
-
  def average_trials(self,beforetrig='0.2s',aftertrig='1s',preprocess='baseline_subtract',pre_average='',postprocess='posplot',test_options='-t'):
   '''
   beforetrig and aftertrig define the length of the final epoch. This is used as-is for the first event_index, while the
@@ -123,24 +70,23 @@ calc -i 2 neg
     continue
    event0index=self.get_event0index(condition)
    for eventindex in event_indices:
-    shiftwidth_points=self.read_epochs_around_condition(condition,event0index,eventindex,beforetrig,aftertrig,preprocess)
+    script=Paradigm_Script.Paradigm_Script(self.avg_q_instance)
+    shiftwidth_points=script.add_Paradigm_Epochsource(self.infile,self.paradigm_instance,condition,event0index,eventindex,beforetrig,aftertrig,preprocess)
     # Now average the epochs
-    self.avg_q_object.get_epoch_around_finish(rest_of_script=pre_average+'''
-average %(test_options)s
-Post:
+    script.add_transform(pre_average)
+    script.set_collect('average %s' % test_options)
+    script.add_postprocess('''
 %(calclog)s
 set_comment Condition %(condition)s event %(eventindex)d shift %(shiftwidth)gms
 %(postprocess)s
--
 ''' % {
-     'test_options': test_options,
      'calclog': calclog,
      'condition':condition,
      'eventindex':eventindex,
      'shiftwidth': shiftwidth_points*1000.0/self.sfreq,
      'postprocess': postprocess
     })
-    self.avg_q_object.run() 
+    script.run()
 
 """
 Next comes the GrandAverage class, handy for doing grand averages.
@@ -160,8 +106,8 @@ import os
 class GrandAverage(object):
  event0index=0
  standardized_RT_ms=600.0 # Fix the reaction here
- def __init__(self,avg_q_object,infiles):
-  self.avg_q_object=avg_q_object
+ def __init__(self,avg_q_instance,infiles):
+  self.avg_q_instance=avg_q_instance
   self.outfile=None
   self.alltuples={}
   self.infiles=[]
@@ -174,8 +120,8 @@ class GrandAverage(object):
     continue
    f=avg_q_file(avgfile)
    if not self.sfreq:
-    self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_object.get_description(f,('sfreq','nr_of_points','beforetrig'))
-   self.alltuples[avgfile]=self.avg_q_object.get_filetriggers(f).gettuples()
+    self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_instance.get_description(f,('sfreq','nr_of_points','beforetrig'))
+   self.alltuples[avgfile]=self.avg_q_instance.get_filetriggers(f).gettuples()
    self.infiles.append(avgfile)
  def get_averages(self,condition,eventindex=None):
   '''Get all single averages, properly aligned and ready for averaging.
@@ -190,13 +136,13 @@ class GrandAverage(object):
    tuples=self.alltuples[avgfile]
    for position,code,description in [(position,code,description) for position,code,description in tuples if self.condstr in description]:
     #print position,code,description
-    self.avg_q_object.getepoch(f,fromepoch=position+1,epochs=1)
+    self.avg_q_instance.getepoch(f,fromepoch=position+1,epochs=1)
     n_averages+=1
     if eventindex!=None and eventindex!=self.event0index:
      shift=get_shift_from_description(description)
      shift_points=int(round((shift-self.standardized_RT_ms)/1000.0*self.sfreq))
      session_shift_points.append(shift_points)
-     self.avg_q_object.write('''
+     self.avg_q_instance.write('''
 >trim %(shift_points)d %(epochlength_points)d
 >set beforetrig %(beforetrig_points)d
 >set xdata 1
@@ -223,7 +169,7 @@ calc -i 2 neg
 '''
   else:
    calclog=''
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 extract_item 0
 average -W %(test_options)s
 Post:
@@ -235,12 +181,12 @@ set_comment %(condstr)s
   'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex!=None and eventindex!=self.event0index else 0)) if eventindex!=None else self.condstr,
   })
   if self.outfile:
-   self.avg_q_object.write('''
+   self.avg_q_instance.write('''
 writeasc %(append)s -b %(outfile)s
 -
 ''' % {
    'append': '-a' if self.append else '',
    'outfile': self.outfile,
    })
-   self.avg_q_object.run()
+   self.avg_q_instance.run()
    self.append=True

@@ -7,8 +7,8 @@ Class to classify and project out artifacts by using ICA
 import os
 
 class ICA_ArtControl(object):
- def __init__(self,avg_q_object):
-  self.avg_q_object=avg_q_object
+ def __init__(self,avg_q_instance):
+  self.avg_q_instance=avg_q_instance
   self.base=None
   self.tmpfiles=[]
   self.remove_channels=set(['Ekg1','Ekg2','Ekg','ECG','BEMG1','BEMG2','EDA','GSR_MR_100_EDA'])
@@ -28,7 +28,7 @@ class ICA_ArtControl(object):
   self.remove_tmpfiles()
   self.clearComponents()
   self.base=base
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 readasc %(base)s_weights_scaled.asc
 query nr_of_points stdout
 null_sink
@@ -36,7 +36,7 @@ null_sink
 ''' % {
   'base': self.base,
   })
-  rdr=self.avg_q_object.runrdr()
+  rdr=self.avg_q_instance.runrdr()
   self.nr_of_components=int(next(rdr))
   for line in rdr:
    print(line)
@@ -56,7 +56,7 @@ null_sink
      activity. Due to 'scale_by invmax', the maximum component will carry the
      weight 1 and therefore will always be selected. 
      Compare get_Artifact_Components2 below.'''
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 readasc %(artifactfile)s
 %(remove_channels)s
 project -C -n -p 0 %(base)s_weights_scaled.asc 0
@@ -73,7 +73,7 @@ null_sink
   'base': self.base,
   })
   components=[]
-  for line in self.avg_q_object.runrdr():
+  for line in self.avg_q_instance.runrdr():
    component,value=line.rstrip('\r\n').split('\t')
    value=float(value)
    component=int(component)
@@ -82,8 +82,8 @@ null_sink
   return components
  def get_trim_selecting_strong_maps(self,getepochscript,relative_strength_cutoff):
   from . import trgfile
-  self.avg_q_object.write(getepochscript)
-  self.avg_q_object.write('''
+  self.avg_q_instance.write(getepochscript)
+  self.avg_q_instance.write('''
 demean_maps
 calc abs
 collapse_channels
@@ -93,7 +93,7 @@ write_crossings collapsed %g stdout
 null_sink
 -
 ''' % relative_strength_cutoff)
-  r=self.avg_q_object.runrdr()
+  r=self.avg_q_instance.runrdr()
   nr_of_points=int(next(r))
   t=trgfile.trgfile(r)
   ranges=[]
@@ -123,8 +123,8 @@ readasc %(artifactfile)s
   'artifactfile': artifactfile,
   }
   trim=self.get_trim_selecting_strong_maps(getepochscript,relative_strength_cutoff)
-  self.avg_q_object.write(getepochscript)
-  self.avg_q_object.write('''
+  self.avg_q_instance.write(getepochscript)
+  self.avg_q_instance.write('''
 trim %(trim)s
 scale_by invmaxabs
 project -C -n -p 0 %(base)s_weights_scaled.asc 0
@@ -139,7 +139,7 @@ null_sink
   'base': self.base,
   })
   components=[]
-  for line in self.avg_q_object.runrdr():
+  for line in self.avg_q_instance.runrdr():
    component,value=line.rstrip('\r\n').split('\t')
    value=float(value)
    component=int(component)
@@ -167,7 +167,7 @@ null_sink
  def get_backproject_script(self,components=None):
   if components is None:
    components=self.notArtComponents()
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 readasc %(base)s_weights_scaled.asc
 %(trim)s
 writeasc -b %(base)s_weights_scaled_tmpproject.asc
@@ -195,7 +195,7 @@ project -C -n -p 0 -m %(base)s_maps_scaled_tmpproject.asc 0
   '''Only the second step of backprojection, start with traces.'''
   if components is None:
    components=self.notArtComponents()
-  self.avg_q_object.write('''
+  self.avg_q_instance.write('''
 readasc %(base)s_maps_scaled.asc
 %(trim)s
 writeasc -b %(base)s_maps_scaled_tmpproject.asc
