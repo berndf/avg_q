@@ -1,0 +1,77 @@
+# Copyright (C) 2009-2011 Bernd Feige
+# This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+"""
+Paradigm_Script class working together with paradigm.py-derived trial lists.
+In particular, we abstract here the idea of reading separately around
+several different events within the epochs (eg Stimulus, Response) while
+referring to the same baseline (before the first event) and shifting the
+averages around the second and following events to exactly overlay the 
+first average.
+"""
+
+__author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>, Tanja Schmitt <schmitt.tanja@web.de>"
+
+import avg_q
+
+class Paradigm_Script(avg_q.Script):
+ def calc_shiftwidth(self, list_of_latencies):
+  '''
+  this is needed in average_trials(),
+  calculate a shiftwidth around which the response avgs will be shifted in order
+  to plot equivalent sections of the component over each other. 
+  '''
+  import math
+  return math.exp(sum([math.log(x) for x in list_of_latencies])/len(list_of_latencies))
+
+ def add_Paradigm_Epochsource(self,infile,paradigm_instance,condition,event0index,eventindex,beforetrig='0.2s',aftertrig='1s',preprocess='baseline_subtract'):
+  '''
+  This encapsulates reading and shifting all single epochs of a given condition and eventindex, ready for averaging.
+  event0index is the 'reference' event around which the epochs are actually read, baseline subtracted
+  and then recentered around event eventindex.
+  If event0index==eventindex, obviously, epochs are read normally without shift.
+  shiftwidth_points is returned, giving amount by which the re-centered event was shifted.
+  '''
+  self.sfreq=self.avg_q_instance.get_description(infile,'sfreq')
+  beforetrig_points=self.avg_q_instance.time_to_points(beforetrig,self.sfreq)
+  aftertrig_points =self.avg_q_instance.time_to_points(aftertrig,self.sfreq)
+
+  if eventindex==event0index:
+   point_list=[trial[eventindex] for trial in paradigm_instance.trials[condition]] 
+   epochsource=avg_q.Epochsource(infile, beforetrig, aftertrig)
+   epochsource.set_trigpoints(point_list)
+   epochsource.set_branch(preprocess)
+   self.add_Epochsource(epochsource)
+   shiftwidth_points=0
+  else:
+   latency_points=[trial[eventindex][0]-trial[event0index][0] for trial in paradigm_instance.trials[condition]]
+   shiftwidth_points=round(self.calc_shiftwidth(latency_points))
+   # Warn if our desired shift point is not within the averaged epoch
+   if aftertrig_points<=shiftwidth_points:
+    print("Warning: shiftwidth_points=%d but aftertrig_points=%d!" % (shiftwidth_points,aftertrig_points))
+   # This is the total target epoch length:
+   trimlength=beforetrig_points+aftertrig_points
+   win_before_trig_points=shiftwidth_points+beforetrig_points
+   win_after_trig_points=trimlength-win_before_trig_points
+   for trial in paradigm_instance.trials[condition]:
+    go_point=trial[event0index][0]
+    secondpoint=trial[eventindex][0]
+    pointdiff=secondpoint-go_point
+     
+    winstart_points = beforetrig_points+pointdiff-win_before_trig_points
+    winend_points   = beforetrig_points+pointdiff+win_after_trig_points
+    # Numerically, if the response is sufficiently earlier than the shift width, we get a negative epoch
+    # length for reading. Don't do this.
+    if winend_points<=0:
+     print("Warning: Not reading epoch completely outside of target window!")
+     continue
+    
+    branch_text = preprocess+'''
+trim %(winstart_points)d %(trimlength)d
+set beforetrig %(beforetrig)s
+set xdata 1
+''' % {'winstart_points': winstart_points,'trimlength':trimlength,'beforetrig':beforetrig}
+    epochsource=avg_q.Epochsource(infile, beforetrig_points, winend_points-beforetrig_points)
+    epochsource.set_trigpoints(go_point)
+    epochsource.set_branch(branch_text)
+    self.add_Epochsource(epochsource)
+  return shiftwidth_points
