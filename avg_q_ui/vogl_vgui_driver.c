@@ -318,9 +318,15 @@ canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
  vdevice.depth = 3;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
  if (VGUI.paint_started) {
+#if GTK_MAJOR_VERSION==2
   GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
   gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
   gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
+#else
+  cairo_rectangle_int_t const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
+  gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),cairo_region_create_rectangle(&crect)),
+#endif
   VGUI.paint_started=TRUE;
  }
 
@@ -329,13 +335,8 @@ canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
  return TRUE;
 }
 static Bool
-canvas_exposure_event(GtkWidget *widget, GdkEventExpose *event) {
-#if 0
- if (widget==VGUI.canvas) {
- }
-#endif
-
- return FALSE;
+canvas_expose_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
+ return canvas_configure_event(widget,NULL);
 }
 static Bool
 window_destroy_event(GtkWidget *windowp, gpointer data, GtkWidget *widget) {
@@ -428,7 +429,6 @@ VGUI_init(void) {
   gtk_window_set_default_size(GTK_WINDOW(VGUI.window), FRAME_SIZE_X, FRAME_SIZE_Y);
  } else {
   gtk_window_set_default_size(GTK_WINDOW(VGUI.window), VGUI.width, VGUI.height);
-  gtk_widget_set_uposition(VGUI.window, VGUI.left, VGUI.top);
  }
  g_signal_connect_object (G_OBJECT (VGUI.window), "delete_event", G_CALLBACK(window_destroy_event), G_OBJECT(VGUI.window), G_CONNECT_SWAPPED);
  g_signal_connect (G_OBJECT (VGUI.window), "configure_event", G_CALLBACK (window_configure_event), NULL);
@@ -998,7 +998,11 @@ VGUI_init(void) {
 		      | GDK_KEY_PRESS_MASK
 		      | GDK_PROPERTY_CHANGE_MASK);
  g_signal_connect (G_OBJECT (VGUI.canvas), "configure_event", G_CALLBACK (canvas_configure_event), NULL);
- g_signal_connect (G_OBJECT (VGUI.canvas), "expose_event", G_CALLBACK (canvas_exposure_event), NULL);
+#if GTK_MAJOR_VERSION==2
+ g_signal_connect (G_OBJECT (VGUI.canvas), "expose_event", G_CALLBACK (canvas_expose_event), NULL);
+#else
+ g_signal_connect (G_OBJECT (VGUI.canvas), "draw", G_CALLBACK (canvas_expose_event), NULL);
+#endif
  g_signal_connect (G_OBJECT (VGUI.canvas), "key_press_event", G_CALLBACK (key_press_event), NULL);
  g_signal_connect (G_OBJECT (VGUI.canvas), "button_press_event", G_CALLBACK (button_press_event), NULL);
  g_signal_connect (G_OBJECT (VGUI.canvas), "motion_notify_event", G_CALLBACK (motion_notify_event), NULL);
@@ -1064,10 +1068,15 @@ VGUI_frontbuffer(void) {
 static int 
 VGUI_backbuffer(void) {
  //printf("VGUI_backbuffer\n");
- GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
  if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
  if (VGUI.backbuffer) {
+#if GTK_MAJOR_VERSION==2
+  GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
   gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
+#else
+  cairo_rectangle_int_t const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),cairo_region_create_rectangle(&crect)),
+#endif
   VGUI.paint_started=TRUE;
  }
  return (0);

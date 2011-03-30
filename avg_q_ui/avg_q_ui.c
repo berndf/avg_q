@@ -299,7 +299,7 @@ Notice(gchar *message) {
  GtkWidget *button;
 
  if (Notice_window!=NULL) {
-  gtk_widget_destroy (GTK_WIDGET(Notice_window));
+  gtk_widget_destroy (Notice_window);
   Notice_window=NULL;
  }
 
@@ -310,7 +310,7 @@ Notice(gchar *message) {
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
  box1 = gtk_vbox_new (FALSE, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(Notice_window)), box1, FALSE, FALSE, 0);
+ gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
  label = gtk_label_new (message);
@@ -651,7 +651,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_SELECTION: {
       GtkWidget * const combo=dialog_widgets[active_widget++];
-      const char * const text=gtk_combo_box_get_active_text(combo);
+      const char * const text=gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
       if (text==NULL) {
        /* This should be only a security precaution... */
        TRACEMS(tinfostruc.emethods, 0, "Combo box selection is NULL!\n");
@@ -944,7 +944,7 @@ method_fileselect_all(method_file_sel_data *data) {
    GtkFileFilter *allfiles=gtk_file_filter_new();
    gtk_file_filter_add_pattern(filter,text); gtk_file_filter_set_name(filter,text);
    gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
-   gtk_file_chooser_add_filter(filesel,filter); gtk_file_chooser_add_filter(filesel,allfiles);
+   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
   } else {
    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (filesel), text);
   }
@@ -993,7 +993,7 @@ Run_Keypress_Now(gpointer data) {
 }
 LOCAL Bool
 method_normal_entry_keypress_event(GtkWidget *widget, GdkEventKey *event, GtkWidget **in_dialog_widgets) {
- if (event->keyval==GDK_Return) {
+ if (event->keyval==GDK_KEY_Return) {
   g_signal_stop_emission_by_name(G_OBJECT(widget), "key_press_event");
   g_signal_emit_by_name(G_OBJECT(MethodInstance_Defaultbutton), "clicked", NULL);
   return TRUE;
@@ -1002,7 +1002,7 @@ method_normal_entry_keypress_event(GtkWidget *widget, GdkEventKey *event, GtkWid
 }
 LOCAL Bool
 method_optional_entry_keypress_event(GtkWidget *widget, GdkEventKey *event, GtkWidget **in_dialog_widgets) {
- if (event->keyval==GDK_Return) {
+ if (event->keyval==GDK_KEY_Return) {
   g_signal_stop_emission_by_name(G_OBJECT(widget), "key_press_event");
   g_signal_emit_by_name(G_OBJECT(MethodInstance_Defaultbutton), "clicked", NULL);
   return TRUE;
@@ -1012,9 +1012,6 @@ method_optional_entry_keypress_event(GtkWidget *widget, GdkEventKey *event, GtkW
  Avg_q_Run_Keypress_Now_Tag=g_idle_add(Run_Keypress_Now, (gpointer)in_dialog_widgets);
  return FALSE;
 }
-/* Nobody nows why a callback attached with one and the same g_signal_connect sometimes
- * adds event info as second argument and sometimes not - in case of a "changed" event
- * callback, it obviously doesn't... */
 LOCAL Bool
 method_combo_changed_event(GtkWidget *widget, GtkWidget **in_dialog_widgets) {
  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(in_dialog_widgets[-1]), TRUE);
@@ -1035,7 +1032,7 @@ MethodInstance_build_dialog(void) {
  gtk_window_set_title (GTK_WINDOW (MethodInstance_window), method.method_name);
 
  box1 = gtk_vbox_new (FALSE, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(MethodInstance_window)), box1, FALSE, FALSE, 0);
+ gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(MethodInstance_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
  label = gtk_label_new (method.method_description);
@@ -1152,11 +1149,11 @@ MethodInstance_build_dialog(void) {
       }
       break;
      case T_ARGS_TAKES_SELECTION: {
-      GtkWidget * const combo=gtk_combo_box_new_text ();
+      GtkWidget * const combo=gtk_combo_box_text_new ();
       const char *const *choice=argument_descriptor->choices;
 
       while (*choice!=NULL) {
-       gtk_combo_box_append_text(combo, *choice);
+       gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), *choice);
        choice++;
       }
       gtk_box_pack_start (GTK_BOX(hbox), combo, FALSE, FALSE, 0);
@@ -1273,7 +1270,7 @@ button_press_event(GtkWidget *widget, GdkEventButton *event) {
 }
 LOCAL Bool
 key_press_in_mainwindow(GtkWidget *widget, GdkEventKey *event) {
- if (event->keyval==GDK_Tab) {
+ if (event->keyval==GDK_KEY_Tab) {
   setup_from_line_requested();
   return TRUE;
  }
@@ -1432,7 +1429,7 @@ Run_Script(void) {
     }
     only_script=save_only_script;
     if (!interactive && script_file==NULL) {
-     g_idle_add((GtkFunction)gtk_main_quit, NULL);
+     g_idle_add((GSourceFunc)gtk_main_quit, NULL);
     }
     break;
    case ERROR_STATUS:
@@ -1471,7 +1468,7 @@ Run_Script(void) {
   gtk_widget_set_sensitive(Stop_Entry, FALSE);
   gtk_widget_set_sensitive(Kill_Entry, FALSE);
   if (script_file!=NULL) {
-   Avg_q_Load_Subscript_Tag=g_idle_add((GtkFunction)Load_Next_Subscript, NULL);
+   Avg_q_Load_Subscript_Tag=g_idle_add(Load_Next_Subscript, NULL);
   }
   gdk_threads_leave();
   growing_buf_free(&script);
@@ -1593,7 +1590,7 @@ Load_Script(gchar *name) {
  if (error==NULL) {
   subscript_loaded=0;
   clear_script();
-  Avg_q_Load_Subscript_Tag=g_idle_add((GtkFunction)Load_Next_Subscript, NULL);
+  Avg_q_Load_Subscript_Tag=g_idle_add(Load_Next_Subscript, NULL);
   snprintf(errormessage, ERRORMESSAGE_SIZE, "Loading script from file %s.", name);
  } else {
   snprintf(errormessage, ERRORMESSAGE_SIZE, "open_file: %s: %s", name, strerror(errno));
@@ -1793,7 +1790,7 @@ Run_Script(void) {
    }
    if (!interactive) {
     gdk_threads_enter();
-    g_idle_add((GtkFunction)gtk_main_quit, NULL);
+    g_idle_add(gtk_main_quit, NULL);
     gdk_threads_leave();
    }
    break;
@@ -1888,7 +1885,7 @@ dump_file_as(GtkWidget *menuitem) {
  GtkFileFilter *allfiles=gtk_file_filter_new();
  gtk_file_filter_add_pattern(filter,"*.h"); gtk_file_filter_set_name(filter,"*.h");
  gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
- gtk_file_chooser_add_filter(filesel,filter); gtk_file_chooser_add_filter(filesel,allfiles);
+ gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
  gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
@@ -1996,7 +1993,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
  accpath="<AVG_Q_UI>/File";
- gtk_accel_map_add_entry(accpath, GDK_Z, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_Z, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(menuitem, accpath, accel_group);
 
 #ifndef STANDALONE
@@ -2005,7 +2002,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
  accpath="<AVG_Q_UI>/File/Open";
- gtk_accel_map_add_entry(accpath, GDK_L, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_L, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(menuitem, accpath, accel_group);
 
  menuitem=gtk_menu_item_new_with_label("Save");
@@ -2013,7 +2010,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
  accpath="<AVG_Q_UI>/File/Save";
- gtk_accel_map_add_entry(accpath, GDK_S, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_S, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(menuitem, accpath, accel_group);
 
  menuitem=gtk_menu_item_new_with_label("Save as");
@@ -2027,7 +2024,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Run_Entry);
  gtk_widget_show (Run_Entry);
  accpath="<AVG_Q_UI>/File/Run";
- gtk_accel_map_add_entry(accpath, GDK_R, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_R, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(Run_Entry, accpath, accel_group);
 
 #ifndef STANDALONE
@@ -2036,7 +2033,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Run_Subscript_Entry);
  gtk_widget_show (Run_Subscript_Entry);
  accpath="<AVG_Q_UI>/File/Run sub-script";
- gtk_accel_map_add_entry(accpath, GDK_T, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_T, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(Run_Subscript_Entry, accpath, accel_group);
 #endif
 
@@ -2046,7 +2043,7 @@ create_main_window (void) {
  gtk_widget_set_sensitive(Stop_Entry, FALSE);
  gtk_widget_show (Stop_Entry);
  accpath="<AVG_Q_UI>/File/Stop script";
- gtk_accel_map_add_entry(accpath, GDK_Y, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_Y, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(Stop_Entry, accpath, accel_group);
 
  Kill_Entry=gtk_menu_item_new_with_label("Cancel script");
@@ -2075,7 +2072,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
  accpath="<AVG_Q_UI>/File/Quit";
- gtk_accel_map_add_entry(accpath, GDK_Q, GDK_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_Q, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(menuitem, accpath, accel_group);
 
  g_signal_connect (G_OBJECT (filemenu), "key_press_event", G_CALLBACK (key_press_for_mainwindow), NULL);
@@ -2213,7 +2210,6 @@ create_main_window (void) {
  gtk_container_add (GTK_CONTAINER (handle_box), hbox);
 
  Avg_q_StatusBar = gtk_statusbar_new();
- gtk_statusbar_set_has_resize_grip(GTK_STATUSBAR(Avg_q_StatusBar), FALSE);
  /* FIXME The 'natural width' of the status bar remains 0 irrespective of the text
   * pushed to it. This means that if the handle_box is torn off, the whole thing
   * collapses to a mere handle - so we set a minimum width here: */
@@ -2224,7 +2220,6 @@ create_main_window (void) {
  set_status("Welcome to avg_q!");
 
  Avg_q_StatusRunBar = gtk_statusbar_new();
- gtk_statusbar_set_has_resize_grip(GTK_STATUSBAR(Avg_q_StatusRunBar), FALSE);
  gtk_widget_set_size_request(Avg_q_StatusRunBar, FRAME_SIZE_X/2, -1);
  gtk_box_pack_start (GTK_BOX (hbox), Avg_q_StatusRunBar, TRUE, TRUE, 0);
  gtk_widget_show (Avg_q_StatusRunBar);
@@ -2293,29 +2288,6 @@ Load_Script_Now(gpointer data) {
  return FALSE;
 }
 #endif
-#include <sys/stat.h>
-LOCAL void
-initialize_gtk_defaults(void) {
- char buf[1024], *envstring;
- struct stat statbuf;
- GtkStyle* Default_style;
-
- Default_style=gtk_widget_get_default_style();
- Default_style->font_desc=pango_font_description_from_string(DEFAULT_FONT);
-
- if ((envstring=getenv("AVG_Q_UIRC"))!=NULL) {
-  gtk_rc_parse (envstring);
- } else if (stat(AVG_Q_UIRC, &statbuf)==0) {
-  gtk_rc_parse (AVG_Q_UIRC);
- } else if ((envstring=getenv("HOME"))!=NULL) {
-  strcpy(buf, envstring);
-  strcat(buf, "/");
-  strcat(buf, AVG_Q_UIRC);
-  if (stat(envstring, &statbuf)==0) {
-   gtk_rc_parse (buf);
-  }
- }
-}
 /*}}}  */
 
 /*{{{ main()*/
@@ -2353,8 +2325,6 @@ main (int argc, char *argv[]) {
   * program runs, otherwise `unexpected results' occur... 
   * This is documented behavior: envbuffer becomes part of the environment. */ 
 
- gtk_set_locale ();
-
 #ifdef USE_THREADING
  /* init threads */
  g_thread_init(NULL);
@@ -2366,8 +2336,6 @@ main (int argc, char *argv[]) {
 #ifdef HAVE_LIBGLE
  gle_init (&argc, &argv);
 #endif /* !HAVE_LIBGLE */
-
- initialize_gtk_defaults();
 
  /* These things should be done before the first calls to the BF library
   * (including method selections): */
