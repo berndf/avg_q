@@ -31,19 +31,14 @@ class Detector(avg_q.Script):
   crossings=trgfile.trgfile(self.runrdr())
   outtuples=[]
   for point,code,description in crossings:
-   if not maxvalue or float(description)<=maxvalue:
-    if self.detection_start is not None and (point<self.detection_start or point>=self.detection_start+self.detection_length):
-     point=None
-     break
-    for breakpoint in self.breakpoints:
-     if abs(point-breakpoint)<self.distance_from_breakpoint_points:
-      point=None
-      break
-    if point is not None:
-     if not description and 'Channel' in crossings.preamble:
-      channel=crossings.preamble['Channel']
-      description=' '.join((crossings.preamble['Epoch'],channel)) if 'Epoch' in crossings.preamble else channel
-     outtuples.append((point,code,description))
+   if self.detection_start is not None and (point<self.detection_start or point>=self.detection_start+self.detection_length) \
+    or maxvalue is not None and float(description)>maxvalue \
+    or any([abs(point-breakpoint)<self.distance_from_breakpoint_points for breakpoint in self.breakpoints]):
+    continue
+   if not description and 'Channel' in crossings.preamble:
+    channel=crossings.preamble['Channel']
+    description=' '.join((crossings.preamble['Epoch'],channel)) if 'Epoch' in crossings.preamble else channel
+   outtuples.append((point,code,description))
   if not self.sfreq and 'Sfreq' in crossings.preamble:
    self.sfreq=float(crossings.preamble['Sfreq'])
   if outtrigfile:

@@ -3,6 +3,7 @@
 import avg_q
 import avg_q.Detector
 import os
+import copy
 
 default_sessionaverage_EOGfile='avgEOG.asc'
 
@@ -42,7 +43,10 @@ class EOG(avg_q.Detector.Detector):
  def detect_VEOG(self,outtrigfile=None):
   # self.VEOGtriggers will be reused if already set
   if self.VEOGtriggers is not None: return
-  self.transforms=[self.get_VEOG_script]
+  # Save and restore the current list of transforms, since we measure by (temporally)
+  # appending to this list
+  storetransforms=copy.copy(self.transforms)
+  self.add_transform(self.get_VEOG_script)
   self.add_transform('''
 set_channelposition -s EOG 0 0 0
 fftfilter 0 0 0.3Hz 0.4Hz 3Hz 3.2Hz 1 1
@@ -54,6 +58,7 @@ write_crossings -E EOG %(VEOG_minamp)f stdout
   'VEOG_minamp': self.VEOG_minamp,
  })
   self.VEOGtriggers=self.detect(outtrigfile, maxvalue=self.VEOG_maxamp)
+  self.transforms=storetransforms
  def average_EOG(self):
   '''Average EOG events with strict checks for duration and surroundings.
      Returns the number of accepted EOGs.'''

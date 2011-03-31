@@ -3,6 +3,7 @@
 import avg_q
 import avg_q.Detector
 import os
+import copy
 
 default_sessionaverage_ECGfile='avgECG.asc'
 
@@ -30,7 +31,10 @@ class ECG(avg_q.Detector.Detector):
  def detect_ECG(self,outtrigfile=None,maxvalue=None):
   # self.ECGtriggers will be reused if already set
   if self.ECGtriggers is not None: return
-  self.transforms=[self.get_ECG_script]
+  # Save and restore the current list of transforms, since we measure by (temporally)
+  # appending to this list
+  storetransforms=copy.copy(self.transforms)
+  self.add_transform(self.get_ECG_script)
   if self.ECGtemplate:
    self.add_transform('''
 set_channelposition -s ECG 0 0 0
@@ -54,6 +58,7 @@ scale_by invpointquantile 0.98
 write_crossings -E -R 0.5s ECG 1 stdout
 ''')
   self.ECGtriggers=self.detect(outtrigfile, maxvalue)
+  self.transforms=storetransforms
  def average_ECG(self):
   '''Average ECG events with rejection.
      Returns the number of accepted ECGs.'''
