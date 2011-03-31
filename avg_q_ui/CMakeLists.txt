@@ -18,8 +18,8 @@ PROJECT(avg_q_ui)
 
 IF(WIN32)
  SET(GTKPATH ${CMAKE_SOURCE_DIR}/wingtk2)
- SET(GTK2_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
- SET(GTK2_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
+ SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
+ SET(GTK_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
   -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)
  IF(${WIN32_THREADED})
   SET(GTHREAD_CFLAGS -I${GTKPATH}/include/glib-2.0)
@@ -32,29 +32,35 @@ IF(WIN32)
  ENDIF(${WIN32_THREADED})
  LINK_DIRECTORIES(${GTKPATH}/lib)
 ELSE(WIN32)
+ INCLUDE(FindPkgConfig)
  IF(${UNIX_THREADED})
+  pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
   SET(USE_THREADING -DUSE_THREADING)
  ELSE(${UNIX_THREADED})
+  SET(GTHREAD_CFLAGS)
+  SET(GTHREAD_LIBRARIES)
   SET(USE_THREADING)
  ENDIF(${UNIX_THREADED})
-INCLUDE(FindPkgConfig)
-pkg_check_modules(GTK2 REQUIRED gtk+-2.0)
-pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
+ IF(AVG_Q_GTK3)
+  pkg_check_modules(GTK REQUIRED gtk+-3.0)
+ ELSE(AVG_Q_GTK3)
+  pkg_check_modules(GTK REQUIRED gtk+-2.0)
+ ENDIF(AVG_Q_GTK3)
 
-#message(STATUS "inc: -${GTK2_INCLUDE_DIRS}")
-#message(STATUS "link libraries: -${GTK2_LIBRARIES}")
-#message(STATUS "cflags: -${GTK2_CFLAGS}")
-#message(STATUS "link dir: -${GTK2_LINK_DIR}")
+ #message(STATUS "inc: -${GTK_INCLUDE_DIRS}")
+ #message(STATUS "link libraries: -${GTK_LIBRARIES}")
+ #message(STATUS "cflags: -${GTK_CFLAGS}")
+ #message(STATUS "link dir: -${GTK_LINK_DIR}")
 ENDIF(WIN32)
 
-ADD_DEFINITIONS(${GTK2_CFLAGS} -DGTK_DISABLE_SINGLE_INCLUDES -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED -DGSEAL_ENABLE)
+ADD_DEFINITIONS(${GTK_CFLAGS} -DGTK_DISABLE_SINGLE_INCLUDES -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED -DGSEAL_ENABLE)
 ADD_DEFINITIONS(${GTHREAD_CFLAGS} ${USE_THREADING})
 
 ADD_LIBRARY(vogl_vgui STATIC vogl_vgui_driver.c)
 ADD_LIBRARY(dummy_vogl_vgui STATIC dummy_vogl_vgui_driver.c)
 
 ADD_EXECUTABLE(avg_q_ui avg_q_ui.c)
-TARGET_LINK_LIBRARIES(avg_q_ui ${BF_LIBS_VGUI} ${GTK2_LIBRARIES}
+TARGET_LINK_LIBRARIES(avg_q_ui ${BF_LIBS_VGUI} ${GTK_LIBRARIES}
  ${GTHREAD_LIBRARIES})
 
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
@@ -62,7 +68,7 @@ IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
  SET_TARGET_PROPERTIES(avg_q_ui1 PROPERTIES 
   COMPILE_FLAGS "-DSTANDALONE"
  )
- TARGET_LINK_LIBRARIES(avg_q_ui1 ${BF_LIBS_VGUI} ${GTK2_LIBRARIES}
+TARGET_LINK_LIBRARIES(avg_q_ui1 ${BF_LIBS_VGUI} ${GTK_LIBRARIES}
   ${GTHREAD_LIBRARIES})
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
 IF(WIN32)

@@ -17,6 +17,9 @@
 PROJECT(avg_q)
 
 OPTION(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)
+# Note that setting this in ccmake doesn't work, pkg_check_modules runs too
+# early and is cached...
+OPTION(AVG_Q_GTK3 "Build avg_q_ui against GTK3" OFF)
 
 IF(AVG_Q_BUILD_DEBUG)
  SET(CMAKE_BUILD_TYPE Debug)

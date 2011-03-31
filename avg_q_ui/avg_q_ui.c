@@ -125,6 +125,14 @@ LOCAL enum method_types method_types[]={
  * setting, all transform methods fit in 2 menus that are about the
  * height of the default window under X11. */
 #define MAX_MENUENTRIES 25
+
+/* Need some compatibility definitions */
+#if GTK_MAJOR_VERSION==2 && GTK_MINOR_VERSION<24
+#define GTK_COMBO_BOX_TEXT(x) GTK_COMBO_BOX(x)
+#define gtk_combo_box_text_new() gtk_combo_box_new_text()
+#define gtk_combo_box_text_append_text(x,y) gtk_combo_box_append_text(x,y)
+#define gtk_combo_box_text_get_active_text(x) gtk_combo_box_get_active_text(x)
+#endif
 /*}}}*/
 
 /*{{{ Declarations*/
@@ -133,12 +141,12 @@ LOCAL my_emethod external_method;
 LOCAL struct transform_methods_struct mymethod;
 
 LOCAL GtkWidget *Avg_Q_Main_Window;
-LOCAL volatile GtkWidget *CurrentScriptPanel, *TracePanel=NULL;
+LOCAL GtkWidget *CurrentScriptPanel, *TracePanel=NULL;
 #define CurrentScriptBuffer (gtk_text_view_get_buffer(GTK_TEXT_VIEW(CurrentScriptPanel)))
 LOCAL GtkWidget *TraceMenuItems[4];
 LOCAL GtkWidget *Avg_q_StatusBar;
 LOCAL gint Avg_q_StatusContext, Avg_q_StatusId=0;
-LOCAL volatile GtkWidget *Avg_q_StatusRunBar;
+LOCAL GtkWidget *Avg_q_StatusRunBar;
 LOCAL gint Avg_q_StatusRunContext, Avg_q_StatusRunId=0;
 #ifdef STANDALONE
 LOCAL gint Avg_q_Run_Script_Now_Tag=0;
@@ -147,10 +155,10 @@ LOCAL gint Avg_q_Load_Script_Now_Tag=0;
 LOCAL gint Avg_q_Load_Subscript_Tag=0;
 #endif
 G_LOCK_DEFINE_STATIC (running);
-LOCAL volatile Bool running=FALSE, interactive=FALSE, dumponly=FALSE, single_step=FALSE;
+LOCAL Bool running=FALSE, interactive=FALSE, dumponly=FALSE, single_step=FALSE;
 G_LOCK_DEFINE_STATIC (stop_request);
-LOCAL volatile Bool stop_request=FALSE;
-LOCAL volatile FILE *dumpfile;
+LOCAL Bool stop_request=FALSE;
+LOCAL FILE *dumpfile;
 #define FilenameLength 300
 LOCAL char filename[FilenameLength]="avg_q_ui.script";
 LOCAL GtkWidget *Run_Entry, *Stop_Entry, *Kill_Entry, *Dump_Entry;
@@ -158,7 +166,7 @@ LOCAL GtkWidget *Run_Entry, *Stop_Entry, *Kill_Entry, *Dump_Entry;
 LOCAL GtkWidget *Run_Subscript_Entry;
 LOCAL GtkWidget *Dialog_Configuration_Error;
 LOCAL gint Avg_q_Run_Keypress_Now_Tag=0;
-LOCAL volatile GIOChannel *script_file=NULL;
+LOCAL GIOChannel *script_file=NULL;
 LOCAL int subscript_loaded=0;
 #endif
 LOCAL int only_script=0, nr_of_script_variables=0;
@@ -1157,7 +1165,7 @@ MethodInstance_build_dialog(void) {
        choice++;
       }
       gtk_box_pack_start (GTK_BOX(hbox), combo, FALSE, FALSE, 0);
-      gtk_combo_box_set_active(combo,argument->arg.i);
+      gtk_combo_box_set_active(GTK_COMBO_BOX(combo),argument->arg.i);
       if (entry_is_optional) {
        g_signal_connect (combo, "changed", G_CALLBACK (method_combo_changed_event), (gpointer)&dialog_widgets[nr_of_active_elements]);
       }
@@ -1790,7 +1798,7 @@ Run_Script(void) {
    }
    if (!interactive) {
     gdk_threads_enter();
-    g_idle_add(gtk_main_quit, NULL);
+    g_idle_add((GSourceFunc)gtk_main_quit, NULL);
     gdk_threads_leave();
    }
    break;
