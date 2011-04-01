@@ -228,9 +228,14 @@ sliding_average(transform_info_ptr tinfo) {
   return tinfo->tsdata;
  }
 
+ sdata->allocated_outpoints=(int)rint(tinfo->nr_of_points/sdata->sstep);
+ if (sdata->allocated_outpoints==0) {
+  /* Zero size result data set! Reject this epoch. */
+  return NULL;
+ }
+
  multiplexed(tinfo);
 
- sdata->allocated_outpoints=(int)rint(tinfo->nr_of_points/sdata->sstep);
  /*{{{  Allocate the output memory*/
  if ((slidedata=(DATATYPE *)malloc(tinfo->nr_of_channels*sdata->allocated_outpoints*tinfo->itemsize*sizeof(DATATYPE)))==NULL) {
   ERREXIT(tinfo->emethods, "sliding_average: Error allocating slidedata memory\n");
@@ -275,9 +280,9 @@ sliding_average(transform_info_ptr tinfo) {
   }
  }
  tinfo->sfreq*= size_factor;	/* Adjust the sampling rate */
+ tinfo->nr_of_points=sdata->allocated_outpoints;
  tinfo->beforetrig=(int)rint(tinfo->beforetrig*size_factor);
  tinfo->aftertrig=tinfo->nr_of_points-tinfo->beforetrig;
- tinfo->nr_of_points=sdata->allocated_outpoints;
  tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels*tinfo->itemsize;
 
  return slidedata;
