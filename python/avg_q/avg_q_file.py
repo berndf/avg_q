@@ -15,6 +15,7 @@ formats_and_extensions=[
  ('sound', ['.wav','.WAV','.au','.AU','.snd','.SND']),
  ('Coherence', ['.Eeg']),
  ('Konstanz', ['.sum', '.SUM', '.raw', '.RAW']),
+ ('Vitaport', ['.vpd', '.VPD', '.raw', '.RAW']),
 ]
 
 class avg_q_file(object):
@@ -50,6 +51,10 @@ read_rec %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(tr
    self.getepochmethod='''
 read_freiburg %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftertrig)s
 '''
+  elif fileformat=='Vitaport':
+   self.getepochmethod='''
+read_vitaport %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
+'''
   elif fileformat=='neurofile':
    self.getepochmethod='''
 read_neurofile %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
@@ -60,7 +65,7 @@ read_inomed %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %
 '''
   elif fileformat=='sound':
    self.getepochmethod='''
-read_sound %(fromepoch_arg)s %(offset_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftertrig)s
+read_sound %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftertrig)s
 '''
   elif fileformat=='Coherence':
    from . import Coherence
@@ -68,7 +73,7 @@ read_sound %(fromepoch_arg)s %(offset_arg)s %(fromepoch_arg)s %(epochs_arg)s %(o
    self.getepochmethod=coherencefile.getepochmethod
   elif fileformat=='Konstanz':
    self.getepochmethod='''
-read_kn %(offset_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(triglist_arg)s
+read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filename)s
 '''
   else:
    raise Exception("Unknown fileformat %s" % fileformat)
