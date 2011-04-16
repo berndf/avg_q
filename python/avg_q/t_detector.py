@@ -28,20 +28,18 @@ uses the Detector module to evaluate crossings of z-scores, calculated from the 
   detects the crossings of IC's z_scores above threshold
   this must be called for the positive and negative threshold separately if desired
   ''' 
-  outtuples=self.detect('''
+  self.add_transform('''
 %(filtercmd)s
 trim -x 0 Inf
 %(scale)s
 write_crossings -x -i %(itempart)s ALL %(threshold)f stdout
-null_sink
--
 ''' % {
    'filtercmd': '' if self.filterspec is None else 'fftfilter -i %(itempart)s %(filterspec)s' % {'itempart': self.itempart, 'filterspec': self.filterspec},
    'itempart': self.itempart,
    'threshold': theta,
    'scale': '' if raw else 'scale_by -i %s invsqrtnrofaverages' % self.itempart,
   })   
-  return outtuples
+  return self.detect()
 
  def measure_ranges(self,infile,available_epochs,IC_latrange_list,process='extract_item 0'):
   '''

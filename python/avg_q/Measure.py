@@ -9,7 +9,7 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 import avg_q
 import copy
 
-class Measure(avg_q.Script):
+class Measure_Script(avg_q.Script):
  def __init__(self,avg_q_instance):
   avg_q.Script.__init__(self,avg_q_instance)
   self.sum_range=False # If set, measure the sum, not the average of each range

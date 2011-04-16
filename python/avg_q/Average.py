@@ -160,6 +160,17 @@ class GrandAverage(object):
      plus the script separator and run() yourself.'''
   self.outfile=outfile
   self.append=append
+ def posplot(self,condition,eventindex=None):
+  '''Debug: show all epochs as they would be averaged by single_average.'''
+  if self.get_averages(condition,eventindex)==0: return
+  self.avg_q_instance.write('''
+extract_item 0
+append -l
+Post:
+posplot
+-
+''')
+  self.avg_q_instance.run()
  def single_average(self,condition,eventindex=None,test_options='-t'):
   if self.get_averages(condition,eventindex)==0: return
   if '-t' in test_options and not '-u' in test_options:

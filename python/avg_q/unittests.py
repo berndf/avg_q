@@ -161,16 +161,16 @@ class avg_q_test_case6(avg_q_test_case):
   import avg_q.Measure
   epochsource=avg_q.Epochsource("o.cnt",'100ms','1s')
   epochsource.set_trigpoints(['2s','5s'])
-  M=avg_q.Measure.Measure(self.avg_q_instance)
+  M=avg_q.Measure.Measure_Script(self.avg_q_instance)
   M.add_Epochsource(epochsource)
   result=M.measure([['A17',[[90,120],[150,180]]],['A10',[[370,550]]]])
   return [str(x) for x in result]
- expected_output='''(1, 'A17', '90 120', -13.5, 111.667)
-(1, 'A17', '150 180', -5.5, 161.923)
-(1, 'A10', '370 550', 9.05263, 445.968)
-(2, 'A17', '90 120', 3.25, 100.286)
-(2, 'A17', '150 180', -25.75, 165.049)
-(2, 'A10', '370 550', 12.1053, 468.944)'''
+ expected_output='''[1, 'A17', '90 120', -13.5, 111.667]
+[1, 'A17', '150 180', -5.5, 161.923]
+[1, 'A10', '370 550', 9.05263, 445.968]
+[2, 'A17', '90 120', 3.25, 100.286]
+[2, 'A17', '150 180', -25.75, 165.049]
+[2, 'A10', '370 550', 12.1053, 468.944]'''
 
 if __name__ == '__main__':
  import sys
