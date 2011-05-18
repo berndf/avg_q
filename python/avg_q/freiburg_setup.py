@@ -57,9 +57,10 @@ setups=[
 
 import os
 def sleep_channels(infile,nr_of_channels):
+ import bookno
  infile,ext=os.path.splitext(infile)
- bookno=os.path.basename(infile).lower()
- eegnr=klinik.database_bookno(bookno.upper())
+ booknumber=os.path.basename(infile).lower()
+ eegnr=bookno.database_bookno(booknumber.upper())
  s=sa.select([somno.c.Schema],somno.c.bn==eegnr).execute().fetchall()
  schema=None
  if len(s)==0:
@@ -69,24 +70,24 @@ def sleep_channels(infile,nr_of_channels):
   if debug:
    print("Schema: " + schema)
  # First look for explicit file associations
- for schemas,booknos,channelnames in setups:
-  if bookno in booknos:
+ for schemas,booknumbers,channelnames in setups:
+  if booknumber in booknumbers:
    if debug:
-    print('Found bookno %s, schema %s overridden by %s' % (bookno, schema, " ".join(schemas)))
+    print('Found bookno %s, schema %s overridden by %s' % (booknumber, schema, " ".join(schemas)))
    return channelnames
  # Then use the schema
  if schema:
-  for schemas,booknos,channelnames in setups:
+  for schemas,booknumbers,channelnames in setups:
    if schema in schemas and len(channelnames)==nr_of_channels:
     if debug:
      print('Found %d channel schema %s' % (nr_of_channels, schema))
     return channelnames
  # Last resort: Use nr_of_channels only
- for schemas,booknos,channelnames in setups:
+ for schemas,booknumbers,channelnames in setups:
   if len(channelnames)==nr_of_channels:
    if debug:
-    print('Using %d-channel setup for %s, schema=%s' % (nr_of_channels,bookno,schema))
+    print('Using %d-channel setup for %s, schema=%s' % (nr_of_channels,booknumber,schema))
    return channelnames
  if debug:
-  print('Oops, no schema for %d channels, returning enumerated channels for %s' % (nr_of_channels,bookno))
+  print('Oops, no schema for %d channels, returning enumerated channels for %s' % (nr_of_channels,booknumber))
  return [str(x) for x in range(1,nr_of_channels+1)]

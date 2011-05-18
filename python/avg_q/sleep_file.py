@@ -1,4 +1,4 @@
-# Copyright (C) 2008,2009 Bernd Feige
+# Copyright (C) 2008-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 This provides a derived version of avg_q_file which encapsulates access to sleep EEG files.
@@ -34,8 +34,8 @@ class sleep_file(avg_q_file):
   self.first,self.ext=os.path.splitext(filename)
   if not self.ext:
    # No extension: Assume this is a book number
-   import klinik
-   file_bookno=klinik.file_bookno(filename)
+   import bookno
+   file_bookno=bookno.file_bookno(filename)
    self.filename=None
    self.filename=dcache.find(rawfile_paths,file_bookno)
    if self.filename:

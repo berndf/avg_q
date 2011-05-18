@@ -48,9 +48,12 @@ scale_by invpointquantile 0.9
 write_crossings -E -R 0.5s ECG 1 stdout
 ''' % {'ECGtemplate': self.ECGtemplate})
   else:
+   # Note that previous versions filtered "0 0 10Hz 11Hz" here but a systematic
+   # optimization between 1Hz and 10Hz shows that "0 0 4Hz 5Hz" yields
+   # the best "R peak to other peaks" ratio.
    self.add_transform('''
 set_channelposition -s ECG 0 0 0
-fftfilter 0 0 10Hz 11Hz
+fftfilter 0 0 4Hz 5Hz
 recode -Inf 0 0 0
 scale_by invpointquantile 0.98
 #write_crossings -E -R 0.5s ECG 1 triggers

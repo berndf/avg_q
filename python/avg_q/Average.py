@@ -114,6 +114,7 @@ class GrandAverage(object):
   self.sfreq=None
   self.epochlength_points=None
   self.beforetrig_points=None
+  self.session_shift_points=None
   for avgfile in infiles:
    if not os.path.exists(avgfile):
     print("Oops, %s doesn't exist!" % avgfile)
@@ -123,36 +124,44 @@ class GrandAverage(object):
     self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_instance.get_description(f,('sfreq','nr_of_points','beforetrig'))
    self.alltuples[avgfile]=self.avg_q_instance.get_filetriggers(f).gettuples()
    self.infiles.append(avgfile)
+ def get_one_average(self,avgfile,eventindex=None):
+  '''Get one single average for this self.condstr and eventindex, properly aligned and ready for averaging.
+     This allows to process the input files one by one if so desired.
+     Otherwise use get_averages below to read all inputs a given condition and eventindex.
+  '''
+  f=avg_q_file(avgfile)
+  tuples=self.alltuples[avgfile]
+  n_averages=0
+  for position,code,description in [(position,code,description) for position,code,description in tuples if self.condstr in description]:
+   #print position,code,description
+   self.avg_q_instance.getepoch(f,fromepoch=position+1,epochs=1)
+   n_averages+=1
+   if eventindex!=None and eventindex!=self.event0index:
+    shift=get_shift_from_description(description)
+    shift_points=int(round((shift-self.standardized_RT_ms)/1000.0*self.sfreq))
+    if isinstance(self.session_shift_points,list): self.session_shift_points.append(shift_points)
+    self.avg_q_instance.write('''
+>trim %(shift_points)d %(epochlength_points)d
+>set beforetrig %(beforetrig_points)d
+>set xdata 1
+''' % {
+    'shift_points': shift_points,
+    'epochlength_points': self.epochlength_points,
+    'beforetrig_points': self.beforetrig_points,
+    })
+  return n_averages
  def get_averages(self,condition,eventindex=None):
   '''Get all single averages, properly aligned and ready for averaging.
      The caller has to issue a collect method etc. if the returned
      number of averages is not zero.
   '''
   self.condstr=condition+' event %d' % eventindex if eventindex!=None else condition
-  session_shift_points=[]
+  self.session_shift_points=[] # Updated by get_one_average
   n_averages=0 # Bail out if no averages are available at all
   for avgfile in self.infiles:
-   f=avg_q_file(avgfile)
-   tuples=self.alltuples[avgfile]
-   for position,code,description in [(position,code,description) for position,code,description in tuples if self.condstr in description]:
-    #print position,code,description
-    self.avg_q_instance.getepoch(f,fromepoch=position+1,epochs=1)
-    n_averages+=1
-    if eventindex!=None and eventindex!=self.event0index:
-     shift=get_shift_from_description(description)
-     shift_points=int(round((shift-self.standardized_RT_ms)/1000.0*self.sfreq))
-     session_shift_points.append(shift_points)
-     self.avg_q_instance.write('''
->trim %(shift_points)d %(epochlength_points)d
->set beforetrig %(beforetrig_points)d
->set xdata 1
-''' % {
-     'shift_points': shift_points,
-     'epochlength_points': self.epochlength_points,
-     'beforetrig_points': self.beforetrig_points,
-     })
+   n_averages+=self.get_one_average(avgfile,eventindex)
   if n_averages>0 and eventindex!=None and eventindex!=self.event0index:
-   print("%s Mean shift points: %g" % (self.condstr,float(sum(session_shift_points))/len(session_shift_points)))
+   print("%s Mean shift points: %g" % (self.condstr,float(sum(self.session_shift_points))/len(self.session_shift_points)))
   return n_averages
  def set_outfile(self,outfile,append=False):
   '''Arranges for single_average to write the result to an ASC file.

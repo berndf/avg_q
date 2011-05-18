@@ -146,7 +146,7 @@ null_sink
    endsegment=point-margin_points
    if endsegment>startsegment:
     yield (startsegment,endsegment)
-   startsegment=point+margin_points
+    startsegment=point+margin_points
  def get_description(self,infile,getvars):
   if not isinstance(getvars,tuple):
    getvars=(getvars,)
@@ -197,8 +197,8 @@ null_sink
    # 'asc' is epoched only; make 'filetriggers' mean epoch numbers (starting at 0), conditions and comments
    self.getepoch(infile)
    self.write('''
-query condition
-query comment
+query condition stdout
+query comment stdout
 null_sink
 -
 ''')

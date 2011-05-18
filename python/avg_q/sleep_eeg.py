@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# Copyright (C) 2009 Bernd Feige
+# Copyright (C) 2009-2011 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Specialized class derived from avg_q including methods for
@@ -43,12 +43,12 @@ class sleep_eeg(avg_q.avg_q):
   ['32+1', '48', 'Gamma']
  ]
  rejection_median_length=20
- def locate_cnt(self,bookno):
-  import klinik
+ def locate_cnt(self,booknumber):
+  import bookno
   if not self.dcache:
    import idircache
    self.dcache=idircache.idircache(extensionstrip=('cnt'))
-  file_bookno=klinik.file_bookno(bookno)
+  file_bookno=bookno.file_bookno(booknumber)
   cntfile=self.dcache.find(cntfile_paths,file_bookno)
   return cntfile
  def channelname_subset(self,channelnames,fromHz=None,toHz=None):
@@ -100,11 +100,11 @@ class sleep_eeg(avg_q.avg_q):
   if os.path.exists(tfile) and os.path.getsize(tfile)>0:
    return
   import slfile
-  cntdir,bookno=os.path.split(first)
+  cntdir,booknumber=os.path.split(first)
   try:
-   sl=slfile.slfile(bookno)
+   sl=slfile.slfile(booknumber)
   except:
-   print("Can't locate sl file for %s" % bookno)
+   print("Can't locate sl file for %s" % booknumber)
    return
   print("Found %s" % sl.filename)
 
@@ -301,13 +301,13 @@ null_sink
     spect=[]
    else:
     spect.append([float(x) for x in line.split('\t')])
- def get_Delta_slope(self,bookno):
+ def get_Delta_slope(self,booknumber):
   from . import sleep_file
   from . import trgfile
   try:
-   f=sleep_file.sleep_file(bookno)
+   f=sleep_file.sleep_file(booknumber)
   except:
-   print("Raw file for %s can't be located!" % bookno)
+   print("Raw file for %s can't be located!" % booknumber)
    return None
   self.getcontepoch(f,'0','0')
   self.write('''

@@ -1372,46 +1372,47 @@ Run_Script(void) {
        sprintf(prefix_buffer, "post%02d", post_queue.current_input_script);
        dump_queue(&post_queue, dumpfile, prefix_buffer);
       } else {
-      int const variables_requested1=set_queuevariables(&tinfostruc, &iter_queue, nr_of_script_variables, script_variables);
-      int const variables_requested2=set_queuevariables(&tinfostruc, &post_queue, nr_of_script_variables, script_variables);
-      int const max_var_requested=(variables_requested1>variables_requested2 ? variables_requested1 : variables_requested2);
-      if (max_var_requested>nr_of_script_variables) {
-       ERREXIT2(tinfostruc.emethods, "Arguments up to $%d were requested by the script, but only %d were given!\n", MSGPARM(max_var_requested), MSGPARM(nr_of_script_variables));
-      }
-      if (max_var_requested<nr_of_script_variables) {
-       TRACEMS2(tinfostruc.emethods, 0, "%d variables were requested by the script, %d were given!\n", MSGPARM(max_var_requested), MSGPARM(nr_of_script_variables));
-      }
-# ifdef FP_EXCEPTION
-      fp_exception_init();	/* This sets up the math exception signal handler */
-# endif
-      do_queues(&tinfostruc, &iter_queue, &post_queue);
-      if (tinfostruc.tsdata!=NULL) {
-       if (tinfostruc.data_type==FREQ_DATA) {
-	int beforepoints=tinfostruc.beforetrig;
-	int beforeshifts;
-	if (tinfostruc.shiftwidth!=0) beforeshifts=1+(beforepoints-tinfostruc.windowsize)/tinfostruc.shiftwidth;
-	else beforeshifts=0;
-	TRACEMS3(tinfostruc.emethods, -1, "Averages: %d (nrofaverages=%d); Shifts for baseline: %d\n", MSGPARM(tinfostruc.accepted_epochs), MSGPARM(tinfostruc.nrofaverages), MSGPARM(beforeshifts));
-	TRACEMS3(tinfostruc.emethods, -1, "Output is %d frequencies x %d shifts of step %d\n", MSGPARM(tinfostruc.nroffreq), MSGPARM(tinfostruc.nrofshifts), MSGPARM(tinfostruc.shiftwidth));
-       } else {
-	TRACEMS2(tinfostruc.emethods, -1, "Averages: %d (nrofaverages=%d)\n", MSGPARM(tinfostruc.accepted_epochs), MSGPARM(tinfostruc.nrofaverages));
+       int const variables_requested1=set_queuevariables(&tinfostruc, &iter_queue, nr_of_script_variables, script_variables);
+       int const variables_requested2=set_queuevariables(&tinfostruc, &post_queue, nr_of_script_variables, script_variables);
+       int const max_var_requested=(variables_requested1>variables_requested2 ? variables_requested1 : variables_requested2);
+       if (max_var_requested>nr_of_script_variables) {
+	ERREXIT2(tinfostruc.emethods, "Arguments up to $%d were requested by the script, but only %d were given!\n", MSGPARM(max_var_requested), MSGPARM(nr_of_script_variables));
        }
-       if (tinfostruc.rejected_epochs>0) {
-	snprintf(errormessage, ERRORMESSAGE_SIZE, "Rejection rate: %6.2f%%\n", tinfostruc.rejected_epochs/((float)tinfostruc.rejected_epochs+tinfostruc.accepted_epochs)*100.0);
-	TRACEMS(tinfostruc.emethods, -1, errormessage);
+       if (max_var_requested<nr_of_script_variables) {
+	TRACEMS2(tinfostruc.emethods, 0, "%d variables were requested by the script, %d were given!\n", MSGPARM(max_var_requested), MSGPARM(nr_of_script_variables));
        }
-       free_tinfo(&tinfostruc);
+#ifdef FP_EXCEPTION
+       fp_exception_init();	/* This sets up the math exception signal handler */
+#endif
+       do_queues(&tinfostruc, &iter_queue, &post_queue);
+       if (tinfostruc.tsdata!=NULL) {
+	if (tinfostruc.data_type==FREQ_DATA) {
+	 int beforepoints=tinfostruc.beforetrig;
+	 int beforeshifts;
+	 if (tinfostruc.shiftwidth!=0) beforeshifts=1+(beforepoints-tinfostruc.windowsize)/tinfostruc.shiftwidth;
+	 else beforeshifts=0;
+	 TRACEMS3(tinfostruc.emethods, -1, "Averages: %d (nrofaverages=%d); Shifts for baseline: %d\n", MSGPARM(tinfostruc.accepted_epochs), MSGPARM(tinfostruc.nrofaverages), MSGPARM(beforeshifts));
+	 TRACEMS3(tinfostruc.emethods, -1, "Output is %d frequencies x %d shifts of step %d\n", MSGPARM(tinfostruc.nroffreq), MSGPARM(tinfostruc.nrofshifts), MSGPARM(tinfostruc.shiftwidth));
+	} else {
+	 TRACEMS2(tinfostruc.emethods, -1, "Averages: %d (nrofaverages=%d)\n", MSGPARM(tinfostruc.accepted_epochs), MSGPARM(tinfostruc.nrofaverages));
+	}
+	if (tinfostruc.rejected_epochs>0) {
+	 snprintf(errormessage, ERRORMESSAGE_SIZE, "Rejection rate: %6.2f%%\n", tinfostruc.rejected_epochs/((float)tinfostruc.rejected_epochs+tinfostruc.accepted_epochs)*100.0);
+	 TRACEMS(tinfostruc.emethods, -1, errormessage);
+	}
+	free_tinfo(&tinfostruc);
+       }
       }
-     }
-     /* This is necessary in order to free the method memory allocated during setup: */
-     free_queuemethodmem(&tinfostruc, &iter_queue);
-     free_queuemethodmem(&tinfostruc, &post_queue);
+      /* This is necessary in order to free the method memory allocated during setup: */
+      free_queuemethodmem(&tinfostruc, &iter_queue);
+      free_queuemethodmem(&tinfostruc, &post_queue);
      } else {
       gdk_threads_enter();
       set_runstatus("Script is empty.");
       gdk_threads_leave();
      }
      succeeded=TRUE;
+     if (only_script>0 && iter_queue.current_input_script==only_script) break;
     }
     if (dumponly) {
      int i;

@@ -46,7 +46,7 @@ dip_simulate 100 5 1s 1s eg_source
 set trigger 500ms:5
 set trigger 1500ms:1
 write_synamps -c o.cnt 1
-query -N triggers
+query -N triggers stdout
 null_sink
 -
 '''
@@ -70,8 +70,8 @@ triggers=50 5
 class avg_q_test_case2(avg_q_test_case):
  script='''
 read_synamps -t 1,3,7,9,5 o.cnt 100ms 400ms 
-query -N condition
-query -N accepted_epochs
+query -N condition stdout
+query -N accepted_epochs stdout
 null_sink
 -
 '''
