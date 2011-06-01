@@ -882,14 +882,14 @@ static int TwoPowerN(int n)
 }
 
 /*--------------------------------------------------------------------*/
-static int AnalyseDiffs(short int *charray, int n, int Rnpoints, short int *nsubsid)
+static int AnalyseDiffs(short int *charray, int n, int npoints, short int *nsubsid)
 /*--------------------------------------------------------------------*/
 { /* output the no. of words that would result from each word length*/
     short int i, nwords = 3, diff, maxdiff;
     int subsidcnt=0, subsidwords;
     maxdiff = TwoPowerN(n-1);                /* 2**n*/
     *nsubsid = 1;
-    for(i=0; i<Rnpoints-1; i++)
+    for(i=0; i<npoints-1; i++)
         {
         diff = charray[i+1] - charray[i];
         if(diff >= maxdiff || (-diff) >= maxdiff) /* limit exceeded*/

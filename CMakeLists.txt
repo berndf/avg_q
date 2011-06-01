@@ -62,7 +62,7 @@ IF(WIN32)
  SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
  SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
  SET(INSTALLDIR "bin")
- SET(CMAKE_C_FLAGS_RELEASE "-march=i586 -O6 -ffast-math -mms-bitfields -mno-cygwin -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+ SET(CMAKE_C_FLAGS_RELEASE "-march=i586 -O4 -ffast-math -mms-bitfields -mno-cygwin -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
  SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-static-libstdc++")
  SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs/libf2c)
  SET(ICA_LIBS lapack_win32 blas_win32 -lf2c)
@@ -88,11 +88,11 @@ ELSE(WIN32)
  SET(AVG_Q_DEFINES -DLITTLE_ENDIAN)
  IF(UNAME MATCHES "x86_64")
   SET(INSTALLDIR distrib/avg_q64)
-  SET(CMAKE_C_FLAGS_RELEASE "-march=athlon64 -O6 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(CMAKE_C_FLAGS_RELEASE "-march=athlon64 -O4 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
  ELSE(UNAME MATCHES "x86_64")
   SET(INSTALLDIR distrib/avg_q32)
   # -D_FILE_OFFSET_BITS=64 is necessary to have working fstat() on CIFS mounts
-  SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O6 -D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O4 -D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
  ENDIF(UNAME MATCHES "x86_64")
 ENDIF(WIN32)
 
@@ -100,6 +100,8 @@ INCLUDE(FindOpenMP)
 IF(OPENMP_FOUND)
  SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OpenMP_C_FLAGS}")
 ENDIF(OPENMP_FOUND)
+
+SET(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
 
 # Permissons to be set on installed files
 SET(EXECUTABLE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
@@ -119,7 +121,7 @@ SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
 SET(AVG_Q_DEFINES ${AVG_Q_DEFINES} -DTRACE -DFP_EXCEPTION -DFOR_AVG_Q)
 SET(AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/bf ${CMAKE_SOURCE_DIR}/bf/array
  ${CMAKE_SOURCE_DIR}/bf/biomag ${CMAKE_SOURCE_DIR}/mfx
- ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/bf/stat
+ ${CMAKE_SOURCE_DIR}/bf/stat
  ${CMAKE_SOURCE_DIR}/bf/math ${CMAKE_SOURCE_DIR}/bf/optimize
  ${CMAKE_SOURCE_DIR}/bf/array ${CMAKE_SOURCE_DIR}/bf/biomag
  ${CMAKE_SOURCE_DIR}/vogl/src ${CMAKE_SOURCE_DIR}/sox 

@@ -1355,9 +1355,12 @@ Run_Script(void) {
        break;
       }
       growing_buf_appendstring(&script, static_linebuf.buffer_start);
-      growing_buf_appendchar(&script, '\n');
+      growing_buf_appendstring(&script, "\n");
       laststatus=getNextLine();
      }
+     /* Remove the last \0 kept by growing_buf_appendstring - it would get counted as an empty line.
+      * Note that '\n' will be replaced by \0 during parsing, so the line tokens are terminated. */
+     if (script.current_length>0) script.current_length--;
      if (setup_queue_from_buffer(&tinfostruc, method_selects, &iter_queue, &post_queue, &script)) {
       if (only_script>0 && iter_queue.current_input_script!=only_script) {
        /* This is necessary in order to free the method memory allocated during setup: */

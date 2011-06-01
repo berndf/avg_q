@@ -45,9 +45,12 @@ void Triangle::make_firstpoint(Point *const newp1) {
 float Triangle::max_angle(Bool const reorder) {
  // This method reorders the points in the triangle so that p1-p2 is the
  // line opposing the maximum angle and returns this maximum angle
- float a1=(*p1 - *p3).angle(&(*p2 - *p3));
- float a2=(*p2 - *p1).angle(&(*p3 - *p1));
- float a3=(*p3 - *p2).angle(&(*p1 - *p2));
+ Point t1=*p2 - *p3;
+ float const a1=(*p1 - *p3).angle(&t1);
+ t1=*p3 - *p1;
+ float const a2=(*p2 - *p1).angle(&t1);
+ t1=*p1 - *p2;
+ float const a3=(*p3 - *p2).angle(&t1);
  float maxangle=a1;
  Point* pt;
 

@@ -301,8 +301,10 @@ int main(int argc, char **argv) {
  if (dumponly) {
   int i;
   fprintf(dumpfile, "\nstatic struct queue_desc_struct *dump_script_pointers[]={\n");
-  for (i=1; i<iter_queue.current_input_script; i++) {
-   fprintf(dumpfile, "&iter%02d_queue, &post%02d_queue,\n", i, i);
+  for (i=1; i<=iter_queue.current_input_script; i++) {
+   if (only_script==0 || only_script==i) {
+    fprintf(dumpfile, "&iter%02d_queue, &post%02d_queue,\n", i, i);
+   }
   }
   fprintf(dumpfile, "NULL};\n");
  }

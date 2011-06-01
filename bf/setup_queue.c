@@ -318,9 +318,9 @@ setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_p
    break;
   }
   if (c==EOF) {
-   /* If there was no EOL at EOF, it could happen that no separator was present
-    * at the end of the script, so possibly garbage was seen on the last line... */
-   growing_buf_appendchar(scriptp, '\n');
+   /* If there was no EOL at EOF, no separator would be present
+    * at the end of the script. So we add one in this case. */
+   if (scriptp->current_length==0 || scriptp->buffer_start[scriptp->current_length-1]!='\n') growing_buf_appendchar(scriptp, '\n');
    break;
   }
   growing_buf_appendchar(scriptp, c);
@@ -526,18 +526,18 @@ dump_queue(queue_desc *queue, FILE *dumpfile, char *prefix) {
        case T_ARGS_TAKES_NOTHING:
        case T_ARGS_TAKES_SELECTION:
        case T_ARGS_TAKES_LONG:
-	fprintf(dumpfile, "{i:%ldL}", queue->start[i].arguments[argno].arg.i);
+	fprintf(dumpfile, "{.i=%ldL}", queue->start[i].arguments[argno].arg.i);
 	break;
        case T_ARGS_TAKES_DOUBLE:
-	fprintf(dumpfile, "{d:%g}", queue->start[i].arguments[argno].arg.d);
+	fprintf(dumpfile, "{.d=%g}", queue->start[i].arguments[argno].arg.d);
 	break;
        case T_ARGS_TAKES_STRING_WORD:
        case T_ARGS_TAKES_SENTENCE:
        case T_ARGS_TAKES_FILENAME:
 	if (queue->start[i].arguments[argno].arg.s==NULL) {
-	 fprintf(dumpfile, "{s:NULL}");
+	 fprintf(dumpfile, "{.s=NULL}");
 	} else {
-	 fprintf(dumpfile, "{s:");
+	 fprintf(dumpfile, "{.s=");
 	 /* Use the trafo_stc.c utility function to output the file name as a
 	  * string that is read as the original string by a C parser */
 	 fprint_cstring(dumpfile, queue->start[i].arguments[argno].arg.s);
@@ -548,7 +548,7 @@ dump_queue(queue_desc *queue, FILE *dumpfile, char *prefix) {
 	continue;
       }
      } else {
-      fprintf(dumpfile, " { FALSE, 0, {i:0L}");
+      fprintf(dumpfile, " { FALSE, 0, {.i=0L}");
      }
      fprintf(dumpfile, " }, /* -%s */\n", queue->start[i].argument_descriptors[argno].option_letters);
     }

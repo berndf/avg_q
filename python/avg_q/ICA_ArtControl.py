@@ -167,50 +167,81 @@ null_sink
  def get_backproject_script(self,components=None):
   if components is None:
    components=self.notArtComponents()
+  weightstmp='%s_weights_scaled_tmpproject.asc' % self.base
+  mapstmp='%s_maps_scaled_tmpproject.asc' % self.base
   self.avg_q_instance.write('''
 readasc %(base)s_weights_scaled.asc
 %(trim)s
-writeasc -b %(base)s_weights_scaled_tmpproject.asc
+writeasc -b %(weightstmp)s
 null_sink
 -
 readasc %(base)s_maps_scaled.asc
 %(trim)s
-writeasc -b %(base)s_maps_scaled_tmpproject.asc
+writeasc -b %(mapstmp)s
 null_sink
 -
 ''' % {
   'base': self.base,
   'trim': self.get_trim_from_components(components),
+  'weightstmp': weightstmp,
+  'mapstmp': mapstmp,
   })
-  self.tmpfiles.extend(['%s_weights_scaled_tmpproject.asc' % self.base, '%s_maps_scaled_tmpproject.asc' % self.base])
+  self.tmpfiles.extend([weightstmp, mapstmp])
   return '''
 %(remove_channels)s
-project -C -n -p 0 %(base)s_weights_scaled_tmpproject.asc 0
-project -C -n -p 0 -m %(base)s_maps_scaled_tmpproject.asc 0
+project -C -n -p 0 %(weightstmp)s 0
+project -C -n -p 0 -m %(mapstmp)s 0
 ''' % {
   'remove_channels': self.get_remove_channels(),
+  'weightstmp': weightstmp,
+  'mapstmp': mapstmp,
+  }
+ def get_extract_script(self,components=None):
+  '''Only the first step of backprojection, return the traces.'''
+  if components is None:
+   components=self.notArtComponents()
+  weightstmp='%s_weights_scaled_tmpproject.asc' % self.base
+  self.avg_q_instance.write('''
+readasc %(base)s_weights_scaled.asc
+%(trim)s
+writeasc -b %(weightstmp)s
+null_sink
+-
+''' % {
   'base': self.base,
+  'weightstmp': weightstmp,
+  'trim': self.get_trim_from_components(components),
+  })
+  self.tmpfiles.append(weightstmp)
+  return '''
+%(remove_channels)s
+project -C -n -p 0 %(weightstmp)s 0
+''' % {
+  'remove_channels': self.get_remove_channels(),
+  'weightstmp': weightstmp,
   }
  def get_reconstruct_script(self,components=None):
   '''Only the second step of backprojection, start with traces.'''
   if components is None:
    components=self.notArtComponents()
+  mapstmp='%s_maps_scaled_tmpproject.asc' % self.base
   self.avg_q_instance.write('''
 readasc %(base)s_maps_scaled.asc
 %(trim)s
-writeasc -b %(base)s_maps_scaled_tmpproject.asc
+writeasc -b %(mapstmp)s
 null_sink
 -
 ''' % {
   'base': self.base,
+  'mapstmp': mapstmp,
   'trim': self.get_trim_from_components(components),
   })
-  self.tmpfiles.extend(['%s_maps_scaled_tmpproject.asc' % self.base])
+  self.tmpfiles.append(mapstmp)
   return '''
 %(remove_channels)s
-project -C -n -p 0 -m %(base)s_maps_scaled_tmpproject.asc 0
+project -C -n -p 0 -m %(mapstmp)s 0
 ''' % {
   'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
-  'base': self.base,
+  'mapstmp': mapstmp,
   }
 
