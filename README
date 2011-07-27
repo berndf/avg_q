@@ -1,7 +1,12 @@
-This is avg_q (pronounced "average queue"), a multichannel (EEG/MEG)
-data processor intended for analyzing event-related brain activity.
-The documentation can be found in the Documentation/ subdirectory (LyX
-source) or the Programs_handbook.pdf file.
+This is avg_q (pronounced "average queue"), a multichannel (EEG/MEG/other
+time series) data processor originally developed for analyzing event-related
+brain activity.  It features built-in methods for filtering, detection,
+spectral analysis, Independent Component Analysis, SVD/PCA, convolution and
+many generic data operations as well as support for reading and writing several
+data formats. Metadata (sampling rates / frequency resolution, events / markers,
+channel names) are consistently passed through the processing queue.
+The documentation can be found in the Documentation/ subdirectory (LyX source)
+or the Programs_handbook.pdf file.
 
 avg_q is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
