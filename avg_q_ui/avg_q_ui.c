@@ -1916,7 +1916,7 @@ LOCAL void
 avg_q_about(GtkWidget *menuitem) {
 #define BUFFER_SIZE 1024
  char buffer[BUFFER_SIZE];
- snprintf(buffer, BUFFER_SIZE, "%s\nThis user interface was built with the free GTK library: See http://www.gtk.org/\n", get_avg_q_signature());
+ snprintf(buffer, BUFFER_SIZE, "%s\nThis user interface was built with the free GTK library (v%d.%d): See http://www.gtk.org/\n", get_avg_q_signature(), GTK_MAJOR_VERSION, GTK_MINOR_VERSION);
  Notice(buffer);
 #undef BUFFER_SIZE
 }
