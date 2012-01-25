@@ -1,5 +1,5 @@
-#LyX 1.6.9 created this file. For more info see http://www.lyx.org/
-\lyxformat 345
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
 \begin_document
 \begin_header
 \textclass bfown
@@ -19,18 +19,26 @@
 \rfoot{Bernd Feige, Freiburg, \today}
 \end_preamble
 \use_default_options false
+\maintain_unincluded_children false
 \language american
+\language_package default
 \inputencoding auto
+\fontencoding global
 \font_roman default
 \font_sans default
 \font_typewriter default
 \font_default_family default
+\use_non_tex_fonts false
 \font_sc false
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
 
 \graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
 \paperfontsize 10
 \spacing single
 \use_hyperref true
@@ -48,9 +56,18 @@
 \use_geometry true
 \use_amsmath 1
 \use_esint 0
+\use_mhchem 1
+\use_mathdots 1
 \cite_engine natbib_authoryear
 \use_bibtopic false
+\use_indices false
 \paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
 \leftmargin 3cm
 \topmargin 2cm
 \rightmargin 1.5cm
@@ -65,8 +82,9 @@
 \paperpagestyle fancy
 \tracking_changes false
 \output_changes false
-\author "" 
-\author "" 
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
 \end_header
 
 \begin_body
@@ -958,7 +976,7 @@ The command line version of
 avg_q
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1007,7 +1025,7 @@ number
  in the script, but only a warning results if more arguments are available
  than requested.
  Note that the script argument expansion
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1147,7 +1165,7 @@ avg_q
 avg_q
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1226,7 +1244,7 @@ avg_q
 avg_q_ui
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1656,7 +1674,7 @@ name "Sec:ReadascFormat"
 To store epochs in a way that is very close to the representation used internall
 y by all processing methods, a special file format is used that will subsequentl
 y be referred to as `asc
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1757,7 +1775,7 @@ name "Sec:ArrayDumpFormat"
 
 \begin_layout Standard
 The `ARRAY_DUMP
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1811,7 +1829,7 @@ Many of the methods available in
 avg_q
 \series default
  can take a list of channel names
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -1929,7 +1947,7 @@ avg_q
  in order to represent lists of such time points or triggers, each of which
  can have an integer number or `trigger code' assigned to it.
  In trigger files
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2072,7 +2090,7 @@ Since a complete data set in memory always includes channel names and positions
 
 \begin_layout Description
 dip_simulate:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2208,7 +2226,7 @@ All `times' specified here are in time points.
 \end_deeper
 \begin_layout Description
 get_mfxepoch:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2314,7 +2332,7 @@ If trigcode=0, any valid trigger code is accepted to specify an epoch.
 \end_deeper
 \begin_layout Description
 null_source:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2365,7 +2383,7 @@ Items: Specify the number of items per channel and sampling point (default:
 \end_deeper
 \begin_layout Description
 readasc:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2427,7 +2445,7 @@ run
 \end_deeper
 \begin_layout Description
 read_freiburg:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2451,7 +2469,7 @@ freiburg
 
  Get-epoch method to read data in the binary ERP and sleep EEG format created
  at the Psychiatric University Clinic in Freiburg
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2623,7 +2641,7 @@ Repair_offset: Don't use the header, start at this file offset (continuous
 \end_deeper
 \begin_layout Description
 read_brainvision:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2745,7 +2763,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_generic:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2964,7 +2982,7 @@ Block_gap: Skip this many bytes between `blocks'.
 \end_deeper
 \begin_layout Description
 read_hdf:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -2987,7 +3005,7 @@ hdf
 \end_inset
 
  Get-epoch method to read epochs from HDF (Hierarchical Data Format)
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3132,7 +3150,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_kn:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3155,7 +3173,7 @@ kn
 \end_inset
 
  Get-epoch method to read epochs from files in the binary Konstanz
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3245,7 +3263,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_labview:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3268,7 +3286,7 @@ labview
 \end_inset
 
  Get-epoch method to read epochs from LabView (TM)
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3322,7 +3340,7 @@ epochs: Specify maximum number of epochs to get
 \end_deeper
 \begin_layout Description
 read_neurofile:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3473,7 +3491,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_rec:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3496,7 +3514,7 @@ rec
 \end_inset
 
  Get-epoch method to read data in the binary REC
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3516,7 +3534,7 @@ key "Kemp:92"
 
 .
  It is also called EDF
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3646,7 +3664,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_sound:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3768,7 +3786,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_synamps:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -3791,7 +3809,7 @@ synamps
 \end_inset
 
  Get-epoch method to read epochs from files in the binary NeuroScan
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4074,7 +4092,7 @@ reference "Sec:TriggerFile"
 \end_deeper
 \begin_layout Description
 read_tucker:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4182,7 +4200,7 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \begin_layout Description
 read_vitaport:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4334,7 +4352,7 @@ name "Sec:RejectMethods"
 
 \begin_layout Description
 assert:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4441,7 +4459,7 @@ Options
 \end_deeper
 \begin_layout Description
 reject_bandwidth:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4574,7 +4592,7 @@ nr_of_item: reject on this item number (
 \end_deeper
 \begin_layout Description
 reject_flor:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4623,7 +4641,7 @@ name "Sec:TransformMethods"
 
 \begin_layout Description
 add:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4727,7 +4745,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 add_channels:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4892,7 +4910,7 @@ channelnames: Only add the named channels
 \end_deeper
 \begin_layout Description
 add_zerochannel:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4930,7 +4948,7 @@ Arguments: channelname x y z
 \end_deeper
 \begin_layout Description
 baseline_divide:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4963,7 +4981,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 baseline_subtract:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -4996,7 +5014,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 calc:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5135,7 +5153,7 @@ reference "Sec:ascaverage"
  They neither use nor modify the first (average) item.
  The second and third items, together with the `nrofaverages' parameter,
  are used by `ttest' to calculate t and two-tailed p values for the t-test
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5209,7 +5227,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 calc_binomial_items:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5270,7 +5288,7 @@ of incidences of a binary decision (e.g.
 \end_inset
 
  and the relative gain
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5304,7 +5322,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 change_axes:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5352,7 +5370,7 @@ Arguments: x_offset x_factor x_newlabel z_offset z_factor z_newlabel
 \end_deeper
 \begin_layout Description
 collapse_channels:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5419,7 +5437,7 @@ Options:
 \end_deeper
 \begin_layout Description
 convolve:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5490,7 +5508,7 @@ fromepoch: Start with epoch number fromepoch (
 \end_deeper
 \begin_layout Description
 correlate:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5695,7 +5713,7 @@ nr_of_item: Read
 \end_deeper
 \begin_layout Description
 demean_maps:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5743,7 +5761,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 detrend:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5855,7 +5873,7 @@ trim
 \end_deeper
 \begin_layout Description
 differentiate:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5912,7 +5930,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 dip_fit:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5945,7 +5963,7 @@ Arguments: time
 \end_deeper
 \begin_layout Description
 echo:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -5989,7 +6007,7 @@ file: Output to this file.
 \end_deeper
 \begin_layout Description
 export_point:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6056,7 +6074,7 @@ run
 \end_deeper
 \begin_layout Description
 extract_item:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6109,7 +6127,7 @@ Arguments: item_number1 item_number2 \SpecialChar \ldots{}
 \end_deeper
 \begin_layout Description
 fftfilter:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6238,7 +6256,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 fftspect:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6432,7 +6450,7 @@ If -c[{c,s}] ALL is given, `nrofshifts' must be
 \end_deeper
 \begin_layout Description
 icadecomp
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6500,7 +6518,7 @@ n: Perform an `extended ICA' with PDF estimation every n blocks (default:
 \end_deeper
 \begin_layout Description
 import_point:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6554,7 +6572,7 @@ Options:
 \end_deeper
 \begin_layout Description
 integrate:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6601,7 +6619,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 invert:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6653,7 +6671,7 @@ nr_of_item: act only on this item number (
 \end_deeper
 \begin_layout Description
 laplacian:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6804,7 +6822,7 @@ laplacian -n !EMG,vEOG,hEOG
 \end_deeper
 \begin_layout Description
 link_order:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6879,7 +6897,7 @@ Arguments: dataset_no_1 [dataset_no_2 \SpecialChar \ldots{}
 \end_deeper
 \begin_layout Description
 normalize_channelbox
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6949,7 +6967,7 @@ Options:
 \end_deeper
 \begin_layout Description
 orthogonalize
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -6981,7 +6999,7 @@ Options:
 \end_deeper
 \begin_layout Description
 posplot:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7004,7 +7022,7 @@ This interactive data browser can also be run by the stand-alone program
 do_posplot
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7139,7 +7157,7 @@ eventfile: Run the named event replay file.
 \end_deeper
 \begin_layout Description
 project:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7461,7 +7479,7 @@ nr_of_item: Read
 \end_deeper
 \begin_layout Description
 push:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7509,7 +7527,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 pop:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7534,7 +7552,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 query:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7764,7 +7782,7 @@ s, xdata), TABs are written instead of newlines.
 \end_deeper
 \begin_layout Description
 raw_fft:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7864,7 +7882,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 recode:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -7905,8 +7923,11 @@ start.
 
 For each incoming value, the blocks are checked in the order in which they
  appear in the arguments, and only the first match is used.
- This is important because both interval borders belong to the interval.
- For example:
+\begin_inset Newline newline
+\end_inset
+
+Note that this can be used to achieve transformations excluding an interval
+ boundary:
 \begin_inset Newline newline
 \end_inset
 
@@ -7914,7 +7935,7 @@ For each incoming value, the blocks are checked in the order in which they
 \series bold
 recode
 \series default
- 10 10 100 100
+ 0 0 0 0
 \begin_inset space ~
 \end_inset
 
@@ -7922,36 +7943,23 @@ recode
 \begin_inset space ~
 \end_inset
 
--Inf 10 0 0
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-10 Inf 0 0
+0 Inf 1 1
 \begin_inset Newline newline
 \end_inset
 
-will map only the exact value 
-\begin_inset Formula $10.0$
+will map only positive values to 
+\begin_inset Formula $1$
 \end_inset
 
- to 
-\begin_inset Formula $100.0$
+ and leave 
+\begin_inset Formula $0$
 \end_inset
 
- and set all other values to zero.
- However, issuing the block `-Inf 10 0 0' first will result in 
-\shape italic
-all
-\shape default
- values being set to zero, because the value 
-\begin_inset Formula $10.0$
+ at 
+\begin_inset Formula $0$
 \end_inset
 
- belongs to this interval as well.
+.
 \end_layout
 
 \begin_deeper
@@ -7988,7 +7996,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 remove_channel:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8077,7 +8085,7 @@ channelnames: Remove channels by name.
 \end_deeper
 \begin_layout Description
 rereference:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8130,7 +8138,7 @@ channelnames: Exclude these channels from the operation.
 \end_deeper
 \begin_layout Description
 run:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8171,7 +8179,7 @@ Arguments: program_path args\SpecialChar \ldots{}
 \end_deeper
 \begin_layout Description
 scale_by:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8281,7 +8289,7 @@ channelnames: Act only on the given subset of channels.
 \end_deeper
 \begin_layout Description
 set:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8560,7 +8568,7 @@ Arguments: var_name value
 \end_deeper
 \begin_layout Description
 set_channelposition:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8654,7 +8662,7 @@ Options:
 \end_deeper
 \begin_layout Description
 set_comment:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8714,7 +8722,7 @@ Options:
 \end_deeper
 \begin_layout Description
 show_memuse:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8750,7 +8758,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 sliding_average:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8773,7 +8781,7 @@ average
 \end_inset
 
  Sliding average or median
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -8847,7 +8855,7 @@ Options:
 \end_deeper
 \begin_layout Description
 subtract:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9046,7 +9054,7 @@ fromepoch: Start with epoch number fromepoch (
 
 \begin_layout Description
 -t: Perform t-test
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9062,7 +9070,7 @@ s as explained above.
 \end_deeper
 \begin_layout Description
 svdecomp:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9143,7 +9151,7 @@ N \SpecialChar \ldots{}
 \end_deeper
 \begin_layout Description
 swap_fc:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9207,7 +9215,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 swap_ic:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9287,7 +9295,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 swap_ix:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9335,7 +9343,7 @@ Arguments: NONE
 \end_deeper
 \begin_layout Description
 trim:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9470,7 +9478,7 @@ trim -s -x 0 5 5+1 10
 \end_deeper
 \begin_layout Description
 write_crossings:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9663,7 +9671,7 @@ Method started reading in the middle of the (usually
 \end_deeper
 \begin_layout Description
 zero_phase:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9718,7 +9726,7 @@ name "Sec:CollectMethods"
 
 \begin_layout Description
 append:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9780,7 +9788,7 @@ posplot
 do_posplot
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9861,7 +9869,7 @@ posplot
 \end_deeper
 \begin_layout Description
 average:
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9915,7 +9923,7 @@ Options:
 
 \begin_layout Description
 -s: Perform a sign test
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -9977,7 +9985,7 @@ reference "Sec:stat_power"
 
 \begin_layout Description
 -t: Perform a t-test 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10021,7 +10029,7 @@ subtract -t
 \end_deeper
 \begin_layout Description
 minmax: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10061,7 +10069,7 @@ Options:
 \end_deeper
 \begin_layout Description
 histogram: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10116,7 +10124,7 @@ Options:
 \end_deeper
 \begin_layout Description
 null_sink: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10169,7 +10177,7 @@ name "Sec:PutEpochMethods"
 
 \begin_layout Description
 writeasc: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10211,7 +10219,7 @@ Options:
 \end_deeper
 \begin_layout Description
 write_freiburg: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10234,7 +10242,7 @@ freiburg
 \end_inset
 
  Put-epoch method to write epochs to a binary Freiburg 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10317,7 +10325,7 @@ ely in the output to achieve this resolution, and the sensitivity value
 \end_deeper
 \begin_layout Description
 write_generic: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10465,7 +10473,7 @@ epochsep: Write this string at the beginning of each new epoch except at
 \end_deeper
 \begin_layout Description
 write_hdf: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10565,7 +10573,7 @@ Options:
 \end_deeper
 \begin_layout Description
 write_kn: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10588,7 +10596,7 @@ kn
 \end_inset
 
  Put-epoch method to write epochs to a binary Konstanz 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10673,7 +10681,7 @@ read_kn
 \end_deeper
 \begin_layout Description
 write_mfx: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10739,7 +10747,7 @@ Options:
 \end_deeper
 \begin_layout Description
 write_rec: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10762,7 +10770,7 @@ rec
 \end_inset
 
  Put-epoch method to write epochs to a binary REC (EDF) 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -10858,7 +10866,7 @@ reServed: Set the `reserved' field value
 \end_deeper
 \begin_layout Description
 write_sound: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -11000,7 +11008,7 @@ Options:
 \end_deeper
 \begin_layout Description
 write_synamps: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -11023,7 +11031,7 @@ synamps
 \end_inset
 
  Put-epoch method to write epochs to a binary NeuroScan 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -11102,7 +11110,7 @@ Options:
 \end_deeper
 \begin_layout Description
 write_vitaport: 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -11905,7 +11913,7 @@ avg_q
 ascaverage
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -11982,7 +11990,7 @@ Options:
 
 \begin_layout Description
 -t: performs a t-test
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -12156,7 +12164,7 @@ avg_q
 extspec
 \series default
 
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -12214,7 +12222,7 @@ extspec
 \end_inset
 
  and the relative gain
-\begin_inset Index
+\begin_inset Index idx
 status collapsed
 
 \begin_layout Plain Layout
@@ -12285,6 +12293,7 @@ options "neuropsychopharmacol"
 \begin_layout Standard
 \begin_inset CommandInset index_print
 LatexCommand printindex
+type "idx"
 
 \end_inset
 
