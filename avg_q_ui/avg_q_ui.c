@@ -468,6 +468,8 @@ static_execution_callback(const transform_info_ptr tinfo, const execution_callba
 
 LOCAL void
 change_dir(GtkWidget *menuitem) {
+ const gchar *uri = NULL;
+
  /* Note that ACTION_SELECT_FOLDER will create nonexistant folders by default! */
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a directory to change to",
   GTK_WINDOW(Avg_Q_Main_Window),
@@ -476,9 +478,19 @@ change_dir(GtkWidget *menuitem) {
   GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
+ if (g_path_is_absolute(filename)) {
+  uri=g_filename_to_uri(filename,NULL,NULL);
+ } else {
+  char * const path=g_get_current_dir();
+  char * const gfilename=g_build_filename(path,filename,NULL);
+  uri=g_filename_to_uri(gfilename,NULL,NULL);
+  g_free(path);
+  g_free(gfilename);
+ }
+ gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
+
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
-  char *gfilename;
-  gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
+  gchar *gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
   if (chdir(gfilename)==0) {
    snprintf(errormessage, ERRORMESSAGE_SIZE, "Current directory is %s", gfilename);
   } else {
@@ -628,7 +640,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_LONG: {
       GtkWidget * const entry=dialog_widgets[active_widget++];
-      const char * const text=gtk_entry_get_text(GTK_ENTRY(entry));
+      const gchar * const text=gtk_entry_get_text(GTK_ENTRY(entry));
       if (*text!='\0') {
        argument->arg.i=strtol(text, &endptr, 10);
        if (*endptr=='\0') argument->is_set=TRUE;
@@ -637,7 +649,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_DOUBLE: {
       GtkWidget * const entry=dialog_widgets[active_widget++];
-      const char * const text=gtk_entry_get_text(GTK_ENTRY(entry));
+      const gchar * const text=gtk_entry_get_text(GTK_ENTRY(entry));
       if (*text!='\0') {
        argument->arg.d=get_value(text, &endptr);
        if (*endptr=='\0') argument->is_set=TRUE;
@@ -659,7 +671,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_SELECTION: {
       GtkWidget * const combo=dialog_widgets[active_widget++];
-      const char * const text=gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
+      const gchar * const text=gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
       if (text==NULL) {
        /* This should be only a security precaution... */
        TRACEMS(tinfostruc.emethods, 0, "Combo box selection is NULL!\n");
@@ -936,16 +948,18 @@ typedef struct {
 } method_file_sel_data;
 LOCAL void
 method_fileselect_all(method_file_sel_data *data) {
- const char * const text=gtk_entry_get_text(GTK_ENTRY(*data->in_dialog_widgets));
+ const gchar * const text=gtk_entry_get_text(GTK_ENTRY(*data->in_dialog_widgets));
+ const gchar *uri = NULL;
 
- /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER */
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a file argument",
   GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_SAVE,
+  GTK_FILE_CHOOSER_ACTION_OPEN,
   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
   GTK_STOCK_PASTE, GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
+ /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
+  * so we need to use gtk_file_chooser_set_uri... */
  if (text!=NULL) {
   if (strchr(text, '*')!=NULL) {
    GtkFileFilter *filter=gtk_file_filter_new();
@@ -954,8 +968,24 @@ method_fileselect_all(method_file_sel_data *data) {
    gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
   } else {
-   gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (filesel), text);
+   if (g_path_is_absolute(text)) {
+    uri=g_filename_to_uri(text,NULL,NULL);
+   } else {
+    char * const path=g_get_current_dir();
+    char * const gfilename=g_build_filename(path,text,NULL);
+    uri=g_filename_to_uri(gfilename,NULL,NULL);
+    g_free(path);
+    g_free(gfilename);
+   }
+   gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
   }
+ }
+ if (uri==NULL) {
+  /* Set current folder */
+  char * const path=g_get_current_dir();
+  uri=g_filename_to_uri(path,NULL,NULL);
+  gtk_file_chooser_set_current_folder_uri (GTK_FILE_CHOOSER (filesel), uri);
+  g_free(path);
  }
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
   char *gfilename;
@@ -989,7 +1019,7 @@ method_fileselect_optional(GtkWidget *select_button, GtkWidget **in_dialog_widge
 LOCAL gint
 Run_Keypress_Now(gpointer data) {
  GtkWidget **in_dialog_widgets=(GtkWidget **)data;
- const char * const text=gtk_entry_get_text(GTK_ENTRY(*in_dialog_widgets));
+ const gchar * const text=gtk_entry_get_text(GTK_ENTRY(*in_dialog_widgets));
  Avg_q_Run_Keypress_Now_Tag=0;
 
  if (*text=='\0') {
@@ -1158,7 +1188,7 @@ MethodInstance_build_dialog(void) {
       break;
      case T_ARGS_TAKES_SELECTION: {
       GtkWidget * const combo=gtk_combo_box_text_new ();
-      const char *const *choice=argument_descriptor->choices;
+      const gchar *const *choice=argument_descriptor->choices;
 
       while (*choice!=NULL) {
        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), *choice);
@@ -1613,15 +1643,28 @@ Load_Script(gchar *name) {
 }
 LOCAL void
 open_file(GtkWidget *menuitem) {
- /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER */
+ const gchar *uri = NULL;
+
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a script file to load",
   GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_SAVE,
+  GTK_FILE_CHOOSER_ACTION_OPEN,
   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
   GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (filesel), filename);
+ /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
+  * so we need to use gtk_file_chooser_set_uri... */
+ if (g_path_is_absolute(filename)) {
+  uri=g_filename_to_uri(filename,NULL,NULL);
+ } else {
+  char * const path=g_get_current_dir();
+  char * const gfilename=g_build_filename(path,filename,NULL);
+  uri=g_filename_to_uri(gfilename,NULL,NULL);
+  g_free(path);
+  g_free(gfilename);
+ }
+ gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
+
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
   char *gfilename;
   gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
@@ -1662,6 +1705,8 @@ save_file(GtkWidget *menuitem) {
 }
 LOCAL void
 save_file_as(GtkWidget *menuitem) {
+ const gchar *uri = NULL;
+
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a script file name to save to",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_SAVE,
@@ -1669,8 +1714,18 @@ save_file_as(GtkWidget *menuitem) {
   GTK_STOCK_SAVE_AS, GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (filesel), filename);
+ if (g_path_is_absolute(filename)) {
+  uri=g_filename_to_uri(filename,NULL,NULL);
+ } else {
+  char * const path=g_get_current_dir();
+  char * const gfilename=g_build_filename(path,filename,NULL);
+  uri=g_filename_to_uri(gfilename,NULL,NULL);
+  g_free(path);
+  g_free(gfilename);
+ }
+ gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
  gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
+
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
   char *gfilename;
   gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
@@ -1887,6 +1942,10 @@ Quit_avg_q(GtkWidget *menuitem) {
 
 LOCAL void
 dump_file_as(GtkWidget *menuitem) {
+ const gchar *uri = NULL;
+ const gchar *uri1;
+ const gchar *extension;
+
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select an include file name to dump to",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_SAVE,
@@ -1898,8 +1957,29 @@ dump_file_as(GtkWidget *menuitem) {
  gtk_file_filter_add_pattern(filter,"*.h"); gtk_file_filter_set_name(filter,"*.h");
  gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
- gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
+ if (g_path_is_absolute(filename)) {
+  uri=g_filename_to_uri(filename,NULL,NULL);
+ } else {
+  char * const path=g_get_current_dir();
+  char * const gfilename=g_build_filename(path,filename,NULL);
+  uri=g_filename_to_uri(gfilename,NULL,NULL);
+  g_free(path);
+  g_free(gfilename);
+ }
+ /* Add extension ".h" */
+ extension=g_strrstr(uri,".");
+ if (extension) {
+  gchar * uri2=g_strndup(uri,extension-uri);
+  uri1=g_strconcat(uri2,".h",NULL);
+  g_free(uri2);
+ } else {
+  uri1=g_strconcat(uri,".h",NULL);
+ }
+ g_free(uri);
+ gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri1);
+ gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
+
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
   char *gfilename;
   gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
