@@ -73,6 +73,10 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 #define DF_DATATYPE DFNT_FLOAT64
 #endif
 
+#ifndef MAX_NC_NAME
+#define MAX_NC_NAME H4_MAX_NC_NAME
+#endif
+
 /* MAXRANK_FOR_MYDATA defines what is the maximum dimensionality acceptable to us */
 #define MAXRANK_FOR_MYDATA 3
 
