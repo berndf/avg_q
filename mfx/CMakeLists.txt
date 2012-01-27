@@ -16,9 +16,9 @@
 # along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
 PROJECT(mfxlib)
 
-IF(WIN32)
+IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  SET(BUILD_SHARED_LIBS OFF)
-ELSE(WIN32)
+ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
  EXECUTE_PROCESS(COMMAND /bin/uname -m
   OUTPUT_VARIABLE UNAME
  )
@@ -28,7 +28,7 @@ ELSE(WIN32)
   SET(OPTIMIZEFLAGS -march=i686 -O4 -Wall -s)
  ENDIF(UNAME MATCHES "x86_64")
  SET(ADD_LIBS)
-ENDIF(WIN32)
+ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 SET(sources
  mfx_file.c mfx_errors.c mfx_infoout.c Intel_compat.c fix_headers.c read_struct.c
