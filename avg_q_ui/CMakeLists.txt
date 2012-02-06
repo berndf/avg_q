@@ -17,10 +17,21 @@
 PROJECT(avg_q_ui)
 
 IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
- SET(GTKPATH ${CMAKE_SOURCE_DIR}/wingtk2)
- SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
- SET(GTK_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
-  -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)
+ IF(AVG_Q_GTK3)
+  SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk3/usr/i686-w64-mingw32/sys-root/mingw/)
+  SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-3.0
+   -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0
+   -I${GTKPATH}/include/glib-2.0 -I${GTKPATH}/include/pango-1.0
+   -I${GTKPATH}/include/cairo)
+  SET(GTK_LIBRARIES -lgtk-3.dll -lgdk-3.dll -latk-1.0.dll -lgdk_pixbuf-2.0.dll
+   -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll
+   -lglib-2.0.dll)
+ ELSE(AVG_Q_GTK3)
+  SET(GTKPATH ${CMAKE_SOURCE_DIR}/wingtk2)
+  SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
+  SET(GTK_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
+   -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)
+ ENDIF(AVG_Q_GTK3)
  IF(${WIN32_THREADED})
   SET(GTHREAD_CFLAGS -I${GTKPATH}/include/glib-2.0)
   SET(USE_THREADING -DUSE_THREADING)

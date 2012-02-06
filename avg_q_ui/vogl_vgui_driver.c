@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1998-2002,2004,2006-2009,2011 Bernd Feige
+ * Copyright (C) 1998-2002,2004,2006-2009,2011-2012 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -17,7 +17,7 @@
  * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * GTK driver for VOGL (c) 1998-2002,2004,2006-2009,2011 by Bernd Feige (Feige@ukl.uni-freiburg.de)
+ * GTK driver for VOGL (c) 1998-2002,2004,2006-2009,2011-2012 by Bernd Feige (Feige@ukl.uni-freiburg.de)
  * 
  * To compile:
  * 
@@ -58,6 +58,11 @@ static GStaticMutex block_thread_mutex=G_STATIC_MUTEX_INIT;
 #else
 #define gdk_threads_enter()
 #define gdk_threads_leave()
+#endif
+
+/* Need some compatibility definitions */
+#if GTK_MAJOR_VERSION==2
+#define gtk_box_new(orientation,spacing) gtk_vbox_new(FALSE,spacing)
 #endif
 
 /*-------------------------- Keyboard_Buffer ------------------------------*/
@@ -120,8 +125,13 @@ static struct {
  int height;
  int line_width;
  int line_style;
+ int draw_lastx, draw_lasty;
  GtkWidget *window;
  GtkWidget *canvas;
+#if GTK_MAJOR_VERSION==2
+#else
+ cairo_region_t *crect;
+#endif
  int fg;
  GdkColor palette[MAXCOLOR];
  cairo_t *cr;
@@ -164,7 +174,7 @@ Notice(gchar *message) {
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK(Notice_window_close), NULL);
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
- box1 = gtk_vbox_new (FALSE, 0);
+ box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
  gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
@@ -321,11 +331,15 @@ canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
 #if GTK_MAJOR_VERSION==2
   GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
   gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect));
 #else
   cairo_rectangle_int_t const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
   gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),cairo_region_create_rectangle(&crect)),
+  if (VGUI.crect!=NULL) {
+   cairo_region_destroy(VGUI.crect);
+  }
+  VGUI.crect=cairo_region_create_rectangle(&crect);
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),VGUI.crect);
 #endif
   VGUI.paint_started=TRUE;
  }
@@ -378,7 +392,7 @@ static void
 posplot_about (GtkWidget *menuitem) {
  Notice(
   "posplot/VOGL GUI driver\n"
-  "(c) 2002-2007,2011 by Bernd Feige, Bernd.Feige@gmx.net\n"
+  "(c) 2002-2007,2011-2012 by Bernd Feige, Bernd.Feige@gmx.net\n"
   "Using the free GTK library: See http://www.gtk.org/"
  );
 }
@@ -433,7 +447,7 @@ VGUI_init(void) {
  g_signal_connect_object (G_OBJECT (VGUI.window), "delete_event", G_CALLBACK(window_destroy_event), G_OBJECT(VGUI.window), G_CONNECT_SWAPPED);
  g_signal_connect (G_OBJECT (VGUI.window), "configure_event", G_CALLBACK (window_configure_event), NULL);
 
- box1 = gtk_vbox_new (FALSE, 0);
+ box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
  gtk_container_add (GTK_CONTAINER (VGUI.window), box1);
  gtk_widget_show (box1);
 
@@ -1022,6 +1036,10 @@ VGUI_init(void) {
  vdevice.depth = 3;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
  VGUI.cr=NULL;
+#if GTK_MAJOR_VERSION==2
+#else
+ VGUI.crect=NULL;
+#endif
  /* Antialiasing doesn't look nice with lines */
  VGUI.antialias=CAIRO_ANTIALIAS_NONE;
  VGUI.backbuffer=TRUE;
@@ -1075,7 +1093,11 @@ VGUI_backbuffer(void) {
   gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
 #else
   cairo_rectangle_int_t const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),cairo_region_create_rectangle(&crect)),
+  if (VGUI.crect!=NULL) {
+   cairo_region_destroy(VGUI.crect);
+  }
+  VGUI.crect=cairo_region_create_rectangle(&crect);
+  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),VGUI.crect);
 #endif
   VGUI.paint_started=TRUE;
  }
@@ -1127,6 +1149,12 @@ VGUI_exit(void) {
   gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
   VGUI.paint_started=FALSE;
  }
+#if GTK_MAJOR_VERSION==2
+#else
+ if (VGUI.crect!=NULL) {
+  cairo_region_destroy(VGUI.crect);
+ }
+#endif
  gtk_widget_destroy (VGUI.window);
  gdk_threads_leave();
 #ifdef USE_THREADING
@@ -1146,14 +1174,12 @@ VGUI_begin(void) {
   //65535=solid
   if (VGUI.line_style != 0xffff) {
    double dashes[16];
-   int     i, n, a, b, offset;
+   int     i, n, a, b;
 
    for (i = 0; i < 16; i++) dashes[i] = 0;
 
    for (i = 0; i < 16; i++)        /* Over 16 bits */
     if ((VGUI.line_style & (1 << i))) break;
-
-   offset = i;
 
 #define ON  1
 #define OFF 0
@@ -1188,6 +1214,7 @@ VGUI_begin(void) {
 
   gdk_cairo_set_source_color(VGUI.cr,&VGUI.palette[VGUI.fg]);
   cairo_set_line_width(VGUI.cr,VGUI.line_width);
+  VGUI.draw_lastx=VGUI.draw_lasty= -1;
  }
  return (1);
 };
@@ -1253,22 +1280,21 @@ static int VGUI_string(char *s)
 }
 
 
-static int VGUI_solid(int x, int y)
+static int VGUI_draw(int x, int y)
 {
- // All line drawing, dashed or not, is done through THIS
- // function, not through VGUI_pattern!
-
  //printf("VGUI_solid %d %d\n", x, y);
 
  gdk_threads_enter();
  if (VGUI.cr!=NULL) {
-  cairo_move_to (VGUI.cr, x, vdevice.sizeSy - y);
-  cairo_line_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+  if (vdevice.cpVx!=VGUI.draw_lastx || vdevice.cpVy!=VGUI.draw_lasty) {
+   cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+  }
+  cairo_line_to (VGUI.cr, x, vdevice.sizeSy - y);
  }
  gdk_threads_leave();
 
- vdevice.cpVx = x;
- vdevice.cpVy = y;
+ VGUI.draw_lastx = vdevice.cpVx = x;
+ VGUI.draw_lasty = vdevice.cpVy = y;
 
  return (0);
 }
@@ -1389,7 +1415,7 @@ static DevEntry VGUIdev = {
  VGUI_checkkey,  /* keyhit */
  VGUI_vclear,  /* clear viewport to current colour */
  VGUI_colour,  /* set current colour */
- VGUI_solid,  /* draw line */
+ VGUI_draw,  /* draw line */
  VGUI_exit,  /* close graphics & exit */
  VGUI_fill,  /* fill polygon */
  VGUI_font,  /* set hardware font */

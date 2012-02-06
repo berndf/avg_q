@@ -1,1 +1,2 @@
-cmake -DCMAKE_TOOLCHAIN_FILE=../CMake_Toolchain_mingw32.txt ..
+avg_q_dir=`dirname $0`
+cmake -DCMAKE_TOOLCHAIN_FILE=$avg_q_dir/CMake_Toolchain_mingw32.txt $* $avg_q_dir

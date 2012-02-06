@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2011 Bernd Feige
+ * Copyright (C) 1996-2012 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -121,17 +121,17 @@ LOCAL enum method_types method_types[]={
 #define TRACEFRAME_SIZE_X 400
 #define TRACEFRAME_SIZE_Y 200
 
-/* More entries fit on the screen in Windows, but with this
- * setting, all transform methods fit in 2 menus that are about the
- * height of the default window under X11. */
-#define MAX_MENUENTRIES 25
-
 /* Need some compatibility definitions */
 #if GTK_MAJOR_VERSION==2 && GTK_MINOR_VERSION<24
 #define GTK_COMBO_BOX_TEXT(x) GTK_COMBO_BOX(x)
 #define gtk_combo_box_text_new() gtk_combo_box_new_text()
 #define gtk_combo_box_text_append_text(x,y) gtk_combo_box_append_text(x,y)
 #define gtk_combo_box_text_get_active_text(x) gtk_combo_box_get_active_text(x)
+#endif
+#if GTK_MAJOR_VERSION==2
+#define gtk_box_new_GTK_ORIENTATION_VERTICAL(spacing) gtk_vbox_new(FALSE,spacing)
+#define gtk_box_new_GTK_ORIENTATION_HORIZONTAL(spacing) gtk_hbox_new(FALSE,spacing)
+#define gtk_box_new(orientation,spacing) gtk_box_new_##orientation(spacing)
 #endif
 /*}}}*/
 
@@ -317,7 +317,7 @@ Notice(gchar *message) {
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK (Notice_window_close), NULL);
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
- box1 = gtk_vbox_new (FALSE, 0);
+ box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
  gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
@@ -387,7 +387,7 @@ trace_message(const external_methods_ptr emeth, const int lvl, const char *msgte
    /* This disables normal processing of keys for the trace panel, including copying... */
    /*g_signal_connect (G_OBJECT (window), "key_press_event", G_CALLBACK (key_press_for_mainwindow), NULL);*/
 
-   box1 = gtk_vbox_new (FALSE, 0);
+   box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
    gtk_container_add (GTK_CONTAINER (window), box1);
    gtk_widget_show (box1);
 
@@ -951,15 +951,15 @@ method_fileselect_all(method_file_sel_data *data) {
  const gchar * const text=gtk_entry_get_text(GTK_ENTRY(*data->in_dialog_widgets));
  const gchar *uri = NULL;
 
+ /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
+  * so we need to use ACTION_SAVE to present any argument... */
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a file argument",
   GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_OPEN,
+  GTK_FILE_CHOOSER_ACTION_SAVE,
   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
   GTK_STOCK_PASTE, GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
-  * so we need to use gtk_file_chooser_set_uri... */
  if (text!=NULL) {
   if (strchr(text, '*')!=NULL) {
    GtkFileFilter *filter=gtk_file_filter_new();
@@ -979,6 +979,8 @@ method_fileselect_all(method_file_sel_data *data) {
    }
    gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
   }
+  /* This is necessary to default to a name that does not exist yet... */
+  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_basename(text));
  }
  if (uri==NULL) {
   /* Set current folder */
@@ -1069,7 +1071,7 @@ MethodInstance_build_dialog(void) {
  g_signal_connect (G_OBJECT (MethodInstance_window), "destroy", G_CALLBACK (method_dialog_close), NULL);
  gtk_window_set_title (GTK_WINDOW (MethodInstance_window), method.method_name);
 
- box1 = gtk_vbox_new (FALSE, 0);
+ box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
  gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(MethodInstance_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
@@ -1108,7 +1110,7 @@ MethodInstance_build_dialog(void) {
     Bool entry_is_optional=FALSE;
     int entry_index= -1;	/* Where in dialog_widgets is the last entry widget */
 
-    hbox = gtk_hbox_new (FALSE, 0);
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start (GTK_BOX(box1), hbox, FALSE, FALSE, 0);
     gtk_widget_show (hbox);
     if (*argument_descriptor->option_letters!='\0') {
@@ -1221,7 +1223,7 @@ MethodInstance_build_dialog(void) {
  gtk_box_pack_start (GTK_BOX(box1), Dialog_Configuration_Error, FALSE, FALSE, 0);
  gtk_widget_hide (Dialog_Configuration_Error);
 
- hbox = gtk_hbox_new (FALSE, 0);
+ hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
  gtk_box_pack_start (GTK_BOX(box1), hbox, FALSE, FALSE, 0);
  gtk_widget_show (hbox);
 
@@ -1724,6 +1726,8 @@ save_file_as(GtkWidget *menuitem) {
   g_free(gfilename);
  }
  gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
+ /* This is necessary to default to a name that does not exist yet... */
+ gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_basename(filename));
  gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
 
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
@@ -1943,8 +1947,18 @@ Quit_avg_q(GtkWidget *menuitem) {
 LOCAL void
 dump_file_as(GtkWidget *menuitem) {
  const gchar *uri = NULL;
- const gchar *uri1;
+ const gchar *newfilename;
  const gchar *extension;
+
+ /* Add extension ".h" */
+ extension=g_strrstr(filename,".");
+ if (extension) {
+  gchar * filename2=g_strndup(filename,extension-filename);
+  newfilename=g_strconcat(filename2,".h",NULL);
+  g_free(filename2);
+ } else {
+  newfilename=g_strconcat(filename,".h",NULL);
+ }
 
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select an include file name to dump to",
   GTK_WINDOW(Avg_Q_Main_Window),
@@ -1958,26 +1972,18 @@ dump_file_as(GtkWidget *menuitem) {
  gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- if (g_path_is_absolute(filename)) {
-  uri=g_filename_to_uri(filename,NULL,NULL);
+ if (g_path_is_absolute(newfilename)) {
+  uri=g_filename_to_uri(newfilename,NULL,NULL);
  } else {
   char * const path=g_get_current_dir();
-  char * const gfilename=g_build_filename(path,filename,NULL);
+  char * const gfilename=g_build_filename(path,newfilename,NULL);
   uri=g_filename_to_uri(gfilename,NULL,NULL);
   g_free(path);
   g_free(gfilename);
  }
- /* Add extension ".h" */
- extension=g_strrstr(uri,".");
- if (extension) {
-  gchar * uri2=g_strndup(uri,extension-uri);
-  uri1=g_strconcat(uri2,".h",NULL);
-  g_free(uri2);
- } else {
-  uri1=g_strconcat(uri,".h",NULL);
- }
- g_free(uri);
- gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri1);
+ gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
+ /* This is necessary to default to a name that does not exist yet... */
+ gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_basename(newfilename));
  gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
 
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
@@ -2061,7 +2067,7 @@ create_main_window (void) {
  g_signal_connect (G_OBJECT (Avg_Q_Main_Window), "destroy", G_CALLBACK (Quit_avg_q), NULL);
  g_signal_connect (G_OBJECT (Avg_Q_Main_Window), "delete_event", G_CALLBACK (Quit_avg_q), NULL);
 
- box1 = gtk_vbox_new (FALSE, 0);
+ box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
  gtk_container_add (GTK_CONTAINER (Avg_Q_Main_Window), box1);
  gtk_widget_show (box1);
 
@@ -2223,48 +2229,20 @@ create_main_window (void) {
  int method_type_id;
  for (method_type_id=0; method_type_id<NR_OF_METHOD_TYPES; method_type_id++) {
   enum method_types const method_type=method_types[method_type_id];
-  int entries_for_submenus;
-  GtkWidget *submenu, *ssubmenu;
-  GtkWidget *last_smenuitem=NULL;
-  int nr_of_methods=0;
+  GtkWidget *submenu;
 
-  ssubmenu=submenu=gtk_menu_new();
+  submenu=gtk_menu_new();
   menuitem=gtk_tearoff_menu_item_new();
-  gtk_menu_shell_append (GTK_MENU_SHELL (ssubmenu), menuitem);
+  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
   gtk_widget_show (menuitem);
 
   for (m_select=method_selects; *m_select!=NULL; m_select++) {
    (**m_select)(&tinfostruc);
-   if (tinfostruc.methods->method_type==method_type) nr_of_methods++;
-  }
-
-  entries_for_submenus=(int)((nr_of_methods-1)/MAX_MENUENTRIES);
-
-  nr_of_methods=0;
-  for (m_select=method_selects; *m_select!=NULL; m_select++) {
-   (**m_select)(&tinfostruc);
    if (tinfostruc.methods->method_type==method_type) {
-    if (entries_for_submenus>0 && nr_of_methods%MAX_MENUENTRIES==0) {
-     if (nr_of_methods!=0) {
-      ssubmenu=gtk_menu_new ();
-      gtk_menu_item_set_submenu (GTK_MENU_ITEM (last_smenuitem), ssubmenu);
-
-      menuitem=gtk_tearoff_menu_item_new();
-      gtk_menu_shell_append (GTK_MENU_SHELL (ssubmenu), menuitem);
-      gtk_widget_show (menuitem);
-     }
-     if ((nr_of_methods/MAX_MENUENTRIES)<entries_for_submenus) {
-      menuitem=gtk_menu_item_new_with_label("");
-      gtk_menu_shell_append (GTK_MENU_SHELL (ssubmenu), menuitem);
-      gtk_widget_show (menuitem);
-      last_smenuitem=menuitem;
-     }
-    }
     menuitem=gtk_menu_item_new_with_label(tinfostruc.methods->method_name);
     g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(method_menu), (gpointer)(*m_select));
-    gtk_menu_shell_append (GTK_MENU_SHELL (ssubmenu), menuitem);
+    gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
     gtk_widget_show (menuitem);
-    nr_of_methods++;
    }
   }
 
@@ -2297,7 +2275,7 @@ create_main_window (void) {
  gtk_box_pack_start (GTK_BOX (box1), handle_box, FALSE, TRUE, 0);
  gtk_widget_show (handle_box);
 
- hbox = gtk_hbox_new (FALSE, 0);
+ hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
  gtk_widget_show (hbox);
  gtk_container_add (GTK_CONTAINER (handle_box), hbox);
 
