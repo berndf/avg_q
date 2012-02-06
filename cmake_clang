@@ -1,0 +1,2 @@
+#CMAKE_C_LINK_EXECUTABLE="llvm-ld -native" CC=clang CXX=clang++ cmake $* ~/work/avg_q
+cmake -DCMAKE_TOOLCHAIN_FILE=~/work/avg_q/llvm_toolchain.cmake $* ~/work/avg_q
