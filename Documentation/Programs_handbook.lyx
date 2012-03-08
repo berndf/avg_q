@@ -6305,6 +6305,11 @@ avg_q
 swap_xz
 \series default
  program, the x values back by half the window width.
+\begin_inset Newline newline
+\end_inset
+
+Spectral analysis is performed after demeaning, detrending and applying
+ a Welch taper to each single FFT window.
 \end_layout
 
 \begin_deeper
@@ -6426,7 +6431,11 @@ points, because the FFT only operates on data sizes that are a power of
 \begin_inset Formula $2$
 \end_inset
 
-.
+ (in this case, 
+\begin_inset Formula $64$
+\end_inset
+
+).
 \begin_inset Newline newline
 \end_inset
 
