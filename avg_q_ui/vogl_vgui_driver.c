@@ -248,16 +248,32 @@ key_press_event(GtkWidget *widget, GdkEventKey *event) {
     keysym='c';
     break;
    case GDK_KEY_Left:
-    keysym=((event->state&GDK_SHIFT_MASK) ? 'H' : 'h');
+    if (event->state&GDK_CONTROL_MASK) {
+     keysym=((event->state&GDK_SHIFT_MASK) ? 'H' : 'h');
+    } else {
+     keysym='I';
+    }
     break;
    case GDK_KEY_Right:
-    keysym=((event->state&GDK_SHIFT_MASK) ? 'L' : 'l');
+    if (event->state&GDK_CONTROL_MASK) {
+     keysym=((event->state&GDK_SHIFT_MASK) ? 'L' : 'l');
+    } else {
+     keysym='i';
+    }
     break;
    case GDK_KEY_Down:
-    keysym=((event->state&GDK_SHIFT_MASK) ? 'J' : 'j');
+    if (event->state&GDK_CONTROL_MASK) {
+     keysym=((event->state&GDK_SHIFT_MASK) ? 'J' : 'j');
+    } else {
+     keysym=')';
+    }
     break;
    case GDK_KEY_Up:
-    keysym=((event->state&GDK_SHIFT_MASK) ? 'K' : 'k');
+    if (event->state&GDK_CONTROL_MASK) {
+     keysym=((event->state&GDK_SHIFT_MASK) ? 'K' : 'k');
+    } else {
+     keysym='(';
+    }
     break;
    case GDK_KEY_Page_Up:
     keysym='(';
