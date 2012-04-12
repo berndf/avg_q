@@ -609,10 +609,11 @@ writeasc average.asc
 This script resamples all epochs in the first file to one fifth and all
  epochs in the second to one half of their respective original sampling
  frequencies and then averages them.
- This `branch skipping' feature should be used with caution, because some
- methods cannot handle a changing number of channels and others (like the
- average method) cannot handle changing epoch lengths.
- Usually, however, such restrictions are obvious.
+ Obviously this `branch skipping' feature should be used with due diligence
+ because it is easy to produce epochs with varying geometry in the output;
+ Some methods cannot handle the case in which the number of channels varies
+ across epochs and others (like the average method) cannot handle varying
+ epoch lengths.
  Another point to be aware of is that although the syntactic parsing of
  all lines is done before any execution of the script is started, the actual
  initialization of a branch takes place only after the prior branches are
@@ -639,14 +640,14 @@ Epoch_\SpecialChar \-
 Metho
 d' by prepending an exclamation mark (`!').
  The reason for this construct is that there is sometimes the need to output
- messages or to run programs 
+ messages or to run programs safely 
 \shape italic
 between
 \shape default
  the processing of two branches.
- Message output can be used by a subsequent program, for example, to separate
- data resulting from different files within an output stream; for example,
- when multiple input files are measured using the 
+ Message output can be used by a subsequent program to separate data resulting
+ from different files within an output stream - for example when multiple
+ input files are measured using the 
 \series bold
 write_crossings
 \series default
@@ -6213,6 +6214,77 @@ Hz, where
 \end_inset
 
  is the epoch length in seconds.
+ For examples, see figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:fftfilter_examples"
+
+\end_inset
+
+.
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename fftfilter1.pdf
+	groupId fftfilter_examples
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename fftfilter2.pdf
+	groupId fftfilter_examples
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:fftfilter_examples"
+
+\end_inset
+
+fftfilter examples.
+ Sampling frequency is 200Hz, Nyquist frequency 100Hz (=1).
+ Start and end of blocks are marked with blue and red vertical lines, respective
+ly.
+ The second example shows how factors can be arbitrarily set for each block
+ by using a number prepended with 
+\begin_inset Quotes eld
+\end_inset
+
+-
+\begin_inset Quotes erd
+\end_inset
+
+ (-x).
+ If omitted, it defaults to 0.0 (full suppression) for each block.
+ Note that these plots are not schematic; they show fftfilter -V diagnostic
+ output for the given configurations.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_deeper
@@ -6243,6 +6315,10 @@ nr_of_item: act only on this item number (
 \end_inset
 
 channelnames: Act only on the given subset of channels.
+\end_layout
+
+\begin_layout Description
+-V: Verbose output of filtering diagnostics
 \end_layout
 
 \begin_layout Description

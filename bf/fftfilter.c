@@ -185,7 +185,7 @@ fftfilter(transform_info_ptr tinfo) {
  if (args[ARGS_VERBOSE].is_set) {
 #define STRINGBUFFER_SIZE 100
   char stringbuffer[STRINGBUFFER_SIZE];
-  snprintf(stringbuffer, STRINGBUFFER_SIZE, "fftfilter: FFT size %ld points, Frequency resolution %gHz\n", fftsize, tinfo->sfreq/2/fftsize);
+  snprintf(stringbuffer, STRINGBUFFER_SIZE, "fftfilter: FFT size %ld points, Frequency resolution %gHz\n", fftsize, tinfo->sfreq/fftsize);
   TRACEMS(tinfo->emethods, -1, stringbuffer);
   for (inblocks=local_arg->blockdefs; inblocks!=NULL; inblocks++) {
    snprintf(stringbuffer, STRINGBUFFER_SIZE, "fftfilter: Block %ld %ld %ld %ld Factor %g\n", (long)rint(inblocks->start*fftsize), (long)rint(inblocks->nullstart*fftsize), (long)rint(inblocks->nullend*fftsize), (long)rint(inblocks->end*fftsize), inblocks->factor);
@@ -196,6 +196,8 @@ fftfilter(transform_info_ptr tinfo) {
  
   tinfo_array(tinfoptr, &myarray);
   for (itempart=local_arg->fromitem; itempart<=local_arg->toitem; itempart++) {
+   /* VERBOSE: Show factors only once */
+   Bool show_factors=args[ARGS_VERBOSE].is_set;
    array_use_item(&myarray, itempart);
    do {
     if (local_arg->have_channel_list && !is_in_channellist(myarray.current_vector+1, local_arg->channel_list)) {
@@ -216,6 +218,9 @@ fftfilter(transform_info_ptr tinfo) {
     }
     realfft(fftarray.start, fftsize, 1);
 
+    if (show_factors) {
+     TRACEMS(tinfo->emethods, -1, "fftfilter: Factors");
+    }
     for (inblocks=local_arg->blockdefs; inblocks!=NULL; inblocks++) {
      for (i=0; i<=fftsize; i+=2) {
       float ratio=((float)i)/fftsize, factor;
@@ -228,8 +233,18 @@ fftfilter(transform_info_ptr tinfo) {
       factor=1.0+(inblocks->factor-1.0)*factor;
       fftarray.start[i  ]*=factor;
       fftarray.start[i+1]*=factor;
+      if (show_factors) {
+#define STRINGBUFFER_SIZE 100
+       char stringbuffer[STRINGBUFFER_SIZE];
+       snprintf(stringbuffer, STRINGBUFFER_SIZE, "\t%d:%g", i/2, factor);
+       TRACEMS(tinfo->emethods, -1, stringbuffer);
+      }
      }
      if (inblocks->last_block) break;
+    }
+    if (show_factors) {
+     TRACEMS(tinfo->emethods, -1, "\n");
+     show_factors=FALSE;
     }
 
     realfft(fftarray.start, fftsize, -1);
