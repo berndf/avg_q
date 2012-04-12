@@ -56,6 +56,36 @@ typedef struct 							//Signaleigenschaften
 	CHANNEL 	strctChannel[MAX_NUMBER_OF_CHANNELS];	// = 32 Channels, 580 Bytes per channel
 } MULTI_CHANNEL_CONTINUOUS;
 
+// MER
+// Header-Structur from NeuroExplorer
+// Matlab code skips 604 bytes; 2*40+11*4+3*40+4+354=602
+// Data are 16-bit shorts; read unsigned, subtract 2048 and multiply by (0.4/4096)
+typedef struct
+{
+   char PatName [40];   // Patientenkürzel
+   char Position [40];  // Position (für EMG nicht relevant)
+   int SamplingRate;
+   int SpikeCount;      // für EMG nicht relevant
+   int TriggerLinie;    // für EMG nicht relevant
+   int SiteNr;          // für EMG nicht relevant
+   int KanalNr;         // Nummer des Messkanals
+   int op_id;           // ID der Operation
+   int SiteID;          // ID der Site
+   int MaxYValue;       // Maximale Auflösung (Amplitude) der Y - Achse
+                        // (ISIS MER: 4095)
+   int typ;             // Typ der Datei 
+                        //(0 = Normale Messdatendatei, 255 =EMG - Datei)
+
+   int Multiplexing;    // Zur Zeit nicht benutzt
+   int EMGChannels;     // Zugeordnete EMG - Kanäle
+   char EMGChannelsDesc [3][40];  // Bezeichner der EMG - Kanäle
+   int BitsPerValue;    // Compression, wenn Wert <> 12 keine Kompression
+   char filler [354];   // Reserve für zukünftige Nutzung
+} PlotWinInfo;
+
 #include <read_struct.h>
 extern struct_member sm_MULTI_CHANNEL_CONTINUOUS[], sm_CHANNEL[], sm_DIG_FILTER[];
 extern struct_member_description smd_MULTI_CHANNEL_CONTINUOUS[], smd_CHANNEL[], smd_DIG_FILTER[];
+
+extern struct_member sm_PlotWinInfo[];
+extern struct_member_description smd_PlotWinInfo[];

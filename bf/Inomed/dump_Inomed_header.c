@@ -46,11 +46,6 @@ enum { INOMEDFILEARG=0, END_OF_ARGS
 
 int 
 main(int argc, char **argv) {
- MULTI_CHANNEL_CONTINUOUS EEG;
-
- char *filename;
- FILE *INOMEDFILE;
-
  int filearg;
  int errflag=0, c;
  int channel;
@@ -68,43 +63,54 @@ main(int argc, char **argv) {
  }
 
  for (filearg=INOMEDFILEARG; argc-optind-filearg>=END_OF_ARGS; filearg++) {
-
-  filename=MAINARG(filearg);
-  INOMEDFILE=fopen(filename,"rb");
+  char *filename=MAINARG(filearg);
+  FILE *INOMEDFILE=fopen(filename,"rb");
   if(INOMEDFILE==NULL) {
    fprintf(stderr, "%s: Can't open file %s\n", argv[0], filename);
    continue;
   }
 
-  if (read_struct((char *)&EEG, sm_MULTI_CHANNEL_CONTINUOUS, INOMEDFILE)==0) {
-   fprintf(stderr, "%s: Short file %s\n", argv[0], filename);
-   continue;
-  }
-#ifndef LITTLE_ENDIAN
-  change_byteorder((char *)&EEG, sm_MULTI_CHANNEL_CONTINUOUS);
-#endif
-  print_structcontents((char *)&EEG, sm_MULTI_CHANNEL_CONTINUOUS, smd_MULTI_CHANNEL_CONTINUOUS, stdout);
-  for (channel=0; channel<EEG.sNumberOfChannels; channel++) {
-   printf("\nChannel %d\n", channel+1);
-   if (read_struct((char *)&EEG.strctChannel[channel], sm_CHANNEL, INOMEDFILE)==0
-     ||read_struct((char *)&EEG.strctChannel[channel].strctHighPass, sm_DIG_FILTER, INOMEDFILE)==0
-     ||read_struct((char *)&EEG.strctChannel[channel].strctLowPass, sm_DIG_FILTER, INOMEDFILE)==0) {
+  if (strlen(filename)>=4 && strcmp(filename+strlen(filename)-4, ".dat")==0) {
+   PlotWinInfo EEG;
+   if (read_struct((char *)&EEG, sm_PlotWinInfo, INOMEDFILE)==0) {
     fprintf(stderr, "%s: Short file %s\n", argv[0], filename);
     continue;
    }
 #ifndef LITTLE_ENDIAN
-   change_byteorder((char *)&EEG.strctChannel[channel], sm_CHANNEL);
-   change_byteorder((char *)&EEG.strctChannel[channel].strctHighPass, sm_DIG_FILTER);
-   change_byteorder((char *)&EEG.strctChannel[channel].strctLowPass, sm_DIG_FILTER);
+   change_byteorder((char *)&EEG, sm_PlotWinInfo);
 #endif
-   print_structcontents((char *)&EEG.strctChannel[channel], sm_CHANNEL, smd_CHANNEL, stdout);
-   printf("HighPass:\n");
-   print_structcontents((char *)&EEG.strctChannel[channel].strctHighPass, sm_DIG_FILTER, smd_DIG_FILTER, stdout);
-   printf("LowPass:\n");
-   print_structcontents((char *)&EEG.strctChannel[channel].strctLowPass, sm_DIG_FILTER, smd_DIG_FILTER, stdout);
+   print_structcontents((char *)&EEG, sm_PlotWinInfo, smd_PlotWinInfo, stdout);
+  } else {
+   MULTI_CHANNEL_CONTINUOUS EEG;
+   if (read_struct((char *)&EEG, sm_MULTI_CHANNEL_CONTINUOUS, INOMEDFILE)==0) {
+    fprintf(stderr, "%s: Short file %s\n", argv[0], filename);
+    continue;
+   }
+#ifndef LITTLE_ENDIAN
+   change_byteorder((char *)&EEG, sm_MULTI_CHANNEL_CONTINUOUS);
+#endif
+   print_structcontents((char *)&EEG, sm_MULTI_CHANNEL_CONTINUOUS, smd_MULTI_CHANNEL_CONTINUOUS, stdout);
+   for (channel=0; channel<EEG.sNumberOfChannels; channel++) {
+    printf("\nChannel %d\n", channel+1);
+    if (read_struct((char *)&EEG.strctChannel[channel], sm_CHANNEL, INOMEDFILE)==0
+      ||read_struct((char *)&EEG.strctChannel[channel].strctHighPass, sm_DIG_FILTER, INOMEDFILE)==0
+      ||read_struct((char *)&EEG.strctChannel[channel].strctLowPass, sm_DIG_FILTER, INOMEDFILE)==0) {
+     fprintf(stderr, "%s: Short file %s\n", argv[0], filename);
+     continue;
+    }
+#ifndef LITTLE_ENDIAN
+    change_byteorder((char *)&EEG.strctChannel[channel], sm_CHANNEL);
+    change_byteorder((char *)&EEG.strctChannel[channel].strctHighPass, sm_DIG_FILTER);
+    change_byteorder((char *)&EEG.strctChannel[channel].strctLowPass, sm_DIG_FILTER);
+#endif
+    print_structcontents((char *)&EEG.strctChannel[channel], sm_CHANNEL, smd_CHANNEL, stdout);
+    printf("HighPass:\n");
+    print_structcontents((char *)&EEG.strctChannel[channel].strctHighPass, sm_DIG_FILTER, smd_DIG_FILTER, stdout);
+    printf("LowPass:\n");
+    print_structcontents((char *)&EEG.strctChannel[channel].strctLowPass, sm_DIG_FILTER, smd_DIG_FILTER, stdout);
+   }
   }
   fclose(INOMEDFILE);
-
  }
 
  return 0;

@@ -74,3 +74,27 @@ struct_member sm_DIG_FILTER[]={
  {(long)&((DIG_FILTER *)NULL)->szReserve, 36, 64, 0},
  {0,0,0,0}
 };
+
+// MER
+struct_member sm_PlotWinInfo[]={
+ {sizeof(PlotWinInfo), 602, 0, 0},
+ {(long)&((PlotWinInfo *)NULL)->PatName, 0, 40, 0},
+ {(long)&((PlotWinInfo *)NULL)->Position, 40, 40, 0},
+ {(long)&((PlotWinInfo *)NULL)->SamplingRate, 80, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->SpikeCount, 84, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->TriggerLinie, 88, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->SiteNr, 92, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->KanalNr, 96, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->op_id, 100, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->SiteID, 104, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->MaxYValue, 108, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->typ, 112, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->Multiplexing, 116, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->EMGChannels, 120, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->EMGChannelsDesc[0], 124, 40, 0},
+ {(long)&((PlotWinInfo *)NULL)->EMGChannelsDesc[1], 164, 40, 0},
+ {(long)&((PlotWinInfo *)NULL)->EMGChannelsDesc[2], 204, 40, 0},
+ {(long)&((PlotWinInfo *)NULL)->BitsPerValue, 244, 4, 1},
+ {(long)&((PlotWinInfo *)NULL)->filler, 248, 354, 0},
+ {0,0,0,0}
+};

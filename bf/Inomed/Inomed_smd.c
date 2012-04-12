@@ -68,3 +68,25 @@ struct_member_description smd_DIG_FILTER[]={
  {STRUCT_MEMBER_FLOAT, "fCutoffFrequency"},
  {STRUCT_MEMBER_CHAR, "szReserve"},
 };
+
+// MER
+struct_member_description smd_PlotWinInfo[]={
+ {STRUCT_MEMBER_CHAR, "PatName"},
+ {STRUCT_MEMBER_CHAR, "Position"},
+ {STRUCT_MEMBER_INT, "SamplingRate"},
+ {STRUCT_MEMBER_INT, "SpikeCount"},
+ {STRUCT_MEMBER_INT, "TriggerLinie"},
+ {STRUCT_MEMBER_INT, "SiteNr"},
+ {STRUCT_MEMBER_INT, "KanalNr"},
+ {STRUCT_MEMBER_INT, "op_id"},
+ {STRUCT_MEMBER_INT, "SiteID"},
+ {STRUCT_MEMBER_INT, "MaxYValue"},
+ {STRUCT_MEMBER_INT, "typ"},
+ {STRUCT_MEMBER_INT, "Multiplexing"},
+ {STRUCT_MEMBER_INT, "EMGChannels"},
+ {STRUCT_MEMBER_CHAR, "EMGChannelsDesc[0]"},
+ {STRUCT_MEMBER_CHAR, "EMGChannelsDesc[1]"},
+ {STRUCT_MEMBER_CHAR, "EMGChannelsDesc[2]"},
+ {STRUCT_MEMBER_INT, "BitsPerValue"},
+ {STRUCT_MEMBER_CHAR, "filler"},
+};
