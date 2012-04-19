@@ -32,7 +32,8 @@ class sleep_eeg(avg_q.avg_q):
   ['3.5+1', '8', 'Theta'],
 
   ['8+1', '12', 'Alpha'],
-  ['12+1', '16', 'Sigma'],
+  ['12+1', '14', 'Sigma1'],
+  ['14+1', '16', 'Sigma2'],
 
   ['16+1', '24', 'Beta1'],
   ['24+1', '32', 'Beta2'],
@@ -302,6 +303,7 @@ null_sink
    else:
     spect.append([float(x) for x in line.split('\t')])
  def get_Delta_slope(self,booknumber):
+  # cf. Esser:2007
   from . import sleep_file
   from . import trgfile
   try:

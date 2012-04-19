@@ -2,24 +2,11 @@
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import avg_q
 import avg_q.Detector
+import avg_q.Channeltypes
 import os
 import copy
 
 default_sessionaverage_EOGfile='avgEOG.asc'
-
-standard_protect_channels=[
- 'ECG',
- 'EKG',
- 'EDA',
- 'EDAShape',
- 'GSR_MR_100_EDA',
- 'Ekg1','Ekg2',
- 'Eog',
- 'Ekg',
- 'BEMG1',
- 'BEMG2',
- 'EVT',
-]
 
 class EOG(avg_q.Detector.Detector):
  VEOG_beforetrig='0.2s'
@@ -32,14 +19,15 @@ class EOG(avg_q.Detector.Detector):
   self.get_VEOG_script="remove_channel -k VEOG\n"
   self.mapfile=None
   self.sessionaverage_EOGfile=None
-  self.protect_channels=standard_protect_channels
+  self.protect_channels=avg_q.Channeltypes.NonEEGChannels
+  self.VEOGtriggers=None
  def set_Epochsource(self,epochsource):
   # This must be used instead of the Script base class 'add_Epochsource' for any file output
   self.Epochsource_list=[epochsource]
   self.base,ext=os.path.splitext(self.Epochsource_list[0].infile.filename)
   self.indir,name=os.path.split(self.base)
-  self.VEOGtriggers=None
   self.avgEOGfile=self.base+'_EOG.asc'
+  self.VEOGtriggers=None
  def detect_VEOG(self,outtrigfile=None):
   # self.VEOGtriggers will be reused if already set
   if self.VEOGtriggers is not None: return

@@ -2,6 +2,7 @@
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import avg_q
 import avg_q.Detector
+import avg_q.Channeltypes
 import os
 import copy
 
@@ -17,7 +18,7 @@ class ECG(avg_q.Detector.Detector):
  def __init__(self,avg_q_instance,ECGtemplate=None):
   avg_q.Detector.Detector.__init__(self,avg_q_instance)
   self.ECGtemplate=ECGtemplate
-  self.get_ECG_script="remove_channel -k ECG\n"
+  self.get_ECG_script="remove_channel -k ?%s\n" % ','.join(avg_q.Channeltypes.ECGchannels)
   self.mapfile=None
   self.sessionaverage_ECGfile=None
   self.protect_channels=standard_protect_channels

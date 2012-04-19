@@ -4,6 +4,7 @@
 Class to classify and project out artifacts by using ICA
 """
 
+from . import Channeltypes
 import os
 
 class ICA_ArtControl(object):
@@ -11,7 +12,8 @@ class ICA_ArtControl(object):
   self.avg_q_instance=avg_q_instance
   self.base=None
   self.tmpfiles=[]
-  self.remove_channels=set(['Ekg1','Ekg2','Ekg','ECG','BEMG1','BEMG2','EDA','GSR_MR_100_EDA'])
+  # Bipolar EOG channels do not need to be discarded for ICA
+  self.remove_channels=Channeltypes.NonEEGChannels.difference(Channeltypes.BipolarEOGchannels)
   self.clearComponents()
  def clearComponents(self):
   self.ArtComponents=set()

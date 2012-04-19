@@ -8,6 +8,7 @@ import avg_q
 from . import avg_q_file
 from . import trgfile
 from . import BrainVision
+from . import Channeltypes
 import os
 import math
 import glob
@@ -24,7 +25,7 @@ class fMRI_Correct(object):
   self.TR=None
   self.TS_points=None
   self.TR_points=None
-  self.remove_channels=set(['Ekg1','Ekg2','Eog','EOG','Ekg','ECG','BEMG1','BEMG2','EDA','GSR_MR_100_EDA'])
+  self.remove_channels=Channeltypes.NonEEGChannels
   self.collapseit=None
   self.overviewfilename=None
   self.templatefilename=None
@@ -624,14 +625,15 @@ subtract -d %(singleEPIfile)s_Amplitude.asc
 # Let each run through all EPIs correspond to exactly "1s"
 set sfreq %(nr_of_EPIs)d
 write_hdf -a -c %(residualsfile)s.hdf
-# EDA carries low artifact, don't consider it
-collapse_channels -h !?EDA,GSR_MR_100_EDA:collapsed
+# Don't consider non-EEG channels to judge the fit
+collapse_channels -h !?%(NonEEGChannels)s:collapsed
 reject_bandwidth -m %(avgEPI_Amplitude_Reject_fraction)g
 pop
 ''' % {
    'singleEPIfile': singleEPIfile,
    'nr_of_EPIs': len(self.EPIs),
    'residualsfile': residualsfile,
+   'NonEEGChannels': ','.join(Channeltypes.NonEEGChannels),
    'avgEPI_Amplitude_Reject_fraction': self.avgEPI_Amplitude_Reject_fraction,
    }
    script=avg_q.Script(self.avg_q_instance)
