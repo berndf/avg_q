@@ -19,6 +19,10 @@ headerfields=[
 ]
 
 unknown_marker_code= 9
+# This is used to detect corrupted event lists:
+max_stringlength=100
+import string
+accepted_characters=string.printable+"öäüÖÄÜß"
 markercodes={
  "DAY": 0,
  "HV": 0,
@@ -37,11 +41,21 @@ markercodes={
  "post hv": 12,
 }
 
-def readstring(filehandle):
- string=''
+def readstring(filehandle,start=b""):
+ # Could be that "start" already contains a string delimiter...
+ zeroindex=start.find(b"\0")
+ if zeroindex>=0:
+  return start[:zeroindex].decode('latin1')
+ string=start.decode('latin1')
+ # Garbage detection
+ if any([char not in accepted_characters for char in string]):
+  return None
  while True:
   char=filehandle.read(1).decode('latin1')
   if ord(char)==0: break
+  # Garbage detection
+  if char not in accepted_characters or len(string)>=max_stringlength:
+   return None
   if sys.version<"3":
    string+=char.encode('utf-8')
   else:
@@ -90,10 +104,10 @@ class CoherenceFile(object):
    duration,=struct.unpack("L",duration)
    # The first entry regularly is pos=2, marker="TEST"
    if pos<=2: break
-   marker=readstring(self.filehandle)
-   if len(marker)<=2:
-    char=self.filehandle.read(3-len(marker))
-    pause_length,=struct.unpack("L", marker.encode('latin1') + b"\0" + char)
+   pause_field=self.filehandle.read(4)
+   if pause_field[2]==0:
+    # PAUSE
+    pause_length,=struct.unpack("L", pause_field)
     marker=readstring(self.filehandle)
     if len(marker)==0:
      hours=int(pause_length/3600.0)
@@ -104,6 +118,10 @@ class CoherenceFile(object):
      if duration>0:
       push_event(pos+duration,marker+' Ende')
      marker+=" = %ds" % pause_length
+   else:
+    marker=readstring(self.filehandle,pause_field)
+    # readstring's garbage detection kicked in
+    if marker is None: break
    push_event(pos,marker)
   return events
  def close(self):
