@@ -63,7 +63,7 @@ pop
    # With N channels we get:
    # epoch,channelname*N,rangename,(amp,lat)*N
    # So we have 2+N*3 values
-   N=(len(values)-2)/3
+   N=int((len(values)-2)/3)
    epoch=int(values[0])+1
    channelnames=",".join(values[1:(1+N)])
    rangename=values[1+N]
