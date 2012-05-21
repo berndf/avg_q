@@ -980,7 +980,7 @@ method_fileselect_all(method_file_sel_data *data) {
    gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
   }
   /* This is necessary to default to a name that does not exist yet... */
-  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_basename(text));
+  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_path_get_basename(text));
  }
  if (uri==NULL) {
   /* Set current folder */
@@ -1561,7 +1561,7 @@ clear_script(void) {
 LOCAL void
 Close_script_file(void) {
  if (script_file!=NULL) {
-  if (g_io_channel_unix_get_fd(script_file)!=STDIN_FILENO)  g_io_channel_close(script_file);
+  if (g_io_channel_unix_get_fd(script_file)!=STDIN_FILENO)  g_io_channel_shutdown(script_file,TRUE,NULL);
   script_file=NULL;
  }
 }
@@ -1727,7 +1727,7 @@ save_file_as(GtkWidget *menuitem) {
  }
  gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
  /* This is necessary to default to a name that does not exist yet... */
- gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_basename(filename));
+ gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_path_get_basename(filename));
  gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
 
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
@@ -1983,7 +1983,7 @@ dump_file_as(GtkWidget *menuitem) {
  }
  gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
  /* This is necessary to default to a name that does not exist yet... */
- gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_basename(newfilename));
+ gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_path_get_basename(newfilename));
  gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
 
  if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
