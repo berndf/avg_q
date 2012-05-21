@@ -104,6 +104,8 @@ class paradigm(object):
     self.stimulus_count[stimulus]=0
   else:
    self.stimulus_count[unset_stimulus_name]=0
+  self.minRT_count=0
+  self.maxRT_count=0
   i=0
   while i<len(self.triggers):
    trial=[self.triggers[i]]
@@ -135,9 +137,13 @@ class paradigm(object):
      if rcode in self.response_set:
       response_latency_ms=(rpoint-point)/self.sfreq*1000.0
       #print code, rcode, response_latency_ms
-      # Classify RTs > maxRT_ms or <minRT as non-response
-      if ((self.minRT_ms and response_latency_ms<self.minRT_ms) or
-	  (self.maxRT_ms and response_latency_ms>self.maxRT_ms)):
+      # Classify RTs > maxRT_ms or <minRT as non-response,
+      # counting the number of occurrances of these conditions as diagnostic
+      if self.minRT_ms and response_latency_ms<self.minRT_ms:
+       self.minRT_count+=1
+       condition=self.classify_nonresponsetrial(point,code)
+      elif self.maxRT_ms and response_latency_ms>self.maxRT_ms:
+       self.maxRT_count+=1
        condition=self.classify_nonresponsetrial(point,code)
       else:
        condition=self.classify_responsetrial(point,code,rcode,response_latency_ms)
@@ -157,6 +163,10 @@ class paradigm(object):
   for condition,trial in self.parse_trials():
    self.trials[condition].append(trial)
  def triggerstats(self):
+  # Output statistics of code counts as well as time differences between two successive
+  # instances of the same code, as used in check_crossings
+  import collections
+  result_tuple=collections.namedtuple('Triggerstats',('n','mean','sd','min','q25','q50','q75','max'))
   codes={}
   for t in self.triggers:
    lat=t[0]/self.sfreq*1000
@@ -166,9 +176,10 @@ class paradigm(object):
   for code in codes:
    diffs=[codes[code][i]-codes[code][i-1] for i in range(1,len(codes[code]))]
    if diffs:
-    stats[code]=(len(codes[code]),mean(diffs),sdev(diffs),)+tuple(quantiles(diffs,[0.0,0.25,0.5,0.75,1.0]))
+    q0,q25,q50,q75,q100=quantiles(diffs,[0.0,0.25,0.5,0.75,1.0])
+    stats[code]=result_tuple(len(codes[code]),mean(diffs),sdev(diffs),q0,q25,q50,q75,q100)
    else:
-    stats[code]=(len(codes[code]),)+(None,)*7
+    stats[code]=result_tuple(len(codes[code]),None,None,None,None,None,None,None)
   return stats
  def get_RT(self,trial):
   Stim_index=None
@@ -189,6 +200,8 @@ class paradigm(object):
    totalN+=self.stimulus_count[stimulus]
   return totalN
  def getstats(self,condition):
+  import collections
+  result_tuple=collections.namedtuple('RTStats',('n','N','stimulus','meanRT','sdRT','minRT','q25','q50','q75','maxRT'))
   assigned_stimuli=self.stimulus_assignments[condition] if self.stimuli else unset_stimulus_name
   if not isinstance(assigned_stimuli,list):
    assigned_stimuli=[assigned_stimuli]
@@ -202,7 +215,7 @@ class paradigm(object):
   else:
    meanRT,sdRT,minRT,q25,q50,q75,maxRT=(None,)*7
 
-  return (len(self.trials[condition]),assigned_stimulus_count,','.join(assigned_stimuli),meanRT,sdRT,minRT,q25,q50,q75,maxRT)
+  return result_tuple(len(self.trials[condition]),assigned_stimulus_count,','.join(assigned_stimuli),meanRT,sdRT,minRT,q25,q50,q75,maxRT)
  def __str__(self):
   totalN=self.get_totalN()
   if totalN==0:
@@ -210,17 +223,17 @@ class paradigm(object):
   else:
    s=''
    for condition in self.conditions:
-    n,N,stimulus,meanRT,sdRT,minRT,q25,q50,q75,maxRT=self.getstats(condition)
-    if N==0:
+    RTStats=self.getstats(condition)
+    if RTStats.N==0:
      s+= "%s: --- No trials ---" % condition
     else:
-     s+= "%s: %d of %dx%s (%3.2f%%)" % (condition,n,N,stimulus,n*100.0/N)
-    if meanRT:
-     if sdRT:
-      s+=" RT: mean+-SD=%.0f+-%.0f, q0=%.0f q25=%.0f q50=%.0f q75=%.0f q100=%.0f\n" % (meanRT,sdRT,minRT,q25,q50,q75,maxRT)
+     s+= "%s: %d of %dx%s (%3.2f%%)" % (condition,RTStats.n,RTStats.N,RTStats.stimulus,RTStats.n*100.0/RTStats.N)
+    if RTStats.meanRT:
+     if RTStats.sdRT:
+      s+=" RT: mean+-SD=%.0f+-%.0f, q0=%.0f q25=%.0f q50=%.0f q75=%.0f q100=%.0f\n" % (RTStats.meanRT,RTStats.sdRT,RTStats.minRT,RTStats.q25,RTStats.q50,RTStats.q75,RTStats.maxRT)
      else:
       # i.e., n==1
-      s+=" RT: Single response %.0f\n" % meanRT
+      s+=" RT: Single response %.0f\n" % RTStats.meanRT
     else:
      s+="\n"
   return s
