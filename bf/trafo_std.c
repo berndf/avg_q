@@ -32,6 +32,7 @@
 #define __USE_ISOC99 1
 #endif
 #include <math.h>
+#include <errno.h>
 #include "transform.h"
 #include "bf.h"
 
@@ -570,7 +571,13 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
   if (buffer.have_token) {
    double trigpos;
    char *inbuffer=buffer.current_token;
+   errno=0;
    trigpos=strtod(inbuffer, &inbuffer);
+   if (errno!=0 || inbuffer==buffer.current_token) {
+    /* Avoid invalid lines. We'd need to generate an error here but don't have the tinfo struct. */
+    continue;
+   }
+
    if (*inbuffer=='m') {
     trigpos/=1000.0;
     inbuffer++;
@@ -583,7 +590,12 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
    growing_buf_nexttoken(&buffer);
    if (buffer.have_token) {
     inbuffer=buffer.current_token;
+    errno=0;
     code=strtol(inbuffer, &inbuffer, 10);
+    if (errno!=0 || inbuffer==buffer.current_token) {
+     /* Avoid invalid lines. We'd need to generate an error here but don't have the tinfo struct. */
+     continue;
+    }
     growing_buf_nexttoken(&buffer);
     if (descriptionp!=NULL) {
      if (buffer.have_token) {

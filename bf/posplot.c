@@ -644,7 +644,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->linestyle_type=0; 
  local_arg->function=TS_RAW;
  local_arg->dev=NEWBORDER;
- local_arg->red_message="This is posplot (c) 1993-2011 by Bernd Feige.";
+ local_arg->red_message="This is posplot (c) 1993-2012 by Bernd Feige.";
 
  if (tinfo->data_type==FREQ_DATA) tinfo->nr_of_points=tinfo->nroffreq;
  local_arg->lastselected= 0.0;
@@ -1201,7 +1201,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 #endif
 
   reshapeviewport();
-  /* This is done anew each time because on SGI the window can be sized */
+  /* This is done anew each time because the window may be resized */
   getviewport(&minx, &maxx, &miny, &maxy);
 
   if (local_arg->position_mode==POSITION_MODE_VERTICAL) {
@@ -1217,10 +1217,6 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
    int const npoints=last_x(tinfo_to_use)-first_x(tinfo_to_use)+1;
    local_arg->sampling_step=rint(((float)npoints)/plotlength+0.5);
   }
-
-  backbuffer(1);
-  color(BACKGROUND);
-  clear();
 
   if (lastsel_changed) {
    /*{{{  Recalculate selmin and selmax*/
@@ -1253,6 +1249,10 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
    translate(-local_arg->center_pos[0], -local_arg->center_pos[1], -local_arg->center_pos[2]);
   }
   /*}}}  */
+
+  backbuffer(1);
+  color(BACKGROUND);
+  clear();
 
   displayed_channel=0;
   entry=(channel_map_entry *)local_arg->channel_map.buffer_start;
@@ -1652,7 +1652,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
    }
    /*}}}  */
    /*{{{  Print 'red_message' if given*/
-   if (!postscript_output && local_arg->red_message!=NULL) {
+   if (local_arg->red_message!=NULL) {
     color(RED);
     cmov2((Coord)CHAR_WIDTH/(maxx-minx), (Coord)(maxy-3*CHAR_HEIGHT)/(maxy-miny));
     charstr(local_arg->red_message);
@@ -2715,7 +2715,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        }
        if (entry==NULL || (entry->selected && nr_of_selected_channels<=1)) break;
        entry->selected=!entry->selected;
-       dev=NEWDATA; leave=TRUE;
+       dev=NEWBORDER; leave=TRUE;
        break;
       case 12:	/* CTRL-L */
        dev=NEWBORDER; leave=TRUE;
@@ -2889,6 +2889,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
    charstr("Plotting...");
    popmatrix();
    popviewport();
+   /*}}}  */
   }
  } while (dev==REDRAW);
 } while (dev==NEWBORDER || dev==NEWDATA);

@@ -128,11 +128,22 @@ struct query_storage {
 };
 /*}}}  */
 
+LOCAL void
+myflush(transform_info_ptr tinfo, char *buffer) {
+ struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
+ if (local_arg->outfile==NULL) {
+  TRACEMS(tinfo->emethods, -1, buffer);
+ } else {
+  fputs(buffer, local_arg->outfile);
+ }
+}
+
 /*{{{  query_init(transform_info_ptr tinfo) {*/
 METHODDEF void
 query_init(transform_info_ptr tinfo) {
  struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
+ char buffer[OUTPUT_LINE_LENGTH], *inbuf=buffer;
 
  if (!args[ARGS_OFILE].is_set) {
   local_arg->outfile=NULL;
@@ -149,6 +160,18 @@ query_init(transform_info_ptr tinfo) {
  } else {
   local_arg->delimiter="\n";
  }
+ switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
+  case C_TRIGGERS_FOR_TRIGFILE:
+  case C_TRIGGERS_FOR_TRIGFILE_S:
+  case C_TRIGGERS_FOR_TRIGFILE_MS:
+  case C_FILETRIGGERS_FOR_TRIGFILE:
+  case C_FILETRIGGERS_FOR_TRIGFILE_S:
+  case C_FILETRIGGERS_FOR_TRIGFILE_MS:
+   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "# Sfreq=%f%s", tinfo->sfreq, local_arg->delimiter); myflush(tinfo, buffer);
+   break;
+  default:
+   break;
+ }
 
  /* This is needed for C_TRIGGERS_FOR_TRIGFILE: */
  local_arg->total_points=0;
@@ -158,15 +181,6 @@ query_init(transform_info_ptr tinfo) {
 /*}}}  */
 
 /*{{{  query(transform_info_ptr tinfo) {*/
-LOCAL void
-myflush(transform_info_ptr tinfo, char *buffer) {
- struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
- if (local_arg->outfile==NULL) {
-  TRACEMS(tinfo->emethods, -1, buffer);
- } else {
-  fputs(buffer, local_arg->outfile);
- }
-}
 METHODDEF DATATYPE *
 query(transform_info_ptr tinfo) {
  struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
@@ -296,11 +310,9 @@ query(transform_info_ptr tinfo) {
   case C_TRIGGERS_FOR_TRIGFILE:
   case C_TRIGGERS_FOR_TRIGFILE_S:
   case C_TRIGGERS_FOR_TRIGFILE_MS:
-   /* This option aims at writing the epoch triggers as absolute file 
-    * triggers suitable as a trigger file. Note that for the correct 
-    * positions to be calculated, the query method must be at a point in
-    * the queue where it sees all epochs in the shape as they are written
-    * to an output file. */
+   /* This option aims at writing the epoch triggers as absolute file triggers
+    * suitable as a trigger file.
+    * Note that the positions correspond to the data seen by the query method. */
    if (tinfoptr->triggers.buffer_start!=NULL) {
     struct trigger *intrig=(struct trigger *)tinfoptr->triggers.buffer_start+1;
     while (intrig->code!=0) {
@@ -338,7 +350,6 @@ query(transform_info_ptr tinfo) {
    if (tinfoptr->filetriggersp!=NULL && tinfoptr->filetriggersp->buffer_start!=NULL) {
     int const nevents=tinfoptr->filetriggersp->current_length/sizeof(struct trigger);
     int current_trigger;
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "# Sfreq=%f%s", tinfo->sfreq, local_arg->delimiter); myflush(tinfo, buffer);
     for (current_trigger=0; current_trigger<nevents; current_trigger++) {
      struct trigger * const intrig=((struct trigger *)tinfoptr->filetriggersp->buffer_start)+current_trigger;
      switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {

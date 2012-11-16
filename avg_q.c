@@ -55,15 +55,12 @@
 /*{{{  External declarations*/
 extern char *optarg;
 extern int optind, opterr;
+#include <getopt.h>
 /*}}}  */
 
-/*{{{  Global and static variables*/
-LOCAL struct transform_info_struct tinfostruc;
-LOCAL struct external_methods_struct emethod;
-LOCAL struct transform_methods_struct method;
-
-char **mainargv;
-enum { 
+/*{{{ argv handling*/
+LOCAL char **mainargv;
+enum {
 #ifdef STANDALONE
 END_OF_ARGS=0
 #else
@@ -72,28 +69,35 @@ CONFIGFILE=0, END_OF_ARGS
 } args;
 
 #define MAINARG(x) mainargv[optind+x]
+/*}}}*/
+
+/*{{{ Definitions*/
+LOCAL struct transform_info_struct tinfostruc;
+LOCAL struct external_methods_struct emethod;
+LOCAL struct transform_methods_struct method;
 
 #ifndef DATE
 #define DATE " UNKNOWN "
 #endif
+/*}}}*/
 
 /*{{{  Local functions*/
 LOCAL void 
-usage(void) {
+usage(FILE *stream) {
 #ifndef STANDALONE
- fprintf(stderr, "Usage: %s [options] Configfile [script_argument1 ...]\n"
-  " user interface for transform methods  -  reads a script (Config) file to\n"
-  " setup an iterated and a postprocessing queue. The iterated queue between\n"
-  " get_epoch method and collect method is executed for all epochs delivered\n"
-  " by the get_epoch method.    If the collect method outputs a result, this\n"
-  " result is fed to the postprocessing queue.\n"
+ fprintf(stream, "Usage: %s [options] Configfile [script_argument1 ...]\n"
+  "Multichannel (EEG/MEG) data processing tool. Reads a script (Config) file to\n"
+  "setup an iterated and a postprocessing queue. The iterated queue between\n"
+  "get_epoch method and collect method is executed for all epochs delivered\n"
+  "by the get_epoch method. If the collect method outputs a result, this\n"
+  "result is fed to the postprocessing queue.\n"
 #else
- fprintf(stderr, "Usage: %s [options] [script_argument1 ...]\n"
-  " Standalone avg_q version with script compiled-in.\n"
-  " The file name of the script was: %s\n"
+ fprintf(stream, "Usage: %s [options] [script_argument1 ...]\n"
+  "Standalone avg_q version with script compiled-in.\n"
+  "The file name of the script was: %s\n"
 #endif
   "\nSignature:\n%s"
-  "\n Options are:\n"
+  "\nOptions are:\n"
   "\t-s scriptnumber: Execute only this script (counting from 1)\n"
 #ifndef STANDALONE
   "\t-l: List all available methods\n"
@@ -101,10 +105,15 @@ usage(void) {
   "\t-H: Describe all available methods\n"
   "\t-t level: Set trace level. 0 (default) suppresses activity messages.\n"
   "\t-D: Dump a compilable version of the script.\n"
-  , mainargv[0], get_avg_q_signature());
 #else
   "\t-t level: Set trace level. 0 (default) suppresses activity messages.\n"
   "\t-D: Dump the compiled-in script to stdout.\n"
+#endif
+  "\t--help: This help screen.\n"
+  "\t--version: Output the program version (i.e. the signature above).\n"
+#ifndef STANDALONE
+  , mainargv[0], get_avg_q_signature());
+#else
   , mainargv[0], DUMP_SCRIPT_NAME, get_avg_q_signature());
 #endif
 }
@@ -169,7 +178,8 @@ int main(int argc, char **argv) {
 #else
 #define GETOPT_STRING "t:Ds:"
 #endif
- while ((c=getopt(argc, argv, GETOPT_STRING))!=EOF) {
+ const struct option longopts[]={{"help",no_argument,NULL,'?'},{"version",no_argument,NULL,'V'},{NULL,0,NULL,0}};
+ while ((c=getopt_long(argc, argv, GETOPT_STRING, longopts, NULL))!=EOF) {
   switch (c) {
    case 't':
     emethod.trace_level=atoi(optarg);
@@ -192,14 +202,21 @@ int main(int argc, char **argv) {
    case 's':
     only_script=atoi(optarg);
     break;
+   case 'V':
+    fprintf(stdout, "%s", get_avg_q_signature());
+    exit(0);
+    break;
    case '?':
+    usage(stdout);
+    exit(0);
+    break;
    default:
     errflag++;
     continue;
   }
  }
  if (argc-optind<END_OF_ARGS || errflag>0) {
-  usage();
+  usage(stderr);
   exit(1);
  }
  nr_of_script_variables=argc-optind-END_OF_ARGS;

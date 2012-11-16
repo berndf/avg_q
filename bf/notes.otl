@@ -1,4 +1,5 @@
 Newest entries on top!
+[_] Eventually transform GrandAverage into GrandAverageScript
 2011-02-14 14-39-34 GTK modernization steps
 	Replace file_select with GtkFileChooserDialog in avg_q_ui
 	 http://library.gnome.org/devel/gtk/2.21/GtkFileChooserDialog.html#gtkfilechooser-typical-usage

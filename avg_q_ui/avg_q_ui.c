@@ -84,6 +84,7 @@ typedef struct {
 /*{{{  External declarations*/
 extern char *optarg;
 extern int optind, opterr;
+#include <getopt.h>
 /*}}}  */
 
 /*{{{ argv handling*/
@@ -2299,26 +2300,27 @@ create_main_window (void) {
  gtk_window_add_accel_group (GTK_WINDOW(Avg_Q_Main_Window), accel_group);
 }
 
+/* passing stream=NULL results in output to trace messages */
 LOCAL void
-usage(void) {
+usage(FILE *stream) {
 #define BUFFER_SIZE 2048
  char buffer[BUFFER_SIZE];
  growing_buf buf;
 
 #ifndef STANDALONE
  snprintf(buffer, BUFFER_SIZE, "Usage: %s [options] Configfile [script_argument1 ...]\n"
-  " user interface for transform methods  -  reads a script (Config) file to\n"
-  " setup an iterated and a postprocessing queue. The iterated queue between\n"
-  " get_epoch method and collect method is executed for all epochs delivered\n"
-  " by the get_epoch method.    If the collect method outputs a result, this\n"
-  " result is fed to the postprocessing queue.\n"
+  "Multichannel (EEG/MEG) data processing GUI. Reads a script (Config) file to\n"
+  "setup an iterated and a postprocessing queue. The iterated queue between\n"
+  "get_epoch method and collect method is executed for all epochs delivered\n"
+  "by the get_epoch method. If the collect method outputs a result, this\n"
+  "result is fed to the postprocessing queue.\n"
 #else
  snprintf(buffer, BUFFER_SIZE, "Usage: %s [options] [script_argument1 ...]\n"
-  " Standalone avg_q version with script compiled-in.\n"
-  " The file name of the script was: %s\n"
+  "Standalone avg_q version with script compiled-in.\n"
+  "The file name of the script was: %s\n"
 #endif
   "\nSignature:\n%s"
-  "\n Options are:\n"
+  "\nOptions are:\n"
   "\t-i: Iconify. Start with the main window iconified.\n"
   "\t-I: Interactive. Don't automatically run the script.\n"
   "\t-s scriptnumber: Execute only this script (counting from 1)\n"
@@ -2328,10 +2330,15 @@ usage(void) {
   "\t-H: Describe all available methods\n"
   "\t-t level: Set trace level. 0 (default) suppresses activity messages.\n"
   "\t-D: Dump a compilable version of the script.\n"
+#else
+  "\t-t level: Set trace level. 0 (default) suppresses activity messages.\n"
+  "\t-D: Dump the compiled-in script to stdout.\n"
+#endif
+  "\t--help: This help screen.\n"
+  "\t--version: Output the program version (i.e. the signature above).\n"
+#ifndef STANDALONE
   , mainargv[0], get_avg_q_signature());
 #else
-  "\t-T level: Set trace level. 0 (default) suppresses activity messages.\n"
-  "\t-D: Dump the compiled-in script to stdout.\n"
   , mainargv[0], DUMP_SCRIPT_NAME, get_avg_q_signature());
 #endif
 
@@ -2339,8 +2346,12 @@ usage(void) {
  buf.delimiters="\n";
  growing_buf_firstsingletoken(&buf);
  while (buf.have_token) {
-  TRACEMS(tinfostruc.emethods, -1, buf.current_token);
-  TRACEMS(tinfostruc.emethods, -1, "\n");
+  if (stream==NULL) {
+   TRACEMS(tinfostruc.emethods, -1, buf.current_token);
+   TRACEMS(tinfostruc.emethods, -1, "\n");
+  } else {
+   fprintf(stream,"%s\n",buf.current_token);
+  }
   growing_buf_nextsingletoken(&buf);
  }
 #undef BUFFER_SIZE
@@ -2425,7 +2436,8 @@ main (int argc, char *argv[]) {
 #else
 #define GETOPT_STRING "t:DiIs:"
 #endif
- while ((c=getopt(mainargc, mainargv, GETOPT_STRING))!=EOF) {
+ const struct option longopts[]={{"help",no_argument,NULL,'?'},{"version",no_argument,NULL,'V'},{NULL,0,NULL,0}};
+ while ((c=getopt_long(argc, argv, GETOPT_STRING, longopts, NULL))!=EOF) {
   switch (c) {
    case 't':
     external_method.emethod.trace_level=atoi(optarg);
@@ -2455,7 +2467,14 @@ main (int argc, char *argv[]) {
    case 's':
     save_only_script=only_script=atoi(optarg);
     break;
+   case 'V':
+    fprintf(stdout, "%s", get_avg_q_signature());
+    exit(0);
+    break;
    case '?':
+    usage(stdout);
+    exit(0);
+    break;
    default:
     errflag++;
     continue;
@@ -2464,7 +2483,7 @@ main (int argc, char *argv[]) {
  gtk_widget_show (Avg_Q_Main_Window);
 
  if (errflag>0) {
-  usage();
+  usage(NULL);
   interactive=TRUE;
   dumponly=FALSE;
  } else if (mainargc-optind>=END_OF_ARGS) {
