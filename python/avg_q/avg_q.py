@@ -395,27 +395,37 @@ class Script(object):
   self.postprocess_transforms=[]
  def add_Epochsource(self, epochsource):
   self.Epochsource_list.append(epochsource)
- def add_Epochsource_contfile_excluding_breakpoints(self,infile,start_point,end_point,breakpoints,margin_points,nr_of_points=None):
+ def add_Epochsource_contfile_excluding_breakpoints(self,infile,start_point,end_point,breakpoints,margin_points,nr_of_points=None,step_points=None):
   '''Read a continuous file in segments, from start_point to end_point, excluding margin_points on
      either side of every point in the breakpoints list.
      Returns the number of valid segments; This must be checked for 0, in which case no epoch source
      method was added.
      If nr_of_points is not set, epochs of varying length will be returned; otherwise, all epochs will
-     have exactly this number of points.'''
+     have exactly this number of points.
+     If step_points is not set but nr_of_points is, the epochs covering sections will be contiguous;
+     otherwise, step_points gives the number of points to advance the epoch start point. This enables
+     for example using overlapping or sparse coverage.'''
   n_segments=0
-  for startsegment,endsegment in self.avg_q_instance.get_file_sections_excluding_breakpoints(start_point,end_point,breakpoints,margin_points):
-   if nr_of_points is None or nr_of_points<=0:
+  if nr_of_points is None or nr_of_points<=0:
+   # Return full variable-length segments, one epoch source per segment with single trigger
+   for startsegment,endsegment in self.avg_q_instance.get_file_sections_excluding_breakpoints(start_point,end_point,breakpoints,margin_points):
     epochsource=Epochsource(infile, 0, endsegment-startsegment)
     epochsource.set_trigpoints(startsegment)
     self.add_Epochsource(epochsource)
     n_segments+=1
-   else:
-    while endsegment-nr_of_points>=startsegment:
-     epochsource=Epochsource(infile, 0, nr_of_points)
-     epochsource.set_trigpoints(startsegment)
-     self.add_Epochsource(epochsource)
+  else:
+   # Return fixed-length epochs covering the segments, single epoch source with multiple triggers
+   if step_points is None or step_points<=0: step_points=nr_of_points
+   trigpoints=[]
+   for startsegment,endsegment in self.avg_q_instance.get_file_sections_excluding_breakpoints(start_point,end_point,breakpoints,margin_points):
+    while startsegment+nr_of_points<=endsegment:
+     trigpoints.append(startsegment)
      n_segments+=1
-     startsegment+=nr_of_points
+     startsegment+=step_points
+   if n_segments>0:
+    epochsource=Epochsource(infile, 0, nr_of_points)
+    epochsource.set_trigpoints(trigpoints)
+    self.add_Epochsource(epochsource)
   return n_segments
  def add_transform(self,transform):
   self.transforms.append(transform)

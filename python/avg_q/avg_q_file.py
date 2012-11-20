@@ -18,6 +18,10 @@ formats_and_extensions=[
  ('Vitaport', ['.vpd', '.VPD', '.raw', '.RAW']),
 ]
 
+def escape_filename(path):
+ '''Helper function to perform whatever escaping is necessary to send a file name to avg_q within a script.'''
+ return path.replace(' ','\\ ')
+
 class avg_q_file(object):
  def __init__(self,filename,fileformat=None):
   if not fileformat:
@@ -92,9 +96,9 @@ read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filen
    'epochs_arg': '-e %d' % epochs if epochs!=None else '', 
    'offset_arg': '-o %s' % offset if offset!=None else '', 
    'triglist_arg': '-t %s' % triglist if triglist!=None else '', 
-   'trigfile_arg': '-R %s' % trigfile if trigfile!=None else '', 
+   'trigfile_arg': '-R %s' % escape_filename(trigfile) if trigfile!=None else '', 
    'trigtransfer_arg': '-T' if trigtransfer else '', 
-   'filename': self.filename.replace(' ','\\ '),
+   'filename': escape_filename(self.filename),
    'beforetrig': str(beforetrig),
    'aftertrig': str(aftertrig)
    } + (self.addmethods if self.addmethods else '')

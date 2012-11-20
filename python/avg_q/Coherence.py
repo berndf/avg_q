@@ -21,7 +21,7 @@ headerfields=[
 
 unknown_marker_code= 9
 # This is used to detect corrupted event lists:
-max_stringlength=100
+max_stringlength=150
 import string
 accepted_characters=string.printable+"öäüÖÄÜß"
 markercodes={
@@ -81,6 +81,9 @@ class CoherenceFile(object):
   events=[]
   def push_event(pos,marker):
    code=None
+   if pos==4294967295:
+    # Max 32-bit int value, occurs as first item starting 2012, drop it
+    return
    if marker in markercodes:
     code=markercodes[marker]
    else:
@@ -100,15 +103,15 @@ class CoherenceFile(object):
    self.filehandle.seek(filepos,0)
    pos=self.filehandle.read(4)
    duration=self.filehandle.read(4)
-   pos,=struct.unpack("L",pos)
+   pos,=struct.unpack("I",pos)
    # Duration of selected event
-   duration,=struct.unpack("L",duration)
+   duration,=struct.unpack("I",duration)
    # The first entry regularly is pos=2, marker="TEST"
    if pos<=2: break
    pause_field=self.filehandle.read(4)
    if pause_field[2]==0:
     # PAUSE
-    pause_length,=struct.unpack("L", pause_field)
+    pause_length,=struct.unpack("I", pause_field)
     marker=readstring(self.filehandle)
     if len(marker)==0:
      hours=int(pause_length/3600.0)
@@ -123,6 +126,8 @@ class CoherenceFile(object):
     marker=readstring(self.filehandle,pause_field)
     # readstring's garbage detection kicked in
     if marker is None: break
+    # At any rate, avoid CRs in markers which would corrupt the marker file
+    marker=marker.translate(str.maketrans('','','\r\n'))
    push_event(pos,marker)
   return events
  def close(self):
