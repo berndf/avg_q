@@ -132,16 +132,16 @@ __DATA__
 triggers=File position: 0
 triggers=50 5
 150 1
-triggers=File position: 0
+triggers=File position: 200
 triggers=50 5
 150 1
-triggers=File position: 0
+triggers=File position: 400
 triggers=50 5
 150 1
-triggers=File position: 0
+triggers=File position: 600
 triggers=50 5
 150 1
-triggers=File position: 0
+triggers=File position: 800
 triggers=50 5
 150 1
 -
