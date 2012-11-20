@@ -338,40 +338,40 @@ read_value(FILE *infile,
  switch (local_arg->datatype) {
   case DT_UINT8: {
    unsigned char c;
-   if (fread(&c, sizeof(char), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
    dat=c;
    }
    break;
   case DT_INT8: {
    signed char c;
-   if (fread(&c, sizeof(char), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
    dat=c;
    }
    break;
   case DT_INT16: {
-   short c;
-   if (fread(&c, sizeof(short), 1, infile)!=1) err=ERR_READ;
-   if (swap_byteorder) Intel_short((unsigned short *)&c);
+   int16_t c;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
+   if (swap_byteorder) Intel_int16((uint16_t *)&c);
    dat=c;
    }
    break;
   case DT_INT32: {
-   long c;
-   if (fread(&c, sizeof(long), 1, infile)!=1) err=ERR_READ;
-   if (swap_byteorder) Intel_long((unsigned long *)&c);
+   int32_t c;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
+   if (swap_byteorder) Intel_int32((uint32_t *)&c);
    dat=c;
    }
    break;
   case DT_FLOAT32: {
    float c;
-   if (fread(&c, sizeof(float), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
    if (swap_byteorder) Intel_float(&c);
    dat=c;
    }
    break;
   case DT_FLOAT64: {
    double c;
-   if (fread(&c, sizeof(double), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
    if (swap_byteorder) Intel_double(&c);
    dat=c;
    }

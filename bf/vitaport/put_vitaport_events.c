@@ -111,7 +111,7 @@ main(int argc, char **argv) {
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&fileheaderI, sm_vitaportI_fileheader);
 #endif
-   Intel_short((unsigned short *)&fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
+   Intel_int16((uint16_t *)&fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
    break;
   case HDTYP_VITAPORT2:
    if (read_struct((char *)&fileheaderII, sm_vitaportII_fileheader, infile)==0) {
@@ -186,7 +186,7 @@ main(int argc, char **argv) {
  }
  fread(&checksum, sizeof(short), 1, infile);
 #ifdef LITTLE_ENDIAN
- Intel_short((unsigned short *)&checksum);
+ Intel_int16((uint16_t *)&checksum);
 #endif
  if (vitaport_filetype==VITAPORT2_FILE) {
   long const tablepos=ftell(infile)+sum_dlen;
@@ -221,7 +221,7 @@ main(int argc, char **argv) {
   fwrite(VP_CHANNELTABLE_NAME, 1, VP_TABLEVAR_LENGTH, infile);
   length=NoOfChannels*(1+2*sizeof(long));
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
   for (channel=0; channel<NoOfChannels; channel++) {
@@ -232,7 +232,7 @@ main(int argc, char **argv) {
   for (channel=0; channel<NoOfChannels; channel++) {
    long unknown= -1;
 #ifdef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&unknown);
+   Intel_int32((uint32_t *)&unknown);
 #endif
    fwrite(&unknown, sizeof(long), 1, infile);
    fwrite(&unknown, sizeof(long), 1, infile);
@@ -243,7 +243,7 @@ main(int argc, char **argv) {
   n_events=markertable_entry->idiotically_fixed_length;
   length=n_events*sizeof(long);
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
   for (tagno=0; tagno<n_events; tagno++) {
@@ -252,14 +252,14 @@ main(int argc, char **argv) {
     * IN TIME UNITS (s or ms) IN THE EVENT FILE */
    if (read_trigger_from_trigfile(evtfile, (DATATYPE)1000, &trigpoint, NULL)==0) break;
 #ifdef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&trigpoint);
+   Intel_int32((uint32_t *)&trigpoint);
 #endif
    fwrite(&trigpoint, sizeof(long), 1, infile);
   }
   for (; tagno<n_events; tagno++) {
    trigpoint= -1;
 #ifdef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&trigpoint);
+   Intel_int32((uint32_t *)&trigpoint);
 #endif
    fwrite(&trigpoint, sizeof(long), 1, infile);
   }
@@ -267,27 +267,27 @@ main(int argc, char **argv) {
   fwrite(VP_GLBMRKTABLE_NAME, 1, VP_TABLEVAR_LENGTH, infile);
   length=4*sizeof(long);
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
   length=0;
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
   length=filelen_ms;
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
   length=0;
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
   length=0;
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, infile);
  }

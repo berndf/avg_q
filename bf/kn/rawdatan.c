@@ -221,8 +221,8 @@ void RGetHead(struct Rheader *Rhd,int qalloc)
     if(m == -1)
         Rperror("Header array read failed ");
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=Rhd->parray, *p_end=Rhd->parray+Rhd->arraysize/sizeof(short);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=Rhd->parray, *p_end=Rhd->parray+Rhd->arraysize/sizeof(short);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
 
@@ -323,14 +323,14 @@ void RStoreHead(struct Rheader *Rhd)
         Rperror("Header string write failed ");
 
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=Rhd->parray, *p_end=Rhd->parray+Rhd->arraysize/sizeof(short);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=Rhd->parray, *p_end=Rhd->parray+Rhd->arraysize/sizeof(short);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
     m = fwrite((void *)Rhd->parray, 1, Rhd->arraysize, Rhd->filehandle);
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=Rhd->parray, *p_end=Rhd->parray+Rhd->arraysize/sizeof(short);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=Rhd->parray, *p_end=Rhd->parray+Rhd->arraysize/sizeof(short);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
     if(m == -1)
@@ -405,14 +405,14 @@ int RStoreTrial(int trial,struct Rheader *Rhd,struct Rtrial *Rtr)
     RStoreTrialHead(trial,Rtr);
 /* Write the data */
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=(short *)trdata, *p_end=(short *)(trdata+trdat);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=(uint16_t *)trdata, *p_end=(uint16_t *)(trdata+trdat);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
     m = fwrite((void *)trdata, 1, trdat, Rhd->filehandle);
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=(short *)trdata, *p_end=(short *)(trdata+trdat);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=(uint16_t *)trdata, *p_end=(uint16_t *)(trdata+trdat);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
     if(m == -1)
@@ -436,14 +436,14 @@ void RStoreTrialHead(int trial, struct Rtrial *Rtr)
     trhead = (int)Rtr->trialhead;
     RStoreTrialBase(trial,Rtr);
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=Rtr->parray, *p_end=Rtr->parray+(trhead-Rbsize)/sizeof(short);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=Rtr->parray, *p_end=Rtr->parray+(trhead-Rbsize)/sizeof(uint16_t);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
     m = fwrite((void *)Rtr->parray, 1, trhead - Rbsize, Rtr->filehandle);
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=Rtr->parray, *p_end=Rtr->parray+(trhead-Rbsize)/sizeof(short);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=Rtr->parray, *p_end=Rtr->parray+(trhead-Rbsize)/sizeof(uint16_t);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
     if(m == -1)
@@ -532,8 +532,8 @@ void RGetTrial(int trial, struct Rtrial *Rtr)
     if(m == -1)
         Rperror("Failed to read trial data! ");
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=(short *)trdata, *p_end=(short *)(trdata+trdat);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=(uint16_t *)trdata, *p_end=(uint16_t *)(trdata+trdat);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
 
@@ -564,8 +564,8 @@ void RGetTrialHead(int trial, struct Rtrial *Rtr)
     if(m == -1)
         Rperror("Failed to read trial array! ");
 #   ifndef LITTLE_ENDIAN
-    {short *pdata=Rtr->parray, *p_end=Rtr->parray+ntrarray/sizeof(short);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=Rtr->parray, *p_end=Rtr->parray+ntrarray/sizeof(uint16_t);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #   endif
 }

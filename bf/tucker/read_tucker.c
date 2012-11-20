@@ -132,8 +132,8 @@ read_tucker_seek_point(transform_info_ptr tinfo, long point) {
  }
  /*{{{  Swap byte order if necessary*/
 # ifdef LITTLE_ENDIAN
- {unsigned short *pdata=local_arg->buffer, *p_end=(unsigned short *)((char *)local_arg->buffer+local_arg->bytes_per_point);
-  while (pdata<p_end) Intel_short((short unsigned int *)pdata++);
+ {uint16_t *pdata=local_arg->buffer, *p_end=(uint16_t *)((char *)local_arg->buffer+local_arg->bytes_per_point);
+  while (pdata<p_end) Intel_int16((uint16_t *)pdata++);
  }
 # endif
  /*}}}  */

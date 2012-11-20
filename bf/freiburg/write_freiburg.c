@@ -216,7 +216,7 @@ freiburg_compress(transform_info_ptr tinfo, unsigned short *from, unsigned short
    word|=0x8000;	/* Set bit 15 */
   }
 #ifdef LITTLE_ENDIAN
-  Intel_short(&word);
+  Intel_int16(&word);
 #endif
   *t++=word;
  }
@@ -238,7 +238,7 @@ freiburg_compress(transform_info_ptr tinfo, unsigned short *from, unsigned short
      word|=0x8000;	/* Set bit 15 */
     }
 #ifdef LITTLE_ENDIAN
-    Intel_short(&word);
+    Intel_int16(&word);
 #endif
    *t++=word;
    } else {

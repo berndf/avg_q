@@ -130,7 +130,7 @@ again:
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&fileheaderI, sm_vitaportI_fileheader);
 #endif
-   Intel_short((unsigned short *)&fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
+   Intel_int16((uint16_t *)&fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
    if (event_list==EVENTLIST_NONE)
    print_structcontents((char *)&fileheaderI, sm_vitaportI_fileheader, smd_vitaportI_fileheader, stdout);
    break;
@@ -239,7 +239,7 @@ again:
  }
  fread(&checksum, sizeof(short), 1, infile);
 #ifdef LITTLE_ENDIAN
- Intel_short((unsigned short *)&checksum);
+ Intel_int16((uint16_t *)&checksum);
 #endif
  if (event_list==EVENTLIST_NONE) {
   printf("\nHeader checksum is %d; Position after header is %ld, hdlen is %d,\n"
@@ -262,7 +262,7 @@ again:
    if (feof(infile)) break;
    fread(&length, sizeof(long), 1, infile);
 #ifdef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&length);
+   Intel_int32((uint32_t *)&length);
 #endif
    for (markertable_entry=markertable_names; markertable_entry->markertable_name!=NULL && strcmp(label, markertable_entry->markertable_name)!=0; markertable_entry++);
    if (event_list==EVENTLIST_NONE) {
@@ -274,7 +274,7 @@ again:
      for (tagno=0; tagno<length/(int)sizeof(long); tagno++) {
       fread(&pointno, sizeof(long), 1, infile);
 #ifdef LITTLE_ENDIAN
-      Intel_long((unsigned long *)&pointno);
+      Intel_int32((uint32_t *)&pointno);
 #endif
       if (pointno>=0) printf(" %ldms\n", pointno);
      }
@@ -292,7 +292,7 @@ again:
        long unknown;
        fread(&unknown, sizeof(long), 1, infile);
 #ifdef LITTLE_ENDIAN
-       Intel_long((unsigned long *)&unknown);
+       Intel_int32((uint32_t *)&unknown);
 #endif
        printf(" %ld", unknown);
       }
@@ -307,7 +307,7 @@ again:
     for (tagno=0; tagno<length/(int)sizeof(long); tagno++) {
      fread(&pointno, sizeof(long), 1, infile);
 #ifdef LITTLE_ENDIAN
-     Intel_long((unsigned long *)&pointno);
+     Intel_int32((uint32_t *)&pointno);
 #endif
      if (pointno>=0) printf("%ldms %d\n", pointno, pointno%2==0 ? TRIGCODE_FOR_STARTMARKER : TRIGCODE_FOR_ENDMARKER);
     }

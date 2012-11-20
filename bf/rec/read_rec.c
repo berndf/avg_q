@@ -513,8 +513,8 @@ read_rec(transform_info_ptr tinfo) {
    }
    /*{{{  Swap byte order if necessary*/
 #   ifndef LITTLE_ENDIAN
-   {short *inrecbuf=local_arg->recordbuf[0], *recbufend=inrecbuf+local_arg->total_samples_per_record;
-    while (inrecbuf<recbufend) Intel_short(inrecbuf++);
+   {uint16_t *inrecbuf=local_arg->recordbuf[0], *recbufend=inrecbuf+local_arg->total_samples_per_record;
+    while (inrecbuf<recbufend) Intel_int16(inrecbuf++);
    }
 #   endif
    /*}}}  */

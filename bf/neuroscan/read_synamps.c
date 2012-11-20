@@ -83,6 +83,7 @@ struct read_synamps_storage {
  FILE *SCAN;	/* Input file */
  SETUP EEG;	/* header info. */
  ELECTLOC *Channels;
+ int bytes_per_sample;	/* Can be 2 or 4 for 16 or 32-bit raw data */
  int nchannels;
  long filesize;
  long SizeofHeader;          /* no. of bytes in header of source file */
@@ -93,7 +94,7 @@ struct read_synamps_storage {
  long current_point;
  long first_point_in_buffer;
  long last_point_in_buffer;
- short *buffer;
+ void *buffer;
  enum NEUROSCAN_SUBTYPES SubType; /* This tells, once and for all, the file type */
 
  long beforetrig;
@@ -108,12 +109,12 @@ struct read_synamps_storage {
 LOCAL long
 offset2point(transform_info_ptr tinfo, long offset) {
  struct read_synamps_storage *local_arg=(struct read_synamps_storage *)tinfo->methods->local_storage;
- return (offset-local_arg->SizeofHeader)/sizeof(short)/local_arg->EEG.nchannels;
+ return (offset-local_arg->SizeofHeader)/local_arg->bytes_per_sample/local_arg->EEG.nchannels;
 }
 LOCAL long
 point2offset(transform_info_ptr tinfo, long point) {
  struct read_synamps_storage *local_arg=(struct read_synamps_storage *)tinfo->methods->local_storage;
- return point*local_arg->EEG.nchannels*sizeof(short)+local_arg->SizeofHeader;
+ return point*local_arg->EEG.nchannels*local_arg->bytes_per_sample+local_arg->SizeofHeader;
 }
 /*}}}  */
 
@@ -175,9 +176,9 @@ read_synamps_seek_point(transform_info_ptr tinfo, long point) {
   case NST_CONTINUOUS:
   case NST_SYNAMPS: {
    /*{{{  */
-   const int points_per_buf=local_arg->EEG.ChannelOffset/sizeof(short);
-   long buffer_boundary=(point/points_per_buf)*points_per_buf;
-   long new_last_point_in_buffer=buffer_boundary+points_per_buf-1;
+   const int points_per_buf=local_arg->EEG.ChannelOffset/local_arg->bytes_per_sample; /* Note a value of 1 is fixed in read_synamps_init */
+   long const buffer_boundary=(point/points_per_buf)*points_per_buf;
+   long const new_last_point_in_buffer=buffer_boundary+points_per_buf-1;
    /* This format is neither points fastest nor channels fastest, but
     * points fastest in blocks. No idea why they didn't do channels fastest,
     * it would have rendered the whole file in one order, no matter what buffer
@@ -191,8 +192,8 @@ read_synamps_seek_point(transform_info_ptr tinfo, long point) {
     local_arg->last_point_in_buffer=new_last_point_in_buffer;
     /*{{{  Swap byte order if necessary*/
 #    ifndef LITTLE_ENDIAN
-    {short *pdata=local_arg->buffer, *p_end=(short *)((char *)local_arg->buffer+local_arg->BufferCount);
-     while (pdata<p_end) Intel_short(pdata++);
+    {uint16_t *pdata=(uint16_t *)local_arg->buffer, *p_end=(uint16_t *)((char *)local_arg->buffer+local_arg->BufferCount);
+     while (pdata<p_end) Intel_int16(pdata++);
     }
 #    endif
     /*}}}  */
@@ -213,7 +214,6 @@ LOCAL int
 read_synamps_get_singlepoint(transform_info_ptr tinfo, array *toarray) {
  struct read_synamps_storage *local_arg=(struct read_synamps_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- ELECTLOC *inChannels=local_arg->Channels;
 
  if (local_arg->current_point>=local_arg->EEG.NumSamples) return -1;
  read_synamps_seek_point(tinfo, local_arg->current_point);
@@ -221,30 +221,46 @@ read_synamps_get_singlepoint(transform_info_ptr tinfo, array *toarray) {
   case NST_DCMES: {
    /* DC-MES data is unsigned, and the marker channel is skipped: */
    unsigned short *pdata=(unsigned short *)local_arg->buffer+local_arg->current_point-local_arg->first_point_in_buffer+1;
+   int channel=0;
    do {
     *pdata^=0x8000;	/* Exclusive or to convert to signed... */
-    if (args[ARGS_NOBADCHANS].is_set && inChannels->bad) {
+    if (args[ARGS_NOBADCHANS].is_set && local_arg->Channels[channel].bad) {
      toarray->message=ARRAY_CONTINUE;
     } else {
-     array_write(toarray, NEUROSCAN_CONVSHORT(inChannels, *((signed short *)pdata)));
+     array_write(toarray, NEUROSCAN_CONVSHORT(&local_arg->Channels[channel], *((signed short *)pdata)));
     }
-    pdata+=local_arg->EEG.ChannelOffset/sizeof(short);
-    inChannels++;
+    pdata+=local_arg->EEG.ChannelOffset/local_arg->bytes_per_sample;
+    channel++;
    } while (toarray->message==ARRAY_CONTINUE);
   }
    break;
   case NST_CONT0:
   case NST_CONTINUOUS:
   case NST_SYNAMPS: {
-   short *pdata=local_arg->buffer+local_arg->current_point-local_arg->first_point_in_buffer;
+   int channel=0;
    do {
-    if (args[ARGS_NOBADCHANS].is_set && inChannels->bad) {
+    DATATYPE val;
+    if (args[ARGS_NOBADCHANS].is_set && local_arg->Channels[channel].bad) {
      toarray->message=ARRAY_CONTINUE;
     } else {
-     array_write(toarray, NEUROSCAN_CONVSHORT(inChannels, *pdata));
+     if (local_arg->bytes_per_sample==2) {
+      int16_t * const pdata=((int16_t *)local_arg->buffer)+local_arg->current_point-local_arg->first_point_in_buffer+channel;
+#   ifndef LITTLE_ENDIAN
+      Intel_int16(pdata);
+#   endif
+      val=NEUROSCAN_CONVSHORT(&local_arg->Channels[channel],*pdata);
+     } else if (local_arg->bytes_per_sample==4) {
+      int32_t * const pdata=((int32_t *)local_arg->buffer)+local_arg->current_point-local_arg->first_point_in_buffer+channel;
+#   ifndef LITTLE_ENDIAN
+      Intel_int32(pdata);
+#   endif
+      val=NEUROSCAN_CONVSHORT(&local_arg->Channels[channel],*pdata);
+     } else {
+      ERREXIT(tinfo->emethods, "read_synamps: Unknown bytes_per_sample\n");
+     }
+     array_write(toarray, val);
     }
-    pdata+=local_arg->EEG.ChannelOffset/sizeof(short);
-    inChannels++;
+    channel++;
    } while (toarray->message==ARRAY_CONTINUE);
   }
    break;
@@ -548,42 +564,68 @@ read_synamps_init(transform_info_ptr tinfo) {
  local_arg->epochs=(args[ARGS_EPOCHS].is_set ? args[ARGS_EPOCHS].arg.i : -1);
  /*}}}  */
 
- /* It appears that NeuroScan actually only uses ChannelOffset in SynAmps files.
-  * When filtering such a file, an NST_CONTINUOUS file is written but the
-  * ChannelOffset value is not modified, which would severely perturb the data
-  * as read by read_synamps! */
- if (local_arg->EEG.ChannelOffset<=1 || local_arg->SubType!=NST_SYNAMPS) local_arg->EEG.ChannelOffset=sizeof(short);
- local_arg->BufferCount = local_arg->EEG.ChannelOffset*NoOfChannels;
  switch(local_arg->SubType) {
   case NST_CONTINUOUS:
   case NST_SYNAMPS:
-   if ((local_arg->buffer=(short *)malloc(local_arg->BufferCount*sizeof(short)))==NULL) {
-    ERREXIT(tinfo->emethods, "read_synamps_init: Error allocating buffer memory\n");
+   /*{{{  Determine bytes_per_sample and NumSamples */
+   {float const bytes_per_sample=rint(((float)(local_arg->EEG.EventTablePos - local_arg->SizeofHeader))/NoOfChannels/local_arg->EEG.NumSamples);
+    if (bytes_per_sample==2.0 || bytes_per_sample==4.0) {
+     local_arg->bytes_per_sample=bytes_per_sample;
+    } else {
+     local_arg->bytes_per_sample=2;
+     local_arg->EEG.NumSamples = (local_arg->EEG.EventTablePos - local_arg->SizeofHeader)/NoOfChannels/local_arg->bytes_per_sample;
+    }
    }
-   /*{{{  Calculate NumSamples from EventTablePos */
-   local_arg->EEG.NumSamples = (local_arg->EEG.EventTablePos - local_arg->SizeofHeader)/NoOfChannels/sizeof(short);
    tinfo->points_in_file=local_arg->EEG.NumSamples;
    /*}}}  */
   break;
  case NST_CONT0:
  case NST_DCMES:
-  if ((local_arg->buffer=(short *)malloc(local_arg->BufferCount*sizeof(short)))==NULL) {
-   ERREXIT(tinfo->emethods, "read_synamps_init: Error allocating buffer memory\n");
-  }
   /*{{{  Calculate NumSamples from the file size*/
+  local_arg->bytes_per_sample=2;
   local_arg->EEG.NumSamples = (local_arg->filesize - local_arg->SizeofHeader)/
-   local_arg->EEG.nchannels/sizeof(short); /* NoOfChannels may be != nchannels ! */
+   local_arg->EEG.nchannels/local_arg->bytes_per_sample; /* NoOfChannels may be != nchannels ! */
   tinfo->points_in_file=local_arg->EEG.NumSamples;
   /*}}}  */
   break;
  case NST_EPOCHS:
+  {float const bytes_per_sample=rint(((float)(local_arg->EEG.EventTablePos - local_arg->SizeofHeader))/NoOfChannels/local_arg->EEG.pnts/local_arg->EEG.nsweeps);
+   if (bytes_per_sample==2.0 || bytes_per_sample==4.0) {
+    local_arg->bytes_per_sample=bytes_per_sample;
+   } else {
+    local_arg->bytes_per_sample=2;
+   }
+  }
+  break;
  case NST_AVERAGE:
+  local_arg->bytes_per_sample=4; /* Floats */
   local_arg->offset-= (long int)rint(local_arg->EEG.xmin*tinfo->sfreq);
   break;
  default:
   ERREXIT1(tinfo->emethods, "read_synamps_init: Format `%s' is not yet supported\n", MSGPARM(neuroscan_subtype_names[local_arg->SubType]));
   break;
  }
+
+ switch(local_arg->SubType) {
+  case NST_CONTINUOUS:
+  case NST_SYNAMPS:
+  case NST_CONT0:
+  case NST_DCMES:
+   /* It appears that NeuroScan actually only uses ChannelOffset in SynAmps files.
+    * When filtering such a file, an NST_CONTINUOUS file is written but the
+    * ChannelOffset value is not modified, which would severely perturb the data
+    * as read by read_synamps! */
+   if (local_arg->EEG.ChannelOffset<=1 || local_arg->SubType!=NST_SYNAMPS) local_arg->EEG.ChannelOffset=local_arg->bytes_per_sample;
+   local_arg->BufferCount = local_arg->EEG.ChannelOffset*NoOfChannels;
+   if ((local_arg->buffer=malloc(local_arg->BufferCount))==NULL) {
+    ERREXIT(tinfo->emethods, "read_synamps_init: Error allocating buffer memory\n");
+   }
+   break;
+  default:
+   local_arg->buffer=NULL;
+   break;
+ }
+
  if (local_arg->beforetrig==0 && local_arg->aftertrig==0 && local_arg->SubType!=NST_EPOCHS && local_arg->SubType!=NST_AVERAGE) {
   if (args[ARGS_CONTINUOUS].is_set) {
    /* For the two epoched types, the automatic length selection is done
@@ -645,7 +687,6 @@ read_synamps(transform_info_ptr tinfo) {
  array myarray;
  int not_correct_trigger, marker;
  int start_point;
- ELECTLOC *inChannels;
  char *description=NULL;
 
  if (local_arg->epochs--==0) return NULL;
@@ -747,14 +788,14 @@ read_synamps(transform_info_ptr tinfo) {
    break;
   case NST_EPOCHS: {
    NEUROSCAN_EPOCHED_SWEEP_HEAD sweephead;
-   short *buffer;
+   void *buffer;
    
    /*{{{  Find a suitable epoch*/
    do {
     do {
      if (local_arg->current_trigger>=local_arg->EEG.compsweeps) return NULL;
      /* sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[0].offset is sizeof(NEUROSCAN_EPOCHED_SWEEP_HEAD) on those other systems... */
-     fseek(local_arg->SCAN,local_arg->current_trigger*(sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[0].offset+local_arg->EEG.pnts*local_arg->EEG.nchannels*sizeof(short))+local_arg->SizeofHeader,SEEK_SET);
+     fseek(local_arg->SCAN,local_arg->current_trigger*(sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[0].offset+local_arg->EEG.pnts*local_arg->EEG.nchannels*local_arg->bytes_per_sample)+local_arg->SizeofHeader,SEEK_SET);
      if (read_struct((char *)&sweephead, sm_NEUROSCAN_EPOCHED_SWEEP_HEAD, local_arg->SCAN)==0) {
       ERREXIT1(tinfo->emethods, "read_synamps_init: Sweep header read error in file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
      }
@@ -805,7 +846,7 @@ read_synamps(transform_info_ptr tinfo) {
    }
    tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels;
    if (array_allocate(&myarray)==NULL
-    || (buffer=(short *)malloc(local_arg->EEG.nchannels*sizeof(short)))==NULL) {
+    || (buffer=malloc(local_arg->EEG.nchannels*local_arg->bytes_per_sample))==NULL) {
     ERREXIT(tinfo->emethods, "read_synamps: Error allocating data\n");
    }
    /* EEG order is multiplexed, ie channels fastest */
@@ -813,25 +854,35 @@ read_synamps(transform_info_ptr tinfo) {
    /*}}}  */
    /*{{{  Read data*/
    TRACEMS2(tinfo->emethods, 1, "read_synamps: Reading epoch %d, StimType=%d\n", MSGPARM(local_arg->current_trigger), MSGPARM(marker));
-   fseek(local_arg->SCAN,start_point*local_arg->EEG.nchannels*sizeof(short),SEEK_CUR);
+   fseek(local_arg->SCAN,start_point*local_arg->EEG.nchannels*local_arg->bytes_per_sample,SEEK_CUR);
    do {
-    short *pdata;
-    if (fread(buffer,sizeof(short),local_arg->EEG.nchannels,local_arg->SCAN)!=local_arg->EEG.nchannels) {
+    int channel=0;
+    if (fread(buffer,local_arg->bytes_per_sample,local_arg->EEG.nchannels,local_arg->SCAN)!=local_arg->EEG.nchannels) {
      ERREXIT(tinfo->emethods, "read_synamps: Error reading epoched data\n");
     }
-    pdata=buffer;
-    inChannels=local_arg->Channels;
     do {
-#   ifndef LITTLE_ENDIAN
-     Intel_short(pdata);
-#   endif
-     if (args[ARGS_NOBADCHANS].is_set && inChannels->bad) {
+     DATATYPE val;
+     if (args[ARGS_NOBADCHANS].is_set && local_arg->Channels[channel].bad) {
       myarray.message=ARRAY_CONTINUE;
      } else {
-      array_write(&myarray, NEUROSCAN_CONVSHORT(inChannels, *pdata));
+      if (local_arg->bytes_per_sample==2) {
+       int16_t * const pdata=((int16_t *)buffer)+channel;
+#   ifndef LITTLE_ENDIAN
+       Intel_int16(pdata);
+#   endif
+       val=NEUROSCAN_CONVSHORT(&local_arg->Channels[channel],*pdata);
+      } else if (local_arg->bytes_per_sample==4) {
+       int32_t * const pdata=((int32_t *)buffer)+channel;
+#   ifndef LITTLE_ENDIAN
+       Intel_int32(pdata);
+#   endif
+       val=NEUROSCAN_CONVSHORT(&local_arg->Channels[channel],*pdata);
+      } else {
+       ERREXIT(tinfo->emethods, "read_synamps: Unknown bytes_per_sample\n");
+      }
+      array_write(&myarray, val);
      }
-     pdata++;
-     inChannels++;
+     channel++;
     } while (myarray.message==ARRAY_CONTINUE);
    } while (myarray.message==ARRAY_ENDOFVECTOR);
    /*}}}  */

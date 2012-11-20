@@ -30,24 +30,24 @@
 
 void
 fix_typeheader(struct mfx_header_format_data *typeheader_p) {
- Intel_short((unsigned short *)&typeheader_p->mfx_header_format);
- Intel_short((unsigned short *)&typeheader_p->mfx_data_format);
+ Intel_int16((uint16_t *)&typeheader_p->mfx_header_format);
+ Intel_int16((uint16_t *)&typeheader_p->mfx_data_format);
 }
 
 void
 fix_fileheader(struct mfx_header_data001 *fileheader_p) {
  Intel_float(&fileheader_p->epoch_begin_latency);
  Intel_float(&fileheader_p->sample_period);
- Intel_int((unsigned int *)&fileheader_p->total_epochs);
- Intel_int((unsigned int *)&fileheader_p->input_epochs);
- Intel_int((unsigned int *)&fileheader_p->pts_in_epoch);
- Intel_int((unsigned int *)&fileheader_p->total_chans);
+ Intel_int32((uint32_t *)&fileheader_p->total_epochs);
+ Intel_int32((uint32_t *)&fileheader_p->input_epochs);
+ Intel_int32((uint32_t *)&fileheader_p->pts_in_epoch);
+ Intel_int32((uint32_t *)&fileheader_p->total_chans);
 }
 
 void
 fix_channelheader(struct mfx_channel_data001 *channelheader_p) {
  int i;
- Intel_short(&channelheader_p->data_type);
+ Intel_int16(&channelheader_p->data_type);
  Intel_double(&channelheader_p->ymin);
  Intel_double(&channelheader_p->ymax);
  Intel_double(&channelheader_p->conv_factor);

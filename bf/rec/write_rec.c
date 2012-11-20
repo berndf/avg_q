@@ -309,7 +309,7 @@ write_rec(transform_info_ptr tinfo) {
     local_arg->overflow_has_occurred=TRUE;
    }
 #ifndef LITTLE_ENDIAN
-   Intel_short(inbuf);
+   Intel_int16(inbuf);
 #endif
    inbuf++;
   } while (myarray.message==ARRAY_CONTINUE);

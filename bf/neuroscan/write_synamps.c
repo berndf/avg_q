@@ -82,12 +82,12 @@ struct write_synamps_storage {
 LOCAL long
 offset2point(transform_info_ptr tinfo, long offset) {
  struct write_synamps_storage *local_arg=(struct write_synamps_storage *)tinfo->methods->local_storage;
- return (offset-local_arg->SizeofHeader)/sizeof(short)/local_arg->EEG.nchannels;
+ return (offset-local_arg->SizeofHeader)/sizeof(int16_t)/local_arg->EEG.nchannels;
 }
 LOCAL long
 point2offset(transform_info_ptr tinfo, long point) {
  struct write_synamps_storage *local_arg=(struct write_synamps_storage *)tinfo->methods->local_storage;
- return point*local_arg->EEG.nchannels*sizeof(short)+local_arg->SizeofHeader;
+ return point*local_arg->EEG.nchannels*sizeof(int16_t)+local_arg->SizeofHeader;
 }
 /*}}}  */
 
@@ -208,7 +208,7 @@ write_synamps_init(transform_info_ptr tinfo) {
  local_arg->EEG.avgupdate=1;
  local_arg->EEG.domain=(tinfo->data_type==FREQ_DATA ? 1 : 0);
  local_arg->EEG.variance=0;
- local_arg->EEG.rate=(short unsigned int)rint(tinfo->sfreq);
+ local_arg->EEG.rate=(uint16_t)rint(tinfo->sfreq);
  if (tinfo->data_type==FREQ_DATA) {
   /* I know that this field is supposed to contain the taper window size in %,
      but we need some way to store basefreq and 'rate' is only integer... */
@@ -232,8 +232,8 @@ write_synamps_init(transform_info_ptr tinfo) {
  local_arg->EEG.veogdir=0;	/* 0=positive, 1=negative */
  local_arg->EEG.veog_n=10;	/* "Number of points per waveform", really: minimum acceptable # averages */
  local_arg->EEG.heog_n=10;
- local_arg->EEG.veogmaxcnt=(short int)rint(0.3*tinfo->sfreq);	/* "Number of observations per point", really: event window size in points */
- local_arg->EEG.heogmaxcnt=(short int)rint(0.5*tinfo->sfreq);
+ local_arg->EEG.veogmaxcnt=(int16_t)rint(0.3*tinfo->sfreq);	/* "Number of observations per point", really: event window size in points */
+ local_arg->EEG.heogmaxcnt=(int16_t)rint(0.5*tinfo->sfreq);
  local_arg->EEG.AmpSensitivity=10;	/* External Amplifier gain */
  local_arg->EEG.baseline=0;
  local_arg->EEG.reject=0;
@@ -294,7 +294,7 @@ write_synamps_init(transform_info_ptr tinfo) {
  local_arg->EEG.SnrFlag=0;
  local_arg->EEG.CoherenceFlag=0;
  local_arg->EEG.ContinousSeconds=4;
- local_arg->EEG.ChannelOffset=sizeof(short);
+ local_arg->EEG.ChannelOffset=sizeof(int16_t);
  local_arg->EEG.AutoCorrectFlag=0;
  local_arg->EEG.DCThreshold='F';
  /*}}}  */
@@ -563,7 +563,7 @@ write_synamps(transform_info_ptr calltinfo) {
   } while (myarray.message!=ARRAY_ENDOFSCAN);
   free(buffer);
  } else {
- short * const buffer=(short *)malloc(myarray.nr_of_vectors*sizeof(short));
+ int16_t * const buffer=(int16_t *)malloc(myarray.nr_of_vectors*sizeof(int16_t));
  if (buffer==NULL) {
   ERREXIT(tinfo->emethods, "write_synamps: Error allocating buffer\n");
  }
@@ -574,11 +574,11 @@ write_synamps(transform_info_ptr calltinfo) {
    DATATYPE hold=array_scan(&myarray);
    buffer[channel]=NEUROSCAN_SHORTCONV(&local_arg->Channels[channel], hold);
 # ifndef LITTLE_ENDIAN
-   Intel_short(&buffer[channel]);
+   Intel_int16(&buffer[channel]);
 # endif
    channel++;
   } while (myarray.message==ARRAY_CONTINUE);
-  if ((int)fwrite(buffer,sizeof(short),myarray.nr_of_elements,local_arg->SCAN)!=myarray.nr_of_elements) {
+  if ((int)fwrite(buffer,sizeof(int16_t),myarray.nr_of_elements,local_arg->SCAN)!=myarray.nr_of_elements) {
    ERREXIT(tinfo->emethods, "write_synamps: Error writing data point\n");
   }
  } while (myarray.message!=ARRAY_ENDOFSCAN);
@@ -603,13 +603,15 @@ write_synamps_exit(transform_info_ptr tinfo) {
 #define SETUP_OFFSET_NUMSAMPLES 864
 #define SETUP_OFFSET_EVENTTABLEPOS 886
 
+ /* Apparently NeuroScan write this even for epoched files although there's no event table there... 
+  * It is important there to compute bytes_per_sample */
+ local_arg->EEG.EventTablePos=ftell(local_arg->SCAN);
  if (local_arg->output_format==FORMAT_CNTFILE) {
   TEEG TagType;
   EVENT1 event;
   int const nevents=local_arg->triggers.current_length/sizeof(struct trigger);
   int n;
 
-  local_arg->EEG.EventTablePos=ftell(local_arg->SCAN);
   TagType.Teeg=TEEG_EVENT_TAB1;
   TagType.Size=(nevents+1)*sm_EVENT1[0].offset;	/* sm_EVENT1[0].offset is sizeof(EVENT1) in the file. */
   TagType.p_o.Offset=0L;
@@ -660,24 +662,27 @@ write_synamps_exit(transform_info_ptr tinfo) {
   write_struct((char *)&event, sm_EVENT1, local_arg->SCAN);
 
 # ifndef LITTLE_ENDIAN
- Intel_long(&local_arg->EEG.NumSamples);
- Intel_long(&local_arg->EEG.EventTablePos);
+ Intel_int32(&local_arg->EEG.NumSamples);
+ Intel_int32(&local_arg->EEG.EventTablePos);
 #endif
   fseek(local_arg->SCAN, SETUP_OFFSET_NUMSAMPLES, SEEK_SET);
-  fwrite(&local_arg->EEG.NumSamples,sizeof(long),1,local_arg->SCAN);
+  fwrite(&local_arg->EEG.NumSamples,sizeof(int32_t),1,local_arg->SCAN);
   fseek(local_arg->SCAN, SETUP_OFFSET_EVENTTABLEPOS, SEEK_SET);
-  fwrite(&local_arg->EEG.EventTablePos,sizeof(long),1,local_arg->SCAN);
+  fwrite(&local_arg->EEG.EventTablePos,sizeof(int32_t),1,local_arg->SCAN);
  } else {
  /*{{{  Patch the number of written epochs into the header*/
  fseek(local_arg->SCAN, SETUP_OFFSET_NSWEEPS, SEEK_SET);
 # ifndef LITTLE_ENDIAN
- Intel_short(&local_arg->EEG.nsweeps);
- Intel_short(&local_arg->EEG.compsweeps);
- Intel_short(&local_arg->EEG.acceptcnt);
+ Intel_int16(&local_arg->EEG.nsweeps);
+ Intel_int16(&local_arg->EEG.compsweeps);
+ Intel_int16(&local_arg->EEG.acceptcnt);
+ Intel_int32(&local_arg->EEG.EventTablePos);
 # endif
- fwrite(&local_arg->EEG.nsweeps,sizeof(short),1,local_arg->SCAN);
- fwrite(&local_arg->EEG.compsweeps,sizeof(short),1,local_arg->SCAN);
- fwrite(&local_arg->EEG.acceptcnt,sizeof(short),1,local_arg->SCAN);
+ fwrite(&local_arg->EEG.nsweeps,sizeof(int16_t),1,local_arg->SCAN);
+ fwrite(&local_arg->EEG.compsweeps,sizeof(int16_t),1,local_arg->SCAN);
+ fwrite(&local_arg->EEG.acceptcnt,sizeof(int16_t),1,local_arg->SCAN);
+ fseek(local_arg->SCAN, SETUP_OFFSET_EVENTTABLEPOS, SEEK_SET);
+ fwrite(&local_arg->EEG.EventTablePos,sizeof(int32_t),1,local_arg->SCAN);
  /*}}}  */
  }
 

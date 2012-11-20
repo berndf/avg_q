@@ -208,7 +208,7 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
     if (feof(local_arg->infile)) break;
     fread(&length, sizeof(long), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
-    Intel_long((unsigned long *)&length);
+    Intel_int32((uint32_t *)&length);
 #endif
     for (markertable_entry=markertable_names; markertable_entry->markertable_name!=NULL && strcmp(label, markertable_entry->markertable_name)!=0; markertable_entry++);
     if (markertable_entry->markertable_name!=NULL) {
@@ -219,7 +219,7 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
      for (tagno=0; tagno<ntags; tagno++) {
       fread(&millisec, sizeof(long), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
-      Intel_long((unsigned long *)&millisec);
+      Intel_int32((uint32_t *)&millisec);
 #endif
       if (millisec<0) {
        /* Usually, there are 100 tags reserved and the unused at the end
@@ -256,10 +256,10 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
        }
        break;
       case 2: {
-       unsigned short s;
+       uint16_t s;
        fread(&s, sizeof(unsigned short), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
-       Intel_short(&s);
+       Intel_int16(&s);
 #endif
        code=s;
        }
@@ -284,10 +284,10 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
 	 }
 	 break;
 	case 2: {
-	 unsigned short s;
+	 uint16_t s;
 	 fread(&s, sizeof(unsigned short), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
-	 Intel_short(&s);
+	 Intel_int16(&s);
 #endif
 	 code=s;
 	 }
@@ -374,7 +374,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
 #ifdef LITTLE_ENDIAN
    change_byteorder((char *)&local_arg->fileheaderI, sm_vitaportI_fileheader);
 #endif
-   Intel_short((unsigned short *)&local_arg->fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
+   Intel_int16((uint16_t *)&local_arg->fileheaderI.blckslh);	/* These is in low-high order, ie always reversed */
    break;
   case HDTYP_VITAPORT2:
   case HDTYP_VITAPORT2P1:
@@ -483,7 +483,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
  }
  fread(&local_arg->checksum, sizeof(short), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
- Intel_short((unsigned short *)&local_arg->checksum);
+ Intel_int16((uint16_t *)&local_arg->checksum);
 #endif
  local_arg->SizeofHeader = ftell(local_arg->infile);
 
@@ -740,7 +740,7 @@ read_vitaport(transform_info_ptr tinfo) {
        short s;
        n=fread(&s, sizeof(short), 1, infile);
 #ifdef LITTLE_ENDIAN
-       Intel_short((unsigned short *)&s);
+       Intel_int16((uint16_t *)&s);
 #endif
        dat=s;
        }
@@ -761,10 +761,10 @@ read_vitaport(transform_info_ptr tinfo) {
        }
        break;
       case 2: {
-       unsigned short s;
+       uint16_t s;
        n=fread(&s, sizeof(unsigned short), 1, infile);
 #ifdef LITTLE_ENDIAN
-       Intel_short(&s);
+       Intel_int16(&s);
 #endif
        dat=s;
        }
@@ -812,10 +812,10 @@ read_vitaport(transform_info_ptr tinfo) {
 	}
 	break;
        case 2: {
-	short s;
+	int16_t s;
 	n=fread(&s, sizeof(short), 1, infile);
 #ifdef LITTLE_ENDIAN
-	Intel_short((unsigned short *)&s);
+	Intel_int16((unsigned short *)&s);
 #endif
 	dat=s;
 	}
@@ -832,10 +832,10 @@ read_vitaport(transform_info_ptr tinfo) {
 	}
 	break;
        case 2: {
-	unsigned short s;
+	uint16_t s;
 	n=fread(&s, sizeof(unsigned short), 1, infile);
 #ifdef LITTLE_ENDIAN
-	Intel_short(&s);
+	Intel_int16(&s);
 #endif
 	dat=s;
 	}

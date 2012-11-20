@@ -110,9 +110,9 @@ read_labview_init(transform_info_ptr tinfo) {
    }
 #ifdef LITTLE_ENDIAN
    if (sizeof(offset)==4) {
-    Intel_long((unsigned long *)&offset);
+    Intel_int32((uint32_t *)&offset);
    } else {
-    Intel_short((unsigned short *)&offset);
+    Intel_int16((uint16_t *)&offset);
    }
 #endif
    if (offset==0) {
@@ -152,9 +152,9 @@ read_labview_init(transform_info_ptr tinfo) {
     }
 #ifdef LITTLE_ENDIAN
     if (sizeof(nexttable)==4) {
-     Intel_long((unsigned long *)&nexttable);
+     Intel_int32((uint32_t *)&nexttable);
     } else {
-     Intel_short((unsigned short *)&nexttable);
+     Intel_int16((uint16_t *)&nexttable);
     }
 #endif
     if (nexttable==0) break;
@@ -221,9 +221,9 @@ read_labview(transform_info_ptr tinfo) {
   }
 #ifdef LITTLE_ENDIAN
   if (sizeof(d)==4) {
-   Intel_long((unsigned long *)&d);
+   Intel_int32((uint32_t *)&d);
   } else {
-   Intel_short((unsigned short *)&d);
+   Intel_int16((uint16_t *)&d);
   }
 #endif
   array_write(&myarray,(DATATYPE)d);

@@ -572,7 +572,7 @@ read_freiburg(transform_info_ptr tinfo) {
  fread(header, 1, FREIBURG_HEADER_LENGTH, infile);
  for (i=0; i<18; i++) {
 # ifdef LITTLE_ENDIAN
-  Intel_short((unsigned short *)&header[i]);
+  Intel_int16((uint16_t *)&header[i]);
 # endif
   TRACEMS2(tinfo->emethods, 3, "read_freiburg: Header %02d: %d\n", MSGPARM(i), MSGPARM(header[i]));
  }
@@ -623,7 +623,7 @@ read_freiburg(transform_info_ptr tinfo) {
    }
    for (channel=0; channel<tinfo->nr_of_channels; channel++) {
 #  ifdef LITTLE_ENDIAN
-    Intel_short((unsigned short *)&buffer[channel]);
+    Intel_int16((uint16_t *)&buffer[channel]);
 #  endif
     array_write(&myarray, (DATATYPE)buffer[channel]);
    }

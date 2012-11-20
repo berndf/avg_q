@@ -16,8 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
  */
-void Intel_short(unsigned short *x);
+#include <stdint.h>
+void Intel_int16(uint16_t *x);
 void Intel_int(unsigned int *x);
-void Intel_long(unsigned long *x);
+void Intel_int32(uint32_t *x);
+void Intel_int64(uint64_t *x);
 void Intel_float(float *f);
 void Intel_double(double *d);

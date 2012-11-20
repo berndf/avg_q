@@ -65,13 +65,13 @@ change_byteorder(char *structure, struct_member *smp) {
   if (in_smp->control_byteorder) {
    switch(in_smp->length) {
     case 2:
-     Intel_short((unsigned short *)(structure+in_smp->offset_this_compiler));
+     Intel_int16((uint16_t *)(structure+in_smp->offset_this_compiler));
      break;
     case 4:
-     Intel_long((unsigned long *)(structure+in_smp->offset_this_compiler));
+     Intel_int32((uint32_t *)(structure+in_smp->offset_this_compiler));
      break;
     case 8:
-     Intel_double((double *)(structure+in_smp->offset_this_compiler));
+     Intel_int64((uint64_t *)(structure+in_smp->offset_this_compiler));
      break;
    }
   }
@@ -173,14 +173,17 @@ print_structcontents(char *structure, struct_member *smp, struct_member_descript
     long value=0;
     int have_value=TRUE;
     switch (in_smp->length) {
-     case sizeof(char):
-      value=*((char *)in_structure);
+     case sizeof(int8_t):
+      value=*((int8_t *)in_structure);
       break;
-     case sizeof(short):
-      value=*((short *)in_structure);
+     case sizeof(int16_t):
+      value=*((int16_t *)in_structure);
       break;
-     case sizeof(long):
-      value=*((long *)in_structure);
+     case sizeof(int32_t):
+      value=*((int32_t *)in_structure);
+      break;
+     case sizeof(int64_t):
+      value=*((int64_t *)in_structure);
       break;
      default:
       fprintf(stream, "UNKNOWN INT SIZE\n");
@@ -196,14 +199,17 @@ print_structcontents(char *structure, struct_member *smp, struct_member_descript
     unsigned long value=0;
     int have_value=TRUE;
     switch (in_smp->length) {
-     case sizeof(char):
-      value=*((unsigned char *)in_structure);
+     case sizeof(uint8_t):
+      value=*((uint8_t *)in_structure);
       break;
-     case sizeof(short):
-      value=*((unsigned short *)in_structure);
+     case sizeof(uint16_t):
+      value=*((uint16_t *)in_structure);
       break;
-     case sizeof(long):
-      value=*((unsigned long *)in_structure);
+     case sizeof(uint32_t):
+      value=*((uint32_t *)in_structure);
+      break;
+     case sizeof(uint64_t):
+      value=*((uint64_t *)in_structure);
       break;
      default:
       fprintf(stream, "UNKNOWN INT SIZE\n");

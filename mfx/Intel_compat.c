@@ -24,33 +24,37 @@
 
 #include "Intel_compat.h"
 
-void Intel_short(unsigned short *x) {
+void Intel_int16(uint16_t *x) {
  *x = ((*x&0x00ffU)<<8) | ((*x&0xff00U)>>8);
 }
 
 void Intel_int(unsigned int *x) {
  if (sizeof(int)==2) {
-  Intel_short((unsigned short *)x);
+  Intel_int16((uint16_t *)x);
  } else {
-  Intel_long((unsigned long *)x);
+  Intel_int32((uint32_t *)x);
  }
 }
 
-void Intel_long(unsigned long *x) {
+void Intel_int32(uint32_t *x) {
  *x = ( (((*x&0xff000000UL)>>24) | ((*x&0x00ff0000UL)>>8))\
       | (((*x&0x0000ff00UL)<<8)  | ((*x&0x000000ffUL)<<24)) );
 }
 
 void Intel_float(float *f) {
- Intel_long((unsigned long *)f);
+ Intel_int32((uint32_t *)f);
 }
 
-void Intel_double(double *d) {
- unsigned long *x=(unsigned long *)d, save;
+void Intel_int64(uint64_t *d) {
+ uint32_t *x=(uint32_t *)d, save;
 
  save = *x;
  *x = *(x+1);
  *(x+1) = save;
- Intel_long(x);
- Intel_long(x+1);
+ Intel_int32(x);
+ Intel_int32(x+1);
+}
+
+void Intel_double(double *d) {
+ Intel_int64((uint64_t *)d);
 }

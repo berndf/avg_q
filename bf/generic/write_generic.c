@@ -202,36 +202,36 @@ write_value(DATATYPE dat, FILE *outfile,
  switch (local_arg->datatype) {
   case DT_UINT8: {
    unsigned char c= (unsigned char)rint(dat);
-   err=(fwrite(&c, sizeof(char), 1, outfile)!=1);
+   err=(fwrite(&c, sizeof(c), 1, outfile)!=1);
    }
    break;
   case DT_INT8: {
    signed char c= (signed char)rint(dat);
-   err=(fwrite(&c, sizeof(char), 1, outfile)!=1);
+   err=(fwrite(&c, sizeof(c), 1, outfile)!=1);
    }
    break;
   case DT_INT16: {
-   short c= (short)rint(dat);
-   if (swap_byteorder) Intel_short((unsigned short *)&c);
-   err=(fwrite(&c, sizeof(short), 1, outfile)!=1);
+   int16_t c= (int16_t)rint(dat);
+   if (swap_byteorder) Intel_int16((uint16_t *)&c);
+   err=(fwrite(&c, sizeof(c), 1, outfile)!=1);
    }
    break;
   case DT_INT32: {
-   long c= (long)rint(dat);
-   if (swap_byteorder) Intel_long((unsigned long *)&c);
-   err=(fwrite(&c, sizeof(long), 1, outfile)!=1);
+   int32_t c= (int32_t)rint(dat);
+   if (swap_byteorder) Intel_int32((uint32_t *)&c);
+   err=(fwrite(&c, sizeof(c), 1, outfile)!=1);
    }
    break;
   case DT_FLOAT32: {
    float c=dat;
    if (swap_byteorder) Intel_float(&c);
-   err=(fwrite(&c, sizeof(float), 1, outfile)!=1);
+   err=(fwrite(&c, sizeof(c), 1, outfile)!=1);
    }
    break;
   case DT_FLOAT64: {
    double c=dat;
    if (swap_byteorder) Intel_double(&c);
-   err=(fwrite(&c, sizeof(double), 1, outfile)!=1);
+   err=(fwrite(&c, sizeof(c), 1, outfile)!=1);
    }
    break;
   case DT_STRING: {

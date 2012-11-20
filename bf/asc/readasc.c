@@ -171,8 +171,8 @@ readasc_open_file(transform_info_ptr tinfo) {
  struct readasc_storage *local_arg=(struct readasc_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  char inbuf[INBUFSIZE];
- unsigned short shortbuf, lensum=0;
- unsigned short magic;
+ uint16_t shortbuf, lensum=0;
+ uint16_t magic;
  int i, len, skipepochs=local_arg->fromepoch-1;
  Bool Intel_Fix=FALSE;
  long save_filepos;
@@ -188,7 +188,7 @@ readasc_open_file(transform_info_ptr tinfo) {
  fread((void *)&magic, 2, 1, ascfileptr);
  local_arg->binary=(magic==OLD_ASC_BF_MAGIC || magic==ASC_BF_FLOAT_MAGIC || magic==ASC_BF_DOUBLE_MAGIC);
  if (!local_arg->binary) {
-  Intel_short(&magic);	/* Try swapping */
+  Intel_int16(&magic);	/* Try swapping */
   if (magic==ASC_BF_FLOAT_MAGIC || magic==ASC_BF_DOUBLE_MAGIC) {
    local_arg->binary=Intel_Fix=TRUE;
   }
@@ -196,7 +196,7 @@ readasc_open_file(transform_info_ptr tinfo) {
  if (local_arg->binary) {
   /* Binary file: Read length of keyword section */
   fread((void *)&shortbuf, 2, 1, ascfileptr);
-  if (Intel_Fix) Intel_short(&shortbuf);
+  if (Intel_Fix) Intel_int16(&shortbuf);
 # ifdef FLOAT_DATATYPE
   local_arg->otherdatatype= (magic==ASC_BF_DOUBLE_MAGIC);
 # endif

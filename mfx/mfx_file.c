@@ -646,7 +646,7 @@ mfx_read(void *tobuffer, long count, MFX_FILE *mfxfile) {
    channel=mfxfile->selected_channels[i];
    datum=mfxfile->input_buffer[--channel];
 #  ifdef LITTLE_ENDIAN
-   Intel_short((unsigned short *)&datum);
+   Intel_int16((uint16_t *)&datum);
 #  endif
    switch (mfxfile->datatype) {
     case MFX_SHORTS:
@@ -717,7 +717,7 @@ mfx_write(void *frombuffer, long count, MFX_FILE *mfxfile) {
      break;
    }
 #  ifdef LITTLE_ENDIAN
-   Intel_short((unsigned short *)&datum);
+   Intel_int16((uint16_t *)&datum);
 #  endif
    mfxfile->input_buffer[channel]=datum;
   }
@@ -863,7 +863,7 @@ static int nexttrigcode(MFX_FILE* mfxfile, int channel) {
  mfxfile->mfxpos++;
  datum=mfxfile->input_buffer[channel-1];
 #ifdef LITTLE_ENDIAN
- Intel_short((unsigned short *)&datum);
+ Intel_int16((uint16_t *)&datum);
 #endif
  /* The following is necessary for compatibility with the old style triggers */
  /* Be aware of round-off problems */

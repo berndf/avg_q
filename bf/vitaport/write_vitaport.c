@@ -334,9 +334,9 @@ write_vitaport_exit(transform_info_ptr tinfo) {
    if (fread(&dat, sizeof(DATATYPE), 1, local_arg->channelfile)!=1) {
     ERREXIT(tinfo->emethods, "write_vitaport_exit: Error reading temp file.\n");
    }
-   s= (short int)rint(dat/factor)-offset;
+   s= (int16_t)rint(dat/factor)-offset;
 #   ifdef LITTLE_ENDIAN
-   Intel_short((unsigned short *)&s);
+   Intel_int16((uint16_t *)&s);
 #   endif
    if (fwrite(&s, sizeof(short), 1, local_arg->outfile)!=1) {
     ERREXIT(tinfo->emethods, "write_vitaport_exit: Write error.\n");
@@ -368,7 +368,7 @@ write_vitaport_exit(transform_info_ptr tinfo) {
   fwrite(markertable_entry->markertable_name, 1, VP_TABLEVAR_LENGTH, local_arg->outfile);
   length=n_events*sizeof(long);
 #ifdef LITTLE_ENDIAN
-  Intel_long((unsigned long *)&length);
+  Intel_int32((uint32_t *)&length);
 #endif
   fwrite(&length, sizeof(long), 1, local_arg->outfile);
   for (tagno=0; tagno<n_events; tagno++) {
@@ -382,14 +382,14 @@ write_vitaport_exit(transform_info_ptr tinfo) {
     trigpoint= -1;
    }
 #ifdef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&trigpoint);
+   Intel_int32((uint32_t *)&trigpoint);
 #endif
    fwrite(&trigpoint, sizeof(long), 1, local_arg->outfile);
   }
   for (; tagno<n_events; tagno++) {
    trigpoint= -1;
 #ifdef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&trigpoint);
+   Intel_int32((uint32_t *)&trigpoint);
 #endif
    fwrite(&trigpoint, sizeof(long), 1, local_arg->outfile);
   }

@@ -575,7 +575,7 @@ read_value(FILE *infile,
    short c;
    if (fread(&c, sizeof(short), 1, infile)!=1) err=ERR_READ;
 #ifndef LITTLE_ENDIAN
-   Intel_short((unsigned short *)&c);
+   Intel_int16((uint16_t *)&c);
 #endif
    dat=c;
    }
@@ -584,7 +584,7 @@ read_value(FILE *infile,
    long c;
    if (fread(&c, sizeof(long), 1, infile)!=1) err=ERR_READ;
 #ifndef LITTLE_ENDIAN
-   Intel_long((unsigned long *)&c);
+   Intel_int32((uint32_t *)&c);
 #endif
    dat=c;
    }
