@@ -46,6 +46,7 @@
 
 enum ARGS_ENUM {
  ARGS_EXTREMA=0, 
+ ARGS_EPOCHMODE, 
  ARGS_REPORT_XVALUE, 
  ARGS_ITEMPART, 
  ARGS_REFRACTORY_PERIOD, 
@@ -57,6 +58,7 @@ enum ARGS_ENUM {
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Write extrema rather than threshold crossings", "E", FALSE, NULL},
+ {T_ARGS_TAKES_NOTHING, "Epoch mode - Restart detector for each new epoch", "e", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Report x axis values rather than point numbers", "x", FALSE, NULL},
  {T_ARGS_TAKES_LONG, "nr_of_item: work only on this item # (>=0)", "i", 0, NULL},
  {T_ARGS_TAKES_STRING_WORD, "Refractory period", "R", ARGDESC_UNUSED, NULL},
@@ -75,6 +77,7 @@ struct write_crossings_storage {
  int itempart;
  long refractory_period;
  long remaining_refractory_points;
+ long pointoffset;
  /* Note how many points have already been seen: */
  long past_points;
  long epochs_seen;
@@ -108,16 +111,14 @@ write_crossings_init(transform_info_ptr tinfo) {
  } else {
   local_arg->refractory_period=0;
  }
- local_arg->remaining_refractory_points=0;
  if (args[ARGS_POINTOFFSET].is_set) {
   if (args[ARGS_REPORT_XVALUE].is_set) {
    ERREXIT(tinfo->emethods, "write_crossings_init: Combining options -x and -o makes no sense.\n");
   }
-  local_arg->past_points=gettimeslice(tinfo, args[ARGS_POINTOFFSET].arg.s);
+  local_arg->pointoffset=gettimeslice(tinfo, args[ARGS_POINTOFFSET].arg.s);
  } else {
-  local_arg->past_points=0;
+  local_arg->pointoffset=0;
  }
- local_arg->epochs_seen=0;
 
  local_arg->channel_list=expand_channel_list(tinfo, args[ARGS_CHANNELNAMES].arg.s);
  if (local_arg->channel_list==NULL) {
@@ -148,10 +149,13 @@ write_crossings_init(transform_info_ptr tinfo) {
    fprintf(local_arg->outfile, "# Refractory period=%s\n", args[ARGS_REFRACTORY_PERIOD].arg.s);
   }
   if (args[ARGS_POINTOFFSET].is_set) {
-   fprintf(local_arg->outfile, "# Point offset=%ld\n", local_arg->past_points);
+   fprintf(local_arg->outfile, "# Point offset=%ld\n", local_arg->pointoffset);
   }
  }
 
+ local_arg->past_points=local_arg->pointoffset;
+ local_arg->remaining_refractory_points=0;
+ local_arg->epochs_seen=0;
  if (args[ARGS_EXTREMA].is_set) {
   local_arg->last_three_points.nr_of_vectors=3;
   local_arg->last_three_points.nr_of_elements=local_arg->channels_in_list;
@@ -177,6 +181,15 @@ write_crossings(transform_info_ptr tinfo) {
  int channel, channel_list_index=0;
  long point=0;
  array tsdata;
+
+ if (args[ARGS_EPOCHMODE].is_set) {
+  /* Reset detector */
+  local_arg->past_points=local_arg->pointoffset;
+  local_arg->remaining_refractory_points=0;
+  if (!args[ARGS_EXTREMA].is_set) {
+   memset(local_arg->signs_of_last_diff, 0, local_arg->channels_in_list*sizeof(int));
+  }
+ }
 
  if (local_arg->outfile==NULL) {
   growing_buf_clear(&local_arg->triggers);
@@ -222,7 +235,7 @@ write_crossings(transform_info_ptr tinfo) {
    if (local_arg->remaining_refractory_points>0) {
     local_arg->remaining_refractory_points--;
    } else {
-   if (point>=2) {
+   if (point-local_arg->pointoffset>=2) {
     /* Have written at least 3 points into last_three_points... */
     DATATYPE p1, p2, p3;
     int condition=0;

@@ -9595,9 +9595,9 @@ threshold or a local minimum
 \end_inset
 
 threshold (option -E).
- The point number at which the threshold was crossed, counted across all
- points seen by the method, is written to the text file outfile one per
- line.
+ The output by default represents a valid avg_q trigger file: The point
+ number at which the threshold was crossed, counted across all points seen
+ by the method, is written to the text file outfile one per line.
  The second column contains a trigger code that is either 
 \begin_inset Formula $1$
 \end_inset
@@ -9610,8 +9610,12 @@ threshold (option -E).
  -- This default behavior is most useful for continuous files read with
  the -c option, because in this case the cumulative point numbers indicate
  the position of the crossing relative to the start of the continuous file.
- The resulting file can be used without modification as a trigger file for
- get-epoch methods that support ASCII trigger files.
+ To be fully operational as a continuous detector, 
+\series bold
+write_crossings
+\series default
+ preserves state between epochs by default (i.e., the last point(s) of the
+ previous epoch are considered).
 \begin_inset Newline newline
 \end_inset
 
@@ -9672,6 +9676,8 @@ write_crossings
  and z_value.
  This is for example useful to describe peaks in the latency--frequency
  plane.
+ Note that option -e (epoch mode) is useful for epoched data to start an
+ independent detection within each epoch.
 \begin_inset Newline newline
 \end_inset
 
@@ -9708,6 +9714,12 @@ Options:
 \begin_deeper
 \begin_layout Description
 -E: Write extrema rather than threshold crossings.
+\end_layout
+
+\begin_layout Description
+-e: Epoch mode - Restart detector for each new epoch.
+ This is recommended whenever consecutive input epochs do not form continuous
+ time series.
 \end_layout
 
 \begin_layout Description
