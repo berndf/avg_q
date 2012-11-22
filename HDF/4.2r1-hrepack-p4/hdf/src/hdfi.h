@@ -104,6 +104,7 @@
  * Under WIN32 we have single threaded static libraries, or
  * mutli-threaded DLLs using the multithreaded runtime DLLs.
  **/
+#undef _MT
 #	if defined(_MT) &&	defined(_DLL) &&!defined(_HDFDLL_)
 /*		If the user really ment to use _HDFDLL_, but he forgot, just define it. */
 #		define _HDFDLL_

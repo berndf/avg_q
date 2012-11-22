@@ -8089,6 +8089,7 @@ case "$host" in
   *-apple*)             BAR="apple"       ;;
   i686-pc-cygwin*)      BAR="linux"       ;;
   i686-pc-mingw*)       BAR="linux"       ;;
+  i686-w64-mingw*)       BAR="linux"       ;;
   *)                    echo "*** unknown host $host!"; exit 1 ;;
 esac
 
