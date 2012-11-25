@@ -194,9 +194,10 @@ write_crossings(transform_info_ptr tinfo) {
  if (local_arg->outfile==NULL) {
   growing_buf_clear(&local_arg->triggers);
  } else {
- if (args[ARGS_REPORT_XVALUE].is_set) {
-  /* If we report x values, the epoch number cannot be calculated because x values
-   * repeat across epochs. Thus, output the epoch number as well. */
+ if (args[ARGS_EPOCHMODE].is_set || args[ARGS_REPORT_XVALUE].is_set) {
+  /* In epoch mode or if we report x values, the epoch number cannot be
+   * calculated because point numbers and x values repeat across epochs. Thus,
+   * output the epoch number as well. */
   fprintf(local_arg->outfile, "# Epoch=%ld", local_arg->epochs_seen+1);
   if (tinfo->z_label!=NULL) {
    fprintf(local_arg->outfile, ": %s=%g\n", tinfo->z_label, tinfo->z_value);

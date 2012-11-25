@@ -9656,11 +9656,6 @@ Using option -E, the point numbers and values at the local extrema in the
  are output.
  Note that by making this value negative it is possible to allow local minima
  with positive values and maxima with negative values.
- Together with filtering, 
-\series bold
-write_crossings
-\series default
- -E can be used as a simple evoked component detector.
 \begin_inset Newline newline
 \end_inset
 
@@ -9669,20 +9664,21 @@ While the standard output format of
 write_crossings
 \series default
  is oriented at detection tasks in continuous files such as EOG candidate
- detection, the output using option -x is for `epoched' data with useful
- x-axis information.
- Points are reported using [x-label=value] pairs instead of continuous point
- numbers and epochs are separated by comments noting epoch number, z_label
- and z_value.
- This is for example useful to describe peaks in the latency--frequency
- plane.
- Note that option -e (epoch mode) is useful for epoched data to start an
- independent detection within each epoch.
+ detection, option -e is for `epoched' data.
+ In this epoch mode, the detector is restarted anew for each epoch and point
+ numbers relative to the start of the epoch are reported.
+ With option -x, x-axis values are reported by [x-label=value] pairs.
+ Note that options -e and -x are independent but usually -x will make most
+ sense together with -e.
+ With either option, epochs are separated by comments noting epoch number,
+ z_label and z_value (if available).
+ This is for example useful to measure event-related potentials or to describe
+ peaks in the latency--frequency plane.
 \begin_inset Newline newline
 \end_inset
 
-Besides the usual `stdin' and `stderr' values, the name `triggers' as outfile
- argument is special; it indicates that the points found are written into
+As outfile argument, the name `triggers' is special besides the usual `stdin'
+ and `stderr' values: It indicates that the points found are written into
  the internal epoch trigger list instead of to a file.
  The trigger code used is 
 \begin_inset Formula $\pm$
@@ -9699,7 +9695,8 @@ query
 \series default
  or written to an event-aware (continuous) output format together with the
  data.
- The -x option is meaningless for writing `triggers'.
+ The -x option is meaningless for writing `triggers' but -e should be used
+ for epoched data.
 \end_layout
 
 \begin_deeper
