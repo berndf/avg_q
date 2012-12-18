@@ -95,7 +95,7 @@ class paradigm(object):
    self.get_trials()
    return self.__dict__[name]
   else:
-   raise AttributeError, '\'paradigm\' object has no attribute \''+name+'\'';
+   raise AttributeError('\'paradigm\' object has no attribute \''+name+'\'');
  def parse_trials(self):
   '''Iterator to output single trials together with their classification.
      This can be used to create output in the order of trials, rather than sorted by condition.'''
@@ -121,7 +121,7 @@ class paradigm(object):
        if not is_valid_continuation(sequence,sequencedepth+1):
 	# Bail out, sequence doesn't fit
         trial=[self.triggers[i]]
-	break
+        break
        sequencedepth+=1
        trial.append(self.triggers[i+sequencedepth])
        sequence=sequence[self.triggers[i+sequencedepth][1]]

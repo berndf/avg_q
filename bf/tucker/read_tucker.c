@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001-2004,2006-2008,2010,2011 Bernd Feige
+ * Copyright (C) 1996-1999,2001-2004,2006-2008,2010-2012 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -42,15 +42,15 @@
 /*}}}  */
 
 #define MAX_COMMENTLEN 1024
-#define MAX_BUFFERED_TRIGGERS 3
 
 enum ARGS_ENUM {
- ARGS_CONTINUOUS=0, 
- ARGS_TRIGFILE,
+ ARGS_CONTINUOUS=0,
+ ARGS_TRIGTRANSFER, 
  ARGS_TRIGLIST, 
  ARGS_FROMEPOCH,
  ARGS_EPOCHS,
  ARGS_OFFSET,
+ ARGS_TRIGFILE,
  ARGS_IFILE,
  ARGS_BEFORETRIG,
  ARGS_AFTERTRIG,
@@ -58,12 +58,13 @@ enum ARGS_ENUM {
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Continuous mode. Read the file in chunks of the given size without triggers", "c", FALSE, NULL},
- {T_ARGS_TAKES_FILENAME, "trigger_file: Read trigger points and codes from this file", "R", ARGDESC_UNUSED, (const char *const *)"*.trg"},
+ {T_ARGS_TAKES_NOTHING, "Transfer a list of triggers within the read epoch", "T", FALSE, NULL},
  {T_ARGS_TAKES_STRING_WORD, "trigger_list: Restrict epochs to these condition codes. Eg: 1,2", "t", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_LONG, "fromepoch: Specify start epoch beginning with 1", "f", 1, NULL},
  {T_ARGS_TAKES_LONG, "epochs: Specify maximum number of epochs to get", "e", 1, NULL},
  {T_ARGS_TAKES_STRING_WORD, "offset: The zero point 'beforetrig' is shifted by offset", "o", ARGDESC_UNUSED, NULL},
- {T_ARGS_TAKES_FILENAME, "Input file", "", ARGDESC_UNUSED, NULL},
+ {T_ARGS_TAKES_FILENAME, "trigger_file: Read trigger points and codes from this file", "R", ARGDESC_UNUSED, (const char *const *)"*.trg"},
+ {T_ARGS_TAKES_FILENAME, "Input file", "", ARGDESC_UNUSED, (const char *const *)"*.raw"},
  {T_ARGS_TAKES_STRING_WORD, "beforetrig", "", ARGDESC_UNUSED, (const char *const *)"1s"},
  {T_ARGS_TAKES_STRING_WORD, "aftertrig", "", ARGDESC_UNUSED, (const char *const *)"1s"},
 };
@@ -72,25 +73,21 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 struct read_tucker_storage {
  struct tucker_header header;
  FILE *infile;
- FILE *triggerfile;
  int *trigcodes;
- unsigned short *last_trigvalues;
  int current_trigger;
- int next_buffered_trigger;	/* Contains the index of the next buffered trigger */
- int after_last_buffered_trigger;	/* Contains the number of buffered triggers */
- struct trigger buffered_triggers[MAX_BUFFERED_TRIGGERS];
+ growing_buf triggers;
  long current_point;
- long current_triggerpoint;
- char *EventCodes;
+ char (*EventCodes)[5]; /* Pointer to fixed-length strings */
  long SizeofHeader;
  long points_in_file;
+ int  bytes_per_sample;
  long bytes_per_point;
  long beforetrig;
  long aftertrig;
  long offset;
  long fromepoch;
  long epochs;
- unsigned short *buffer;
+ void *buffer;
 
  DATATYPE Factor;
 };
@@ -101,16 +98,6 @@ struct read_tucker_storage {
 /*{{{  read_tucker_get_filestrings: Allocate and set strings and probepos array*/
 LOCAL void
 read_tucker_get_filestrings(transform_info_ptr tinfo) {
- struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
- transform_argument *args=tinfo->methods->arguments;
- char const *last_sep=strrchr(args[ARGS_IFILE].arg.s, PATHSEP);
- char const *last_component=(last_sep==NULL ? args[ARGS_IFILE].arg.s : last_sep+1);
-
- if ((tinfo->comment=(char *)malloc(MAX_COMMENTLEN))==NULL) {
-  ERREXIT(tinfo->emethods, "read_tucker: Error allocating comment\n");
- }
- snprintf(tinfo->comment, MAX_COMMENTLEN, "read_tucker %s %02d/%02d/%04d,%02d:%02d:%02d", last_component, local_arg->header.Month, local_arg->header.Day, local_arg->header.Year, local_arg->header.Hour, local_arg->header.Minute, local_arg->header.Sec);
-
  /* Force create_channelgrid to really allocate the channel info anew.
   * Otherwise, free_tinfo will free someone else's data ! */
  tinfo->channelnames=NULL; tinfo->probepos=NULL;
@@ -132,8 +119,27 @@ read_tucker_seek_point(transform_info_ptr tinfo, long point) {
  }
  /*{{{  Swap byte order if necessary*/
 # ifdef LITTLE_ENDIAN
- {uint16_t *pdata=local_arg->buffer, *p_end=(uint16_t *)((char *)local_arg->buffer+local_arg->bytes_per_point);
-  while (pdata<p_end) Intel_int16((uint16_t *)pdata++);
+ switch (local_arg->header.Version) {
+  case 2:
+   /* Data are signed shorts */
+   {uint16_t *pdata=(uint16_t *)local_arg->buffer, *p_end=(uint16_t *)((char *)local_arg->buffer+local_arg->bytes_per_point);
+    while (pdata<p_end) Intel_int16(pdata++);
+   }
+   break;
+  case 4:
+   /* Data are floats */
+   {float *pdata=(float *)local_arg->buffer, *p_end=(float *)((char *)local_arg->buffer+local_arg->bytes_per_point);
+    while (pdata<p_end) Intel_float(pdata++);
+   }
+   break;
+  case 6:
+   /* Data are doubles */
+   {double *pdata=(double *)local_arg->buffer, *p_end=(double *)((char *)local_arg->buffer+local_arg->bytes_per_point);
+    while (pdata<p_end) Intel_double(pdata++);
+   }
+   break;
+  default:
+   break;
  }
 # endif
  /*}}}  */
@@ -145,101 +151,155 @@ read_tucker_seek_point(transform_info_ptr tinfo, long point) {
 LOCAL int
 read_tucker_get_singlepoint(transform_info_ptr tinfo, array *toarray) {
  struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
- unsigned short *pdata=local_arg->buffer;
 
  if (local_arg->current_point>=local_arg->points_in_file) return -1;
  read_tucker_seek_point(tinfo, local_arg->current_point);
 
- do {
-  array_write(toarray, local_arg->Factor*(*pdata++));
- } while (toarray->message==ARRAY_CONTINUE);
+ switch (local_arg->header.Version) {
+  case 2:
+   /* Data are signed shorts */
+   {uint16_t *pdata=(uint16_t *)local_arg->buffer;
+    do {
+     array_write(toarray, local_arg->Factor*(*pdata++));
+    } while (toarray->message==ARRAY_CONTINUE);
+   }
+   break;
+  case 4:
+   /* Data are floats */
+   {float *pdata=(float *)local_arg->buffer;
+    do {
+     array_write(toarray, *pdata++);
+    } while (toarray->message==ARRAY_CONTINUE);
+   }
+   break;
+  case 6:
+   /* Data are doubles */
+   {double *pdata=(double *)local_arg->buffer;
+    do {
+     array_write(toarray, *pdata++);
+    } while (toarray->message==ARRAY_CONTINUE);
+   }
+   break;
+  default:
+   break;
+ }
 
  local_arg->current_point++;
  return 0;
 }
 /*}}}  */
 
-/*{{{  read_tucker_nexttrigger(transform_info_ptr tinfo, long *trigpoint) {*/
 /*{{{  Maintaining the buffered triggers list*/
 LOCAL void 
 read_tucker_reset_triggerbuffer(transform_info_ptr tinfo) {
  struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
- local_arg->next_buffered_trigger=local_arg->after_last_buffered_trigger=0;
-}
-
-LOCAL void
-read_tucker_push_trigger(transform_info_ptr tinfo, long position, int code) {
- struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
- if (code==0) return;	/* Triggers with code 0 are not pushed */
- if (local_arg->after_last_buffered_trigger>MAX_BUFFERED_TRIGGERS) {
-  ERREXIT(tinfo->emethods, "read_tucker_push_trigger: after_last_buffered_trigger>MAX_BUFFERED_TRIGGERS\n");
- }
- local_arg->buffered_triggers[local_arg->after_last_buffered_trigger].position= position;
- local_arg->buffered_triggers[local_arg->after_last_buffered_trigger].code    = code;
- local_arg->after_last_buffered_trigger++;
-}
-
-LOCAL int
-read_tucker_pop_trigger(transform_info_ptr tinfo, long *position) {
- struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
- int code;
-
- if (local_arg->next_buffered_trigger>=local_arg->after_last_buffered_trigger) {
-  read_tucker_reset_triggerbuffer(tinfo);
-  return 0;
- }
- if (local_arg->next_buffered_trigger>=MAX_BUFFERED_TRIGGERS) {
-  ERREXIT(tinfo->emethods, "read_tucker_pop_trigger: next_buffered_trigger>=MAX_BUFFERED_TRIGGERS\n");
- }
- *position=local_arg->buffered_triggers[local_arg->next_buffered_trigger].position;
-  code    =local_arg->buffered_triggers[local_arg->next_buffered_trigger].code;
- local_arg->next_buffered_trigger++;
- return code;
+ local_arg->current_trigger=0;
 }
 /*}}}  */
 
-/* Buffering of triggers takes place because multiple condition codes 
- * may occur at one time
- * (from Stimulation, Keypad and Keyboard or, in the case of event tables,
- * just multiple events registered with the same time stamp). This way,
- * the events always occur separately from each other from read_tucker' point
- * of view, which of course makes it impossible to look for specific 
- * combinations of events (which would be unlikely anyway, however). */
-LOCAL int
-read_tucker_nexttrigger(transform_info_ptr tinfo, long *trigpoint) {
- struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
- int code;
- int eventno;
- unsigned short *pdata;
+/*{{{  read_tucker_build_trigbuffer(transform_info_ptr tinfo) {*/
+/* This function has all the knowledge about events */
+LOCAL void 
+read_tucker_build_trigbuffer(transform_info_ptr tinfo) {
+ struct read_tucker_storage * const local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
+ transform_argument *args=tinfo->methods->arguments;
 
- /* Return buffered trigger if available */
- code=read_tucker_pop_trigger(tinfo, trigpoint);
- if (code!=0) {
-  return code;
+ if (local_arg->triggers.buffer_start==NULL) {
+  growing_buf_allocate(&local_arg->triggers, 0);
+ } else {
+  growing_buf_clear(&local_arg->triggers);
  }
-
- if (local_arg->triggerfile!=NULL) {
-  code=read_trigger_from_trigfile(local_arg->triggerfile, tinfo->sfreq, trigpoint, NULL);
-  return code;
- }
-
- while (local_arg->current_triggerpoint<local_arg->points_in_file && code==0) {
-  read_tucker_seek_point(tinfo, local_arg->current_triggerpoint);
-  pdata=local_arg->buffer+local_arg->header.NChan;
-
-  for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
-   /* Trigger on the first non-zero point */
-   if (local_arg->last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
-    code=eventno+1;
-    read_tucker_push_trigger(tinfo, local_arg->current_triggerpoint, code);
-   }
-   local_arg->last_trigvalues[eventno]=pdata[eventno];
+ if (args[ARGS_TRIGFILE].is_set) {
+  FILE * const triggerfile=(strcmp(args[ARGS_TRIGFILE].arg.s,"stdin")==0 ? stdin : fopen(args[ARGS_TRIGFILE].arg.s, "r"));
+  TRACEMS(tinfo->emethods, 1, "read_tucker_build_trigbuffer: Reading event file\n");
+  if (triggerfile==NULL) {
+   ERREXIT1(tinfo->emethods, "read_tucker_build_trigbuffer: Can't open trigger file >%s<\n", MSGPARM(args[ARGS_TRIGFILE].arg.s));
   }
-  local_arg->current_triggerpoint++;
- }
+  while (TRUE) {
+   long trigpoint;
+   char *description;
+   int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
+   if (code==0) break;
+   push_trigger(&local_arg->triggers, trigpoint, code, description);
+  }
+  if (triggerfile!=stdin) fclose(triggerfile);
+ } else {
+  int eventno;
+  long current_triggerpoint=0;
+  int last_trigvalues[local_arg->header.NEvents];
 
- /* If all of the pushed codes were 0, then this will yield 0 (buffer empty): */
- return read_tucker_pop_trigger(tinfo, trigpoint);
+  TRACEMS(tinfo->emethods, 1, "read_tucker_build_trigbuffer: Scanning trigger traces\n");
+  while (current_triggerpoint<local_arg->points_in_file) {
+   read_tucker_seek_point(tinfo, current_triggerpoint);
+   switch (local_arg->header.Version) {
+    case 2:
+     /* Data are signed shorts */
+     {uint16_t *pdata=((uint16_t *)local_arg->buffer)+local_arg->header.NChan;
+      for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
+       /* Trigger on the first non-zero point */
+       if (last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
+	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, strdup(local_arg->EventCodes[eventno]));
+       }
+       last_trigvalues[eventno]=pdata[eventno];
+      }
+     }
+     break;
+    case 4:
+     /* Data are floats */
+     {float *pdata=((float *)local_arg->buffer)+local_arg->header.NChan;
+      for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
+       /* Trigger on the first non-zero point */
+       if (last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
+	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, strdup(local_arg->EventCodes[eventno]));
+       }
+       last_trigvalues[eventno]=pdata[eventno];
+      }
+     }
+     break;
+    case 6:
+     /* Data are doubles */
+     {double *pdata=((double *)local_arg->buffer)+local_arg->header.NChan;
+      for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
+       /* Trigger on the first non-zero point */
+       if (last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
+	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, strdup(local_arg->EventCodes[eventno]));
+       }
+       last_trigvalues[eventno]=pdata[eventno];
+      }
+     }
+     break;
+    default:
+     break;
+   }
+   current_triggerpoint++;
+  }
+ }
+}
+/*}}}  */
+
+/* This is the highest-level access function: Read the next trigger and
+ * advance the trigger counter. If this function is not called at least
+ * once, event information is not even touched. */
+LOCAL int
+read_tucker_read_trigger(transform_info_ptr tinfo, long *position, char **descriptionp) {
+ struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
+ int code=0;
+ if (local_arg->triggers.buffer_start==NULL) {
+  /* Load the event information */
+  read_tucker_build_trigbuffer(tinfo);
+ }
+ {
+ int const nevents=local_arg->triggers.current_length/sizeof(struct trigger);
+
+ if (local_arg->current_trigger<nevents) {
+  struct trigger * const intrig=((struct trigger *)local_arg->triggers.buffer_start)+local_arg->current_trigger;
+  *position=intrig->position;
+   code    =intrig->code;
+  if (descriptionp!=NULL) *descriptionp=intrig->description;
+ }
+ }
+ local_arg->current_trigger++;
+ return code;
 }
 /*}}}  */
 /*}}}  */
@@ -250,6 +310,8 @@ read_tucker_init(transform_info_ptr tinfo) {
  struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  struct stat statbuff;
+
+ growing_buf_init(&local_arg->triggers);
 
  /*{{{  Process options*/
  local_arg->fromepoch=(args[ARGS_FROMEPOCH].is_set ? args[ARGS_FROMEPOCH].arg.i : 1);
@@ -266,30 +328,47 @@ read_tucker_init(transform_info_ptr tinfo) {
  change_byteorder((char *)&local_arg->header, sm_tucker);
 #endif
  if (local_arg->header.NEvents>0) {
-  if ((local_arg->EventCodes=(char *)malloc(local_arg->header.NEvents*4))==NULL) {
+  int eventno;
+  if ((local_arg->EventCodes=(char (*)[sizeof(local_arg->EventCodes[0])])malloc(local_arg->header.NEvents*sizeof(local_arg->EventCodes[0])))==NULL) {
    ERREXIT(tinfo->emethods, "read_tucker_init: Error allocating event code table\n");
   }
-  if ((int)fread((void *)local_arg->EventCodes, 4, local_arg->header.NEvents, local_arg->infile)!=local_arg->header.NEvents) {
-   ERREXIT(tinfo->emethods, "read_tucker_init: Error reading event code table\n");
-  }
-  if ((local_arg->last_trigvalues=(unsigned short *)calloc(local_arg->header.NEvents, sizeof(unsigned short)))==NULL) {
-   ERREXIT(tinfo->emethods, "read_tucker_init: Error allocating event memory\n");
+  for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
+   if ((int)fread((void *)&local_arg->EventCodes[eventno], 4, 1, local_arg->infile)!=1) {
+    ERREXIT(tinfo->emethods, "read_tucker_init: Error reading event code table\n");
+   }
+   local_arg->EventCodes[eventno][4]=(char)0;
   }
  } else {
   local_arg->EventCodes=NULL;
-  local_arg->last_trigvalues=NULL;
   if (!args[ARGS_TRIGFILE].is_set && !args[ARGS_CONTINUOUS].is_set) {
    ERREXIT(tinfo->emethods, "read_tucker_init: No event trace present!\n");
   }
  }
  local_arg->SizeofHeader = ftell(local_arg->infile);
 
- local_arg->bytes_per_point=(local_arg->header.NChan+local_arg->header.NEvents)*sizeof(short);
+ switch (local_arg->header.Version) {
+  case 2:
+   /* Data are signed shorts */
+   local_arg->bytes_per_sample=2;
+   local_arg->Factor=((DATATYPE)local_arg->header.Range)/(1<<local_arg->header.Bits);
+   break;
+  case 4:
+   /* Data are floats */
+   local_arg->bytes_per_sample=4;
+   break;
+  case 6:
+   /* Data are doubles */
+   local_arg->bytes_per_sample=8;
+   break;
+  default:
+   ERREXIT1(tinfo->emethods, "read_tucker_init: Unknown Version %d\n", local_arg->header.Version);
+   break;
+ }
+ local_arg->bytes_per_point=(local_arg->header.NChan+local_arg->header.NEvents)*local_arg->bytes_per_sample;
  fstat(fileno(local_arg->infile),&statbuff);
  local_arg->points_in_file = (statbuff.st_size-local_arg->SizeofHeader)/local_arg->bytes_per_point;
  tinfo->points_in_file=local_arg->points_in_file;
- local_arg->Factor=((DATATYPE)local_arg->header.Range)/(1<<local_arg->header.Bits);
- if ((local_arg->buffer=(unsigned short *)malloc(local_arg->bytes_per_point))==NULL) {
+ if ((local_arg->buffer=malloc(local_arg->bytes_per_point))==NULL) {
   ERREXIT(tinfo->emethods, "read_tucker_init: Error allocating buffer memory\n");
  }
  
@@ -308,16 +387,6 @@ read_tucker_init(transform_info_ptr tinfo) {
   } else {
    ERREXIT(tinfo->emethods, "read_tucker_init: Zero epoch length.\n");
   }
- }
- if (args[ARGS_TRIGFILE].is_set) {
-  if (strcmp(args[ARGS_TRIGFILE].arg.s,"stdin")==0) {
-   local_arg->triggerfile=stdin;
-  } else
-  if ((local_arg->triggerfile=fopen(args[ARGS_TRIGFILE].arg.s, "r"))==NULL) {
-   ERREXIT1(tinfo->emethods, "read_tucker_init: Can't open trigger file >%s<\n", MSGPARM(args[ARGS_TRIGFILE].arg.s));
-  }
- } else {
-  local_arg->triggerfile=NULL;
  }
  if (args[ARGS_TRIGLIST].is_set) {
   growing_buf buf;
@@ -346,7 +415,6 @@ read_tucker_init(transform_info_ptr tinfo) {
  read_tucker_reset_triggerbuffer(tinfo);
  local_arg->current_trigger=0;
  local_arg->current_point=0;
- local_arg->current_triggerpoint=0;
 
  tinfo->methods->init_done=TRUE;
 }
@@ -358,9 +426,9 @@ read_tucker(transform_info_ptr tinfo) {
  struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  array myarray;
- FILE *infile=local_arg->infile;
  Bool not_correct_trigger=FALSE;
  long trigger_point, file_start_point, file_end_point;
+ char *description=NULL;
 
  if (local_arg->epochs--==0) return NULL;
  tinfo->beforetrig=local_arg->beforetrig;
@@ -387,7 +455,7 @@ read_tucker(transform_info_ptr tinfo) {
    tinfo->condition=0;
   } else 
   do {
-   tinfo->condition=read_tucker_nexttrigger(tinfo, &trigger_point);
+   tinfo->condition=read_tucker_read_trigger(tinfo, &trigger_point, &description);
    if (tinfo->condition==0) return NULL;	/* No more triggers in file */
    file_start_point=trigger_point-tinfo->beforetrig+local_arg->offset;
    file_end_point=trigger_point+tinfo->aftertrig-1-local_arg->offset;
@@ -405,11 +473,31 @@ read_tucker(transform_info_ptr tinfo) {
      trigno++;
     }
    }
-   local_arg->current_trigger++;
   } while (not_correct_trigger || file_start_point<0 || file_end_point>=local_arg->points_in_file);
  } while (--local_arg->fromepoch>0);
  TRACEMS3(tinfo->emethods, 1, "read_tucker: Reading around tag %d at %d, condition=%d\n", MSGPARM(local_arg->current_trigger), MSGPARM(trigger_point), MSGPARM(tinfo->condition));
- fseek(infile, file_start_point*local_arg->bytes_per_point, SEEK_SET);
+
+ /*{{{  Handle triggers within the epoch (option -T)*/
+ if (args[ARGS_TRIGTRANSFER].is_set) {
+  int trigs_in_epoch, code;
+  long trigpoint;
+  long const old_current_trigger=local_arg->current_trigger;
+  char *thisdescription;
+
+  /* First trigger entry holds file_start_point */
+  push_trigger(&tinfo->triggers, file_start_point, -1, NULL);
+  read_tucker_reset_triggerbuffer(tinfo);
+  for (trigs_in_epoch=1; code=read_tucker_read_trigger(tinfo, &trigpoint, &thisdescription), 
+	 (code!=0 && trigpoint<=file_end_point); ) {
+   if (trigpoint>=file_start_point) {
+    push_trigger(&tinfo->triggers, trigpoint-file_start_point, code, thisdescription);
+    trigs_in_epoch++;
+   }
+  }
+  push_trigger(&tinfo->triggers, 0, 0, NULL); /* End of list */
+  local_arg->current_trigger=old_current_trigger;
+ }
+ /*}}}  */
 
  /*{{{  Configure myarray*/
  myarray.element_skip=tinfo->itemsize=1;
@@ -423,7 +511,22 @@ read_tucker(transform_info_ptr tinfo) {
  /*}}}  */
 
  read_tucker_get_filestrings(tinfo);
- read_tucker_seek_point(tinfo, file_start_point);
+ /* Construct comment */
+ {
+  char const *last_sep=strrchr(args[ARGS_IFILE].arg.s, PATHSEP);
+  char const *last_component=(last_sep==NULL ? args[ARGS_IFILE].arg.s : last_sep+1);
+  int const commentlen=strlen(last_component)+40+(description==NULL ? 0 : strlen(description)+1);
+
+  if ((tinfo->comment=(char *)malloc(commentlen))==NULL) {
+   ERREXIT(tinfo->emethods, "read_tucker: Error allocating comment\n");
+  }
+  snprintf(tinfo->comment, commentlen, "read_tucker %s %02d/%02d/%04d,%02d:%02d:%02d", last_component, local_arg->header.Month, local_arg->header.Day, local_arg->header.Year, local_arg->header.Hour, local_arg->header.Minute, local_arg->header.Sec);
+  if (description!=0) {
+   strcat(tinfo->comment, " ");
+   strcat(tinfo->comment, description);
+  }
+ }
+ local_arg->current_point=file_start_point;
  do {
   read_tucker_get_singlepoint(tinfo, &myarray);
  } while (myarray.message!=ARRAY_ENDOFSCAN);
@@ -435,6 +538,8 @@ read_tucker(transform_info_ptr tinfo) {
  tinfo->leaveright=0;
  tinfo->data_type=TIME_DATA;
 
+ tinfo->filetriggersp=&local_arg->triggers;
+
  return tinfo->tsdata;
 }
 /*}}}  */
@@ -444,14 +549,10 @@ METHODDEF void
 read_tucker_exit(transform_info_ptr tinfo) {
  struct read_tucker_storage *local_arg=(struct read_tucker_storage *)tinfo->methods->local_storage;
 
- if (local_arg->triggerfile!=NULL) {
-  if (local_arg->triggerfile!=stdin) fclose(local_arg->triggerfile);
-  local_arg->triggerfile=NULL;
- }
- fclose(local_arg->infile);
  free_pointer((void **)&local_arg->trigcodes);
  free_pointer((void **)&local_arg->EventCodes);
- free_pointer((void **)&local_arg->last_trigvalues);
+ growing_buf_free(&local_arg->triggers);
+ fclose(local_arg->infile);
 
  tinfo->methods->init_done=FALSE;
 }
@@ -469,8 +570,8 @@ select_read_tucker(transform_info_ptr tinfo) {
  tinfo->methods->method_type=GET_EPOCH_METHOD;
  tinfo->methods->method_name="read_tucker";
  tinfo->methods->method_description=
-  "Get-epoch method to read binary files in the `Tucker' format used with the"
-  " `Geodesic Net' EEG system.\n";
+  "Get-epoch method to read continuous files in the `simple-binary' export format\n"
+  "used with EGI Net Station software.\n";
  tinfo->methods->local_storage_size=sizeof(struct read_tucker_storage);
  tinfo->methods->nr_of_arguments=NR_OF_ARGUMENTS;
  tinfo->methods->argument_descriptors=argument_descriptors;

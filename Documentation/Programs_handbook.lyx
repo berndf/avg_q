@@ -4116,8 +4116,9 @@ tucker
 \end_inset
 
  Get-epoch method to read binary files in the `Tucker' format used with
- the `Geodesic Net' 128-channel EEG system.
- Data is stored as short integers with scale information in the header.
+ the EGI `Geodesic Net' EEG system.
+ Currently 'simple binary' export format versions 2, 4 and 6 are supported
+ (short integer, float and double samples).
  Triggers can be contained in specialized channels, with each channel coding
  for only one event type (or condition).
  The rising ramp of a trigger signal in trigger channel 1 is interpreted
@@ -4138,6 +4139,10 @@ Options:
 \begin_layout Description
 -c: Continuous: Read a continuous file in adjacent chunks of the given size
  disregarding triggers
+\end_layout
+
+\begin_layout Description
+-T: Transfer a list of triggers within the read epoch
 \end_layout
 
 \begin_layout Description

@@ -272,6 +272,7 @@ read_synamps_get_singlepoint(transform_info_ptr tinfo, array *toarray) {
  return 0;
 }
 /*}}}  */
+/*}}}  */
 
 /*{{{  read_synamps_nexttrigger(transform_info_ptr tinfo, long *trigpoint) {*/
 /*{{{  Maintaining the triggers list*/
@@ -780,7 +781,7 @@ read_synamps(transform_info_ptr tinfo) {
    tinfo->multiplexed=TRUE;
    /*}}}  */
 
-   read_synamps_seek_point(tinfo, file_start_point);
+   local_arg->current_point=file_start_point;
    do {
     read_synamps_get_singlepoint(tinfo, &myarray);
    } while (myarray.message!=ARRAY_ENDOFSCAN);

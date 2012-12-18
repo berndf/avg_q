@@ -16,6 +16,7 @@ formats_and_extensions=[
  ('Coherence', ['.Eeg']),
  ('Konstanz', ['.sum', '.SUM', '.raw', '.RAW']),
  ('Vitaport', ['.vpd', '.VPD', '.raw', '.RAW']),
+ ('Tucker', ['.raw', '.RAW']),
 ]
 
 def escape_filename(path):
@@ -78,6 +79,10 @@ read_sound %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftert
   elif fileformat=='Konstanz':
    self.getepochmethod='''
 read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filename)s
+'''
+  elif fileformat=='Tucker':
+   self.getepochmethod='''
+read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   else:
    raise Exception("Unknown fileformat %s" % fileformat)

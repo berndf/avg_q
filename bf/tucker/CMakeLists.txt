@@ -15,5 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
 SET(bf_sources
- read_tucker.c tucker_sm.c
+ read_tucker.c
+ tucker_sm.c
+ tucker_smd.c
+)
+
+SET(programs
+ dump_tucker_header
 )
