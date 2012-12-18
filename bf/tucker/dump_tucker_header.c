@@ -90,7 +90,7 @@ main(int argc, char **argv) {
     continue;
    }
    EventCode[4]=(char)0;
-   printf(" %s\n", EventCode);
+   printf(" %2d %s\n", eventno+1, EventCode);
   }
 
   fclose(INFILE);
