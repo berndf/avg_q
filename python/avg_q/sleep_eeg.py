@@ -11,19 +11,7 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 import avg_q
 import os
 
-# Helpers for the get_measures method
-stagenames2stagelist={
- '2': ['2'],
- 'NREM': ['2','3','4'],
- 'REM': ['5'],
-}
-
-cntfile_paths=(
- '/home/charly/tmp/autosleep/',
-)
-
 class sleep_eeg(avg_q.avg_q):
- dcache=None
  defaultbands=[
   # From, To, Name (all strings)
   ['0.1', '48', 'Total'],
@@ -44,14 +32,6 @@ class sleep_eeg(avg_q.avg_q):
   ['32+1', '48', 'Gamma']
  ]
  rejection_median_length=20
- def locate_cnt(self,booknumber):
-  import bookno
-  if not self.dcache:
-   import idircache
-   self.dcache=idircache.idircache(extensionstrip=('cnt'))
-  file_bookno=bookno.file_bookno(booknumber)
-  cntfile=self.dcache.find(cntfile_paths,file_bookno)
-  return cntfile
  def channelname_subset(self,channelnames,fromHz=None,toHz=None):
   subset=[]
   for channelname in channelnames:
@@ -77,30 +57,25 @@ class sleep_eeg(avg_q.avg_q):
    collapse_args.append(",".join(subset)+':'+bandname)
   #print collapse_args
   return collapse_args
- def get_cntbands(self,infile,collapse_args):
-  self.getcontepoch(infile,0,0)
-  self.write('''
-# NeuroScan files store the sampling freq as int; we have 1/30s...
->set sfreq 0.03333333333
->calc exp
->set leaveright 1
->collapse_channels %(collapse_args)s
->set leaveright 0
->calc log
+ def add_cntbandssource(self,script,cntsource,bands=defaultbands):
+  collapse_args=self.get_channel_collapse_args(cntsource.infile,bands)
+  script.add_Epochsource(cntsource)
+  cntsource.add_branchtransform('''
+calc exp
+set leaveright 1
+collapse_channels %(collapse_args)s
+set leaveright 0
+calc log
 ''' % {'collapse_args': ' '.join(collapse_args)})
  def cnt2trg(self,cntfile):
-  from . import avg_q_file
-  first,ext=os.path.splitext(cntfile)
-  if not ext:
-   # No extension: Assume this is a book number
-   cntfile=self.locate_cnt(cntfile)
-   if not cntfile:
-    print("cnt2trg: Can't locate cnt file for book number %s" % first)
-    return
-  tfile=cntfile.replace('.cnt','.trg')
+  c=cntspectsource(cntfile)
+  if c.filename is None:
+   return
+  tfile=c.filename.replace('.cnt','.trg')
   if os.path.exists(tfile) and os.path.getsize(tfile)>0:
    return
   import slfile
+  first,ext=os.path.splitext(c.filename)
   cntdir,booknumber=os.path.split(first)
   try:
    sl=slfile.slfile(booknumber)
@@ -109,21 +84,19 @@ class sleep_eeg(avg_q.avg_q):
    return
   print("Found %s" % sl.filename)
 
-  c=avg_q_file(cntfile)
-  collapse_args=self.get_channel_collapse_args(c,bands=self.rejection_bands)
-  self.get_cntbands(c,collapse_args)
-  self.write('''
+  c.aftertrig=0 # Read the whole cnt file as one epoch
+  script=avg_q.Script(self)
+  self.add_cntbandssource(script,c,bands=self.rejection_bands)
+  script.add_transform('''
 write_generic stdout string
 echo -F stdout End of bands\\n
 sliding_average -M %(median_length)d 1
 write_generic stdout string
 echo -F stdout End of medbands\\n
-null_sink
--
 ''' % {
   'median_length': self.rejection_median_length,
   })
-  rdr=self.runrdr()
+  rdr=script.runrdr()
   nr_of_bands=len(self.rejection_bands)
   bands=[[] for x in range(nr_of_bands)]
   for r in rdr:
@@ -161,6 +134,8 @@ null_sink
   point=0
   nr_of_points=len(bands[0])
   tuples=[]
+  time,stage,checks,arousals,myos,eyemovements,remcycle,nremcycle=-1,0,0,0,0,0,-1,-1
+  print(len(sl.tuples))
   while point<nr_of_points:
    checkmark=0
    checkmarks=[0 for i in range(nr_of_bands)]
@@ -193,80 +168,22 @@ null_sink
   t.writetuples(tuples,f)
   f.close()
   sl.close()
- def spect_from_cnt(self,cntfile,checkpoint,postprocess,average_options=''):
-  """Average epoch spectra using .trg file.
-  checkpoint is a callback function deciding which points to average
-  postprocess defines what to do with the resulting single epoch
-  average_options may e.g. be '-t -u' for variance assessments"""
-  first,ext=os.path.splitext(cntfile)
-  if not ext:
-   # No extension: Assume this is a book number
-   cntfile=self.locate_cnt(cntfile)
-   if not cntfile:
-    print("spect_from_cnt: Can't locate cnt file for book number %s" % first)
-    return
-  tfile=cntfile.replace('.cnt','.trg')
-  self.write('''
-read_synamps -R stdin %(cntfile)s 0 1
-average %(average_options)s
-Post:
-swap_fc
-%(postprocess)s
--
-''' % {
-   'cntfile': cntfile, 
-   'postprocess': postprocess,
-   'average_options': average_options},
-  )
-
-  from . import trgfile
-  t=trgfile.trgfile(tfile)
-  for point,code,codes in t:
-   point=int(point)
-   code=int(code)
-   (stage, remcycle, nremcycle, arousals, myos, eyemovements, checks, checkmark_Total, checkmark_Gamma)=codes.split("\t")
-   remcycle=int(remcycle)
-   nremcycle=int(nremcycle)
-   arousals=int(arousals)
-   myos=int(myos)
-   eyemovements=int(eyemovements)
-   checks=int(checks)
-   checkmark_Total=(checkmark_Total=='1')
-   checkmark_Gamma=(checkmark_Gamma=='1')
-
-   if checkpoint(point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma):
-    self.write("%d\t1\n" % point)
-  self.write("0\t0\n") # A 0 code indicates end of the trigger list
  def get_spect_trim(self,bands=defaultbands):
   trim='trim -x -s'
   for fromHz,toHz,name in bands:
    trim+= ' '+fromHz+' '+toHz
   return trim
- def get_epoch_selector(self,stagename,cycle=None):
-  stagelist=stagenames2stagelist[stagename]
-  return (lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
-   stage in stagelist and code>0 and (cycle==None or remcycle==cycle))
- def average_spectra(self,cntfiles,stage,cycle,postprocess,average_flags=''):
-  import tempfile
-  tmpfile=tempfile.mktemp()
-  append=''
-  for cntfile in cntfiles:
-   self.spect_from_cnt(cntfile,self.get_epoch_selector(stage,cycle),'''
-writeasc %(append)s -b %(tmpfile)s
-''' % {'tmpfile': tmpfile, 'append': append})
-   append='-a'
-  self.write('''
-readasc %(tmpfile)s
-average %(average_flags)s
-Post:
-%(postprocess)s
--
-''' % {'tmpfile': tmpfile, 'average_flags': average_flags, 'postprocess': postprocess})
-  self.run()
-  os.unlink(tmpfile)
- def get_measures(self,cntfile,stage,cycle,bands=defaultbands):
+ def get_measures(self,cntfile,stage,cycle=None,bands=defaultbands):
   '''Average epochs from cnt and directly measure the result'''
-  self.spect_from_cnt(cntfile,self.get_epoch_selector(stage,cycle), '''
+  c=cntspectsource(cntfile)
+  if c.filename is None:
+   return
+  c.set_stage_cycle(stage,cycle)
+  script=avg_q.Script(self)
+  script.add_Epochsource(c)
+  script.set_collect('average')
+  script.add_postprocess('''
+swap_fc
 trim -x 0+1 48
 calc exp
 '''+self.get_spect_trim(bands)+'''
@@ -275,7 +192,7 @@ query -N nrofaverages
 write_generic -P stdout string
 ''')
   outline=[]
-  for line in self.runrdr():
+  for line in script.runrdr():
    if '=' in line:
     varname,value=line.split('=')
     if varname=='nrofaverages':
@@ -283,25 +200,6 @@ write_generic -P stdout string
    else:
     yield outline+[float(x) for x in line.split('\t')]
     outline=[]
- def spect_measure(self,bands=defaultbands,postprocess=''):
-  """Generator yielding spectral measurements"""
-  epochendstring="End of epoch"
-  self.write(self.get_spect_trim(bands) + '''
-%(postprocess)s
-write_generic -P stdout string
-echo -F stdout %(epochendstring)s\\n
-null_sink
--
-''' % {'postprocess': postprocess, 'epochendstring': epochendstring}
-)
-  # One frequency list per channel
-  spect=[]
-  for line in self.runrdr():
-   if line==epochendstring:
-    yield spect
-    spect=[]
-   else:
-    spect.append([float(x) for x in line.split('\t')])
  def get_Delta_slope(self,booknumber):
   # cf. Esser:2007
   from . import sleep_file
@@ -368,3 +266,74 @@ null_sink
     if lastneg:
      intervening_pos.append((point,amplitude))
   return values
+
+cntspectfile_paths=(
+ '/home/charly/tmp/autosleep/',
+)
+# Helpers for the get_measures method
+stagenames2stagelist={
+ 'NREM': ['2','3','4'],
+ 'REM': ['5'],
+}
+
+class cntspectsource(avg_q.Epochsource):
+ '''Encapsulate the concept of an epoch source yielding spectra for defined epochs.
+    These are read from .cnt files and .trg files used to yield subsets of epochs.
+ '''
+ dcache=None
+ def __init__(self,filename):
+  first,ext=os.path.splitext(filename)
+  if ext:
+   self.filename=filename
+  else:
+   # No extension: Assume this is a book number
+   self.locate(first)
+   if self.filename is None:
+    print("cntspectsource: Can't locate cnt file for book number %s" % first)
+    return
+  # This prepares for reading continuously - changed when using set_epochfilter
+  avg_q.Epochsource.__init__(self,self.filename,beforetrig=0,aftertrig=1,continuous=True)
+  self.add_branchtransform('''
+# NeuroScan files store the sampling freq as int; we have 1/30s...
+set sfreq 0.03333333333
+''')
+ def locate(self,booknumber):
+  import bookno
+  if not self.dcache:
+   import idircache
+   self.dcache=idircache.idircache(extensionstrip=('cnt'))
+  file_bookno=bookno.file_bookno(booknumber)
+  self.filename=self.dcache.find(cntspectfile_paths,file_bookno)
+ def set_epochfilter(self,epochfilter):
+  tfile=self.filename.replace('.cnt','.trg')
+  from . import trgfile
+  t=trgfile.trgfile(tfile)
+  trigpoints=[]
+  for point,code,codes in t:
+   point=int(point)
+   code=int(code)
+   (stage, remcycle, nremcycle, arousals, myos, eyemovements, checks, checkmark_Total, checkmark_Gamma)=codes.split("\t")
+   remcycle=int(remcycle)
+   nremcycle=int(nremcycle)
+   arousals=int(arousals)
+   myos=int(myos)
+   eyemovements=int(eyemovements)
+   checks=int(checks)
+   checkmark_Total=(checkmark_Total=='1')
+   checkmark_Gamma=(checkmark_Gamma=='1')
+
+   if epochfilter(point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma):
+    trigpoints.append(point)
+
+  self.continuous=False
+  self.set_trigpoints(trigpoints)
+ def set_stage_cycle(self,stagename,cycle=None):
+  if isinstance(stagename,list):
+   stagenames=stagename
+  else:
+   stagenames=[stagename]
+  stagelist=[]
+  for stagename in stagenames:
+   stagelist.extend(stagenames2stagelist.get(stagename,[stagename]))
+  self.set_epochfilter(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
+   stage in stagelist and code>0 and (cycle==None or remcycle==cycle))

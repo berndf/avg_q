@@ -39,7 +39,7 @@ class Paradigm_Script(avg_q.Script):
    point_list=[trial[eventindex] for trial in paradigm_instance.trials[condition]] 
    epochsource=avg_q.Epochsource(infile, beforetrig, aftertrig)
    epochsource.set_trigpoints(point_list)
-   epochsource.set_branch(preprocess)
+   epochsource.add_branchtransform(preprocess)
    self.add_Epochsource(epochsource)
    shiftwidth_points=0
   else:
@@ -72,6 +72,6 @@ set xdata 1
 ''' % {'winstart_points': winstart_points,'trimlength':trimlength,'beforetrig':beforetrig}
     epochsource=avg_q.Epochsource(infile, beforetrig_points, winend_points-beforetrig_points)
     epochsource.set_trigpoints(go_point)
-    epochsource.set_branch(branch_text)
+    epochsource.add_branchtransform(branch_text)
     self.add_Epochsource(epochsource)
   return shiftwidth_points

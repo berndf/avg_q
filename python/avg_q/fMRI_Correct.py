@@ -579,7 +579,7 @@ class avgEPI(object):
   }
   epochsource=avg_q.Epochsource(self.infile,beforetrig,aftertrig)
   epochsource.set_trigpoints(EPI[0])
-  epochsource.set_branch(branch)
+  epochsource.add_branchtransform(branch)
   return epochsource
  def avgEPI(self,crsfile,runindex):
   self.set_crsfile(crsfile)

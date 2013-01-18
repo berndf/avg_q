@@ -335,10 +335,19 @@ class Epochsource(object):
   self.triglist=triglist
   self.trigfile=trigfile
   self.trigtransfer=trigtransfer
-  self.branch=None
+  self.branch=[]
   self.trigpoints=None
- def set_branch(self,branch):
-  self.branch=branch
+ def add_branchtransform(self,transform):
+  # Add a branch script fragment applying only to epochs from this epoch source.
+  # Will accept lines already preceded by the branch mark '>' but otherwise will add '>'.
+  # Take care here that every line becomes an item in the 'branch' list
+  for methodline in transform.split('\n'):
+   methodline=methodline.strip()
+   if methodline=='': continue
+   if methodline.startswith('>'):
+    self.branch.append(methodline)
+   else:
+    self.branch.append('>'+methodline)
  def set_trigpoints(self,trigpoints):
   if self.trigfile is not None:
    raise Exception("Epochsource: cannot specify both trigpoints and trigfile!")
@@ -358,16 +367,8 @@ class Epochsource(object):
    self.trigpoints=None
   else:
    avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, continuous=self.continuous, fromepoch=self.fromepoch, epochs=self.epochs, offset=self.offset, triglist=self.triglist, trigfile=self.trigfile, trigtransfer=self.trigtransfer)
-  if self.branch:
-   # Send a branch script fragment applying only to epochs from this epoch source.
-   # Will accept lines already preceded by the branch mark '>' but otherwise will add '>'.
-   for methodline in self.branch.split('\n'):
-    methodline=methodline.strip()
-    if methodline=='': continue
-    if methodline.startswith('>'):
-     avg_q_instance.write(methodline+'\n')
-    else:
-     avg_q_instance.write('>'+methodline+'\n')
+  for methodline in self.branch:
+   avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):
   if self.trigpoints is not None:
    if len(self.trigpoints)>0 and isinstance(self.trigpoints[0],tuple):

@@ -9,6 +9,4 @@ avg_q module root directory.
 from .avg_q import avg_q
 from .avg_q import Script
 from .avg_q import Epochsource
-# Dito for sleep_eeg...
-from .sleep_eeg import sleep_eeg
 from .avg_q_file import avg_q_file
