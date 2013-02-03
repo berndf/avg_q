@@ -1,5 +1,6 @@
 # Copyright (C) 2010 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+from . import Epochsource
 from . import Detector
 from . import avg_q_file
 
@@ -80,7 +81,7 @@ extract_item %(itempart)d
   })
  
  def measure_conditions(self,ascfile,conditions,zthreshold,raw=False):
-  infile=avg_q_file(ascfile) # Take care not to call set_infile on tdetector since we do the get_epoch ourself!
+  infile=avg_q_file(ascfile)
   triggers=self.avg_q_instance.get_filetriggers(infile).gettuples()
 
   available_epochs=[]
@@ -94,7 +95,8 @@ extract_item %(itempart)d
    for fromepoch in available_epochs[condition_index]:
     position,code,description=triggers[fromepoch-1]
     for theta in zthreshold,-zthreshold:
-     self.avg_q_instance.getepoch(infile,fromepoch=fromepoch,epochs=1)
+     self.Epochsource_list=[Epochsource(infile,fromepoch=fromepoch,epochs=1)]
+     self.transforms=[]
      outtuples=self.detect_z_crossings(theta,raw)
      if outtuples:
       IC_latrange_list.extend(self.get_ranges(outtuples, theta))
