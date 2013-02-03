@@ -70,8 +70,9 @@ External libraries needed
   linear algebra packages lapack and blas are needed (http://www.netlib.org/).
   Additionally, f2c.h is needed and best provided by installing libf2c (http://www.netlib.org/f2c/).
 
-- For sound input/output (sox library, see below): GSM library
-  (http://packages.qa.debian.org/libg/libgsm.html)
+- For sound input/output, the sox library (libsox, current: >=v14) is used if available.
+  If libsox presence is not detected on the system at compile time, read_sound
+  and write_sound methods will not be built.
 
 Most Linux distributions contain packages for these libraries. To compile avg_q yourself,
 it may be necessary to install the development packages of these libraries in addition to
@@ -82,8 +83,6 @@ Third-party libraries with modifications, included in the current source tree
 
 - For plotting (needed by posplot): vogl/ http://www.autochthonous.org/eric/index.html
 
-- For sound input/output (read_sound, write_sound): sox/ http://sox.sourceforge.net/
-
 - For Independent Component Analysis (icadecomp): bf/ica/ica.[ch] http://www.cnl.salk.edu/~enghoff/
 
 Windows installation
@@ -92,4 +91,10 @@ Windows installation
 The current distribution is intended for cross-compilation from Linux, using
 mingw32. For HDF4, I had to compile the HDF source 4.2r1-hrepack-p4 myself, including
 its dependencies jpeg-6b, szip-2.1 and zlib-1.2.3. Similarly, I cross-compiled GTK+.
+
+For sox (http://sox.sourceforge.net/), few files needed modification to build
+using mingw32; these are included in winlibs/sox. The rest of the official distribution
+needs to be unpacked under that directory as well, and configured using the
+'winlibs/sox/doit' script. avg_q no longer bundles (an old version of) sox
+since newer sox supports using it as a (possibly shared) library.
 
