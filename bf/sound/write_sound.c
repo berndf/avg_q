@@ -43,7 +43,7 @@
 #endif
 #include "transform.h"
 #include "bf.h"
-#include "st_i.h"
+#include "sox.h"
 /*}}}  */
 
 /*{{{  Argument defs*/
@@ -51,7 +51,7 @@ LOCAL const char *const bits_choice[]={
  "-8", "-16", "-32", "-float", "-double", "-ieee", NULL
 };
 LOCAL int bits_sizes[]={
- ST_SIZE_8BIT, ST_SIZE_16BIT, ST_SIZE_32BIT, ST_SIZE_32BIT, ST_SIZE_64BIT, ST_SIZE_64BIT
+ 8, 16, 32, 32, 64, 64
 };
 LOCAL const char *const encoding_choice[]={
  "-u", "-s", "-ul", "-al",
@@ -59,9 +59,8 @@ LOCAL const char *const encoding_choice[]={
  "-inv_ul", "-inv_al", NULL
 };
 LOCAL int encoding_codes[]={
- ST_ENCODING_UNSIGNED, ST_ENCODING_SIGN2, ST_ENCODING_ULAW, ST_ENCODING_ALAW,
- ST_ENCODING_FLOAT, ST_ENCODING_ADPCM, ST_ENCODING_IMA_ADPCM, ST_ENCODING_GSM,
- ST_ENCODING_INV_ULAW, ST_ENCODING_INV_ALAW
+ SOX_ENCODING_UNSIGNED, SOX_ENCODING_SIGN2, SOX_ENCODING_ULAW, SOX_ENCODING_ALAW,
+ SOX_ENCODING_FLOAT, SOX_ENCODING_MS_ADPCM, SOX_ENCODING_IMA_ADPCM, SOX_ENCODING_GSM,
 };
 enum ARGS_ENUM {
  ARGS_HELP=0,
@@ -83,231 +82,27 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 /*}}}  */
 
 struct write_sound_storage {
- st_sample_t *outbuf;
- struct st_soundstream outformat;
+ sox_sample_t *outbuf;
+ sox_format_t *outformat;
 };
 
-/*{{{  SOX routines and #defines*/
 #define EXPORT
-#define WRITEBINARY "wb"
-/* From sox.c: */
-#define LASTCHAR        '/'
 
-/* We need to replicate some global things from util.c here, otherwise we
- * would not be able to incorporate sox's error and report mechanism. 
- * Nothing should be needed from util.c, otherwise linking will fail. */
-EXPORT float volume = 1.0;	/* expansion coefficient */
-EXPORT int dovolume = 0;
-EXPORT int verbose = 0;	/* be noisy on stderr */
+EXPORT Bool sox_init_done=FALSE;
 EXPORT char *myname;
-LOCAL char msgbuf[MESSAGE_BUFLEN];
 EXPORT external_methods_ptr sox_emethods;
 
-/* This one is needed by both write_sound and read_sound: */
-EXPORT int filetype(int fd) {
- struct stat st;
- fstat(fd, &st);
- return st.st_mode & S_IFMT;
-}
-LOCAL int strcmpcase(char *s1, char *s2) {
- while(*s1 && *s2 && (tolower(*s1) == tolower(*s2))) {
-  s1++, s2++;
- }
- return *s1 - *s2;
-}
+LOCAL char msgbuf[MESSAGE_BUFLEN];
 EXPORT void
-st_report(const char *fmt, ...)
-{
- va_list args;
-
- if (! verbose)
-	 return;
-
- va_start(args, fmt);
- vsnprintf(msgbuf, MESSAGE_BUFLEN, fmt, args);
- /* Set this to tracelevel 2, so that we have a chance to avoid the 'reports' */
- TRACEMS2(sox_emethods, 2, "%s: %s\n", MSGPARM(myname), MSGPARM(msgbuf));
- va_end(args);
+avg_q_sox_output_message_handler(
+    unsigned level,                       /* 1 = FAIL, 2 = WARN, 3 = INFO, 4 = DEBUG, 5 = DEBUG_MORE, 6 = DEBUG_MOST. */
+    LSX_PARAM_IN_Z char const * filename, /* Source code __FILENAME__ from which message originates. */
+    LSX_PARAM_IN_PRINTF char const * fmt, /* Message format string. */
+    LSX_PARAM_IN va_list ap               /* Message format parameters. */
+) {
+ vsnprintf(msgbuf,MESSAGE_BUFLEN,fmt,ap);
+ TRACEMS(sox_emethods,level-1,msgbuf);
 }
-EXPORT void
-st_warn(const char *fmt, ...)
-{
- va_list args;
-
- va_start(args, fmt);
- vsnprintf(msgbuf, MESSAGE_BUFLEN, fmt, args);
- va_end(args);
- TRACEMS2(sox_emethods, 0, "%s: %s\n", MSGPARM(myname), MSGPARM(msgbuf));
-}
-EXPORT void
-st_fail(const char *fmt, ...)
-{
- va_list args;
-
- va_start(args, fmt);
- vsnprintf(msgbuf, MESSAGE_BUFLEN, fmt, args);
- va_end(args);
- /* Note that util.c calls cleanup() here, which is def'd in sox.c. 
-  * We don't have such a cleanup mechanism in avg_q (yet). */ 
- ERREXIT2(sox_emethods, "%s: %s\n", MSGPARM(myname), MSGPARM(msgbuf));
-}
-EXPORT void
-st_fail_errno(ft_t ft, int st_errno, const char *fmt, ...)
-{
- va_list args;
-
- ft->st_errno = st_errno;
-
- va_start(args, fmt);
- vsnprintf(ft->st_errstr, 256, fmt, args);
- va_end(args);
- ft->st_errstr[255] = '\0';
-}
-/*
- * Check that we have a known format suffix string.
- */
-EXPORT int
-st_gettype(ft_t formp)
-{
- char **list;
- int i;
-
- if (! formp->filetype)
-st_fail("Must give file type for %s file, either as suffix or with -t option",
-formp->filename);
- for(i = 0; st_formats[i].names; i++) {
-  for(list = st_formats[i].names; *list; list++) {
-   char *s1 = *list, *s2 = formp->filetype;
-   if (! strcmpcase(s1, s2))
-    break; /* not a match */
-  }
-  if (! *list)
-   continue;
-  /* Found it! */
-  formp->h = &st_formats[i];
-  return ST_SUCCESS;
- }
- if (! strcmpcase(formp->filetype, "snd")) {
-  verbose = 1;
-  st_report("File type '%s' is used to name several different formats.", formp->filetype);
-  st_report("If the file came from a Macintosh, it is probably");
-  st_report("a .ub file with a sample rate of 11025 (or possibly 5012 or 22050).");
-  st_report("Use the sequence '-t .ub -r 11025 file.snd'");
-  st_report("If it came from a PC, it's probably a Soundtool file.");
-  st_report("Use the sequence '-t .sndt file.snd'");
-  st_report("If it came from a NeXT, it's probably a .au file.");
-  st_fail("Use the sequence '-t .au file.snd'\n");
- }
- st_fail("File type '%s' of %s file is not known!",
-  formp->filetype, formp->filename);
- return ST_EFMT;
-}
-EXPORT int
-st_is_bigendian(void)
-{
-    int b;
-    char *p;
-
-    b = 1;
-    p = (char *) &b;
-    if (!*p)
-        return 1;
-    else
-        return 0;
-}
-
-EXPORT int
-st_is_littleendian(void)
-{
-    int b;
-    char *p;
-
-    b = 1;
-    p = (char *) &b;
-    if (*p)
-        return 1;
-    else
-        return 0;
-}
-/*
- * st_parsesamples
- *
- * Parse a string for # of samples.  If string ends with a 's'
- * then string is interrepted as a user calculated # of samples.
- * If string contains ':' or '.' or if it ends with a 't' then its
- * treated as an amount of time.  This is converted into seconds and
- * fraction of seconds and then use the sample rate to calculate
- * # of samples.
- * Returns ST_EOF on error.
- */
-EXPORT int
-st_parsesamples(st_rate_t rate, char *str, st_size_t *samples, char def)
-{
-    int found_samples = 0, found_time = 0;
-    int time;
-    long long_samples;
-    float frac = 0;
-
-    if (strchr(str, ':') || strchr(str, '.') || str[strlen(str)-1] == 't')
-        found_time = 1;
-    else if (str[strlen(str)-1] == 's')
-        found_samples = 1;
-
-    if (found_time || (def == 't' && !found_samples))
-    {
-        *samples = 0;
-
-        while(1)
-        {
-            if (sscanf(str, "%d", &time) != 1)
-                return ST_EOF;
-            *samples += time;
-
-            while (*str != ':' && *str != '.' && *str != 0)
-                str++;
-
-            if (*str == '.' || *str == 0)
-                break;
-
-            /* Skip past ':' */
-            str++;
-            *samples *= 60;
-        }
-
-        if (*str == '.')
-        {
-            if (sscanf(str, "%f", &frac) != 1)
-                return ST_EOF;
-        }
-
-        *samples *= rate;
-        *samples += (unsigned int)rint(rate * frac);
-        return ST_SUCCESS;
-    }
-    if (found_samples || (def == 's' && !found_time))
-    {
-        if (sscanf(str, "%ld", &long_samples) != 1)
-            return ST_EOF;
-        *samples = long_samples;
-        return ST_SUCCESS;
-    }
-    return ST_EOF;
-}
-/*}}}  */
-
-/*{{{  Own global functions*/
-EXPORT void
-st_list_formats(void) {
- int i;
- TRACEMS(sox_emethods, -1, "Supported SOX library formats:\n");
- for (i = 0; st_formats[i].names != NULL; i++) {
-  /* only print the first name */
-  snprintf(msgbuf, MESSAGE_BUFLEN, "%s ", st_formats[i].names[0]);
-  TRACEMS(sox_emethods, -1, msgbuf);
- }
- TRACEMS(sox_emethods, -1, "\n");
-}
-/*}}}  */
 
 /*{{{  write_sound_init(transform_info_ptr tinfo) {*/
 METHODDEF void
@@ -315,76 +110,45 @@ write_sound_init(transform_info_ptr tinfo) {
  struct write_sound_storage *local_arg=(struct write_sound_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  char const *ofile=args[ARGS_OFILE].arg.s;
+ sox_signalinfo_t signal;
+ sox_encodinginfo_t encodingstruct, *encoding=NULL;
+ sox_globals_t *sox_globalsp;
 
- /* This is needed by the error handling kludge: */
+ /* This is needed by the error handler: */
  myname=tinfo->methods->method_name;
  sox_emethods=tinfo->emethods;
 
+ if (!sox_init_done) {
+  /* SOX doesn't like sox_init() to be called twice --
+   * This may occur for example if both read_sound and write_sound are present
+   * in a script */
+  if (sox_init()!=SOX_SUCCESS) {
+   ERREXIT(tinfo->emethods, "write_sound_init: sox init failed.\n");
+  }
+  sox_init_done=TRUE;
+ }
+ sox_globalsp=sox_get_globals();
+ sox_globalsp->output_message_handler=&avg_q_sox_output_message_handler;
+
  if (args[ARGS_HELP].is_set) {
-  st_list_formats();
+  //st_list_formats();
   ERREXIT(tinfo->emethods, "write_sound: Help request by user.\n");
  }
 
- if ((local_arg->outformat.filetype = strrchr(ofile, LASTCHAR)))
-  local_arg->outformat.filetype++;
- else
-  local_arg->outformat.filetype = ofile;
- if ((local_arg->outformat.filetype = strrchr(local_arg->outformat.filetype, '.'))) {
-  local_arg->outformat.filetype++;
+ signal.rate=(sox_rate_t)tinfo->sfreq;
+ signal.channels=tinfo->nr_of_channels;
+ if (args[ARGS_ENCODING].is_set) {
+  encodingstruct.encoding=encoding_codes[args[ARGS_ENCODING].arg.i];
+  encodingstruct.bits_per_sample=(args[ARGS_BITS].is_set ? bits_sizes[args[ARGS_BITS].arg.i] : 16);
+  encoding=&encodingstruct;
+ }
+ if ((local_arg->outformat=sox_open_write(ofile, &signal, encoding, NULL, NULL, NULL))==NULL) {
+  ERREXIT1(tinfo->emethods, "write_sound_init: Can't open output file '%s'\n", MSGPARM(ofile));
  }
 
- if (local_arg->outformat.filetype!=NULL) {
-  if (strcmp(local_arg->outformat.filetype, "ossdsp")==0) {
-   ofile="/dev/dsp";
-  } else if (strcmp(local_arg->outformat.filetype, "sunau")==0) {
-   ofile="/dev/audio";
-  }
- }
+ //local_arg->outformat.comment=tinfo->comment;
 
- local_arg->outformat.filename = ofile;
- /*
-  * There are two choices here:
-  * 1) stomp the old file - normal shell "> file" behavior
-  * 2) fail if the old file already exists - csh mode
-  */
- if (strcmp(ofile, "stdout")==0) {
-  local_arg->outformat.fp = stdout;
- } else if (strcmp(ofile, "stderr")==0) {
-  local_arg->outformat.fp = stderr;
- } else {
-#ifdef unix
-   /* 
-   * Remove old file if it's a text file, but 
-    * preserve Unix /dev/sound files.  I'm not sure
-   * this needs to be here, but it's not hurting
-   * anything.
-   */
-  if ((local_arg->outformat.fp = fopen(ofile, WRITEBINARY)) && 
-      (filetype(fileno(local_arg->outformat.fp)) == S_IFREG)) {
-   fclose(local_arg->outformat.fp);
-   unlink(ofile);
-   creat(ofile, 0666);
-   local_arg->outformat.fp = fopen(ofile, WRITEBINARY);
-  }
-#else
-  local_arg->outformat.fp = fopen(ofile, WRITEBINARY);
-#endif
-  if (local_arg->outformat.fp == NULL)
-   ERREXIT1(tinfo->emethods, "write_sound_init: Can't open output file '%s'\n", MSGPARM(ofile));
- }
-
- local_arg->outformat.seekable = (filetype(fileno(local_arg->outformat.fp)) == S_IFREG); 
- local_arg->outformat.info.rate=(st_rate_t)tinfo->sfreq;
- local_arg->outformat.info.size=(args[ARGS_BITS].is_set ? bits_sizes[args[ARGS_BITS].arg.i] : ST_SIZE_16BIT);
- local_arg->outformat.info.encoding=(args[ARGS_ENCODING].is_set ? encoding_codes[args[ARGS_ENCODING].arg.i] : -1);
- local_arg->outformat.info.channels=tinfo->nr_of_channels;
- local_arg->outformat.comment=tinfo->comment;
-
- st_gettype(&local_arg->outformat);
-
- (*local_arg->outformat.h->startwrite)(&local_arg->outformat);
- 
- if ((local_arg->outbuf=(st_sample_t *)malloc(tinfo->nr_of_points*tinfo->nr_of_channels*sizeof(long)))==NULL) {
+ if ((local_arg->outbuf=(sox_sample_t *)malloc(tinfo->nr_of_points*tinfo->nr_of_channels*sizeof(sox_sample_t)))==NULL) {
   ERREXIT(tinfo->emethods, "write_sound_init: Error allocating outbuf memory.\n");
  }
 
@@ -396,7 +160,7 @@ write_sound_init(transform_info_ptr tinfo) {
 METHODDEF DATATYPE *
 write_sound(transform_info_ptr tinfo) {
  struct write_sound_storage *local_arg=(struct write_sound_storage *)tinfo->methods->local_storage;
- st_sample_t *inoutbuf=local_arg->outbuf;
+ sox_sample_t *inoutbuf=local_arg->outbuf;
  array myarray;
 
  myname=tinfo->methods->method_name;
@@ -408,7 +172,7 @@ write_sound(transform_info_ptr tinfo) {
    *inoutbuf++ = (int)rint(array_scan(&myarray));
   } while (myarray.message==ARRAY_CONTINUE);
  } while (myarray.message==ARRAY_ENDOFVECTOR);
- (*local_arg->outformat.h->write)(&local_arg->outformat, local_arg->outbuf, (long) tinfo->nr_of_points*tinfo->nr_of_channels);
+ sox_write(local_arg->outformat, local_arg->outbuf, (size_t) tinfo->nr_of_points*tinfo->nr_of_channels);
 
  return tinfo->tsdata;	/* Simply to return something `useful' */
 }
@@ -420,12 +184,11 @@ write_sound_exit(transform_info_ptr tinfo) {
  struct write_sound_storage *local_arg=(struct write_sound_storage *)tinfo->methods->local_storage;
 
  myname=tinfo->methods->method_name;
- (*local_arg->outformat.h->stopwrite)(&local_arg->outformat);
- if (local_arg->outformat.fp!=stdout && local_arg->outformat.fp!=stderr) {
-  fclose(local_arg->outformat.fp);
- } else {
-  fflush(local_arg->outformat.fp);
- }
+ sox_close(local_arg->outformat);
+ /* It must be ensured that sox_quit() is called at most once and only after
+  * all SOX users are finished - possibly atexit() with extra global variable
+  * and such, so we just leave it alone
+  *sox_quit(); */
  free_pointer((void **)&local_arg->outbuf);
 
  tinfo->methods->init_done=FALSE;

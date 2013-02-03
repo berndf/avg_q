@@ -1,0 +1,1 @@
+CC=/usr/bin/i686-w64-mingw32-gcc LD=/usr/bin/i686-w64-mingw32-ld AR=/usr/bin/i686-w64-mingw32-ar RANLIB=/usr/bin/i686-w64-mingw32-ranlib bash -c "./configure --host=mingw32 --enable-shared=no --without-waveaudio; make"

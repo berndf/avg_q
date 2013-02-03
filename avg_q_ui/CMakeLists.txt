@@ -27,7 +27,7 @@ IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
    -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll
    -lglib-2.0.dll)
  ELSE(AVG_Q_GTK3)
-  SET(GTKPATH ${CMAKE_SOURCE_DIR}/wingtk2)
+  SET(GTKPATH ${CMAKE_SOURCE_DIR}/winlibs/wingtk2)
   SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
   SET(GTK_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
    -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)

@@ -22,7 +22,6 @@
  * read_sound.c module to read data from some SOX (SOund eXchange) input format
  *	-- Bernd Feige 18.10.1996
  *
- * If (tinfo->filename eq "stdin") tinfo->fileptr=stdin;
  */
 /*}}}  */
 
@@ -35,29 +34,7 @@
 #include <sys/stat.h>
 #include "transform.h"
 #include "bf.h"
-#include "st_i.h"
-/*}}}  */
-
-/*{{{  Patch of code from sox/util.c needed by the DSP drivers (eg oss.c): */
-#include <signal.h>
-static ft_t ft_queue[2];
-static void
-sigint(int s) {
-    if (s == SIGINT) {
-	if (ft_queue[0])
-	    ft_queue[0]->file.eof = 1;
-	if (ft_queue[1])
-	    ft_queue[1]->file.eof = 1;
-    }
-}
-void
-sigintreg(ft_t ft) {
-    if (ft_queue[0] == 0)
-	ft_queue[0] = ft;
-    else
-	ft_queue[1] = ft;
-    signal(SIGINT, sigint);
-}
+#include "sox.h"
 /*}}}  */
 
 /*{{{  #defines*/
@@ -86,28 +63,25 @@ struct read_sound_storage {
  int fromepoch;
  int epochs;
  long epochlength;
- long buflen;
- st_sample_t *inbuf;
- struct st_soundstream informat;
+ size_t buflen;
+ sox_sample_t *inbuf;
+ sox_format_t *informat;
 };
 
-/*{{{  SOX routines and #defines*/
-#define IMPORT
-#define READBINARY "rb"
-/* From sox.c: */
-#define LASTCHAR        '/'
+#define IMPORT extern
 
 /* These global variables are defined in write_sound.c together with
  * the other SOX bindings: */
+IMPORT Bool sox_init_done;
 IMPORT char *myname;
 IMPORT external_methods_ptr sox_emethods;
-IMPORT int st_gettype(ft_t formp);
-IMPORT int filetype(int fd);
-
-/* This is my own global helper function: */
-IMPORT int filetype(int fd);
-IMPORT void st_list_formats(void);
-/*}}}  */
+IMPORT void
+avg_q_sox_output_message_handler(
+    unsigned level,                       /* 1 = FAIL, 2 = WARN, 3 = INFO, 4 = DEBUG, 5 = DEBUG_MORE, 6 = DEBUG_MOST. */
+    LSX_PARAM_IN_Z char const * filename, /* Source code __FILENAME__ from which message originates. */
+    LSX_PARAM_IN_PRINTF char const * fmt, /* Message format string. */
+    LSX_PARAM_IN va_list ap               /* Message format parameters. */
+);
 
 /*{{{  read_sound_init(transform_info_ptr tinfo) {*/
 METHODDEF void
@@ -115,95 +89,60 @@ read_sound_init(transform_info_ptr tinfo) {
  struct read_sound_storage *local_arg=(struct read_sound_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  char const *ifile=args[ARGS_IFILE].arg.s;
+ sox_globals_t *sox_globalsp;
 
- /* This is needed by the error handling kludge: */
+ /* This is needed by the error handler: */
  myname=tinfo->methods->method_name;
  sox_emethods=tinfo->emethods;
 
+ if (!sox_init_done) {
+  /* SOX doesn't like sox_init() to be called twice --
+   * This may occur for example if both read_sound and write_sound are present
+   * in a script */
+  if (sox_init()!=SOX_SUCCESS) {
+   ERREXIT(tinfo->emethods, "read_sound_init: sox init failed.\n");
+  }
+  sox_init_done=TRUE;
+ }
+ sox_globalsp=sox_get_globals();
+ sox_globalsp->output_message_handler=&avg_q_sox_output_message_handler;
+
  if (args[ARGS_HELP].is_set) {
-  st_list_formats();
+  //st_list_formats();
   ERREXIT(tinfo->emethods, "read_sound: Help request by user.\n");
  }
 
  local_arg->epochs=(args[ARGS_EPOCHS].is_set ? args[ARGS_EPOCHS].arg.i : -1);
 
- if ((local_arg->informat.filetype = strrchr(ifile, LASTCHAR)))
-  local_arg->informat.filetype++;
- else
-  local_arg->informat.filetype = ifile;
- if ((local_arg->informat.filetype = strrchr(local_arg->informat.filetype, '.')))
-  local_arg->informat.filetype++;
- else /* Default to "auto" */
-  local_arg->informat.filetype = "auto";
-
- if (local_arg->informat.filetype!=NULL) {
-  if (strcmp(local_arg->informat.filetype, "ossdsp")==0) {
-   ifile="/dev/dsp";
-  } else if (strcmp(local_arg->informat.filetype, "sunau")==0) {
-   ifile="/dev/audio";
-  }
+ if ((local_arg->informat = sox_open_read(ifile, NULL, NULL, NULL))==NULL) {
+  ERREXIT(tinfo->emethods, "read_sound_init: Can't open file.\n");
  }
 
- local_arg->informat.filename = ifile;
- if (strcmp(ifile, "stdin")==0)
-  local_arg->informat.fp = stdin;
- else if ((local_arg->informat.fp = fopen(ifile, READBINARY)) == NULL)
-  st_fail("Can't open input file '%s': %s", 
-   ifile, strerror(errno));
+ tinfo->points_in_file=local_arg->informat->signal.length/local_arg->informat->signal.channels;
 
- local_arg->informat.seekable  = (filetype(fileno(local_arg->informat.fp)) == S_IFREG);
- local_arg->informat.comment = local_arg->informat.filename;
-
- st_gettype(&local_arg->informat);
- local_arg->informat.info.channels= -1;
- local_arg->informat.info.encoding = -1;
- local_arg->informat.info.size = -1;
- local_arg->informat.length = -1;
- (* local_arg->informat.h->startread)(&local_arg->informat);
- /* A SOX peculiarity is that the driver might not set the number of channels
-  * if it is 1: */ 
- if (local_arg->informat.info.channels== -1) local_arg->informat.info.channels=1;
- tinfo->points_in_file=local_arg->informat.length;
-
- tinfo->sfreq=local_arg->informat.info.rate;
+ tinfo->sfreq=local_arg->informat->signal.rate;
 
  /*{{{  Process arguments that can be in seconds*/
  local_arg->beforetrig=(args[ARGS_OFFSET].is_set ? -gettimeslice(tinfo, args[ARGS_OFFSET].arg.s) : 0);
  local_arg->epochlength=gettimeslice(tinfo, args[ARGS_EPOCHLENGTH].arg.s);
  if (local_arg->epochlength==0) {
-  /* Read the whole file as one epoch. Within SOX, there is no predefined way
-   * to determine the length of the file in samples; We take the route to
-   * read the file twice. For this, the file must be seekable. */
-  if (local_arg->informat.seekable) {
-   st_sample_t *inbuf=(st_sample_t *)malloc(local_arg->informat.info.channels*sizeof(long));
-   if (inbuf==NULL) {
-    ERREXIT(tinfo->emethods, "read_sound_init: Error allocating temp inbuf memory.\n");
-   }
-   while (local_arg->buflen!=(*local_arg->informat.h->read)(&local_arg->informat, inbuf, (long)local_arg->informat.info.channels)) {
-    local_arg->epochlength++;
-   }
-   free(inbuf);
-   (*local_arg->informat.h->stopread)(&local_arg->informat);
-   fseek(local_arg->informat.fp, 0L, SEEK_SET);
-   (* local_arg->informat.h->startread)(&local_arg->informat);
-   if (local_arg->informat.info.channels== -1) local_arg->informat.info.channels=1;
-  } else {
-   ERREXIT(tinfo->emethods, "read_sound_init: Can determine the sound length only if the file is seekable.\n");
-  }
+  /* Read the whole file as one epoch. */
+  local_arg->epochlength=tinfo->points_in_file;
  }
  local_arg->aftertrig=local_arg->epochlength-local_arg->beforetrig;
  /*}}}  */
 
- local_arg->buflen=local_arg->epochlength*local_arg->informat.info.channels;
- if ((local_arg->inbuf=(st_sample_t *)malloc(local_arg->buflen*sizeof(long)))==NULL) {
+ local_arg->buflen=local_arg->epochlength*local_arg->informat->signal.channels;
+ if ((local_arg->inbuf=(sox_sample_t *)malloc(local_arg->buflen*sizeof(sox_sample_t)))==NULL) {
   ERREXIT(tinfo->emethods, "read_sound_init: Error allocating inbuf memory.\n");
  }
 
  /*{{{  Seek to fromepoch if necessary*/
  if (args[ARGS_FROMEPOCH].is_set) {
-  int i;
-  for (i=1; i<args[ARGS_FROMEPOCH].arg.i; i++) {
-   (*local_arg->informat.h->read)(&local_arg->informat, local_arg->inbuf, (long) local_arg->buflen);
+  uint64_t seek= (args[ARGS_FROMEPOCH].arg.i-1)*local_arg->epochlength*local_arg->informat->signal.channels;
+  /* Move the file pointer to the desired starting position */
+  if (sox_seek(local_arg->informat, seek, SOX_SEEK_SET) != SOX_SUCCESS) {
+   ERREXIT(tinfo->emethods, "read_sound_init: sox init failed.\n");
   }
  }
  /*}}}  */
@@ -225,12 +164,12 @@ METHODDEF DATATYPE *
 read_sound(transform_info_ptr tinfo) {
  struct read_sound_storage *local_arg=(struct read_sound_storage *)tinfo->methods->local_storage;
  array myarray;
- st_sample_t *ininbuf=local_arg->inbuf;
+ sox_sample_t *ininbuf=local_arg->inbuf;
 
  myname=tinfo->methods->method_name;
 
  if (local_arg->epochs-- ==0) return NULL;
- if (local_arg->buflen!=(*local_arg->informat.h->read)(&local_arg->informat, local_arg->inbuf, (long) local_arg->buflen)) return NULL;
+ if (local_arg->buflen!=sox_read(local_arg->informat, local_arg->inbuf, local_arg->buflen)) return NULL;
 
  tinfo->beforetrig=local_arg->beforetrig;
  tinfo->aftertrig=local_arg->aftertrig;
@@ -239,7 +178,7 @@ read_sound(transform_info_ptr tinfo) {
  /*{{{  Setup and allocate myarray*/
  myarray.element_skip=tinfo->itemsize=1;
  myarray.nr_of_vectors=tinfo->nr_of_points=tinfo->beforetrig+tinfo->aftertrig;
- myarray.nr_of_elements=tinfo->nr_of_channels=local_arg->informat.info.channels;
+ myarray.nr_of_elements=tinfo->nr_of_channels=local_arg->informat->signal.channels;
  if (tinfo->nr_of_points<=0) {
   ERREXIT1(tinfo->emethods, "read_sound: Invalid nr_of_points %d\n", MSGPARM(tinfo->nr_of_points));
  }
@@ -263,14 +202,14 @@ read_sound(transform_info_ptr tinfo) {
  tinfo->channelnames=NULL;
  tinfo->probepos=NULL;
  create_channelgrid(tinfo);
- if ((tinfo->comment=(char *)malloc(strlen(local_arg->informat.comment)+1))==NULL) {
+ if ((tinfo->comment=(char *)malloc(strlen(local_arg->informat->handler.description)+1))==NULL) {
   ERREXIT(tinfo->emethods, "read_sound: Error allocating comment\n");
  }
- strcpy(tinfo->comment, local_arg->informat.comment);
+ strcpy(tinfo->comment, local_arg->informat->handler.description);
  /*}}}  */
 
  tinfo->tsdata=myarray.start;
- tinfo->sfreq=local_arg->informat.info.rate;
+ tinfo->sfreq=local_arg->informat->signal.rate;
  tinfo->leaveright=0;
  tinfo->data_type=TIME_DATA;
 
@@ -284,9 +223,11 @@ read_sound_exit(transform_info_ptr tinfo) {
  struct read_sound_storage *local_arg=(struct read_sound_storage *)tinfo->methods->local_storage;
 
  myname=tinfo->methods->method_name;
- (*local_arg->informat.h->stopread)(&local_arg->informat);
- if (local_arg->informat.fp!=stdin) fclose(local_arg->informat.fp);
- local_arg->informat.fp=NULL;
+ sox_close(local_arg->informat);
+ /* It must be ensured that sox_quit() is called at most once and only after
+  * all SOX users are finished - possibly atexit() with extra global variable
+  * and such, so we just leave it alone
+  *sox_quit(); */
  free_pointer((void **)&local_arg->inbuf);
 
  tinfo->methods->init_done=FALSE;

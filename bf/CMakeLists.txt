@@ -87,7 +87,6 @@ SET(subdirs
  generic
  HDF
  mfx
- sound
  kn
  neuroscan
  freiburg
@@ -101,6 +100,13 @@ SET(subdirs
  TriAn
  ica
 )
+
+if (SOX_FOUND)
+ LIST(APPEND subdirs sound)
+ SET_SOURCE_FILES_PROPERTIES(method_list.c PROPERTIES 
+  COMPILE_FLAGS "-DAVG_Q_WITH_SOUND"
+ )
+endif (SOX_FOUND)
 
 FOREACH(subdir ${subdirs})
  # "." is binary_dir; Tells cmake to generate libbf here, not in subdirs

@@ -32,7 +32,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_read_kn,
  select_read_neurofile,
  select_read_rec,
+#ifdef AVG_Q_WITH_SOUND
  select_read_sound,
+#endif
  select_read_synamps,
  select_read_tucker,
  select_read_vitaport,
@@ -111,7 +113,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_write_kn,
  select_write_mfx,
  select_write_rec,
+#ifdef AVG_Q_WITH_SOUND
  select_write_sound,
+#endif
  select_write_synamps,
  select_write_vitaport,
 

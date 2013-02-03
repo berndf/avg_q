@@ -40,17 +40,17 @@ IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  SET(BUILD_SHARED_LIBS OFF)
  SET(VOGL_LIBS vogl)
  SET(HDF_INCLUDES 
-  ${CMAKE_SOURCE_DIR}/HDF/4.2r1-hrepack-p4/mfhdf/libsrc
-  ${CMAKE_SOURCE_DIR}/HDF/4.2r1-hrepack-p4/hdf/src
-  ${CMAKE_SOURCE_DIR}/HDF/zlib-1.2.3/include
-  ${CMAKE_SOURCE_DIR}/HDF/jpeg-6b/include
-  ${CMAKE_SOURCE_DIR}/HDF/szip-2.1/src/include)
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/mfhdf/libsrc
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/hdf/src
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/zlib-1.2.3/include
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/jpeg-6b/include
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/szip-2.1/src/include)
  SET(HDF_LIBPATH
-  ${CMAKE_SOURCE_DIR}/HDF/4.2r1-hrepack-p4/mfhdf/libsrc
-  ${CMAKE_SOURCE_DIR}/HDF/4.2r1-hrepack-p4/hdf/src
-  ${CMAKE_SOURCE_DIR}/HDF/zlib-1.2.3/lib
-  ${CMAKE_SOURCE_DIR}/HDF/jpeg-6b/lib
-  ${CMAKE_SOURCE_DIR}/HDF/szip-2.1/src/lib)
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/mfhdf/libsrc
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/hdf/src
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/zlib-1.2.3/lib
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/jpeg-6b/lib
+  ${CMAKE_SOURCE_DIR}/winlibs/HDF/szip-2.1/src/lib)
  SET(HDF_LIBS mfhdf df sz jpeg z ws2_32) # Without ws2_32, "undefined reference to `_htonl@4'" results
  #SET(HDF_DEFINES -D_DLL) # Use the multithreaded DLLs
  SET(HDF_DEFINES -U_MT) # Disable multithreading for static linking
@@ -61,6 +61,7 @@ IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs/libf2c)
  SET(ICA_LIBS lapack_win32 blas_win32 -lf2c)
  SET(ICA_LIBPATH "${CMAKE_SOURCE_DIR}/winlibs")
+ SET(SOX_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs/sox/src)
  SET(AVG_Q_DEFINES -DLITTLE_ENDIAN ${HDF_DEFINES})
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
  IF(CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -107,7 +108,12 @@ SET(MFX_LIBS mfx)
 
 SET(DUMMY_VGUI dummy_vogl_vgui)
 SET(VGUI_LIB vogl_vgui)
-SET(SOUND_LIBS st gsm)
+
+INCLUDE(FindPkgConfig)
+pkg_check_modules(SOX sox)
+if (NOT SOX_FOUND)
+ MESSAGE("SOX library not found - compiling without read_sound/write_sound")
+endif (NOT SOX_FOUND)
 
 SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
 #SET(CMAKE_C_FLAGS_DEBUG -g -DMALLOC_TRACE)
@@ -118,15 +124,18 @@ SET(AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/bf ${CMAKE_SOURCE_DIR}/bf/array
  ${CMAKE_SOURCE_DIR}/bf/stat
  ${CMAKE_SOURCE_DIR}/bf/math ${CMAKE_SOURCE_DIR}/bf/optimize
  ${CMAKE_SOURCE_DIR}/bf/array ${CMAKE_SOURCE_DIR}/bf/biomag
- ${CMAKE_SOURCE_DIR}/vogl/src ${CMAKE_SOURCE_DIR}/sox 
- ${HDF_INCLUDES} ${ICA_INCLUDES})
+ ${CMAKE_SOURCE_DIR}/vogl/src
+ ${HDF_INCLUDES}
+ ${ICA_INCLUDES}
+ ${SOX_INCLUDES}
+)
 
 # Arranges that shared libs are found in the same dir as the binary
 SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG -g)
 SET(BF_LIBPATH_DYNAMIC ${HDF_LIBPATH} ${ICA_LIBPATH})
-SET(BF_LIBS bf ${MFX_LIBS} ${SOUND_LIBS} ${VOGL_LIBS} ${DUMMY_VGUI} ${HDF_LIBS} ${ICA_LIBS})
-SET(BF_LIBS_VGUI bf ${MFX_LIBS} ${SOUND_LIBS} ${VOGL_LIBS} ${VGUI_LIB} ${HDF_LIBS} ${ICA_LIBS})
+SET(BF_LIBS bf ${MFX_LIBS} ${SOX_LIBRARIES} ${VOGL_LIBS} ${DUMMY_VGUI} ${HDF_LIBS} ${ICA_LIBS})
+SET(BF_LIBS_VGUI bf ${MFX_LIBS} ${SOX_LIBRARIES} ${VOGL_LIBS} ${VGUI_LIB} ${HDF_LIBS} ${ICA_LIBS})
 
 ADD_DEFINITIONS(${AVG_Q_DEFINES})
 INCLUDE_DIRECTORIES(${AVG_Q_INCLUDES})
@@ -134,7 +143,6 @@ LINK_DIRECTORIES(${BF_LIBPATH_DYNAMIC})
 
 # Imported libs:
 ADD_SUBDIRECTORY(vogl)
-ADD_SUBDIRECTORY(sox)
 
 ADD_SUBDIRECTORY(mfx)
 ADD_SUBDIRECTORY(bf)
