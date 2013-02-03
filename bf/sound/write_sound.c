@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998,1999,2001-2004,2008,2010 Bernd Feige
+ * Copyright (C) 1996,1998,1999,2001-2004,2008,2010,2012-2013 Bernd Feige
  * 
  * This file is part of avg_q.
  * 

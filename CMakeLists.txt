@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2012 Bernd Feige
+# Copyright (C) 2006-2013 Bernd Feige
 # 
 # This file is part of avg_q.
 # 
