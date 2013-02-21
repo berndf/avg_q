@@ -637,8 +637,11 @@ GLOBAL void
 clear_triggers(growing_buf *triggersp) {
  if (triggersp!=NULL && triggersp->buffer_start!=NULL) {
   struct trigger *intrig=(struct trigger *)triggersp->buffer_start;
-  /* Traverse the trigger list to free all descriptions */
-  for (; intrig->code!=0; intrig++) free_pointer((void *)&intrig->description);
+  struct trigger *const afterlast=(struct trigger *)(triggersp->buffer_start+triggersp->current_length);
+  /* Traverse the trigger list to free all descriptions.
+   * Respect both end-of-list conventions because clear_triggers may be called in situations where a
+   * correct end marker has not yet been written, such as after an ERREXIT while opening a trigger file */
+  for (; intrig<afterlast && intrig->code!=0; intrig++) free_pointer((void *)&intrig->description);
   growing_buf_clear(triggersp);
   push_trigger(triggersp, 0L, -1, NULL); /* File position entry */
   push_trigger(triggersp, 0L, 0, NULL); /* End of list */
