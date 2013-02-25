@@ -24,7 +24,7 @@ def escape_filename(path):
  return path.replace(' ','\\ ')
 
 class avg_q_file(object):
- def __init__(self,filename,fileformat=None):
+ def __init__(self,filename=None,fileformat=None):
   if not fileformat:
    filename,fileformat=self.guessformat(filename)
   self.filename=filename
@@ -84,6 +84,11 @@ read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filen
    self.getepochmethod='''
 read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
+  elif fileformat=='dip_simulate':
+   self.getepochmethod=None
+  elif fileformat in ['dip_simulate', 'null_source']:
+   # Handled specially
+   self.getepochmethod=None
   else:
    raise Exception("Unknown fileformat %s" % fileformat)
  def __str__(self):
@@ -95,6 +100,22 @@ read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %
   trigfile for every getepoch call.'''
   if not trigfile and self.trigfile:
    trigfile=self.trigfile
+  if self.fileformat=='dip_simulate':
+   return '''
+dip_simulate 100 %(epochs_arg)s %(beforetrig)s %(aftertrig)s eg_source
+''' % {
+    'epochs_arg': str(epochs), 
+    'beforetrig': str(beforetrig),
+    'aftertrig': str(aftertrig)
+    }
+  elif self.fileformat=='null_source':
+   return '''
+null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
+''' % {
+    'epochs_arg': str(epochs), 
+    'beforetrig': str(beforetrig),
+    'aftertrig': str(aftertrig)
+    }
   return self.getepochmethod % {
    'continuous_arg': '-c' if continuous else '', 
    'fromepoch_arg': '-f %d' % fromepoch if fromepoch!=None else '', 

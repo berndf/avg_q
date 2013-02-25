@@ -46,19 +46,6 @@ valuetype={
 
 break_events=[256,257] # NAV_STARTSTOP, NAV_DCRESET
 
-# Layout helper function to get a 2D arrangement of nplots plots
-def nrows_ncols_from_nplots(nplots):
- import numpy as np
- ncols=np.sqrt(nplots)
- if ncols.is_integer():
-  nrows=ncols
- else:
-  ncols=np.ceil(ncols)
-  nrows=nplots/ncols
-  if not nrows.is_integer():
-   nrows=np.ceil(nrows)
- return int(nrows),int(ncols)
-
 outtuple=[]
 collectvalue=None
 listvalue=[]
@@ -222,97 +209,6 @@ null_sink
 ''')
    filetriggers=trgfile.trgfile(self.runrdr())
   return filetriggers
- def plot_maps(self, rest_of_script='\nnull_sink\n-\n'):
-  import numpy as np
-  import matplotlib.mlab as mlab
-  import matplotlib.pyplot as plt
-
-  def mapplot(xpos,ypos,z,nsteps=50):
-   #ncontours=15
-   xmin,xmax=xpos.min(),xpos.max()
-   ymin,ymax=ypos.min(),ypos.max()
-   xi=np.linspace(xmin,xmax,nsteps)
-   yi=np.linspace(ymin,ymax,nsteps)
-   nplots=z.shape[0]
-   nrows,ncols=nrows_ncols_from_nplots(nplots)
-   for thisplot in range(0,nplots):
-    # cf. http://www.scipy.org/Cookbook/Matplotlib/Gridding_irregularly_spaced_data
-    zi=mlab.griddata(xpos,ypos,z[thisplot],xi,yi)
-    # Ensure a color mapping symmetric around 0
-    zmin,zmax=zi.min(),zi.max()
-    if -zmin>zmax:
-     zmax= -zmin
-    plt.subplot(nrows,ncols,thisplot+1)
-    gplot=plt.pcolor(xi,yi,zi,norm=plt.normalize(vmin=-zmax,vmax=zmax),antialiaseds=False) # shading="faceted"
-    #gplot=plt.contourf(g,ncontours)
-    #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
-    plt.contour(xi,yi,zi,[0],colors='black') # Draw zero line
-    gplot.axes.set_axis_off()
-    gplot.axes.set_xlim(xmin,xmax)
-    gplot.axes.set_ylim(ymin,ymax)
-
-  self.write('''
-query channelpositions stdout
-extract_item 0
-echo -F stdout Data:\\n
-write_generic stdout string
-''')
-  self.write(rest_of_script)
-  rdr=self.runrdr()
-  xpos=[]
-  ypos=[]
-  for r in rdr:
-   if r=='Data:':
-    break
-   channelname,x,y,z=r.split()
-   xpos.append(float(x))
-   ypos.append(float(y))
-  z=[]
-  for r in rdr:
-   z.append([float(x) for x in r.split()])
-  mapplot(np.array(xpos),np.array(ypos),np.array(z))
- def plot_traces(self, vmin=None, vmax=None, rest_of_script='\nnull_sink\n-\n'):
-  import numpy as np
-  import matplotlib.pyplot as plt
-
-  def traceplot(z):
-   #ncontours=15
-   nplots=len(z)
-   nrows,ncols=nrows_ncols_from_nplots(nplots)
-   thisplot=0
-   for z1 in z:
-    z1=np.array(z1)
-    plt.subplot(nrows,ncols,thisplot+1)
-    gplot=plt.pcolor(z1,norm=plt.normalize(vmin=vmin,vmax=vmax)) # shading="faceted"
-    #gplot=plt.contourf(z1,ncontours)
-    gplot.axes.set_axis_off()
-    #print z1.shape
-    gplot.axes.set_xlim(0,z1.shape[1])
-    gplot.axes.set_ylim(0,z1.shape[0])
-    thisplot+=1
-
-  self.write('''
-echo -F stdout Epoch Start\\n
-write_generic stdout string
-''')
-  self.write(rest_of_script)
-  z=[] # One array per *channel*, each array collects all time points and epochs, epochs varying fastest
-  point=0
-  for r in self:
-   if r=='Epoch Start':
-    point=0
-   else:
-    channels=[float(x) for x in r.split()]
-    for channel in range(0,len(channels)):
-     if len(z)<=channel:
-      z.append([[channels[channel]]])
-     else:
-      if len(z[channel])<=point:
-       z[channel].append([channels[channel]])
-      else:
-       z[channel][point].append(channels[channel])
-    point+=1
-  traceplot(z)
 
 class Epochsource(object):
  '''This class contains everything necessary for representing an epoch source.
