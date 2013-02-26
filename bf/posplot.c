@@ -2175,7 +2175,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	struct trigger * const trigstart=(struct trigger *)tinfo_to_use->triggers.buffer_start+1;
 	/* Jump to the next trigger */
 	struct trigger *mintrig=find_trigger_after(trigstart,whichpoint,right); 
-	if (mintrig==NULL) mintrig=find_trigger_after(trigstart,left,right);
+	if (mintrig==NULL) mintrig=find_trigger_after(trigstart,left-1,right);
 	if (mintrig==NULL) {
 	 whichpoint= -1;
 	} else {
@@ -2215,7 +2215,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	struct trigger * const trigstart=(struct trigger *)tinfo_to_use->triggers.buffer_start+1;
 	/* Jump to the previous trigger */
 	struct trigger *mintrig=find_trigger_before(trigstart,whichpoint,left); 
-	if (mintrig==NULL) mintrig=find_trigger_before(trigstart,right,left);
+	if (mintrig==NULL) mintrig=find_trigger_before(trigstart,right+1,left);
 	if (mintrig==NULL) {
 	 whichpoint= -1;
 	} else {
