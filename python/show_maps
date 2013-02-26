@@ -1,0 +1,67 @@
+#!/bin/env python
+# Copyright (C) 2010-2013 Bernd Feige
+# This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+
+import sys
+import getopt
+
+def usage():
+ print("Usage: [-d: demean_maps] [-s: save_fig] mapfile")
+
+try:
+ optlist, args = getopt.getopt(sys.argv[1:],'ds')
+except getopt.GetoptError as err:
+ # print help information and exit:
+ print(str(err)) # will print something like "option -a not recognized"
+ usage()
+ sys.exit(2)
+
+if len(args)==0:
+ usage()
+ sys.exit(1)
+
+demean_maps=False
+save_fig=False
+for opt,arg in optlist:
+ if opt=='-d':
+  demean_maps=True
+ elif opt=='-s':
+  save_fig=True
+
+import avg_q
+import avg_q.numpy_Script
+import matplotlib.pyplot as plt
+
+a=avg_q.avg_q()
+figno=1
+pngfile=None
+for ascfile in args:
+ if save_fig:
+  import os
+  base,ext=os.path.splitext(ascfile)
+  pngfile=base+'.png'
+  if os.path.exists(pngfile):
+   print("%s exists!" % pngfile)
+   continue
+  print("Plotting %s to %s" % (ascfile,pngfile))
+ else:
+  print("Plotting %s" % ascfile)
+ fig=plt.figure(figno)
+ fig.canvas.set_window_title(ascfile)
+ f=avg_q.avg_q_file(ascfile)
+ epochsource=avg_q.Epochsource(f)
+ script=avg_q.numpy_Script.numpy_Script(a)
+ script.add_Epochsource(epochsource)
+ if demean_maps:
+  script.add_transform("demean_maps")
+ script.read()
+ script.plot_maps()
+ if save_fig:
+  plt.savefig(pngfile,format='png',transparent=True)
+  plt.clf()
+ else:
+  figno+=1
+a.close()
+
+if not save_fig:
+ plt.show()
