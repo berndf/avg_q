@@ -60,7 +60,8 @@ echo_init(transform_info_ptr tinfo) {
  while (*inbuf !='\0') {
   char c=*inbuf++;
   if (c=='\\') {
-   switch (*inbuf++) {
+   char c1;
+   switch (c1=*inbuf++) {
     case 'n':
      c='\n';
      break;
@@ -71,6 +72,7 @@ echo_init(transform_info_ptr tinfo) {
      inbuf--;
      break;
     default:
+     c=c1;
      break;
    }
    if (c=='\0') break;

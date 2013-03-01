@@ -364,9 +364,11 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
   iter_queue->current_input_line++; post_queue->current_input_line++;
   growing_buf_nextsingletoken(&script);	/* Skip to the start of the next line now */
 
-  /* Remove comment if it exists */
+  /* Remove comment if it exists, unless escaped */
   if ((inbuf=strchr(linebuf.buffer_start, '#'))!=NULL) {
-   while (*inbuf!='\0') *inbuf++ = '\0';
+   if (inbuf==linebuf.buffer_start || *(inbuf-1)!='\\') {
+    while (*inbuf!='\0') *inbuf++ = '\0';
+   }
   }
 
   if (*linebuf.buffer_start=='>') {
