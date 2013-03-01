@@ -28,7 +28,8 @@ class avg_q_test_case(unittest.TestCase):
   self.avg_q_instance.close()
   self.avg_q_instance = None
 
- # This getResult method can be overridden, or simply self.script set.
+ # This getResult method can be overridden;
+ # The method implemented here or simply sends self.script to avg_q.
  # In any case, self.expected_output must be set.
  def getResult(self):
   self.avg_q_instance.write(self.script)
@@ -38,8 +39,8 @@ class avg_q_test_case(unittest.TestCase):
   return output
 
  def runTest(self):
-  if self.script is None:
-   # Catch unittest running the base class as a test since it has runTest()...
+  # Catch unittest running the base class as a test since it has runTest()...
+  if self.__class__.__name__=='avg_q_test_case':
    return
   result=self.getResult()
   self.assertEqual('\n'.join(result), self.expected_output)

@@ -1,4 +1,6 @@
 #!/bin/env python
+# Copyright (C) 2011-2013 Bernd Feige
+# This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 # avg_q unit testing. Note that many tests will create files in the
 # current directory, so it's best to start this from some work directory.
@@ -137,6 +139,56 @@ class avg_q_test_case6(avg_q_test_case):
 [2, 'A17', '90 120', 3.25, 100.286]
 [2, 'A17', '150 180', -25.75, 165.049]
 [2, 'A10', '370 550', 12.1053, 468.944]'''
+
+# get_description test
+class avg_q_test_case7(avg_q_test_case):
+ def getResult(self):
+  import avg_q.avg_q_file
+  infile=avg_q.avg_q_file("o.cnt")
+  result=self.avg_q_instance.get_description(infile,('sfreq','points_in_file','comment'))
+  return [str(x) for x in result]
+ expected_output='''100.0
+1000
+Version 3.0,,,dip_simulate output,Unspecified'''
+
+class avg_q_test_case8(avg_q_test_case):
+ def getResult(self):
+  import avg_q.avg_q_file
+  import avg_q.Artifacts
+  # Generate a file o.hdf with artifacts
+  script=avg_q.Script(self.avg_q_instance)
+  epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='20s',epochs=1)
+  epochsource.add_branchtransform('add gaussnoise 100')
+  script.add_Epochsource(epochsource)
+  # 1s Blocking artifact on channel 10
+  epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='1s',epochs=1)
+  epochsource.add_branchtransform('add gaussnoise 100')
+  epochsource.add_branchtransform('scale_by -n 10 0')
+  script.add_Epochsource(epochsource)
+  epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='20s',epochs=1)
+  epochsource.add_branchtransform('add gaussnoise 100')
+  script.add_Epochsource(epochsource)
+  # And a phasic event on channel 5
+  epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='20ms',epochs=1)
+  # The height is important here - 1000 often triggers the jump detector as well
+  epochsource.add_branchtransform('add -n 5 800')
+  script.add_Epochsource(epochsource)
+  epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='20s',epochs=1)
+  epochsource.add_branchtransform('add gaussnoise 100')
+  script.add_Epochsource(epochsource)
+  script.set_collect('append')
+  #script.add_postprocess('posplot')
+  script.add_postprocess('write_hdf -c o.hdf')
+  script.run()
+  # Now 
+  infile=avg_q.avg_q_file('o.hdf')
+  points_in_file=self.avg_q_instance.get_description(infile,'points_in_file')
+  segmentation=avg_q.Artifacts.Artifact_Segmentation(self.avg_q_instance,infile,0,points_in_file)
+  segmentation.collect_artifacts()
+  #segmentation.show_artifacts()
+  return [str(x) for x in segmentation.collected.artifacts]
+ expected_output='''4100.0
+(2001.0, 2100.0)'''
 
 if __name__ == '__main__':
  import sys

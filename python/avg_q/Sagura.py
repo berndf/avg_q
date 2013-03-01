@@ -56,6 +56,12 @@ def readStreamString(aStream):
  nbuf=str(aStream.read(2*n),'utf16')
  return(nbuf)
 
+MarkerMsg2Code={
+ 'Ableitungsbeginn': 256, # NAV_STARTSTOP
+ 'Ableitungsende': 256, # NAV_STARTSTOP
+ 'Initialisierung': 256, # NAV_STARTSTOP
+}
+
 class Marker(object):
  def __init__(self,aStream):
   try:
@@ -93,4 +99,8 @@ class Markers(object):
   return None
  def gettuples(self):
   #startmarker=print(markers.find('Ableitungsbeginn'))
-  return [("%gs" % (m._SamplesBegin/self._baseSampleRate),1,m._MarkerMsg) for m in self.markers]
+  return [(
+   "%gs" % (m._SamplesBegin/self._baseSampleRate),
+   MarkerMsg2Code.get(m._MarkerMsg,1),
+   m._MarkerMsg
+  ) for m in self.markers]

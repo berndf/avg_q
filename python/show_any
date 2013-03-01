@@ -1,15 +1,43 @@
 #!/bin/env python
-# Copyright (C) 2009,2010 Bernd Feige
+# Copyright (C) 2009-2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import avg_q
+from avg_q.avg_q_file import formats_and_extensions
 import sys
 import os
+import getopt
+import fnmatch
 
-a=avg_q.avg_q(avg_q='avg_q_ui')
-#a.debug=True
+fromepoch=None
+epochs=None
+aftertrig=0
+tracelevel=0
+try:
+ optlist, args = getopt.getopt(sys.argv[1:],'e:E:f:t:d')
+except getopt.GetoptError as err:
+ # print help information and exit:
+ print(str(err)) # will print something like "option -a not recognized"
+ print("Usage: [-f fromepoch] [-e epochs] [-E epochlen] [-t tracelevel] [-d: Debug] file1 file2 ...")
+ sys.exit(2)
+
+debug=False
+for opt,arg in optlist:
+ if opt=='-f':
+  fromepoch=int(arg)
+ elif opt=='-e':
+  epochs=int(arg)
+ elif opt=='-E':
+  aftertrig=arg
+ elif opt=='-t':
+  tracelevel=int(arg)
+ elif opt=='-d':
+  debug=True
+
+a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=tracelevel)
+a.debug=debug
 n_files=0
-for filename_and_triggerfile in sys.argv[1:]:
+for filename_and_triggerfile in args:
  fsplit=filename_and_triggerfile.split('+')
  if len(fsplit)==1:
   filename=filename_and_triggerfile
@@ -17,9 +45,15 @@ for filename_and_triggerfile in sys.argv[1:]:
  else:
   filename=fsplit[0]
   trgfile=fsplit[1]
+ parts=filename.split(':')
+ #print(parts)
+ if len(parts)==2 and parts[0] in dict(formats_and_extensions):
+  filetype,filename=parts
+ else:
+  filetype=None
  base,ext=os.path.splitext(filename)
  addmethods=None
- if not ext:
+ if filetype is None and ext=='':
   # Try to interpret this as a sleep bookno
   import avg_q.sleep_file
   print("Reading sleep file for bookno: %s" % filename)
@@ -28,8 +62,8 @@ for filename_and_triggerfile in sys.argv[1:]:
   if not os.path.exists(filename):
    print("Oops, %s doesn't exist - skipping..." % filename)
    continue
-  print("Opening file: %s" % filename)
-  infile=avg_q.avg_q_file(filename)
+  print("Opening file: %s type %s" % (filename,filetype))
+  infile=avg_q.avg_q_file(filename,filetype)
  if not trgfile:
   if infile.fileformat=='Inomed':
    trgfile=filename+'.tri'
@@ -41,7 +75,11 @@ for filename_and_triggerfile in sys.argv[1:]:
    trgfile=base+'.trg'
  if os.path.exists(trgfile):
   infile.trigfile=trgfile
- a.getcontepoch(infile, 0, 0, trigtransfer=True)
+ if fnmatch.fnmatch(filename,'*_residuals[0-9][0-9].hdf'):
+  # Show fMRI gradient correction residual files
+  a.getcontepoch(infile, 0, '1s', fromepoch=fromepoch, epochs=epochs)
+ else:
+  a.getcontepoch(infile, 0, aftertrig, fromepoch=fromepoch, epochs=epochs, trigtransfer=True)
  if addmethods:
   for line in addmethods:
    a.write('>'+line+'\n')

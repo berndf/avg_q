@@ -6,7 +6,6 @@ Python interface to avg_q.
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
-import re
 import sys
 import subprocess
 
@@ -53,7 +52,6 @@ class avg_q(object):
  def __init__(self,avg_q="avg_q_vogl",endstring="End of script",tracelevel=0):
   """Start avg_q."""
   self.endstring=endstring
-  self.querymatch=re.compile('^([^=]+)=(.+)$')
   call=[avg_q,'stdin']
   if tracelevel>0:
    call.insert(1,'-t %d' % tracelevel)
@@ -124,22 +122,66 @@ null_sink
  def getcontepoch(self, infile, beforetrig, aftertrig, fromepoch=None, epochs=None, trigfile=None, trigtransfer=False):
   self.getepoch(infile, beforetrig, aftertrig, continuous=True, fromepoch=fromepoch, epochs=epochs, trigfile=trigfile, trigtransfer=trigtransfer)
  def get_file_sections_excluding_breakpoints(self,start_point,end_point,breakpoints,margin_points):
-  '''Iterator of (startsegment,endsegment) avoiding breakpoints by margin_points'''
-  br=[point for point in breakpoints] # Copy the points
-  br.sort()
-  br.append(end_point+margin_points) # Needed so that the last segment will really extend to end_point
+  '''Iterator of (startsegment,endsegment) avoiding breakpoints by margin_points.
+     'breakpoint' elements can be (start,end) tuples as well, in which case the whole segment between
+     start and end (and added margin) is excluded'''
+  laststart=None
+  # List of (start,end) tuples *sorted by start*
+  br=sorted([(element[0]-margin_points,element[1]+margin_points) if isinstance(element,tuple) else (element-margin_points,element+margin_points) for element in breakpoints],key=lambda x: x[0])
+  #print(start_point,end_point,br)
+  # startsegment holds the next candidate for starting a clear segment
+  # not touched by any exclude range
   startsegment=start_point
-  for point in br:
-   endsegment=point-margin_points
-   if endsegment>startsegment:
-    yield (startsegment,endsegment)
-    startsegment=point+margin_points
+  current_exclude_range=0
+  while current_exclude_range<len(br) and br[current_exclude_range][0]<end_point:
+   # Check if new startsegment is within the next exclude range
+   # Note that the sorting by start restricts possibilities here
+   if startsegment<br[current_exclude_range][0]:
+    # current_exclude_range only starts after startsegment: Found a clear patch...
+    yield (startsegment,br[current_exclude_range][0])
+    startsegment=br[current_exclude_range][1]
+   else:
+    if startsegment<br[current_exclude_range][1]:
+     # startsegment is within current_exclude_range, skip to the end of this range
+     startsegment=br[current_exclude_range][1]
+    # else: Both start and end of range are below startsegment, skip this range
+   current_exclude_range+=1
+  if startsegment<end_point:
+   yield (startsegment,end_point)
  def get_description(self,infile,getvars):
+  class collect_results(object):
+   import re
+   querymatch=re.compile('^([^=]+)=(.+)$')
+   def __init__(self,getvars):
+    self.getvars=getvars
+    self.outtuple=[]
+    self.collectvalue=None
+    self.listvalue=[]
+   def closelist(self):
+    if self.collectvalue and len(self.listvalue)>0:
+     self.outtuple.append(self.listvalue)
+     self.listvalue=[]
+    self.collectvalue=False
+   def addline(self,line):
+    m=self.querymatch.match(line)
+    if m:
+     var,value=m.groups()
+     if var in self.getvars:
+      collect.closelist()
+      if valuetype[var]==list:
+       self.listvalue=[value]
+       self.collectvalue=True
+      else:
+       value=valuetype[var](value)
+       self.outtuple.append(value)
+       self.collectvalue=False
+     else: m=None
+    if not m:
+     if self.collectvalue:
+      self.listvalue.append(line)
   if not isinstance(getvars,tuple):
    getvars=(getvars,)
   self.getcontepoch(infile, 0, 1, epochs=1)
-  global outtuple
-  outtuple=[]
   for var in getvars:
    self.write('''
 query -N %s stdout
@@ -148,36 +190,11 @@ query -N %s stdout
 null_sink
 -
 ''')
-  global collectvalue,listvalue
-  collectvalue=None
-  listvalue=[]
-  def closelist():
-   global collectvalue,listvalue
-   if collectvalue and len(listvalue)>0:
-    outtuple.append(listvalue)
-    listvalue=[]
-   collectvalue=False
+  collect=collect_results(getvars)
   for r in self:
-   m=self.querymatch.match(r)
-   if m:
-    var,value=m.groups()
-    if var in getvars:
-     closelist()
-     if valuetype[var]==list:
-      listvalue=[value]
-      collectvalue=True
-     else:
-      value=valuetype[var](value)
-      outtuple.append(value)
-      collectvalue=False
-    else: m=None
-   if not m:
-    if collectvalue:
-      listvalue.append(r)
-  closelist()
-  if len(getvars)==1: outtuple=outtuple[0]
-  else: outtuple=tuple(outtuple)
-  return outtuple
+   collect.addline(r)
+  collect.closelist()
+  return collect.outtuple[0] if len(getvars)==1 else tuple(collect.outtuple)
  def get_filetriggers(self,infile):
   from . import trgfile
   if infile.fileformat=='asc':
