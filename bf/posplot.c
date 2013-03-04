@@ -1307,7 +1307,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
     }
 
     /* Avoid drawing triggers, coordinate system and marker multiple times in overlay mode */
-    if (local_arg->position_mode!=POSITION_MODE_OVERLAY || entry_number==0) {
+    if (local_arg->position_mode!=POSITION_MODE_OVERLAY || displayed_channel==0) {
     if (local_arg->showtriggers) {
      /*{{{  */
      for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
