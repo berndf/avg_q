@@ -427,7 +427,7 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
     '''
 set beforetrig 0
 set xdata 1
-add_channels -l %(avgEPIfile)s.asc
+add_channels -l %(avgEPIfile)s
 link_order 2
 set sfreq 5000
 set beforetrig 0
@@ -435,7 +435,7 @@ set xdata 1
 posplot
 '''
     self.transferSection(readpoint, myEPI.beforetrig_points, myEPI.aftertrig_points, addmethods='''
-subtract %(avgEPIfile)s.asc
+subtract %(avgEPIfile)s
 %(lefttrim)s
 ''' % {
     'avgEPIfile': myEPI.tmpEPIfile if myEPI.upsample!=1 else myEPI.avgEPIfile,
@@ -583,11 +583,11 @@ class avgEPI(object):
   return epochsource
  def avgEPI(self,crsfile,runindex):
   self.set_crsfile(crsfile)
-  self.avgEPIfile=self.base + '_AvgEPI%02d' % runindex
-  if os.path.exists(self.avgEPIfile + '.asc') and self.CheckIfAvgEPICompatible():
-   print("Reusing average file %s.asc" % self.avgEPIfile)
+  self.avgEPIfile=self.base + '_AvgEPI%02d.asc' % runindex
+  if os.path.exists(self.avgEPIfile) and self.CheckIfAvgEPICompatible():
+   print("Reusing average file %s" % self.avgEPIfile)
    return
-  print("Averaging EPI... -> %s.asc" % self.avgEPIfile)
+  print("Averaging EPI... -> %s" % self.avgEPIfile)
   singleEPIepoch=1 # Use first EPI as template by default
   singleEPIfile=self.base + '_SingleEPI%02d' % runindex
   residualsfile=self.base + '_residuals%02d' % runindex
@@ -595,6 +595,7 @@ class avgEPI(object):
    os.unlink(residualsfile+'.hdf')
   # Store "best" template in case finding one with the strict criterion fails
   min_rejection_fraction=1
+  base_avgEPIfile,ext_avgEPIfile=os.path.splitext(self.avgEPIfile)
   # Repeat averaging if too many EPIs are rejected (specimen itself is bad):
   while True:
    print("Using EPI template epoch %d" % singleEPIepoch)
@@ -654,7 +655,7 @@ posplot
     script.add_transform(rejection_script)
     script.set_collect('average')
     script.add_postprocess('''
-writeasc -b %(avgEPIfile)s.asc
+writeasc -b %(avgEPIfile)s
 query accepted_epochs stdout
 query rejected_epochs stdout
 ''' % {
@@ -672,17 +673,17 @@ query rejected_epochs stdout
    #print accepted_epochs,rejected_epochs,rejection_fraction
    if rejection_fraction>self.avgEPI_max_rejection_fraction:
     if rejection_fraction<min_rejection_fraction:
-     os.rename(self.avgEPIfile + '.asc', self.avgEPIfile + '_Best.asc')
+     os.rename(self.avgEPIfile, base_avgEPIfile + '_Best.asc')
      min_rejection_fraction=rejection_fraction
     else:
-     os.unlink(self.avgEPIfile + '.asc')
+     os.unlink(self.avgEPIfile)
     # Try the next EPI template...
     singleEPIepoch+=1
     if singleEPIepoch>=len(self.EPIs):
-     if os.path.exists(self.avgEPIfile + '_Best.asc'):
+     if os.path.exists(base_avgEPIfile + '_Best.asc'):
       # Okay, we pragmatically use the one with the least rejection
       print("No EPI templates would fit, using best rejection fraction (%g)" % rejection_fraction)
-      os.rename(self.avgEPIfile + '_Best.asc', self.avgEPIfile + '.asc')
+      os.rename(base_avgEPIfile + '_Best.asc', self.avgEPIfile)
       break
      else:
       print("Oops, not even a best rejection_fraction fit?")
@@ -690,11 +691,11 @@ query rejected_epochs stdout
     print("EPI Rejection fraction too large (%g), retrying..." % rejection_fraction)
    else:
     break
-  if os.path.exists(self.avgEPIfile + '_Best.asc'):
-   os.unlink(self.avgEPIfile + '_Best.asc')
+  if os.path.exists(base_avgEPIfile + '_Best.asc'):
+   os.unlink(base_avgEPIfile + '_Best.asc')
  def get_tmpEPI(self,trimcorrection):
   self.avg_q_instance.write('''
-readasc %(avgEPIfile)s.asc
+readasc %(avgEPIfile)s
 trim %(trimstart)f %(trimlength)f
 sliding_average 1 %(upsample)d
 writeasc -b %(tmpEPIfile)s.asc

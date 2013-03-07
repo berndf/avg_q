@@ -34,7 +34,7 @@ class avg_q_file(object):
   self.trigfile=None
   if fileformat=='BrainVision':
    self.getepochmethod='''
-read_brainvision %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s.vhdr %(beforetrig)s %(aftertrig)s
+read_brainvision %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='NeuroScan':
    self.getepochmethod='''
@@ -42,11 +42,11 @@ read_synamps %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s 
 '''
   elif fileformat=='asc':
    self.getepochmethod='''
-readasc %(fromepoch_arg)s %(epochs_arg)s %(filename)s.asc
+readasc %(fromepoch_arg)s %(epochs_arg)s %(filename)s
 '''
   elif fileformat=='hdf':
    self.getepochmethod='''
-read_hdf %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s.hdf %(beforetrig)s %(aftertrig)s
+read_hdf %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='rec':
    self.getepochmethod='''
@@ -140,6 +140,4 @@ null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
    fileformat=findformat(ext.lower())
   if not fileformat:
    raise Exception("Can't guess format of %s!" % filename)
-  if fileformat in ['asc','hdf','BrainVision']:
-   filename=name
   return filename,fileformat

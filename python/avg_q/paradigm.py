@@ -21,7 +21,9 @@ def sdev(x):
   s=sum(x)
   ss=sum([y*y for y in x])
   # sd(x)==sqrt(mean(x^2)+mean(x)^2-2*mean(x)^2)*sqrt(n/(n-1)) # Second term for df correction
-  return math.sqrt((ss-s*s/n)/(n-1.0))
+  # numerically var<0 (e.g., var= -1e-7) may happen numerically when variance is indeed zero
+  var=(ss-s*s/n)/(n-1.0)
+  return 0.0 if var<0.0 else math.sqrt(var)
 
 def quantiles(x,q):
  theValues = sorted(x)

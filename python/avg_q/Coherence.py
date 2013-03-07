@@ -169,7 +169,7 @@ class avg_q_Coherencefile(avg_q_file):
    self.compressed=eegfilename<first_uncompressed
   else:
    self.compressed=compressed
-  self.format="Coherence"
+  self.fileformat="Coherence"
   self.addmethods=None
   getepochstart='read_generic -O %d -C %d -s %d ' % (data_offset,self.nr_of_channels,self.sfreq)
   if self.compressed:
