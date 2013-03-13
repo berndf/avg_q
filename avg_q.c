@@ -121,7 +121,7 @@ usage(FILE *stream) {
 
 /*{{{  int main(int argc, char **argv) {*/
 int main(int argc, char **argv) {
- int beforepoints, beforeshifts, errflag=0, c;
+ int errflag=0, c;
  int nr_of_script_variables, variables_requested1, variables_requested2, max_var_requested;
  Bool dumponly=FALSE;
  FILE * const dumpfile=stdout;
@@ -293,18 +293,6 @@ int main(int argc, char **argv) {
    /*}}}  */
 
    if (tinfostruc.tsdata!=NULL) {
-   if (tinfostruc.data_type==FREQ_DATA) {
-    beforepoints=tinfostruc.beforetrig;
-    if (tinfostruc.shiftwidth!=0) beforeshifts=1+(beforepoints-tinfostruc.windowsize)/tinfostruc.shiftwidth;
-    else beforeshifts=0;
-    fprintf(stderr, "Averages: %d (nrofaverages=%d); Shifts for baseline: %d\n", tinfostruc.accepted_epochs, tinfostruc.nrofaverages, beforeshifts);
-    fprintf(stderr, "Output is %d frequencies x %d shifts of step %d\n", tinfostruc.nroffreq, tinfostruc.nrofshifts, tinfostruc.shiftwidth);
-   } else {
-    fprintf(stderr, "Averages: %d (nrofaverages=%d)\n", tinfostruc.accepted_epochs, tinfostruc.nrofaverages);
-   }
-   if (tinfostruc.rejected_epochs>0) {
-    fprintf(stderr, "Rejection rate: %6.2f%%\n", tinfostruc.rejected_epochs/((float)tinfostruc.rejected_epochs+tinfostruc.accepted_epochs)*100.0);
-   }
     free_tinfo(&tinfostruc);
    }
   }
@@ -366,18 +354,6 @@ int main(int argc, char **argv) {
    /*}}}  */
 
    if (tinfostruc.tsdata!=NULL) {
-   if (tinfostruc.data_type==FREQ_DATA) {
-    beforepoints=tinfostruc.beforetrig;
-    if (tinfostruc.shiftwidth!=0) beforeshifts=1+(beforepoints-tinfostruc.windowsize)/tinfostruc.shiftwidth;
-    else beforeshifts=0;
-    fprintf(stderr, "Averages: %d (nrofaverages=%d); Shifts for baseline: %d\n", tinfostruc.accepted_epochs, tinfostruc.nrofaverages, beforeshifts);
-    fprintf(stderr, "Output is %d frequencies x %d shifts of step %d\n", tinfostruc.nroffreq, tinfostruc.nrofshifts, tinfostruc.shiftwidth);
-   } else {
-    fprintf(stderr, "Averages: %d (nrofaverages=%d)\n", tinfostruc.accepted_epochs, tinfostruc.nrofaverages);
-   }
-   if (tinfostruc.rejected_epochs>0) {
-    fprintf(stderr, "Rejection rate: %6.2f%%\n", tinfostruc.rejected_epochs/((float)tinfostruc.rejected_epochs+tinfostruc.accepted_epochs)*100.0);
-   }
     free_tinfo(&tinfostruc);
    }
   }
