@@ -1809,20 +1809,6 @@ Run_Script(void) {
 # endif
      do_queues(&tinfostruc, &iter_queue, &post_queue);
      if (tinfostruc.tsdata!=NULL) {
-      if (tinfostruc.data_type==FREQ_DATA) {
-       int beforepoints=tinfostruc.beforetrig;
-       int beforeshifts;
-       if (tinfostruc.shiftwidth!=0) beforeshifts=1+(beforepoints-tinfostruc.windowsize)/tinfostruc.shiftwidth;
-       else beforeshifts=0;
-       TRACEMS3(tinfostruc.emethods, -1, "Averages: %d (nrofaverages=%d); Shifts for baseline: %d\n", MSGPARM(tinfostruc.accepted_epochs), MSGPARM(tinfostruc.nrofaverages), MSGPARM(beforeshifts));
-       TRACEMS3(tinfostruc.emethods, -1, "Output is %d frequencies x %d shifts of step %d\n", MSGPARM(tinfostruc.nroffreq), MSGPARM(tinfostruc.nrofshifts), MSGPARM(tinfostruc.shiftwidth));
-      } else {
-       TRACEMS2(tinfostruc.emethods, -1, "Averages: %d (nrofaverages=%d)\n", MSGPARM(tinfostruc.accepted_epochs), MSGPARM(tinfostruc.nrofaverages));
-      }
-      if (tinfostruc.rejected_epochs>0) {
-       snprintf(errormessage, ERRORMESSAGE_SIZE, "Rejection rate: %6.2f%%\n", tinfostruc.rejected_epochs/((float)tinfostruc.rejected_epochs+tinfostruc.accepted_epochs)*100.0);
-       TRACEMS(tinfostruc.emethods, -1, errormessage);
-      }
       free_tinfo(&tinfostruc);
      }
      }
