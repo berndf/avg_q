@@ -55,7 +55,15 @@ class avg_q(object):
   call=[avg_q,'stdin']
   if tracelevel>0:
    call.insert(1,'-t %d' % tracelevel)
-  self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+  try:
+   self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+  except:
+   import os
+   # See if this is a Windows install with python/ within the avg_q binary directory
+   call[0]=os.path.join(os.path.dirname(__file__),'..','..',avg_q+'.exe')
+   self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
   self.recorded_trigpoints=[]
   self.debug=False
  def __del__(self):

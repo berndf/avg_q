@@ -18,6 +18,7 @@ def nrows_ncols_from_nplots(nplots):
 class numpy_epoch(object):
  def __init__(self):
   self.sfreq=None
+  self.comment=None
   self.channelnames=[]
   self.channelpos=[]
   self.nr_of_points=0
@@ -25,7 +26,8 @@ class numpy_epoch(object):
   self.itemsize=0
   self.data=None
  def __str__(self):
-  return("%d x %d sfreq %g" % (self.nr_of_points,self.nr_of_channels,self.sfreq))
+  return(((self.comment+': ') if self.comment else "")+
+  "%d x %d sfreq %g" % (self.nr_of_points,self.nr_of_channels,self.sfreq))
 
 class numpy_Epochsource(avg_q.Epochsource):
  def __init__(self, epochs=None):
@@ -72,6 +74,7 @@ class numpy_Script(avg_q.Script):
   self.add_transform("""
 echo -F stdout Epoch Dataset\\n
 query channelpositions stdout
+query -N comment stdout
 query -N sfreq stdout
 query -N nr_of_points stdout
 query -N itemsize stdout
@@ -95,7 +98,9 @@ write_generic stdout float32
    while r:
     if r=='Data:': break
     name,value=r.split('=')
-    if name=='sfreq': 
+    if name=='comment': 
+     epoch.comment=value
+    elif name=='sfreq': 
      epoch.sfreq=float(value)
     elif name=='nr_of_points':
      epoch.nr_of_points=int(value)
