@@ -10,6 +10,9 @@ as well, starting with version 2.6.
 
 Included scripts:
 
+Windows_glob_example.py: A worked example displaying the first 2s of all
+EDF files in a certain directory. Intended as a good place to start.
+
 show_any: Will use avg_q_ui to display whatever file(s) were given on the
 command line, using format autodetection. Each file will be read as a single
 epoch and all files are shown as "linked" epochs in posplot. Note that posplot
@@ -21,3 +24,5 @@ check_crossings: Count trigger codes and output statistics on temporal distances
 between triggers with the same code. It will work on avg_q style ".trg" or ".crs"
 trigger text files but will also automatically extract triggers from any known file
 format.
+
+show_maps: Uses matplotlib to show topographic maps for all points in a given file.
