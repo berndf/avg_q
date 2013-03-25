@@ -53,10 +53,10 @@ LOCAL char *datatype_choice[]={
  NULL
 };
 LOCAL int datatype_size[]={
- sizeof(char),
- sizeof(char),
- sizeof(short),
- sizeof(long),
+ sizeof(uint8_t),
+ sizeof(int8_t),
+ sizeof(int16_t),
+ sizeof(int32_t),
  sizeof(float),
  sizeof(double),
  0,	/* This entry for the `string' datatype tells us there is no fixed length... */

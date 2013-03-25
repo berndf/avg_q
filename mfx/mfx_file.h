@@ -26,6 +26,7 @@
 #define MFX_FILE_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include "mfx_header_format.h"
 #include "mfx_data_format.h"
 
@@ -75,7 +76,7 @@ typedef struct MFX_FILE_STRUCT {
  int	was_just_created;	/* Flag: 1 if header has yet to be written */
  int	nr_of_channels_selected;/* Length of the following array */
  int*	selected_channels;	/* List of selected channel numbers (starting with 1) */
- short*	input_buffer;		/* Holds 1 row of data (1 data point, all channels) */
+ int16_t* input_buffer;		/* Holds 1 row of data (1 data point, all channels) */
  enum	mfx_datatypes datatype;
  enum	mfx_subversions subversion;
  char	filename[256];

@@ -82,7 +82,7 @@ struct read_vitaport_storage {
  enum vitaport_filetypes vitaport_filetype;
  struct vitaport_channelheader *channelheaders;
  struct vitaportIIrchannelheader *channelheadersII;
- short checksum;
+ uint16_t checksum;
  FILE *infile;
  FILE *triggerfile;
  int *trigcodes;
@@ -201,23 +201,23 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
    fseek(local_arg->infile, local_arg->sum_dlen, SEEK_CUR);
    while (1) {
     char label[VP_TABLEVAR_LENGTH+1];
-    long length;
+    uint32_t length;
     struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
     label[VP_TABLEVAR_LENGTH]='\0';
     fread(label, 1, VP_TABLEVAR_LENGTH, local_arg->infile);
     if (feof(local_arg->infile)) break;
-    fread(&length, sizeof(long), 1, local_arg->infile);
+    fread(&length, sizeof(length), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
     Intel_int32((uint32_t *)&length);
 #endif
     for (markertable_entry=markertable_names; markertable_entry->markertable_name!=NULL && strcmp(label, markertable_entry->markertable_name)!=0; markertable_entry++);
     if (markertable_entry->markertable_name!=NULL) {
-     long millisec;
+     uint32_t millisec;
      int tagno;
-     int const ntags=length/sizeof(long);
+     int const ntags=length/sizeof(millisec);
      found_markertable=TRUE;
      for (tagno=0; tagno<ntags; tagno++) {
-      fread(&millisec, sizeof(long), 1, local_arg->infile);
+      fread(&millisec, sizeof(millisec), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&millisec);
 #endif
@@ -251,13 +251,13 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
      switch (this_size) {
       case 1: {
        unsigned char s;
-       fread(&s, sizeof(unsigned char), 1, local_arg->infile);
+       fread(&s, sizeof(s), 1, local_arg->infile);
        code=s;
        }
        break;
       case 2: {
        uint16_t s;
-       fread(&s, sizeof(unsigned short), 1, local_arg->infile);
+       fread(&s, sizeof(s), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
        Intel_int16(&s);
 #endif
@@ -279,13 +279,13 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
        switch (this_size) {
 	case 1: {
 	 unsigned char s;
-	 fread(&s, sizeof(unsigned char), 1, local_arg->infile);
+	 fread(&s, sizeof(s), 1, local_arg->infile);
 	 code=s;
 	 }
 	 break;
 	case 2: {
 	 uint16_t s;
-	 fread(&s, sizeof(unsigned short), 1, local_arg->infile);
+	 fread(&s, sizeof(s), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
 	 Intel_int16(&s);
 #endif
@@ -481,7 +481,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
   }
   local_arg->channelnames_length+=actual_fieldlength(local_arg->channelheaders[channel].kname, local_arg->channelheaders[channel].kname+VP_CHANNELNAME_LENGTH)+1;
  }
- fread(&local_arg->checksum, sizeof(short), 1, local_arg->infile);
+ fread(&local_arg->checksum, sizeof(uint16_t), 1, local_arg->infile);
 #ifdef LITTLE_ENDIAN
  Intel_int16((uint16_t *)&local_arg->checksum);
 #endif
@@ -732,13 +732,13 @@ read_vitaport(transform_info_ptr tinfo) {
      switch (this_size) {
       case 1: {
        char s;
-       n=fread(&s, sizeof(char), 1, infile);
+       n=fread(&s, sizeof(s), 1, infile);
        dat=s;
        }
        break;
       case 2: {
-       short s;
-       n=fread(&s, sizeof(short), 1, infile);
+       int16_t s;
+       n=fread(&s, sizeof(s), 1, infile);
 #ifdef LITTLE_ENDIAN
        Intel_int16((uint16_t *)&s);
 #endif
@@ -756,13 +756,13 @@ read_vitaport(transform_info_ptr tinfo) {
      switch (this_size) {
       case 1: {
        unsigned char s;
-       n=fread(&s, sizeof(unsigned char), 1, infile);
+       n=fread(&s, sizeof(s), 1, infile);
        dat=s;
        }
        break;
       case 2: {
        uint16_t s;
-       n=fread(&s, sizeof(unsigned short), 1, infile);
+       n=fread(&s, sizeof(s), 1, infile);
 #ifdef LITTLE_ENDIAN
        Intel_int16(&s);
 #endif
@@ -807,13 +807,13 @@ read_vitaport(transform_info_ptr tinfo) {
       switch (this_size) {
        case 1: {
 	char s;
-	n=fread(&s, sizeof(char), 1, infile);
+	n=fread(&s, sizeof(s), 1, infile);
 	dat=s;
 	}
 	break;
        case 2: {
 	int16_t s;
-	n=fread(&s, sizeof(short), 1, infile);
+	n=fread(&s, sizeof(s), 1, infile);
 #ifdef LITTLE_ENDIAN
 	Intel_int16((unsigned short *)&s);
 #endif
@@ -827,13 +827,13 @@ read_vitaport(transform_info_ptr tinfo) {
       switch (this_size) {
        case 1: {
 	unsigned char s;
-	n=fread(&s, sizeof(unsigned char), 1, infile);
+	n=fread(&s, sizeof(s), 1, infile);
 	dat=s;
 	}
 	break;
        case 2: {
 	uint16_t s;
-	n=fread(&s, sizeof(unsigned short), 1, infile);
+	n=fread(&s, sizeof(s), 1, infile);
 #ifdef LITTLE_ENDIAN
 	Intel_int16(&s);
 #endif

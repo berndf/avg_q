@@ -370,7 +370,7 @@ read_neurofile(transform_info_ptr tinfo) {
  do {
   signed char exponent;
   short delta;
-  if (fread(&exponent, sizeof(signed char), 1, infile)!=1) {
+  if (fread(&exponent, sizeof(exponent), 1, infile)!=1) {
    ERREXIT(tinfo->emethods, "read_neurofile: Error reading data\n");
   }
   delta=exponent;

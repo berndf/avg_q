@@ -56,7 +56,7 @@ main(int argc, char **argv) {
  char *filename;
  FILE *infile;
  int NoOfChannels, channel;
- short checksum;
+ uint16_t checksum;
  long sum_dlen=0;
  unsigned long max_sfac=1, min_sfac=SHRT_MAX, bytes_per_max_sfac=0;
  float ceil_sfreq=0;
@@ -237,7 +237,7 @@ again:
     break;
   }
  }
- fread(&checksum, sizeof(short), 1, infile);
+ fread(&checksum, sizeof(checksum), 1, infile);
 #ifdef LITTLE_ENDIAN
  Intel_int16((uint16_t *)&checksum);
 #endif
@@ -255,12 +255,12 @@ again:
   fseek(infile, sum_dlen, SEEK_CUR);
   while(1) {
    char label[VP_TABLEVAR_LENGTH+1];
-   long length;
+   uint32_t length;
    struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
    label[VP_TABLEVAR_LENGTH]='\0';
    fread(label, 1, VP_TABLEVAR_LENGTH, infile);
    if (feof(infile)) break;
-   fread(&length, sizeof(long), 1, infile);
+   fread(&length, sizeof(length), 1, infile);
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&length);
 #endif
@@ -269,10 +269,10 @@ again:
     printf("Field of length %ld Bytes, Label: >%s<\n", length, label);
     if (markertable_entry->markertable_name!=NULL || 
         strcmp(label, VP_GLBMRKTABLE_NAME)==0) {
-     long pointno;
+     uint32_t pointno;
      int tagno;
-     for (tagno=0; tagno<length/(int)sizeof(long); tagno++) {
-      fread(&pointno, sizeof(long), 1, infile);
+     for (tagno=0; tagno<length/(int)sizeof(uint32_t); tagno++) {
+      fread(&pointno, sizeof(pointno), 1, infile);
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&pointno);
 #endif
@@ -289,8 +289,8 @@ again:
      printf("\n");
      for (pass=0; pass<2; pass++) {
       for (channel=0; channel<NoOfChannels; channel++) {
-       long unknown;
-       fread(&unknown, sizeof(long), 1, infile);
+       uint32_t unknown;
+       fread(&unknown, sizeof(unknown), 1, infile);
 #ifdef LITTLE_ENDIAN
        Intel_int32((uint32_t *)&unknown);
 #endif
@@ -302,10 +302,10 @@ again:
     }
    }
    if (event_list==EVENTLIST_AVG_Q && markertable_entry->markertable_name!=NULL) {
-    long pointno;
+    uint32_t pointno;
     int tagno;
-    for (tagno=0; tagno<length/(int)sizeof(long); tagno++) {
-     fread(&pointno, sizeof(long), 1, infile);
+    for (tagno=0; tagno<length/(int)sizeof(uint32_t); tagno++) {
+     fread(&pointno, sizeof(pointno), 1, infile);
 #ifdef LITTLE_ENDIAN
      Intel_int32((uint32_t *)&pointno);
 #endif

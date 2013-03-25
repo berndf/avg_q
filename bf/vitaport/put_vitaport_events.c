@@ -58,7 +58,7 @@ main(int argc, char **argv) {
  int NoOfChannels, channel;
  int marker_channel= -1;
  long filelen_ms=0;
- short checksum;
+ uint16_t checksum;
  long sum_dlen=0;
  int errflag=0, c;
 
@@ -184,13 +184,14 @@ main(int argc, char **argv) {
   channellen_ms=(long int)rint(channelheaderII.dlen*1000.0/(channelheader.dasize+1)*fileheaderII.scnrate*channelheader.scanfc*channelheader.stofac/VITAPORT_CLOCKRATE);
   if (channellen_ms>filelen_ms) filelen_ms=channellen_ms;
  }
- fread(&checksum, sizeof(short), 1, infile);
+ fread(&checksum, sizeof(checksum), 1, infile);
 #ifdef LITTLE_ENDIAN
  Intel_int16((uint16_t *)&checksum);
 #endif
  if (vitaport_filetype==VITAPORT2_FILE) {
   long const tablepos=ftell(infile)+sum_dlen;
-  long tagno, length, n_events, trigpoint;
+  long tagno, n_events;
+  uint32_t length, trigpoint;
   struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
 
   /* Count the events in evtfile. */
@@ -219,33 +220,33 @@ main(int argc, char **argv) {
 
 #if 0
   fwrite(VP_CHANNELTABLE_NAME, 1, VP_TABLEVAR_LENGTH, infile);
-  length=NoOfChannels*(1+2*sizeof(long));
+  length=NoOfChannels*(1+2*sizeof(length));
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
   for (channel=0; channel<NoOfChannels; channel++) {
    unsigned char display_channel=channel;
    if (channel==marker_channel) display_channel=0xff;
    fwrite(&display_channel, 1, 1, infile);
   }
   for (channel=0; channel<NoOfChannels; channel++) {
-   long unknown= -1;
+   int32_t unknown= -1;
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&unknown);
 #endif
-   fwrite(&unknown, sizeof(long), 1, infile);
-   fwrite(&unknown, sizeof(long), 1, infile);
+   fwrite(&unknown, sizeof(unknown), 1, infile);
+   fwrite(&unknown, sizeof(unknown), 1, infile);
   }
 #endif
 
   fwrite(markertable_entry->markertable_name, 1, VP_TABLEVAR_LENGTH, infile);
   n_events=markertable_entry->idiotically_fixed_length;
-  length=n_events*sizeof(long);
+  length=n_events*sizeof(length);
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
   for (tagno=0; tagno<n_events; tagno++) {
    /* By specifying a sampling rate of 1kHz, the 'point number' output will
     * actually be milliseconds as we need it IF THE POINT POSITIONS ARE GIVEN
@@ -254,42 +255,42 @@ main(int argc, char **argv) {
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&trigpoint);
 #endif
-   fwrite(&trigpoint, sizeof(long), 1, infile);
+   fwrite(&trigpoint, sizeof(trigpoint), 1, infile);
   }
   for (; tagno<n_events; tagno++) {
    trigpoint= -1;
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&trigpoint);
 #endif
-   fwrite(&trigpoint, sizeof(long), 1, infile);
+   fwrite(&trigpoint, sizeof(trigpoint), 1, infile);
   }
 
   fwrite(VP_GLBMRKTABLE_NAME, 1, VP_TABLEVAR_LENGTH, infile);
-  length=4*sizeof(long);
+  length=4*sizeof(length);
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
   length=0;
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
   length=filelen_ms;
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
   length=0;
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
   length=0;
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, infile);
+  fwrite(&length, sizeof(length), 1, infile);
  }
  fclose(evtfile);
  fclose(infile);

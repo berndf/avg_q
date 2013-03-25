@@ -146,13 +146,13 @@ mfx_open(char const *filename, char const *filemode, enum mfx_datatypes datatype
 #endif
  mfxfile->data_offset=ftell(mfxfile->mfxstream);	/* Save data start for seeking */
  fseek(mfxfile->mfxstream, 0, 2);			/* Find the actual file length */
- mfxfile->mfxlen=(ftell(mfxfile->mfxstream)-mfxfile->data_offset)/sizeof(short)/
+ mfxfile->mfxlen=(ftell(mfxfile->mfxstream)-mfxfile->data_offset)/sizeof(int16_t)/
 		  mfxfile->fileheader.total_chans;
  mfxfile->subversion=SUBVERSION_PAST1192;
  if (mfxfile->mfxlen!=mfxfile->fileheader.total_epochs*mfxfile->fileheader.pts_in_epoch) {
   /* Does the file size difference indicate this is an old file ? */
   if ((mfxfile->fileheader.total_epochs*mfxfile->fileheader.pts_in_epoch-
-      mfxfile->mfxlen)*sizeof(short)==
+      mfxfile->mfxlen)*sizeof(int16_t)==
       sizeof(struct mfx_channel_data001)-sizeof(struct mfx_channel_data001a)) {
    int channel;
    struct mfx_channel_data001a *oldchannelp=
@@ -190,8 +190,8 @@ mfx_open(char const *filename, char const *filemode, enum mfx_datatypes datatype
    return (MFX_FILE*)NULL;
   }
  }
- if ((mfxfile->input_buffer=(short*)
-      malloc(mfxfile->fileheader.total_chans*sizeof(short)))==NULL) {
+ if ((mfxfile->input_buffer=(int16_t*)
+      malloc(mfxfile->fileheader.total_chans*sizeof(int16_t)))==NULL) {
   fclose(mfxfile->mfxstream);
   free((void*)mfxfile->channelheaders);
   free((void*)mfxfile);
@@ -243,8 +243,8 @@ mfx_create(char const *filename, int nr_of_channels, enum mfx_datatypes datatype
   return (MFX_FILE*)NULL;
  }
  mfxfile->subversion=SUBVERSION_PAST1192;
- if ((mfxfile->input_buffer=(short*)
-      malloc(mfxfile->fileheader.total_chans*sizeof(short)))==NULL) {
+ if ((mfxfile->input_buffer=(int16_t*)
+      malloc(mfxfile->fileheader.total_chans*sizeof(int16_t)))==NULL) {
   fclose(mfxfile->mfxstream);
   free((void*)mfxfile->channelheaders);
   free((void*)mfxfile);
@@ -372,10 +372,10 @@ mfx_close(MFX_FILE* mfxfile) {
    if (leftover>0) {
     /* There are data rows left to write to complete the last epoch */
     if (mfx_seek(mfxfile, 0L, SEEK_END)!=MFX_NOERR) return mfx_lasterr;
-    memset(mfxfile->input_buffer, 0, sizeof(short)*mfxfile->fileheader.total_chans);
+    memset(mfxfile->input_buffer, 0, sizeof(int16_t)*mfxfile->fileheader.total_chans);
     leftover=mfxfile->fileheader.pts_in_epoch-leftover;
     while (leftover--) {
-     if ((int)fwrite(mfxfile->input_buffer, sizeof(short), mfxfile->fileheader.total_chans, 
+     if ((int)fwrite(mfxfile->input_buffer, sizeof(int16_t), mfxfile->fileheader.total_chans, 
 		mfxfile->mfxstream)!=mfxfile->fileheader.total_chans) {
       return mfx_lasterr=MFX_WRITEERR4;
      }
@@ -631,13 +631,13 @@ mfx_errtype
 mfx_read(void *tobuffer, long count, MFX_FILE *mfxfile) {
  char *bufptr;
  int i, channel;
- short datum;
+ int16_t datum;
  if (mfxfile->nr_of_channels_selected==0) {
   return mfx_lasterr=MFX_NOCHANNEL;
  }
  bufptr=(char *)tobuffer;
  while (count--) {
-  if ((int)fread(mfxfile->input_buffer, sizeof(short), mfxfile->fileheader.total_chans, 
+  if ((int)fread(mfxfile->input_buffer, sizeof(int16_t), mfxfile->fileheader.total_chans, 
 	    mfxfile->mfxstream)!=mfxfile->fileheader.total_chans) {
    return mfx_lasterr=MFX_READERR4;
   }
@@ -650,8 +650,8 @@ mfx_read(void *tobuffer, long count, MFX_FILE *mfxfile) {
 #  endif
    switch (mfxfile->datatype) {
     case MFX_SHORTS:
-     *(short*)bufptr=datum;
-     bufptr+=sizeof(short);
+     *(int16_t*)bufptr=datum;
+     bufptr+=sizeof(int16_t);
      break;
     case MFX_FLOATS:
      *(float*)bufptr=DATACONV(mfxfile->channelheaders[channel], datum);
@@ -683,7 +683,7 @@ mfx_errtype
 mfx_write(void *frombuffer, long count, MFX_FILE *mfxfile) {
  char *bufptr;
  int i, channel;
- short datum;
+ int16_t datum;
  if (mfxfile->was_just_created) mfx_flushheaders(mfxfile);
  if (mfxfile->nr_of_channels_selected==0) {
   return mfx_lasterr=MFX_NOCHANNEL;
@@ -694,18 +694,18 @@ mfx_write(void *frombuffer, long count, MFX_FILE *mfxfile) {
    * a new time slice is appended. 
    */
   if (mfxfile->mfxpos<mfxfile->mfxlen) {
-   if ((int)fread(mfxfile->input_buffer, sizeof(short), mfxfile->fileheader.total_chans, 
+   if ((int)fread(mfxfile->input_buffer, sizeof(int16_t), mfxfile->fileheader.total_chans, 
 	     mfxfile->mfxstream)!=mfxfile->fileheader.total_chans) {
     return mfx_lasterr=MFX_READERR4;
    }
-   fseek(mfxfile->mfxstream, -sizeof(short)*mfxfile->fileheader.total_chans, 1);
-  } else memset(mfxfile->input_buffer, 0, sizeof(short)*mfxfile->fileheader.total_chans);
+   fseek(mfxfile->mfxstream, -sizeof(int16_t)*mfxfile->fileheader.total_chans, 1);
+  } else memset(mfxfile->input_buffer, 0, sizeof(int16_t)*mfxfile->fileheader.total_chans);
   for (i=0; i<mfxfile->nr_of_channels_selected; i++) {
    channel=mfxfile->selected_channels[i]-1;
    switch (mfxfile->datatype) {
     case MFX_SHORTS:
-     datum=*(short*)bufptr;
-     bufptr+=sizeof(short);
+     datum=*(int16_t*)bufptr;
+     bufptr+=sizeof(int16_t);
      break;
     case MFX_FLOATS:
      datum=CONVDATA(mfxfile->channelheaders[channel], *(float*)bufptr);
@@ -721,7 +721,7 @@ mfx_write(void *frombuffer, long count, MFX_FILE *mfxfile) {
 #  endif
    mfxfile->input_buffer[channel]=datum;
   }
-  if ((int)fwrite(mfxfile->input_buffer, sizeof(short), mfxfile->fileheader.total_chans, 
+  if ((int)fwrite(mfxfile->input_buffer, sizeof(int16_t), mfxfile->fileheader.total_chans, 
 	    mfxfile->mfxstream)!=mfxfile->fileheader.total_chans) {
    return mfx_lasterr=MFX_WRITEERR4;
   }
@@ -771,12 +771,12 @@ mfx_seek(MFX_FILE* mfxfile, long offset, int whence) {
  }
  if (newpos<0) return mfx_lasterr=MFX_NEGSEEK;
  if (newpos>mfxfile->mfxlen) return mfx_lasterr=MFX_PLUSSEEK;
- newoffset+=offset*mfxfile->fileheader.total_chans*sizeof(short);
+ newoffset+=offset*mfxfile->fileheader.total_chans*sizeof(int16_t);
  if (fseek(mfxfile->mfxstream, newoffset, whence)!=0) {
   return mfx_lasterr=MFX_SEEKERROR;
  }
  mfxfile->mfxpos=(ftell(mfxfile->mfxstream)-mfxfile->data_offset)/
-		  sizeof(short)/mfxfile->fileheader.total_chans;
+		  sizeof(int16_t)/mfxfile->fileheader.total_chans;
  if (mfxfile->mfxpos!=newpos) return mfx_lasterr=MFX_SEEKINCONSISTENT;
  return mfx_lasterr=MFX_NOERR;
 }
@@ -833,7 +833,7 @@ mfx_alloc(MFX_FILE* mfxfile, long count) {
  int elementsize=0;
  switch (mfxfile->datatype) {
   case MFX_SHORTS:
-   elementsize=sizeof(short);
+   elementsize=sizeof(int16_t);
    break;
   case MFX_FLOATS:
    elementsize=sizeof(float);
@@ -854,8 +854,8 @@ mfx_alloc(MFX_FILE* mfxfile, long count) {
  * Returns triggercode of next datum or 0
  */
 static int nexttrigcode(MFX_FILE* mfxfile, int channel) {
- short datum;
- if ((int)fread(mfxfile->input_buffer, sizeof(short), mfxfile->fileheader.total_chans, 
+ int16_t datum;
+ if ((int)fread(mfxfile->input_buffer, sizeof(datum), mfxfile->fileheader.total_chans, 
 	   mfxfile->mfxstream)!=mfxfile->fileheader.total_chans) {
   mfx_lasterr=MFX_READERR4;
   return 0;
@@ -867,7 +867,7 @@ static int nexttrigcode(MFX_FILE* mfxfile, int channel) {
 #endif
  /* The following is necessary for compatibility with the old style triggers */
  /* Be aware of round-off problems */
- datum=(short int)(DATACONV(mfxfile->channelheaders[channel-1], datum)+0.1);
+ datum=(int16_t)(DATACONV(mfxfile->channelheaders[channel-1], datum)+0.1);
  mfx_lasterr=MFX_NOERR;
  if (IS_TRIGGER(datum)==0) return 0;
  return TRIGGERCODE(datum);

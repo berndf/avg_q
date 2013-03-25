@@ -230,9 +230,9 @@ write_vitaport_exit(transform_info_ptr tinfo) {
  struct write_vitaport_storage *local_arg=(struct write_vitaport_storage *)tinfo->methods->local_storage;
  int channel, NoOfChannels=local_arg->fileheader.knum;
  long point;
- long const channellen=local_arg->total_points*sizeof(short); 
+ long const channellen=local_arg->total_points*sizeof(uint16_t); 
  long const hdlen=local_arg->fileheader.hdlen;
- short checksum=0;
+ uint16_t checksum=0;
 
  local_arg->fileheaderII.dlen=hdlen+NoOfChannels*channellen; 
  /*{{{  Write the file headers*/
@@ -311,7 +311,7 @@ write_vitaport_exit(transform_info_ptr tinfo) {
 #  endif
   /*}}}  */
  }
- fwrite(&checksum, sizeof(short), 1, local_arg->outfile);
+ fwrite(&checksum, sizeof(checksum), 1, local_arg->outfile);
 
  TRACEMS(tinfo->emethods, 1, "write_vitaport_exit: Copying channels to output file...\n");
 
@@ -329,7 +329,7 @@ write_vitaport_exit(transform_info_ptr tinfo) {
 
   for (point=0; point<local_arg->total_points; point++) {
    DATATYPE dat;
-   short s;
+   int16_t s;
    fseek(local_arg->channelfile, (point*NoOfChannels+channel)*sizeof(DATATYPE), SEEK_SET);
    if (fread(&dat, sizeof(DATATYPE), 1, local_arg->channelfile)!=1) {
     ERREXIT(tinfo->emethods, "write_vitaport_exit: Error reading temp file.\n");
@@ -338,7 +338,7 @@ write_vitaport_exit(transform_info_ptr tinfo) {
 #   ifdef LITTLE_ENDIAN
    Intel_int16((uint16_t *)&s);
 #   endif
-   if (fwrite(&s, sizeof(short), 1, local_arg->outfile)!=1) {
+   if (fwrite(&s, sizeof(s), 1, local_arg->outfile)!=1) {
     ERREXIT(tinfo->emethods, "write_vitaport_exit: Write error.\n");
    }
   }
@@ -348,7 +348,8 @@ write_vitaport_exit(transform_info_ptr tinfo) {
  unlink(local_arg->channelfilename);
 
  if (local_arg->triggers.current_length!=0) {
-  long tagno, length, n_events, trigpoint;
+  long tagno, n_events;
+  uint32_t length, trigpoint;
   int const nevents=local_arg->triggers.current_length/sizeof(struct trigger);
   struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
 
@@ -366,11 +367,11 @@ write_vitaport_exit(transform_info_ptr tinfo) {
   n_events=markertable_entry->idiotically_fixed_length;
 
   fwrite(markertable_entry->markertable_name, 1, VP_TABLEVAR_LENGTH, local_arg->outfile);
-  length=n_events*sizeof(long);
+  length=n_events*sizeof(length);
 #ifdef LITTLE_ENDIAN
   Intel_int32((uint32_t *)&length);
 #endif
-  fwrite(&length, sizeof(long), 1, local_arg->outfile);
+  fwrite(&length, sizeof(length), 1, local_arg->outfile);
   for (tagno=0; tagno<n_events; tagno++) {
    if (tagno<nevents) {
     struct trigger * const intrig=((struct trigger *)local_arg->triggers.buffer_start)+tagno;
@@ -384,14 +385,14 @@ write_vitaport_exit(transform_info_ptr tinfo) {
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&trigpoint);
 #endif
-   fwrite(&trigpoint, sizeof(long), 1, local_arg->outfile);
+   fwrite(&trigpoint, sizeof(trigpoint), 1, local_arg->outfile);
   }
   for (; tagno<n_events; tagno++) {
    trigpoint= -1;
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&trigpoint);
 #endif
-   fwrite(&trigpoint, sizeof(long), 1, local_arg->outfile);
+   fwrite(&trigpoint, sizeof(trigpoint), 1, local_arg->outfile);
   }
  }
 

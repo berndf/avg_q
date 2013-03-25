@@ -28,6 +28,7 @@
  *
 */
 
+#include <stdint.h>
 #include <math.h> /* For rint() */
 
 #ifdef __MINGW32__
@@ -39,7 +40,7 @@
 /* The DATACONV macro does the transformation of short data into a floating point number */
 #define DATACONV(colstruct, datashort) (colstruct.shift_factor+(datashort)*colstruct.conv_factor)
 /* The CONVDATA macro does the reverse transformation */
-#define CONVDATA(colstruct, datafloat) ((short)rint(((datafloat)-colstruct.shift_factor)/colstruct.conv_factor))
+#define CONVDATA(colstruct, datafloat) ((int16_t)rint(((datafloat)-colstruct.shift_factor)/colstruct.conv_factor))
 /* The WRITECONVSTRUCT macro writes the necessary translation codes into the colstruct;
  * The last term for colstruct.shift_factor is due to the asymmetry of the short data range */
 #define WRITECONVSTRUCT(colstruct, newymin, newymax) colstruct.ymin=newymin; colstruct.ymax=newymax; colstruct.conv_factor=(newymax-newymin)/65535; colstruct.shift_factor=(newymax+newymin)/2+0.5*colstruct.conv_factor

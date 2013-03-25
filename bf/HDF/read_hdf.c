@@ -279,7 +279,6 @@ read_hdf_init(transform_info_ptr tinfo) {
  struct read_hdf_storage *local_arg=(struct read_hdf_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  int32 nattr;
- int ret;
 
  /*{{{  Process options*/
  local_arg->fromepoch=(args[ARGS_FROMEPOCH].is_set ? args[ARGS_FROMEPOCH].arg.i : 1);
@@ -290,7 +289,7 @@ read_hdf_init(transform_info_ptr tinfo) {
  if (local_arg->fileid==FAIL) {
   ERREXIT1(tinfo->emethods, "read_hdf_init: Error opening %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
- ret=SDfileinfo(local_arg->fileid, &local_arg->ndatasets, &nattr);
+ SDfileinfo(local_arg->fileid, &local_arg->ndatasets, &nattr);
  if (local_arg->ndatasets<=0) {
   ERREXIT1(tinfo->emethods, "read_hdf_init: Can't find a Scientific Data Set in %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }

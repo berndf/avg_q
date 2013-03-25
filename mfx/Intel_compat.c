@@ -28,11 +28,15 @@ void Intel_int16(uint16_t *x) {
  *x = ((*x&0x00ffU)<<8) | ((*x&0xff00U)>>8);
 }
 
+/* int size is usually 2 bytes on 32 bit and 4 on 64 bit systems,
+ * but may also be 8 bytes */
 void Intel_int(unsigned int *x) {
  if (sizeof(int)==2) {
   Intel_int16((uint16_t *)x);
- } else {
+ } else if (sizeof(int)==4) {
   Intel_int32((uint32_t *)x);
+ } else {
+  Intel_int64((uint64_t *)x);
  }
 }
 

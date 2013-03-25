@@ -116,7 +116,6 @@ METHODDEF DATATYPE *
 average(transform_info_ptr tinfo) {
  struct average_local_struct *localp=(struct average_local_struct *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- Bool first_epoch=FALSE;
  int *channelmap=NULL;
  int missing_channels=0;
  int const varstep=var_steps[localp->stat_test]+(args[ARGS_MATCHBYNAME].is_set ? matchbyname_addsteps[localp->stat_test] : 0);
@@ -127,8 +126,6 @@ average(transform_info_ptr tinfo) {
  if (tinfo->nrofaverages<=0 || !args[ARGS_WEIGHTED].is_set) tinfo->nrofaverages=1;
  if (localp->nr_of_averages==0) {
   /*{{{  First incoming epoch: Initialize working memory*/
-  first_epoch=TRUE;
-
   /* Make our own local copy of tinfo and its arrays */
   deepcopy_tinfo(&localp->tinfo, tinfo);
 

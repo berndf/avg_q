@@ -64,9 +64,9 @@ LOCAL char *datatype_choice[]={
  NULL
 };
 LOCAL int datatype_size[]={
- sizeof(char),
- sizeof(short),
- sizeof(long),
+ sizeof(int8_t),
+ sizeof(int16_t),
+ sizeof(int32_t),
  sizeof(float),
  sizeof(double),
 };
@@ -567,31 +567,31 @@ read_value(FILE *infile,
  switch (local_arg->datatype) {
   case DT_INT8: {
    signed char c;
-   if (fread(&c, sizeof(char), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
    dat=c;
    }
    break;
   case DT_INT16: {
-   short c;
-   if (fread(&c, sizeof(short), 1, infile)!=1) err=ERR_READ;
+   int16_t c;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
 #ifndef LITTLE_ENDIAN
-   Intel_int16((uint16_t *)&c);
+   Intel_int16(&c);
 #endif
    dat=c;
    }
    break;
   case DT_INT32: {
-   long c;
-   if (fread(&c, sizeof(long), 1, infile)!=1) err=ERR_READ;
+   int32_t c;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
 #ifndef LITTLE_ENDIAN
-   Intel_int32((uint32_t *)&c);
+   Intel_int32(&c);
 #endif
    dat=c;
    }
    break;
   case DT_FLOAT32: {
    float c;
-   if (fread(&c, sizeof(float), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
 #ifndef LITTLE_ENDIAN
    Intel_float(&c);
 #endif
@@ -600,7 +600,7 @@ read_value(FILE *infile,
    break;
   case DT_FLOAT64: {
    double c;
-   if (fread(&c, sizeof(double), 1, infile)!=1) err=ERR_READ;
+   if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
 #ifndef LITTLE_ENDIAN
    Intel_double(&c);
 #endif

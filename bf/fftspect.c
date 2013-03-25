@@ -268,7 +268,7 @@ cspect(transform_info_ptr tinfo, DATATYPE *indata, complex_spectrum *cspec, int 
 /*{{{  calc_refspectrum(transform_info_ptr tinfo, complex_spectrum *cspec, complex_spectrum *normspec, int refchannel, complex *p, enum norm_types norm_type) {*/
 LOCAL void
 calc_refspectrum(transform_info_ptr tinfo, complex_spectrum *cspec, complex_spectrum *normspec, int refchannel, complex *p, enum norm_types norm_type) {
- int m1,mm2,kk,joff,k,i,j;
+ int m1,kk,joff,k,i,j;
  DATATYPE den;
  complex *phaseref, *cwp, *pr;
 
@@ -309,7 +309,7 @@ calc_refspectrum(transform_info_ptr tinfo, complex_spectrum *cspec, complex_spec
   /*}}}  */
  }
 
- mm2=2*(m1=cspec->nr_of_freq);
+ m1=cspec->nr_of_freq;
  k=cspec->items_per_freq/2;
  cwp=cspec->current_spectrum;
  pr=normspec->current_spectrum;
