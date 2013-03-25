@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2009,2010 Bernd Feige
+# Copyright (C) 2009-2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import sys
@@ -7,18 +7,24 @@ import os
 import avg_q
 import avg_q.trgfile
 import avg_q.paradigm
+from avg_q.avg_q_file import formats_and_extensions
 
 a=avg_q.avg_q()
 for filename in sys.argv[1:]:
+ parts=filename.split(':')
+ if len(parts)==2 and parts[0] in dict(formats_and_extensions):
+  filetype,filename=parts
+ else:
+  filetype=None
  if not os.path.exists(filename):
   print("Oops, %s doesn't exist - skipping..." % filename)
   continue
  base,ext=os.path.splitext(filename)
- if ext in ['.trg','.crs','.tri']:
+ if filetype is None and ext in ['.trg','.crs','.tri']:
   # Assume trigger file
   trg=avg_q.trgfile.trgfile(filename)
  else:
-  infile=avg_q.avg_q_file(filename)
+  infile=avg_q.avg_q_file(filename,filetype)
   trg=a.get_filetriggers(infile)
  triggers=trg.gettuples()
  trg.close()
@@ -29,12 +35,13 @@ for filename in sys.argv[1:]:
   p=avg_q.paradigm.paradigm(triggers)
  stats=p.triggerstats()
  for code in stats:
-  if stats[code][0]<=1:
-   print("%s Code %d: %d" % ((filename, code, stats[code][0])))
-  elif stats[code][0]==2:
-   print("%s Code %d: %d [single diff %g]" % ((filename, code)+stats[code][:2]))
+  result=stats[code]
+  if result.n<=1:
+   print("%s Code %d: %d" % (filename, code, result.n))
+  elif result.n==2:
+   print("%s Code %d: %d [single diff %g]" % (filename, code, result.n, result.mean))
   else:
-   print("%s Code %d: %d [mean %g+-%g, q0=%g q25=%g q50=%g q75=%g q100=%g]" % ((filename, code)+stats[code]))
+   print("%s Code %d: %d [mean %g+-%g, q0=%g q25=%g q50=%g q75=%g q100=%g]" % (filename, code, result.n, result.mean, result.sd, result.min, result.q25, result.q50, result.q75, result.max))
  if not stats:
   print("%s: No triggers!" % filename)
 a.close()

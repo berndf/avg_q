@@ -34,7 +34,7 @@ for opt,arg in optlist:
  elif opt=='-d':
   debug=True
 
-a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=tracelevel)
+a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=tracelevel,iconify=True)
 a.debug=debug
 n_files=0
 for filename_and_triggerfile in args:
