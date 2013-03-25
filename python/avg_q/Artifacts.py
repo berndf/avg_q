@@ -77,7 +77,7 @@ class Artifact_Segmentation(avg_q.Script):
     For this reason, blocking marks possibly extended regions, while the other two artifact types
     are detected as single points.'''
  ArtifactDetectionThreshold=300.0 # Detect phasic artifacts exceeding this threshold
- JumpDetectionThreshold=900.0 # Detect jumps (after differentiate) by this threshold
+ JumpDetectionThreshold=600.0 # Detect jumps (after differentiate) by this threshold
  min_blocking_points=3 # Do not add single or 3 repeated points as blocking
  def __init__(self,avg_q_instance,infile,start_point,end_point):
   self.infile=infile
@@ -119,10 +119,10 @@ write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
   self.collected.add_crossings(crossings,self.start_point,self.end_point)
  def add_Epochsource_contfile_excluding_artifacts(self,margin_points,nr_of_points=None,step_points=None,additional_breakpoints=None):
   return self.add_Epochsource_contfile_excluding_breakpoints(self.infile,self.start_point,self.end_point,self.collected.artifacts+additional_breakpoints if additional_breakpoints else self.collected.artifacts,margin_points,nr_of_points,step_points)
- def show_artifacts(self):
+ def show_artifacts(self, epochlength=0):
   '''Read the full continuous file and add triggers showing the breakpoints (and -regions).
      Note that this currently works for avg_q_vogl only, not for the batch version.'''
-  epochsource=avg_q.Epochsource(self.infile,continuous=True,trigtransfer=True)
+  epochsource=avg_q.Epochsource(self.infile,aftertrig=epochlength,continuous=True,trigtransfer=True)
   epochsource.set_trigpoints(self.collected.get_tuples())
   script=avg_q.Script(self.avg_q_instance)
   script.add_Epochsource(epochsource)
