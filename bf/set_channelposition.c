@@ -484,12 +484,17 @@ set_channelposition(transform_info_ptr tinfo) {
   } else {
    char * const channel_name=selection->channelnames[i];
    int channel=0;
+   int set_count=0;
    do {
     if (strcmp(tinfo->channelnames[channel], channel_name)==0) {
      set_1channelposition(tinfo, channel, i);
+     set_count++;
     }
     channel++;
    } while (channel<tinfo->nr_of_channels);
+   if (set_count==0) {
+    TRACEMS1(tinfo->emethods,3,"set_channelposition: Unmatched channel >%s<\n", MSGPARM(channel_name));
+   }
   }
  }
 
