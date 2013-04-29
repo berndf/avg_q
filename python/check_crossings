@@ -20,9 +20,14 @@ for filename in sys.argv[1:]:
   print("Oops, %s doesn't exist - skipping..." % filename)
   continue
  base,ext=os.path.splitext(filename)
- if filetype is None and ext in ['.trg','.crs','.tri']:
+ if filetype is None and ext in ['.trg','.crs','.tri','.log']:
   # Assume trigger file
-  trg=avg_q.trgfile.trgfile(filename)
+  if ext=='.log':
+   # Assume Presentation log file
+   import avg_q.Presentation
+   trg=avg_q.Presentation.PresLogfile(filename)
+  else:
+   trg=avg_q.trgfile.trgfile(filename)
  else:
   infile=avg_q.avg_q_file(filename,filetype)
   trg=a.get_filetriggers(infile)
