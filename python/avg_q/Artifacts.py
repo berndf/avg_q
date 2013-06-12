@@ -72,12 +72,15 @@ class Artifact_Segmentation(avg_q.Script):
     Three types of artifacts are detected: Peaks exceeding ArtifactDetectionThreshold,
     Jumps (discontinuities) exceeding JumpDetectionThreshold and blocking (zero difference
     between adjacent points) exceeding a duration of min_blocking_points.
+    The threshold amplitudes are relative to the median across all points - each channel is normalized
+    by its median before the operation because the typical amplitude of each channel usually varies
+    with its distance from the reference. By this procedure the operation is scale free.
     There are two causes of blocking - during a recording, it indicates amplifier saturation;
     in some environments (eg sleep), disconnecting the amplifiers results in zero lines written.
     For this reason, blocking marks possibly extended regions, while the other two artifact types
     are detected as single points.'''
- ArtifactDetectionThreshold=300.0 # Detect phasic artifacts exceeding this threshold
- JumpDetectionThreshold=600.0 # Detect jumps (after differentiate) by this threshold
+ ArtifactDetectionThreshold=4.0 # Detect phasic artifacts exceeding this threshold
+ JumpDetectionThreshold=8.0 # Detect jumps (after differentiate) by this threshold
  min_blocking_points=3 # Do not add single or 3 repeated points as blocking
  def __init__(self,avg_q_instance,infile,start_point,end_point):
   self.infile=infile
@@ -99,6 +102,11 @@ push
 differentiate
 calc abs
 push
+trim -M 0 0
+writeasc -b -c scale.asc
+pop
+subtract -d -P -c scale.asc
+push
 collapse_channels -h
 write_crossings -E collapsed %(JumpDetectionThreshold)g stdout
 pop
@@ -107,6 +115,7 @@ recode 0 0 1 1  0 Inf 0 0
 write_crossings collapsed 0.5 stdout
 pop
 fftfilter 0 0 30Hz 35Hz
+subtract -d -P -c scale.asc
 calc abs
 collapse_channels -h
 write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
@@ -121,7 +130,7 @@ write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
   return self.add_Epochsource_contfile_excluding_breakpoints(self.infile,self.start_point,self.end_point,self.collected.artifacts+additional_breakpoints if additional_breakpoints else self.collected.artifacts,margin_points,nr_of_points,step_points)
  def show_artifacts(self, epochlength=0):
   '''Read the full continuous file and add triggers showing the breakpoints (and -regions).
-     Note that this currently works for avg_q_vogl only, not for the batch version.'''
+     Note that this currently works for avg_q_vogl only, not for avg_q_ui.'''
   epochsource=avg_q.Epochsource(self.infile,aftertrig=epochlength,continuous=True,trigtransfer=True)
   epochsource.set_trigpoints(self.collected.get_tuples())
   script=avg_q.Script(self.avg_q_instance)

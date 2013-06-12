@@ -17,6 +17,7 @@ formats_and_extensions=[
  ('Konstanz', ['.sum', '.SUM', '.raw', '.RAW']),
  ('Vitaport', ['.vpd', '.VPD', '.raw', '.RAW']),
  ('Tucker', ['.raw', '.RAW']),
+ ('Embla', ['.ebm', '.EBM']),
 ]
 
 def escape_filename(path):
@@ -76,6 +77,10 @@ read_sound %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftert
    from . import Coherence
    coherencefile=Coherence.avg_q_Coherencefile(filename)
    self.getepochmethod=coherencefile.getepochmethod
+  elif fileformat=='Embla':
+   from . import Embla
+   emblafile=Embla.avg_q_Emblafile(filename)
+   self.getepochmethod=emblafile.getepochmethod
   elif fileformat=='Konstanz':
    self.getepochmethod='''
 read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filename)s

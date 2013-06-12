@@ -38,8 +38,11 @@ class PresLog(object):
    self.atstart=False
    yield fields
  def __del__(self):
+  self.close()
+ def close(self):
   if self.log:
    self.log.close()
+   self.log=None
 
 class PresLogfile(trgfile.trgfile):
  def __init__(self,logfile,part='events'):
@@ -57,4 +60,8 @@ class PresLogfile(trgfile.trgfile):
     code= -1
     description=' '.join([description,data['Code']])
    yield (point, code, description)
+ def close(self):
+  if self.PL:
+   self.PL.close()
+   self.PL=None
 

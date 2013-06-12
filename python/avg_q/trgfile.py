@@ -40,13 +40,21 @@ class trgfile(object):
    if source:
     self.reader=iter(source)
   self.preamble=Preamble()
+ def __del__(self):
+  """Destructor."""
+  self.close()
+ # The "with avg_q.trgfile.trgfile() as xxx" API
+ def __enter__(self):
+  return self
+ def __exit__(self,exc_type,exc_value,traceback):
+  self.close()
  def set_description_codes(self,description_codes):
   self.description_codes=description_codes
   self.unknown_descriptions={}
  def close(self):
   if self.trgfile:
    self.trgfile.close()
-  self.trgfile=None
+   self.trgfile=None
  def getline(self):
   if self.trgfile:
    line=next(self.trgfile)

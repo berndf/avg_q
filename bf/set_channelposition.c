@@ -125,16 +125,25 @@ LOCAL struct positions_for_channelnames positions_PSG[]={
  {"EEG A2",	3.0,	2.0,	0.0},
  {"EEG A1-AA",	-3.0,	2.0,	0.0},
  {"EEG A2-AA",	3.0,	2.0,	0.0},
- {"EKG",	 -2,-1.0,	0.0},
- {"ECG",	 -2,-1.0,	0.0},
+ {"EKG",	-3.0,	-1.0,	0.0},
+ {"ECG",	-3.0,	-1.0,	0.0},
  {"POLY1",	-1.0,	-1.0,	0.0},
  {"POLY2",	-0.0,	-1.0,	0.0},
  {"K25",	-2.0,	-2.0,	0.0},
  {"K26",	-1.0,	-2.0,	0.0},
  {"K27",	0.0,	-2.0,	0.0},
  {"EMG",	1.0,	-2.0,	0.0},
- {"EMG EMGchin",	1.0,	-2.0,	0.0},
- {"ATM",	2.0,	-2.0,	0.0},
+ {"EMG EMGchin",	-3.0,	-2.0,	0.0},
+ {"EMG EMGTible",	-2.0,	-2.0,	0.0},
+ {"EMG EMGTibri",	-1.0,	-2.0,	0.0},
+ {"ATM",	-2.0,	-1.0,	0.0},
+ {"Airflow",	-1.0,	-1.0,	0.0},
+ {"Thorax",	0.0,	-1.0,	0.0},
+ {"Abdomen",	1.0,	-1.0,	0.0},
+ {"Plethysmogram",	2.0,	-1.0,	0.0},
+ {"SpO2",	3.0,	-1.0,	0.0},
+ {"Pulse",	1.0,	-2.0,	0.0},
+ {"Snoring",	2.0,	-2.0,	0.0},
  /* The NULL end entry tells where unknown channels are placed (i*x, y, z) */
  {NULL,	0.5,	-3.0,	0.0}
 };
@@ -324,20 +333,34 @@ set_channelposition_init(transform_info_ptr tinfo) {
   /*}}}  */
  } else if (*buf.current_token=='@') {
   /*{{{  Read channels and positions from ascii file*/
-  char inbuf[INBUF_SIZE], *ininbuf;
-  int nr_of_channels=0, i;
+  int nr_of_channels=0;
   FILE *pos_file=fopen(buf.current_token+1, "r");
+  growing_buf linebuf;
+  int c;
 
   if (pos_file==NULL) {
    ERREXIT1(tinfo->emethods, "set_channelposition_init: Can't open position file >%s<\n", MSGPARM(buf.current_token+1));
   }
+  growing_buf_init(&linebuf);
+  growing_buf_allocate(&linebuf, 0);
+  linebuf.delimiters="\t";
 
   /*{{{  Count lines and neccessary string space*/
-  while (fgets(inbuf, INBUF_SIZE, pos_file)!=NULL) {
-   nr_of_channels++;
-   for (ininbuf=inbuf; isspace(*ininbuf); ininbuf++);
-   for (; !isspace(*ininbuf); ininbuf++,string_space++);
-   string_space++;
+  while (TRUE) {
+   c=fgetc(pos_file);
+   if (c==EOF) break;
+   if (c=='\n') {
+    growing_buf_appendchar(&linebuf, '\0');
+    growing_buf_firsttoken(&linebuf);
+    if (linebuf.nr_of_tokens!=4) {
+     ERREXIT(tinfo->emethods, "set_channelposition_init: Not 3 positions for each channel\n");
+    }
+    nr_of_channels++;
+    string_space+=strlen(linebuf.current_token)+1;
+    growing_buf_clear(&linebuf);
+   } else {
+    growing_buf_appendchar(&linebuf, c);
+   }
   }
   /*}}}  */
 
@@ -347,20 +370,30 @@ set_channelposition_init(transform_info_ptr tinfo) {
    ERREXIT(tinfo->emethods, "set_channelposition_init: Can't malloc data\n");
   }
   fseek(pos_file, 0, 0);
+
   channel=0;
-  while (fgets(inbuf, INBUF_SIZE, pos_file)!=NULL) {
-   for (ininbuf=inbuf; isspace(*ininbuf); ininbuf++);
-   selection->channelnames[channel]=innames;
-   while (!isspace(*ininbuf)) *innames++ = *ininbuf++;
-   *innames++='\0';
-   for (i=0; i<3; i++) {
-    while (isspace(*ininbuf)) ininbuf++;
-    selection->positions[3*channel+i]=atof(ininbuf);
-    while (!isspace(*ininbuf)) ininbuf++;
+  while (TRUE) {
+   c=fgetc(pos_file);
+   if (c==EOF) break;
+   if (c=='\n') {
+    growing_buf_firsttoken(&linebuf);
+    strcpy(innames, linebuf.current_token);
+    selection->channelnames[channel]=innames;
+    innames+=strlen(innames)+1;
+    growing_buf_nexttoken(&linebuf);
+    selection->positions[3*channel  ]=atof(linebuf.current_token);
+    growing_buf_nexttoken(&linebuf);
+    selection->positions[3*channel+1]=atof(linebuf.current_token);
+    growing_buf_nexttoken(&linebuf);
+    selection->positions[3*channel+2]=atof(linebuf.current_token);
+    growing_buf_clear(&linebuf);
+    channel++;
+   } else {
+    growing_buf_appendchar(&linebuf, c);
    }
-   channel++;
   }
   selection->nr_of_channels=nr_of_channels;
+  growing_buf_free(&linebuf);
   fclose(pos_file);
   /*}}}  */
  } else {

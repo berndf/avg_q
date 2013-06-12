@@ -7738,14 +7738,14 @@ set_channelposition
 \series default
 
 \begin_inset Foot
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
 \series bold
 query channelpositions
 \series default
- superseded the special method 
+ replaced the special method 
 \series bold
 write_channelpositions
 \series default
@@ -8685,9 +8685,9 @@ channelposition
  Channel names and positions can also be read from the lines of an ASCII
  file as written by 
 \series bold
-write_channelpositions
+query channelpositions
 \series default
-.
+ (tab delimited, no header, columns: name x y z).
  Multiple channels of the same name are set to the same position by default.
 \begin_inset Newline newline
 \end_inset

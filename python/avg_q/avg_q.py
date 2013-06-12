@@ -71,6 +71,11 @@ class avg_q(object):
  def __del__(self):
   """Destructor."""
   self.close()
+ # The "with avg_q.avg_q() as xxx" API
+ def __enter__(self):
+  return self
+ def __exit__(self,exc_type,exc_value,traceback):
+  self.close()
  def write(self,script):
   """Send a string (or whole script) to avg_q"""
   if self.debug:
@@ -99,9 +104,11 @@ null_sink
   for line in self:
    print(line)
  def close(self):
-  """Close input and output handles, terminate avg_q."""
-  self.avg_q.stdin.close()
-  self.avg_q.stdout.close()
+  """Close input and output handles, terminating avg_q."""
+  if self.avg_q:
+   self.avg_q.stdin.close()
+   self.avg_q.stdout.close()
+   self.avg_q=None
  # Helper functions accepting avg_q style time designations ('12s', '330ms', 533) and returning a float in the target unit
  def time_to_any(self,time,lambdas):
   if type(time)==int or type(time)==float:
@@ -287,13 +294,13 @@ class Epochsource(object):
    for trigpoint in self.trigpoints:
     epoch=(trigpoint[0] if isinstance(trigpoint,tuple) else trigpoint)+1
     avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, offset=self.offset, fromepoch=epoch, epochs=1)
-   self.trigpoints=None
   else:
    avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, continuous=self.continuous, fromepoch=self.fromepoch, epochs=self.epochs, offset=self.offset, triglist=self.triglist, trigfile=self.trigfile, trigtransfer=self.trigtransfer)
   for methodline in self.branch:
    avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):
-  if self.trigpoints is not None:
+  # For asc files we already treated the trigpoints in send()
+  if self.infile.fileformat!='asc' and self.trigpoints is not None:
    if len(self.trigpoints)>0 and isinstance(self.trigpoints[0],tuple):
     from . import trgfile
     t=trgfile.trgfile()
@@ -318,7 +325,10 @@ class Script(object):
   self.collect='null_sink'
   self.postprocess_transforms=[]
  def add_Epochsource(self, epochsource):
-  self.Epochsource_list.append(epochsource)
+  if isinstance(epochsource,list):
+   self.Epochsource_list.extend(epochsource)
+  else:
+   self.Epochsource_list.append(epochsource)
  def add_Epochsource_contfile_excluding_breakpoints(self,infile,start_point,end_point,breakpoints,margin_points,nr_of_points=None,step_points=None):
   '''Read a continuous file in segments, from start_point to end_point, excluding margin_points on
      either side of every point in the breakpoints list.

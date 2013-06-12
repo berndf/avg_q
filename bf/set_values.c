@@ -211,7 +211,7 @@ set(transform_info_ptr tinfo) {
     /* Create new position values */
     free_pointer((void **)&tinfo->probepos);
    }
-   if (value==0 || value==1) {
+   if (value==0.0 || value==1.0) {
     create_channelgrid(tinfo);
    } else {
     create_channelgrid_ncols(tinfo, abs((int)rint(value)));

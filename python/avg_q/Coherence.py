@@ -70,6 +70,13 @@ class CoherenceFile(object):
  def __init__(self,filename,sfreq=256):
   self.filehandle=open(filename,"rb")
   self.sfreq=sfreq
+ def __del__(self):
+  self.close()
+ # The "with avg_q.Coherence.CoherenceFile() as xxx" API
+ def __enter__(self):
+  return self
+ def __exit__(self,exc_type,exc_value,traceback):
+  self.close()
  def getHeader(self):
   header=[]
   for pos,name in headerfields:
@@ -131,7 +138,9 @@ class CoherenceFile(object):
    push_event(pos,marker)
   return events
  def close(self):
-  self.filehandle.close()
+  if self.filehandle:
+   self.filehandle.close()
+   self.filehandle=None
 
 class CoherenceTriggers(trgfile.trgfile):
  def __init__(self,source=None,sfreq=256):

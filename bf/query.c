@@ -279,7 +279,7 @@ query(transform_info_ptr tinfo) {
    break;
   case C_CHANNELPOSITIONS:
    for (channel=0; channel<tinfoptr->nr_of_channels; channel++) {
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s %g %g %g%s", tinfoptr->channelnames[channel], tinfoptr->probepos[channel*3], tinfoptr->probepos[channel*3+1], tinfoptr->probepos[channel*3+2], local_arg->delimiter); myflush(tinfo, buffer);
+    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s\t%g\t%g\t%g%s", tinfoptr->channelnames[channel], tinfoptr->probepos[channel*3], tinfoptr->probepos[channel*3+1], tinfoptr->probepos[channel*3+2], local_arg->delimiter); myflush(tinfo, buffer);
     inbuf=buffer;
    }
    break;
