@@ -256,10 +256,11 @@ class paradigm(object):
    onsets.append([(x[0][0]/self.sfreq-fMRI_onset_s)/TR_s for x in self.trials[condition]])
    durations.append([0.0]*len(self.trials[condition]))
   ons={
-   'names': scipy.array([ [[x] for x in names] ],dtype=object), 
-   'onsets': scipy.array([ [[x] for x in onsets] ],dtype=object), 
-   'durations': scipy.array([ [[x] for x in durations] ],dtype=object)}
-  scipy.io.savemat(filename,ons)
+   'names': scipy.array(names,dtype=object), 
+   'onsets': onsets,
+   'durations': durations,
+  }
+  scipy.io.savemat(filename,ons,oned_as='row')
 
  # These need to be overridden by the concrete class:
  def classify_responsetrial(self,point,code,rcode,response_latency_ms):

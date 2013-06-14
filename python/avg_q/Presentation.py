@@ -48,7 +48,7 @@ class PresLogfile(trgfile.trgfile):
  def __init__(self,logfile,part='events'):
   self.PL=PresLog(logfile,part)
   trgfile.trgfile.__init__(self,self.PL)
-  self.preamble['Sfreq']=1000.0
+  self.preamble['Sfreq']=10000.0
  def rdr(self):
   for fields in self.reader:
    data=dict(zip(self.PL.header_fields,fields))
