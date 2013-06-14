@@ -55,9 +55,9 @@ for filename_and_triggerfile in args:
  addmethods=None
  if filetype is None and ext=='':
   # Try to interpret this as a sleep bookno
-  import avg_q.sleep_file
+  import avg_q.Sleep.sleep_file
   print("Reading sleep file for bookno: %s" % filename)
-  infile=avg_q.sleep_file.sleep_file(filename)
+  infile=avg_q.Sleep.sleep_file.sleep_file(filename)
  else:
   if not os.path.exists(filename):
    print("Oops, %s doesn't exist - skipping..." % filename)

@@ -67,22 +67,15 @@ collapse_channels %(collapse_args)s
 set leaveright 0
 calc log
 ''' % {'collapse_args': ' '.join(collapse_args)})
- def cnt2trg(self,cntfile):
+ def cnt2trg(self,sl,cntfile):
+  '''sl must be an slfile.slfile instance yielding the sleep staging
+     for the given night'''
   c=cntspectsource(cntfile)
   if c.filename is None:
    return
   tfile=c.filename.replace('.cnt','.trg')
   if os.path.exists(tfile) and os.path.getsize(tfile)>0:
    return
-  import slfile
-  first,ext=os.path.splitext(c.filename)
-  cntdir,booknumber=os.path.split(first)
-  try:
-   sl=slfile.slfile(booknumber)
-  except:
-   print("Can't locate sl file for %s" % booknumber)
-   return
-  print("Found %s" % sl.filename)
 
   c.aftertrig=0 # Read the whole cnt file as one epoch
   script=avg_q.Script(self)
@@ -114,8 +107,8 @@ echo -F stdout End of medbands\\n
     medbands[i].append(float(r[i]))
   for r in rdr:
    pass
-  #print bands
-  #print medbands
+  #print(bands)
+  #print(medbands)
   import copy
   sorted_medbands=copy.deepcopy(medbands)
   medians_of_medianfiltered=[]
@@ -123,8 +116,8 @@ echo -F stdout End of medbands\\n
   diff_threshold=[]
   for i in range(nr_of_bands):
    sorted_medbands[i].sort()
-   medians_of_medianfiltered.append(sorted_medbands[i][len(sorted_medbands[i])/2])
-   quartiles_of_medianfiltered.append(sorted_medbands[i][len(sorted_medbands[i])/4])
+   medians_of_medianfiltered.append(sorted_medbands[i][int(len(sorted_medbands[i])/2)])
+   quartiles_of_medianfiltered.append(sorted_medbands[i][int(len(sorted_medbands[i])/4)])
    diff_threshold.append(medians_of_medianfiltered[i]-quartiles_of_medianfiltered[i])
   print("medians_of_medianfiltered=" + str(medians_of_medianfiltered))
   print("quartiles_of_medianfiltered=" + str(quartiles_of_medianfiltered))
@@ -161,7 +154,7 @@ echo -F stdout End of medbands\\n
    point+=1
 
   # Finally write the result...
-  from . import trgfile
+  from .. import trgfile
   t=trgfile.trgfile()
   t.preamble['fields']="\t".join(['point', 'code', 'stage', 'remcycle', 'nremcycle', 'arousals', 'myos', 'emts', 'checks']+['checkmark_'+band[2] for band in self.rejection_bands])
   f=open(tfile,"w")
@@ -203,7 +196,7 @@ write_generic -P stdout string
  def get_Delta_slope(self,booknumber):
   # cf. Esser:2007
   from . import sleep_file
-  from . import trgfile
+  from .. import trgfile
   try:
    f=sleep_file.sleep_file(booknumber)
   except:
@@ -298,15 +291,15 @@ class cntspectsource(avg_q.Epochsource):
 set sfreq 0.03333333333
 ''')
  def locate(self,booknumber):
-  import bookno
+  from . import bookno
   if not self.dcache:
-   import idircache
+   from .. import idircache
    self.dcache=idircache.idircache(extensionstrip=('cnt'))
   file_bookno=bookno.file_bookno(booknumber)
   self.filename=self.dcache.find(cntspectfile_paths,file_bookno)
  def set_epochfilter(self,epochfilter):
   tfile=self.filename.replace('.cnt','.trg')
-  from . import trgfile
+  from .. import trgfile
   t=trgfile.trgfile(tfile)
   trigpoints=[]
   for point,code,codes in t:

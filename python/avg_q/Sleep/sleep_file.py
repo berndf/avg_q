@@ -7,7 +7,7 @@ This provides a derived version of avg_q_file which encapsulates access to sleep
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
-from . import avg_q_file
+from .. import avg_q_file
 import os
 
 rawfile_paths=(
@@ -24,7 +24,7 @@ rawfile_paths=(
  '/usermount/charly/sleepdata2/A9000_Axxxx/',
 )
 
-import idircache
+from .. import idircache
 
 dcache=idircache.idircache(extensionstrip=('edf','rec','co'))
 

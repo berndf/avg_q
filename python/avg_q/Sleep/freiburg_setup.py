@@ -57,7 +57,7 @@ setups=[
 
 import os
 def sleep_channels(infile,nr_of_channels):
- import bookno
+ from . import bookno
  infile,ext=os.path.splitext(infile)
  booknumber=os.path.basename(infile).lower()
  eegnr=bookno.database_bookno(booknumber.upper())
