@@ -47,12 +47,14 @@ LOCAL const char *const collapse_choice[]={
 };
 enum ARGS_ENUM {
  ARGS_COLLAPSE=0, 
+ ARGS_USE_CHANNEL,
  ARGS_USE_XVALUES,
  ARGS_RANGES, 
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_SELECTION, "Collapse ranges by averaging, summation, median, highest or lowest value", " ", 0, collapse_choice},
+ {T_ARGS_TAKES_STRING_WORD, "channelname: Use value regions of this channel instead of point or x value regions", "n", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_NOTHING, "xstart and xend are used to specify ranges instead of offset and length", "x", FALSE, NULL},
  {T_ARGS_TAKES_SENTENCE, "Ranges: offset1 length1 [offset2 length2 ...]", "", ARGDESC_UNUSED, NULL}
 };
@@ -74,6 +76,10 @@ trim_init(transform_info_ptr tinfo) {
  struct trim_storage *local_arg=(struct trim_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
 
+ if (args[ARGS_USE_XVALUES].is_set && args[ARGS_USE_CHANNEL].is_set) {
+  ERREXIT(tinfo->emethods, "trim: -n and -x flags are exclusive.\n");
+ }
+
  growing_buf_init(&local_arg->rangearg);
  growing_buf_takethis(&local_arg->rangearg, args[ARGS_RANGES].arg.s);
 
@@ -89,15 +95,16 @@ trim(transform_info_ptr tinfo) {
  struct trim_storage *local_arg=(struct trim_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  int item, shift, nrofshifts=1;
- struct range *ranges;
- long nr_of_ranges;
+ long nr_of_input_ranges,nr_of_ranges;
  long output_points;
  long rangeno, current_output_point=0;
  array myarray, newarray;
  DATATYPE *oldtsdata;
  DATATYPE *new_xdata=NULL;
+ growing_buf ranges;
  growing_buf triggers;
 
+ growing_buf_init(&ranges);
  growing_buf_init(&triggers);
 
  if (tinfo->data_type==FREQ_DATA) {
@@ -110,37 +117,80 @@ trim(transform_info_ptr tinfo) {
  Bool havearg;
 
  havearg=growing_buf_firsttoken(&local_arg->rangearg);
- nr_of_ranges=local_arg->rangearg.nr_of_tokens;
- if (nr_of_ranges<=0 || nr_of_ranges%2!=0) {
+ nr_of_input_ranges=local_arg->rangearg.nr_of_tokens;
+ if (nr_of_input_ranges<=0 || nr_of_input_ranges%2!=0) {
   ERREXIT(tinfo->emethods, "trim: Need an even number of arguments >=2\n");
  }
- nr_of_ranges/=2;
- if ((ranges=(struct range *)malloc(nr_of_ranges*sizeof(struct range)))==NULL) {
-  ERREXIT(tinfo->emethods, "trim: Error allocating ranges memory\n");
- }
+ nr_of_input_ranges/=2;
  output_points=0;
- for (rangeno=0; rangeno<nr_of_ranges && havearg; rangeno++) {
-  if (args[ARGS_USE_XVALUES].is_set) {
-   if (tinfo->xdata==NULL) create_xaxis(tinfo);
-   ranges[rangeno].offset=decode_xpoint(tinfo, local_arg->rangearg.current_token);
-   havearg=growing_buf_nexttoken(&local_arg->rangearg);
-   ranges[rangeno].length=decode_xpoint(tinfo, local_arg->rangearg.current_token)-ranges[rangeno].offset+1;
-  } else {
-   ranges[rangeno].offset=gettimeslice(tinfo, local_arg->rangearg.current_token);
-   havearg=growing_buf_nexttoken(&local_arg->rangearg);
-   ranges[rangeno].length=gettimeslice(tinfo, local_arg->rangearg.current_token);
-   if (ranges[rangeno].length==0) {
-    ranges[rangeno].length=tinfo->nr_of_points-ranges[rangeno].offset;
+ growing_buf_allocate(&ranges, 0);
+ while (havearg) {
+  struct range thisrange;
+  if (args[ARGS_USE_CHANNEL].is_set) {
+   int const channel=find_channel_number(tinfo,args[ARGS_USE_CHANNEL].arg.s);
+   if (channel>=0) {
+    DATATYPE const minval=get_value(local_arg->rangearg.current_token, NULL);
+    havearg=growing_buf_nexttoken(&local_arg->rangearg);
+    DATATYPE const maxval=get_value(local_arg->rangearg.current_token, NULL);
+    array indata;
+    tinfo_array(tinfo, &indata);
+    indata.current_vector=channel;
+    thisrange.offset= -1; /* Marks no start recorded yet */
+    do {
+     DATATYPE const currval=indata.read_element(&indata);
+     if (currval>=minval && currval<=maxval) {
+      if (thisrange.offset== -1) {
+       thisrange.offset=indata.current_element;
+       thisrange.length= 1;
+      } else {
+       thisrange.length++;
+      }
+     } else {
+      if (thisrange.offset!= -1) {
+       growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
+       output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
+       thisrange.offset= -1;
+      }
+     }
+     array_advance(&indata);
+    } while (indata.message==ARRAY_CONTINUE);
+    if (thisrange.offset!= -1) {
+     growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
+     output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
+    }
+   } else {
+    ERREXIT1(tinfo->emethods, "set xdata_from_channel: Unknown channel name >%s<\n", MSGPARM(args[ARGS_USE_CHANNEL].arg.s));
    }
+  } else {
+   if (args[ARGS_USE_XVALUES].is_set) {
+    if (tinfo->xdata==NULL) create_xaxis(tinfo);
+    thisrange.offset=decode_xpoint(tinfo, local_arg->rangearg.current_token);
+    havearg=growing_buf_nexttoken(&local_arg->rangearg);
+    thisrange.length=decode_xpoint(tinfo, local_arg->rangearg.current_token)-thisrange.offset+1;
+   } else {
+    thisrange.offset=gettimeslice(tinfo, local_arg->rangearg.current_token);
+    havearg=growing_buf_nexttoken(&local_arg->rangearg);
+    thisrange.length=gettimeslice(tinfo, local_arg->rangearg.current_token);
+    if (thisrange.length==0) {
+     thisrange.length=tinfo->nr_of_points-thisrange.offset;
+    }
+   }
+   if (thisrange.length<=0) {
+    ERREXIT1(tinfo->emethods, "trim: length is %d but must be >0.\n", MSGPARM(thisrange.length));
+   }
+   growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
+   output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
   }
-  if (ranges[rangeno].length<=0) {
-   ERREXIT1(tinfo->emethods, "trim: length is %d but must be >0.\n", MSGPARM(ranges[rangeno].length));
-  }
-  output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : ranges[rangeno].length);
   havearg=growing_buf_nexttoken(&local_arg->rangearg);
  }
  /*}}}  */
  }
+ nr_of_ranges=ranges.current_length/sizeof(struct range);
+ if (nr_of_ranges==0) {
+  TRACEMS(tinfo->emethods, 0, "trim: No valid ranges selected, rejecting epoch.\n");
+  return NULL;
+ }
+ TRACEMS2(tinfo->emethods, 1, "trim: nr_of_ranges=%ld, output_points=%ld\n", MSGPARM(nr_of_ranges), MSGPARM(output_points));
 
  newarray.nr_of_vectors=tinfo->nr_of_channels*nrofshifts;
  newarray.nr_of_elements=output_points;
@@ -173,15 +223,16 @@ trim(transform_info_ptr tinfo) {
  }
  
  for (rangeno=0; rangeno<nr_of_ranges; rangeno++) {
-  long const old_startpoint=(ranges[rangeno].offset>0 ?  ranges[rangeno].offset : 0);
-  long const new_startpoint=(ranges[rangeno].offset<0 ? -ranges[rangeno].offset : 0);
+  struct range *rangep=((struct range *)(ranges.buffer_start))+rangeno;
+  long const old_startpoint=(rangep->offset>0 ?  rangep->offset : 0);
+  long const new_startpoint=(rangep->offset<0 ? -rangep->offset : 0);
 
  /*{{{  Transfer the data*/
  if (old_startpoint<tinfo->nr_of_points 
   /* Skip this explicitly if no "real" point needs copying (length confined within negative offset)
    * since otherwise an endless loop can result as the stop conditions below look at the array 
    * states and no array is touched... */
-  && new_startpoint<ranges[rangeno].length)
+  && new_startpoint<rangep->length)
  for (item=0; item<tinfo->itemsize; item++) {
   array_use_item(&newarray, item);
   for (shift=0; shift<nrofshifts; shift++) {
@@ -212,12 +263,12 @@ trim(transform_info_ptr tinfo) {
     helparray.ringstart=ARRAY_ELEMENT(&myarray);
     helparray.current_element=helparray.current_vector=0;
     helparray.nr_of_vectors=1;
-    helparray.nr_of_elements=ranges[rangeno].length;
+    helparray.nr_of_elements=rangep->length;
     sum=array_median(&helparray);
     myarray.message=ARRAY_CONTINUE;
    } else
    do {
-    if (reached_length>=ranges[rangeno].length) break;
+    if (reached_length>=rangep->length) break;
     if (args[ARGS_COLLAPSE].is_set) {
      DATATYPE const hold=array_scan(&myarray);
      switch (args[ARGS_COLLAPSE].arg.i) {
@@ -267,7 +318,7 @@ trim(transform_info_ptr tinfo) {
    newpoint=current_output_point+new_startpoint;
   }
   for (point=old_startpoint;
-    point<tinfo->nr_of_points && reached_length<ranges[rangeno].length;
+    point<tinfo->nr_of_points && reached_length<rangep->length;
     point++) {
    if (args[ARGS_COLLAPSE].is_set) {
     sum+=tinfo->xdata[point];
@@ -290,7 +341,7 @@ trim(transform_info_ptr tinfo) {
    /* Collect triggers... */
    struct trigger *intrig=(struct trigger *)tinfo->triggers.buffer_start+1;
    while (intrig->code!=0) {
-    if (intrig->position>=old_startpoint && intrig->position<old_startpoint+ranges[rangeno].length) {
+    if (intrig->position>=old_startpoint && intrig->position<old_startpoint+rangep->length) {
      struct trigger trig= *intrig;
      if (args[ARGS_COLLAPSE].is_set) {
       trig.position=current_output_point;
@@ -302,7 +353,7 @@ trim(transform_info_ptr tinfo) {
     intrig++;
    }
   }
-  current_output_point+=(args[ARGS_COLLAPSE].is_set ? 1 : ranges[rangeno].length);
+  current_output_point+=(args[ARGS_COLLAPSE].is_set ? 1 : rangep->length);
  }
 
  if (new_xdata!=NULL) {
@@ -325,13 +376,13 @@ trim(transform_info_ptr tinfo) {
  if (tinfo->data_type==FREQ_DATA) {
   tinfo->nroffreq=tinfo->nr_of_points;
  } else {
-  tinfo->beforetrig-=ranges[0].offset;
+  tinfo->beforetrig-=((struct range *)(ranges.buffer_start))->offset;
   tinfo->aftertrig=output_points-tinfo->beforetrig;
  }
  tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels*tinfo->itemsize*nrofshifts;
  local_arg->current_epoch++;
 
- free(ranges);
+ growing_buf_free(&ranges);
 
  return newarray.start;
 }

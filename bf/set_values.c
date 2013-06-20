@@ -47,6 +47,7 @@ LOCAL const char *const variables_choice[]={
  "condition",
  "xchannelname",
  "xdata",
+ "xdata_from_channel",
  "posdata",
  "z_label",
  "z_value",
@@ -70,6 +71,7 @@ enum variables_choice {
  C_CONDITION,
  C_XCHANNELNAME,
  C_XDATA,
+ C_XDATA_FROM_CHANNEL,
  C_POSDATA,
  C_Z_LABEL,
  C_Z_VALUE,
@@ -195,6 +197,22 @@ set(transform_info_ptr tinfo) {
    } else {
     tinfo->xchannelname=NULL;
     free_pointer((void **)&tinfo->xdata);
+   }
+   break;
+  case C_XDATA_FROM_CHANNEL: {
+   int const channel=find_channel_number(tinfo,args[ARGS_VALUE].arg.s);
+   if (channel>=0) {
+    int i;
+    array indata;
+    tinfo_array(tinfo, &indata);
+    indata.current_vector=channel;
+    if (tinfo->xdata==NULL) create_xaxis(tinfo);
+    for (i=0; i<tinfo->nr_of_points; i++) {
+     tinfo->xdata[i]=array_scan(&indata);
+    }
+   } else {
+    ERREXIT1(tinfo->emethods, "set xdata_from_channel: Unknown channel name >%s<\n", MSGPARM(args[ARGS_VALUE].arg.s));
+   }
    }
    break;
   case C_POSDATA: {

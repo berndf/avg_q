@@ -8533,14 +8533,20 @@ xdata
 \shape default
  either deletes the current explicit x axis information (value==0) or creates
  explicit x axis information anew from the variables beforetrig and sfreq.
- Most of the times, `set xdata 0' will suffice to force 
+ After `set xdata 0', 
 \series bold
 avg_q
 \series default
- to eventually rebuild the x axis.
- Similarly, 
+ will rebuild the x axis later when it is needed.
+ 
 \shape italic
-posdata
+xdata_from_channel 
+\shape default
+copies the data of the named channel to xdata, allowing for example to plot
+ channels as Lissajous figures.
+
+\shape italic
+ posdata
 \shape default
  uses 
 \series bold
@@ -9562,6 +9568,29 @@ trim -s -x 0 5 5+1 10
 .
  In this way, two non-overlapping but adjacent regions are guaranteed to
  be used independently of the concrete x values present in the file.
+\end_layout
+
+\begin_layout Description
+-n
+\begin_inset space ~
+\end_inset
+
+channelname: The two values given for each range are 
+\emph on
+value
+\emph default
+ ranges for the given channel.
+ 
+\series bold
+trim
+\series default
+ selects point ranges in which the given channel value falls into the range.
+ Selected point ranges from all value ranges are appended as with the other
+ selection types.
+ Internally, every consecutive point range in which the value remains within
+ the given interval is added as one normal range, thus collapsing works
+ across these consecutive ranges (one value per such range, not per range
+ argument).
 \end_layout
 
 \end_deeper
