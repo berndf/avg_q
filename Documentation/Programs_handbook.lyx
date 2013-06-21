@@ -1811,6 +1811,99 @@ DUMP matrix file format
 \end_layout
 
 \begin_layout Subsection
+Trigger file format
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "Sec:TriggerFile"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Some Get_\SpecialChar \-
+Epoch_\SpecialChar \-
+Methods process continuous files from which epochs could
+ be read around arbitrary time points.
+ A simple ASCII trigger file format is supported by 
+\series bold
+avg_q
+\series default
+ in order to represent lists of such time points or triggers, each of which
+ can have an integer number or `trigger code' assigned to it.
+ In trigger files
+\begin_inset Index idx
+status collapsed
+
+\begin_layout Plain Layout
+trigger file format
+\end_layout
+
+\end_inset
+
+, lines beginning with a hash `#' are comments and skipped; otherwise, each
+ line should contain a pair of values of the form `point code' giving the
+ point number around which to read and the trigger code assigned to this
+ point.
+ Any further columns appearing in the file are ignored (this feature is
+ used by 
+\series bold
+write_crossings -E
+\series default
+, which creates a third column containing the measured value of the extremum
+ while its output is still a valid trigger file).
+ The point number is the sampling point number relative to the first point
+ in the file, starting with 0.
+ It is also possible to enter the trigger point in time units, where 
+\series bold
+avg_q
+\series default
+ calculates the point number using the known sampling frequency: If `point'
+ ends with an `s', the value is taken as seconds, and likewise as milliseconds
+ if it ends with `ms'.
+\end_layout
+
+\begin_layout Standard
+A trigger code of 0 (`point' being irrelevant) signals the end of the trigger
+ list just as the End of File does.
+ This is useful as instead of an actual file name, `stdin' being given as
+ a trigger file name will read trigger lines from standard input instead.
+ Usually, no End of File condition is desired on the standard input stream;
+ instead, you should signal the end of the trigger list by a zero trigger
+ code.
+\end_layout
+
+\begin_layout Standard
+This might be a good moment to note that representation of triggers or markers
+ is one of the big incompatibility issues between data formats.
+ 
+\series bold
+avg_q
+\series default
+ alone cannot solve these issues completely.
+ While triggers represented as lists (most often appended to the end of
+ the raw continuous data) can be handled relatively efficiently and are
+ even internally kept with each epoch and written to some output formats,
+ especially the surprisingly common storage in dedicated `marker channels'
+ is tedious to deal with.
+ The detection of steps or peaks in such channels is a signal processing
+ task in its own right rather than an aid for analysis.
+ Of course, dedicated 
+\series bold
+avg_q
+\series default
+ methods for a given file format handle their specific trigger format (one
+ or several trigger `channels', binary trigger lists appended to the file
+ or stored separately and so forth); When dealing with random access to
+ data segments, however, extra steps may be needed to produce an ASCII trigger
+ list first.
+\end_layout
+
+\begin_layout Subsection
 Channel selection by name
 \end_layout
 
@@ -1923,96 +2016,83 @@ A special value for channelnames is `ALL', which selects all channels present
 \end_layout
 
 \begin_layout Subsection
-Trigger file format
+Metadata handling
 \end_layout
 
 \begin_layout Standard
-\begin_inset CommandInset label
-LatexCommand label
-name "Sec:TriggerFile"
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Some Get_\SpecialChar \-
+\series bold
+avg_q
+\series default
+ uses a number of metadata entries with each epoch.
+ Obviously, the data dimension is defined by the numbers of channels, points
+ per channel and items per point.
+ The sampling rate (sfreq) is mandatory.
+ Additionally, channel name and position information is mandatory (positions
+ being defined in three dimensions but often using only the first two dimensions
+ for a flat screen layout).
+ All Get_\SpecialChar \-
 Epoch_\SpecialChar \-
-Methods process continuous files from which epochs could
- be read around arbitrary time points.
- A simple ASCII trigger file format is supported by 
-\series bold
-avg_q
-\series default
- in order to represent lists of such time points or triggers, each of which
- can have an integer number or `trigger code' assigned to it.
- In trigger files
-\begin_inset Index idx
-status collapsed
-
-\begin_layout Plain Layout
-trigger file format
-\end_layout
-
+Methods generate this data; if it is not explicitly available
+ in the file format, default routines are used to create numbered channel
+ names (
+\begin_inset Quotes eld
 \end_inset
 
-, lines beginning with a hash `#' are comments and skipped; otherwise, each
- line should contain a pair of values of the form `point code' giving the
- point number around which to read and the trigger code assigned to this
- point.
- Any further columns appearing in the file are ignored (this feature is
- used by 
-\series bold
-write_crossings -E
-\series default
-, which creates a third column containing the measured value of the extremum
- while its output is still a valid trigger file).
- The point number is the sampling point number relative to the first point
- in the file, starting with 0.
- It is also possible to enter the trigger point in time units, where 
-\series bold
-avg_q
-\series default
- calculates the point number using the known sampling frequency: If `point'
- ends with an `s', the value is taken as seconds, and likewise as milliseconds
- if it ends with `ms'.
+1
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+2
+\begin_inset Quotes erd
+\end_inset
+
+, \SpecialChar \ldots{}
+) and a square flat channel layout.
 \end_layout
 
 \begin_layout Standard
-A trigger code of 0 (`point' being irrelevant) signals the end of the trigger
- list just as the End of File does.
- This is useful as instead of an actual file name, `stdin' being given as
- a trigger file name will read trigger lines from standard input instead.
- Usually, no End of File condition is desired on the standard input stream;
- instead, you should signal the end of the trigger list by a zero trigger
- code.
-\end_layout
+xdata, a special 
+\begin_inset Quotes eld
+\end_inset
 
-\begin_layout Standard
-This might be a good moment to note that representation of triggers or markers
- is one of the big incompatibility issues between data formats.
- 
-\series bold
-avg_q
-\series default
- alone cannot solve these issues completely.
- While triggers represented as lists (most often appended to the end of
- the raw continuous data) can be handled relatively efficiently and are
- even internally kept with each epoch and written to some output formats,
- especially the surprisingly common storage in dedicated `marker channels'
- is tedious to deal with.
- The detection of steps or peaks in such channels is a signal processing
- task in its own right rather than an aid for analysis.
- Of course, dedicated 
-\series bold
-avg_q
-\series default
- methods for a given file format handle their specific trigger format (one
- or several trigger `channels', binary trigger lists appended to the file
- or stored separately and so forth); When dealing with random access to
- data segments, however, extra steps may be needed to produce an ASCII trigger
- list first.
+channel
+\begin_inset Quotes erd
+\end_inset
+
+ holding x axis values, is not mandatory; However it is generated when needed
+ using a standard routine.
+ The metadata involved is sfreq, beforetrig and aftertrig.
+ These three values are sufficient to create a default epoch-local time
+ axis.
+ A heuristic based upon the sampling rate is used to determine the time
+ unit (µs, ms, s, min or h) and the x axis name constructed as 
+\begin_inset Quotes eld
+\end_inset
+
+Lat[
+\emph on
+unit
+\emph default
+]
+\begin_inset Quotes erd
+\end_inset
+
+.
+ If the epoch contains frequency-domain data, the x axis name will be 
+\begin_inset Quotes eld
+\end_inset
+
+Freq[Hz]
+\begin_inset Quotes erd
+\end_inset
+
+ and the values constructed using nroffreq and basefreq properties of the
+ epoch.
 \end_layout
 
 \begin_layout Section
@@ -9448,7 +9528,7 @@ trim
 
 \end_inset
 
- The first use of this transform method is to trim all channels to the specified
+ The first use of this transform method is to trim all channels to a specified
  length.
  This can be useful in cases where the get-epoch method does not provide
  a way to influence the epoch length (like 
@@ -9467,17 +9547,36 @@ read_kn
 \begin_inset Newline newline
 \end_inset
 
-Copying of data points starts at point offset (zeros are prepended if offset
- is negative) and proceeds through the specified length, appending zeros
- if less than length points are available in the source data starting at
- offset.
+Inclusion of data points starts at point offset (zeros are prepended if
+ offset is negative) and proceeds through the specified length, appending
+ zeros if less than length points are available in the source data starting
+ at offset.
  This copying process is done for all ranges specified, appending all data
  in the output.
  This means that arbitrary sections of all channels (and the x data vector,
  if available) can be cut out and concatenated in any order.
  Ranges can also be specified by the x axis values of the first and last
- points to include (option -x).
+ points to include (option -x; obviously, no extension with zeros will happen
+ since boundaries are always within the data length), or, as a special extension
+, defined very dynamically by the times during which values of a given channel
+ fall into given ranges.
  Epoch triggers are correctly transferred if available.
+\begin_inset Newline newline
+\end_inset
+
+Note that when 
+\series bold
+trim
+\series default
+ is used to select (concatenate) multiple sections of the current epoch,
+ the absence of explicit x axis data has the consequence of a contiguous
+ time axis being constructed later (eg by posplot).
+ If the intention is to retain the original x values for each selected point,
+ x axis data should be created explicitly before 
+\series bold
+trim
+\series default
+ (set xdata 1).
 \begin_inset Newline newline
 \end_inset
 
