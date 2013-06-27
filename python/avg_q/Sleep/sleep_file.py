@@ -34,13 +34,12 @@ class sleep_file(avg_q_file):
   self.first,self.ext=os.path.splitext(filename)
   if not self.ext:
    # No extension: Assume this is a book number
-   import bookno
+   from . import bookno
    file_bookno=bookno.file_bookno(filename)
    self.filename=None
    self.filename=dcache.find(rawfile_paths,file_bookno)
    if self.filename:
     self.first,self.ext=os.path.splitext(self.filename)
-    #print self.filename
    else:
     raise Exception('Can\'t locate raw file for book number %s' % filename)
   if self.ext.lower()=='.co':
