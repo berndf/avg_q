@@ -26,3 +26,11 @@ trigger text files but will also automatically extract triggers from any known f
 format.
 
 show_maps: Uses matplotlib to show topographic maps for all points in a given file.
+
+voglps2svg and voglps2svg.cairo: Generate SVG (scalable vector graphics) format from
+postscript .ps posplot output files. This allows to have very nice editable vector
+graphics for any plot shown by posplot.
+For parsing, voglps.py is used, and for output, voglps2svg uses SVG.py ((c)
+Rick Muller http://code.activestate.com/recipes/325823/), while
+voglps2svg.cairo uses the python cairo bindings (http://cairographics.org/pycairo/).
+voglps2svg is recommended because of the better editable text representation.
