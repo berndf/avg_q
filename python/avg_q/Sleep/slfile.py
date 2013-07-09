@@ -48,6 +48,9 @@ stagenames={
  6: 'MT',
 }
 
+sl2cache=None
+sl3cache=None
+
 import collections
 
 import os
@@ -59,8 +62,6 @@ class slfile(object):
   self.Date=None
   self.Time=None
   self.slfile=None
-  self.sl2cache=None
-  self.sl3cache=None
   # Allow the object to be created uninitialized as well
   if filename:
    self.init_from_file(filename,minutes_per_epoch)
@@ -68,7 +69,10 @@ class slfile(object):
   self.filename=filename
   self.minutes_per_epoch=0.5 if not minutes_per_epoch else minutes_per_epoch
   self.first,self.ext=os.path.splitext(filename)
-  self.lights_out_hour,self.lights_out_minute,self.lights_out_offset=None,None,None
+  self.lights_out_hour=None
+  self.lights_out_minute=None
+  self.lights_out_offset=None
+  self.lights_on_offset=None
   self.rdr=self.rdr3
   if self.ext:
    if self.ext.lower()=='.sl':
@@ -83,19 +87,21 @@ class slfile(object):
     raise Exception('Can\'t locate SL file for book number %s' % filename)
   self.slfile=open(self.filename,'r')
  def locate_sl2file_via_bookno(self,booknumber):
-  if self.sl2cache is None:
+  global sl2cache
+  if sl2cache is None:
    from .. import idircache
-   self.sl2cache=idircache.idircache(extensionstrip='sl')
+   sl2cache=idircache.idircache(extensionstrip='sl')
   from . import bookno
   file_bookno=bookno.file_bookno(booknumber)
-  self.filename=self.sl2cache.find(sl2file_paths,file_bookno)
+  self.filename=sl2cache.find(sl2file_paths,file_bookno)
  def locate_sl3file_via_bookno(self,booknumber):
-  if self.sl3cache is None:
+  global sl3cache
+  if sl3cache is None:
    from .. import idircache
-   self.sl3cache=idircache.idircache(extensionstrip='sl3')
+   sl3cache=idircache.idircache(extensionstrip='sl3')
   from . import bookno
   file_bookno=bookno.file_bookno(booknumber)
-  self.filename=self.sl3cache.find(sl3file_paths,file_bookno)
+  self.filename=sl3cache.find(sl3file_paths,file_bookno)
  def __iter__(self):
   return self.rdr()
  def rdr2(self):
@@ -103,7 +109,9 @@ class slfile(object):
   (index,time,stage,checks,arousals,myos,eyemovements)=(0,-1, 0, 0, 0, 0, 0);
   while True:
    sl=self.slfile.read(14)
-   if len(sl)<14 or sl.startswith('WA'): break
+   if len(sl)<14 or sl.startswith('WA'):
+    self.lights_on_offset= index
+    break
 
    if sl.startswith('LA'):
     sl=sl.rstrip()
@@ -173,6 +181,7 @@ class slfile(object):
       self.lights_out_hour,self.lights_out_minute=int(timepart[0:1]),int(timepart[1:3])
      self.lights_out_offset= index
     elif field.startswith('WA*'):
+     self.lights_on_offset= index
      return
     elif field.startswith('Stage*'):
      stagecode=field[6:]
