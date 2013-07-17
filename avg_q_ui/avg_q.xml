@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/avg_q">
+         <comment xml:lang="en">avg_q script</comment>
+         <glob pattern="*.script"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">avg_q epoch file</comment>
+         <glob pattern="*.asc"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">Hierarchical Data Format (HDF) file</comment>
+         <glob pattern="*.hdf"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">European Data Format (EDF) file</comment>
+         <glob pattern="*.edf"/>
+         <glob pattern="*.rec"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">Vitaport file</comment>
+         <glob pattern="*.vpd"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">Brain Vision Analyzer file</comment>
+         <glob pattern="*.vhdr"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">NeuroScan CNT file</comment>
+         <glob pattern="*.cnt"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">NeuroScan EEG file</comment>
+         <glob pattern="*.eeg"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">NeuroScan avg file</comment>
+         <glob pattern="*.avg"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">Münster File eXchange file</comment>
+         <glob pattern="*.mfx"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">Inomed file</comment>
+         <glob pattern="*.emg"/>
+  </mime-type>
+</mime-info>

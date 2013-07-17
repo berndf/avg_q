@@ -112,7 +112,7 @@ INSTALL(
 )
 IF(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 INSTALL(
- FILES avg_q.desktop avg_q.png
+ FILES avg_q.desktop avg_q.png avg_q.xml
  DESTINATION ${INSTALLDIR}
  PERMISSIONS ${FILE_PERMISSIONS}
 )
