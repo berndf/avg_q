@@ -42,7 +42,15 @@
          <glob pattern="*.mfx"/>
   </mime-type>
   <mime-type type="application/show_any">
+         <comment xml:lang="en">Freiburg file</comment>
+         <glob pattern="*.co"/>
+  </mime-type>
+  <mime-type type="application/show_any">
          <comment xml:lang="en">Inomed file</comment>
          <glob pattern="*.emg"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+         <comment xml:lang="en">Embla file</comment>
+         <glob pattern="*.ebm"/>
   </mime-type>
 </mime-info>
