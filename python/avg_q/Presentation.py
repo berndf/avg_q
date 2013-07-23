@@ -17,14 +17,14 @@ class PresLog(object):
    raise "PresLog: File doesn't start with 'Scenario'"
   self.scenario=fileheader[11:]
   #print("Scenario: %s" % self.scenario)
-  table_start='Subject' if part=='events' else 'Event Type'
+  table_start=['Subject','Trial'] if part=='events' else ['Event Type']
   self.header_fields=None
   for line in self.log:
    fields=line.rstrip('\r\n').split('\t')
    if len(fields)<=1: continue
    if self.header_fields is None:
     # The first table is skipped...
-    if fields[0]==table_start:
+    if fields[0] in table_start:
      self.header_fields=fields
      self.atstart=True
      break
