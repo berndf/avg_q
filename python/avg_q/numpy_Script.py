@@ -143,7 +143,7 @@ write_generic stdout float32
     if -zmin>zmax:
      zmax= -zmin
     plt.subplot(nrows,ncols,thisplot+1)
-    gplot=plt.pcolor(xi,yi,zi,norm=plt.normalize(vmin=-zmax,vmax=zmax),antialiaseds=False) # shading="faceted"
+    gplot=plt.pcolor(xi,yi,zi,norm=plt.Normalize(vmin=-zmax,vmax=zmax),antialiaseds=False) # shading="faceted"
     #gplot=plt.contourf(g,ncontours)
     #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
     plt.contour(xi,yi,zi,[0],colors='black') # Draw zero line
@@ -169,7 +169,7 @@ write_generic stdout float32
    for z1 in z:
     z1=numpy.array(z1)
     plt.subplot(nrows,ncols,thisplot+1)
-    gplot=plt.pcolor(z1,norm=plt.normalize(vmin=vmin,vmax=vmax)) # shading="faceted"
+    gplot=plt.pcolor(z1,norm=plt.Normalize(vmin=vmin,vmax=vmax)) # shading="faceted"
     #gplot=plt.contourf(z1,ncontours)
     gplot.axes.set_axis_off()
     #print z1.shape
