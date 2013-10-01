@@ -35,6 +35,7 @@ stages3={
  '4': 4,
  'R': 5,
  'M': 6,
+ 'MT': 6,
  'TA': 6,
  'T': 6,
 }
@@ -50,6 +51,13 @@ stagenames={
 
 sl2cache=None
 sl3cache=None
+
+def int_or_1(s):
+ try:
+  result=int(s)
+ except:
+  result=1
+ return(result)
 
 import collections
 
@@ -69,10 +77,8 @@ class slfile(object):
   self.filename=filename
   self.minutes_per_epoch=0.5 if not minutes_per_epoch else minutes_per_epoch
   self.first,self.ext=os.path.splitext(filename)
-  self.lights_out_hour=None
-  self.lights_out_minute=None
-  self.lights_out_offset=None
-  self.lights_on_offset=None
+  self.lights_out=[] # List of lights_out events of form {'hour': hour, 'minute': minute, 'offset': offset}
+  self.lights_on=[] # List of lights_on events of form {'hour': hour, 'minute': minute, 'offset': offset}
   self.rdr=self.rdr3
   if self.ext:
    if self.ext.lower()=='.sl':
@@ -110,16 +116,19 @@ class slfile(object):
   while True:
    sl=self.slfile.read(14)
    if len(sl)<14 or sl.startswith('WA'):
-    self.lights_on_offset= index
-    break
-
-   if sl.startswith('LA'):
     sl=sl.rstrip()
     if len(sl)==6:
-     self.lights_out_hour,self.lights_out_minute=int(sl[2:4]),int(sl[4:6])
+     hh,mm=int(sl[2:4]),int(sl[4:6])
     elif len(sl)==5:
-     self.lights_out_hour,self.lights_out_minute=int(sl[2:3]),int(sl[3:5])
-    self.lights_out_offset= index
+     hh,mm=int(sl[2:3]),int(sl[3:5])
+    self.lights_on.append({'hour': hh, 'minute': mm, 'offset': index})
+   elif sl.startswith('LA'):
+    sl=sl.rstrip()
+    if len(sl)==6:
+     hh,mm=int(sl[2:4]),int(sl[4:6])
+    elif len(sl)==5:
+     hh,mm=int(sl[2:3]),int(sl[3:5])
+    self.lights_out.append({'hour': hh, 'minute': mm, 'offset': index})
    else:
     eyemovements=0
     if sl[0]!=' ':
@@ -176,19 +185,31 @@ class slfile(object):
     if field.startswith('LA*'):
      timepart=field[3:]
      if len(timepart)==4:
-      self.lights_out_hour,self.lights_out_minute=int(timepart[0:2]),int(timepart[2:4])
+      hh,mm=int(timepart[0:2]),int(timepart[2:4])
      elif len(timepart)==3:
-      self.lights_out_hour,self.lights_out_minute=int(timepart[0:1]),int(timepart[1:3])
-     self.lights_out_offset= index
+      hh,mm=int(timepart[0:1]),int(timepart[1:3])
+     else:
+      print("Bad LA time: %s %s" % (self.filename,field))
+     self.lights_out.append({'hour': hh, 'minute': mm, 'offset': index})
     elif field.startswith('WA*'):
-     self.lights_on_offset= index
-     return
+     timepart=field[3:]
+     if len(timepart)==4:
+      hh,mm=int(timepart[0:2]),int(timepart[2:4])
+     elif len(timepart)==3:
+      hh,mm=int(timepart[0:1]),int(timepart[1:3])
+     self.lights_on.append({'hour': hh, 'minute': mm, 'offset': index})
     elif field.startswith('Stage*'):
      stagecode=field[6:]
      if stagecode=='V': # No idea what this means, pbly 'has apnea diagnostics'?
       continue
      if stagecode in stages3:
       stage=stages3[stagecode]
+     elif stagecode.startswith('R*'):
+      # This happened in one old file (M0517.sl3)
+      if stagecode[2:]==' ':
+       eyemovements=0
+      else:
+       eyemovements=int(stagecode[2:])
      else:
       print("Oops, unknown stage %s!" % stagecode)
     elif field=='Arousal':
@@ -206,21 +227,21 @@ class slfile(object):
      else:
       eyemovements=int(field[4:])
     elif field.startswith('ApZA*'): # Central apnea with arousal
-     apnea_za=int(field[5:])
+     apnea_za=int_or_1(field[5:])
     elif field.startswith('ApZ*'): # Central apnea without arousal
-     apnea_z=int(field[4:])
+     apnea_z=int_or_1(field[4:])
     elif field.startswith('ApOA*'): # Obstructive apnea with arousal
-     apnea_oa=int(field[5:])
+     apnea_oa=int_or_1(field[5:])
     elif field.startswith('ApO*'): # Obstructive apnea without arousal
-     apnea_o=int(field[4:])
+     apnea_o=int_or_1(field[4:])
     elif field.startswith('ApGA*'): # General apnea with arousal
-     apnea_ga=int(field[5:])
+     apnea_ga=int_or_1(field[5:])
     elif field.startswith('ApG*'): # General apnea without arousal
-     apnea_g=int(field[4:])
+     apnea_g=int_or_1(field[4:])
     elif field.startswith('HypA*'): # Hypopnea with arousal
-     hypopnea_a=int(field[5:])
+     hypopnea_a=int_or_1(field[5:])
     elif field.startswith('Hyp*'): # Hypopnea without arousal
-     hypopnea=int(field[4:])
+     hypopnea=int_or_1(field[4:])
     else:
      print("Oops, unknown field %s!" % field)
 
@@ -234,10 +255,41 @@ class slfile(object):
   if self.slfile:
    self.slfile.close()
    self.sfile=None
-
+ def find_datetime(self,timestamp):
+  '''Convenience function to locate the stage for a given absolute time.'''
+  if timestamp<self.realtime[0]: return None
+  for row,rt in enumerate(self.realtime):
+   if timestamp>=rt and timestamp<rt+self.step: return row
+  return None
  # Lazy evaluation functions to get the epoch-wise data (tuples) and REM/NREM cycle (remcycles)
  def create_tuples(self):
   self.tuples=[tup for tup in self]
+ def create_step(self):
+  import datetime
+  self.step=datetime.timedelta(minutes=self.minutes_per_epoch)
+ def create_start_timestamp(self):
+  import datetime
+  len(self.tuples) # Ensure that the sl file was read
+  if self.Date is not None:
+   day,month,year=(int(x) for x in self.Date.split('.'))
+   hour,minute,second=(int(x) for x in self.Time.split(':'))
+   self.start_timestamp=datetime.datetime(year,month,day,hour,minute,second)
+  else:
+   import klinik
+   import sqlalchemy as sa
+   from . import bookno
+   klinikdb = sa.create_engine(klinik.klinikurl)
+   somno= sa.Table('somno',sa.MetaData(klinikdb),autoload=True)
+   booknumber,ext=os.path.splitext(self.filename)
+   path,booknumber=os.path.split(booknumber)
+   booknumber=bookno.database_bookno(booknumber)
+   abl_datum=sa.select(columns=[sa.func.date(somno.c.abldatum)],whereclause=somno.c.bn==booknumber).execute().fetchone()[0]
+   la_time=datetime.datetime.combine(abl_datum,datetime.time(self.lights_out[0]['hour'],self.lights_out[0]['minute']))
+   self.start_timestamp=la_time-self.lights_out[0]['offset']*self.step
+ def create_realtime(self):
+  self.realtime=[]
+  for row,tup in enumerate(self.tuples):
+   self.realtime.append(self.start_timestamp+row*self.step)
  def create_remcycles(self):
   self.remcycles=[]
   self.n_remcycles,self.n_nremcycles,in_REM= -1,0,False
@@ -322,6 +374,9 @@ class slfile(object):
    self.rem_period_density.append(float(sum([self.tuples[n].eyemovements for n in epochs]))/n_epochs*100/microepochs_per_epoch)
  creator_functions={
   'tuples': create_tuples,
+  'step': create_step,
+  'start_timestamp': create_start_timestamp,
+  'realtime': create_realtime,
   'remcycles': create_remcycles,
   'n_remcycles': create_remcycles,
   'n_nremcycles': create_remcycles,

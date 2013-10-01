@@ -22,7 +22,8 @@ class slfile(parent_slfile.slfile):
   self.filename=filename
   self.minutes_per_epoch=0.5 if not minutes_per_epoch else minutes_per_epoch
   self.first,self.ext=os.path.splitext(filename)
-  self.lights_out_hour,self.lights_out_minute,self.lights_out_offset=None,None,None
+  self.lights_out=[] # List of lights_out events of form {'hour': hour, 'minute': minute, 'offset': offset}
+  self.lights_on=[] # List of lights_on events of form {'hour': hour, 'minute': minute, 'offset': offset}
   events=open(self.filename,"r")
   self.staging=[]
   started=False
