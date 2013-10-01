@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import avg_q
+import avg_q.trgfile
+from avg_q.avg_q_file import formats_and_extensions
+
+a=avg_q.avg_q()
+#a.debug=True
+for filename in sys.argv[1:]:
+ parts=filename.split(':')
+ if len(parts)==2 and parts[0] in dict(formats_and_extensions):
+  filetype,filename=parts
+ else:
+  filetype=None
+ if not os.path.exists(filename):
+  print("Oops, %s doesn't exist - skipping..." % filename)
+  continue
+ base,ext=os.path.splitext(filename)
+ if filetype is None and ext in ['.trg','.crs','.tri','.log']:
+  # Assume trigger file
+  if ext=='.log':
+   # Assume Presentation log file
+   import avg_q.Presentation
+   trg=avg_q.Presentation.PresLogfile(filename)
+  else:
+   trg=avg_q.trgfile.trgfile(filename)
+ else:
+  infile=avg_q.avg_q_file(filename,filetype)
+  trg=a.get_filetriggers(infile)
+ triggers=trg.gettuples()
+ sfreq=float(trg.preamble.get('Sfreq'))
+ for point, code, description in triggers:
+  if description:
+   print("%gs\t%d\t%s" % (point/sfreq, code, description))
+  else:
+   print("%gs\t%d" % (point/sfreq, code))
+ trg.close()
+a.close()
