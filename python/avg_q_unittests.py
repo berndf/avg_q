@@ -170,14 +170,14 @@ class avg_q_test_case8(avg_q_test_case):
   script.add_Epochsource(epochsource)
   # And a phasic event on channel 5
   epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='20ms',epochs=1)
-  # The height is important here - 1000 often triggers the jump detector as well
-  epochsource.add_branchtransform('add -n 5 800')
+  # The height is important here - 2000 often triggers the jump detector as well
+  epochsource.add_branchtransform('add -n 5 1900')
   script.add_Epochsource(epochsource)
   epochsource=avg_q.Epochsource(avg_q.avg_q_file(fileformat='null_source'),aftertrig='20s',epochs=1)
   epochsource.add_branchtransform('add gaussnoise 100')
   script.add_Epochsource(epochsource)
   script.set_collect('append')
-  #script.add_postprocess('posplot')
+  script.add_postprocess('posplot')
   script.add_postprocess('write_hdf -c o.hdf')
   script.run()
   # Now 

@@ -80,7 +80,7 @@ class Artifact_Segmentation(avg_q.Script):
     For this reason, blocking marks possibly extended regions, while the other two artifact types
     are detected as single points.'''
  ArtifactDetectionThreshold=4.0 # Detect phasic artifacts exceeding this threshold
- JumpDetectionThreshold=8.0 # Detect jumps (after differentiate) by this threshold
+ JumpDetectionThreshold=20.0 # Detect jumps (after differentiate) by this threshold
  min_blocking_points=3 # Do not add single or 3 repeated points as blocking
  def __init__(self,avg_q_instance,infile,start_point,end_point):
   self.infile=infile
