@@ -187,7 +187,9 @@ select_link_order(transform_info_ptr tinfo) {
  tinfo->methods->method_type=TRANSFORM_METHOD;
  tinfo->methods->method_name="link_order";
  tinfo->methods->method_description=
-  "Transform method to reorder the linked datasets in memory.\n";
+  "Transform method to reorder the linked list (stack) of datasets in memory.\n"
+  "'link_order 10 11' for example makes dataset 10 the first, 11 the second,\n"
+  "followed by what was first before. Dataset numbers start with 1.\n";
  tinfo->methods->local_storage_size=sizeof(struct link_order_storage);
  tinfo->methods->nr_of_arguments=NR_OF_ARGUMENTS;
  tinfo->methods->argument_descriptors=argument_descriptors;
