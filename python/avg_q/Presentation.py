@@ -17,6 +17,14 @@ class PresLog(object):
    raise "PresLog: File doesn't start with 'Scenario'"
   self.scenario=fileheader[11:]
   #print("Scenario: %s" % self.scenario)
+  fileheader2=next(self.log).rstrip('\r\n')
+  #print("fileheader2: %s" % fileheader2)
+  if fileheader2.startswith('Logfile written - '):
+   import datetime
+   self.timestamp=datetime.datetime.strptime(fileheader2[18:],"%m/%d/%Y %H:%M:%S")
+   #print(self.timestamp)
+  else:
+   self.timestamp=None
   table_start=['Subject','Trial'] if part=='events' else ['Event Type']
   self.header_fields=None
   for line in self.log:
@@ -64,4 +72,13 @@ class PresLogfile(trgfile.trgfile):
   if self.PL:
    self.PL.close()
    self.PL=None
+ def gettuples_abstime(self):
+  import datetime
+  tuples=self.gettuples()
+  sfreq=float(self.preamble.get('Sfreq'))
+  last_s=datetime.timedelta(seconds=tuples[-1][0]/sfreq)
+  #print(last_s)
+  for i,t in enumerate(tuples):
+   tuples[i]=self.PL.timestamp-last_s+datetime.timedelta(seconds=t[0]/sfreq),t[1],t[2]
+  return tuples
 
