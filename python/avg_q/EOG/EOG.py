@@ -7,6 +7,7 @@ import os
 import copy
 
 default_sessionaverage_EOGfile='avgEOG.asc'
+from ..avg_q import channel_list2arg
 
 class EOG(avg_q.Detector.Detector):
  VEOG_beforetrig='0.2s'
@@ -62,7 +63,7 @@ write_crossings -E EOG %(VEOG_minamp)f stdout
    script.add_transform('''
 scale_by -n ?%(protect_channels)s 0
 ''' % {
-   'protect_channels': ','.join(self.protect_channels), 
+   'protect_channels': channel_list2arg(self.protect_channels), 
    })
   # Note that we require the VEOG signal to be "close to baseline" before and after the maximum
   script.add_transform('''

@@ -13,6 +13,8 @@ import os
 import math
 import glob
 
+from .avg_q import channel_list2arg
+
 class fMRI_Correct(object):
  def __init__(self,avg_q_instance):
   self.avg_q_instance=avg_q_instance
@@ -46,7 +48,7 @@ class fMRI_Correct(object):
   self.avgEPI_Amplitude_Reject_fraction=None # A way to pass this parameter to avgEPI()
  def get_remove_channels(self):
   '''Helper function to get the necessary remove_channel command'''
-  return 'remove_channel -n ?' + ",".join(self.remove_channels) if self.remove_channels else ''
+  return 'remove_channel -n ?' + channel_list2arg(self.remove_channels) if self.remove_channels else ''
  def set_infile(self,infile):
   '''Collect information that we will need downstream'''
   self.infile=infile

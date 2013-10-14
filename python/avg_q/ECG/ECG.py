@@ -9,6 +9,7 @@ import copy
 default_sessionaverage_ECGfile='avgECG.asc'
 
 standard_protect_channels=[]
+from ..avg_q import channel_list2arg
 
 class ECG(avg_q.Detector.Detector):
  ECG_beforetrig='0.2s'
@@ -18,7 +19,7 @@ class ECG(avg_q.Detector.Detector):
  def __init__(self,avg_q_instance,ECGtemplate=None):
   avg_q.Detector.Detector.__init__(self,avg_q_instance)
   self.ECGtemplate=ECGtemplate
-  self.get_ECG_script="remove_channel -k ?%s\n" % ','.join(avg_q.Channeltypes.ECGchannels)
+  self.get_ECG_script="remove_channel -k ?%s\n" % avg_q.channel_list2arg(avg_q.Channeltypes.ECGchannels)
   self.mapfile=None
   self.sessionaverage_ECGfile=None
   self.protect_channels=standard_protect_channels
@@ -76,9 +77,9 @@ write_crossings -E -R 0.5s ECG 1 stdout
   script.add_Epochsource(epochsource)
   if self.protect_channels is not None and len(self.protect_channels)>0:
    script.add_transform('''
-scale_by -n %(protect_channels)s 0
+scale_by -n ?%(protect_channels)s 0
 ''' % {
-   'protect_channels': ','.join(self.protect_channels), 
+   'protect_channels': channel_list2arg(self.protect_channels), 
    })
   script.add_transform('''
 baseline_subtract

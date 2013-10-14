@@ -51,6 +51,8 @@ def escape_filename(path):
 def escape_channelname(channelname):
  '''Helper function to perform whatever escaping is necessary to send a channel name to avg_q within a script.'''
  return channelname.replace(' ','\\ ').replace('-','\\-')
+def channel_list2arg(channel_list):
+ return ','.join([escape_channelname(x) for x in channel_list])
 
 outtuple=[]
 collectvalue=None
@@ -133,8 +135,6 @@ null_sink
   return self.time_to_any(time,[lambda x: float(x)/sfreq,lambda x: float(x[:-1]),lambda x: float(x[:-2])/1000.0])
  def time_to_ms(self,time,sfreq):
   return self.time_to_any(time,[lambda x: float(x)*1000.0/sfreq,lambda x: float(x[:-1])*1000.0,lambda x: float(x[:-2])])
- def channel_list2arg(self,channel_list):
-  return ','.join([escape_channelname(x) for x in channel_list])
  def get_breakpoints(self,infile):
   '''
   Get those file events causing discontinuities in the (continuous) data. Start at point 0

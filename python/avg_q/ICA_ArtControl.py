@@ -5,6 +5,7 @@ Class to classify and project out artifacts by using ICA
 """
 
 from . import Channeltypes
+from .avg_q import channel_list2arg
 import os
 
 class ICA_ArtControl(object):
@@ -44,7 +45,7 @@ null_sink
    print(line)
  def get_remove_channels(self):
   '''Helper function to get the necessary remove_channel command'''
-  return 'remove_channel -n ?' + ",".join(self.remove_channels) if self.remove_channels else ''
+  return 'remove_channel -n ?' + channel_list2arg(self.remove_channels) if self.remove_channels else ''
  def set_ArtComponents(self,ArtComponents):
   self.ArtComponents=set(ArtComponents)
  def add_ArtComponents(self,AddComponents):

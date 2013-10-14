@@ -149,6 +149,7 @@ LOCAL struct positions_for_channelnames positions_PSG[]={
 };
 LOCAL struct positions_for_channelnames positions_EEG[]={
  {"Nas",	0,	2.4,	0.0},
+ {"Nz",	0,	2.4,	0.0},
 
  {"IO1",	-0.628435,	2.5,	0.0},
  {"IO2",	0.628435,	2.5,	0.0},
