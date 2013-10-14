@@ -106,7 +106,7 @@ write_crossings_init(transform_info_ptr tinfo) {
  if (args[ARGS_REFRACTORY_PERIOD].is_set) {
   local_arg->refractory_period=gettimeslice(tinfo, args[ARGS_REFRACTORY_PERIOD].arg.s);
   if (local_arg->refractory_period<0) {
-   ERREXIT1(tinfo->emethods, "write_crossings_init: Invalid refractory period %d.\n", local_arg->refractory_period);
+   ERREXIT1(tinfo->emethods, "write_crossings_init: Invalid refractory period %d.\n", MSGPARM(local_arg->refractory_period));
   }
  } else {
   local_arg->refractory_period=0;

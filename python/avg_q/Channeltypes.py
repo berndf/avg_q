@@ -10,6 +10,8 @@ BipolarEOGchannels=set([
  'EOG',
  'VEOG',
  'HEOG',
+ 'EOG LOC',
+ 'EOG ROC',
 ])
 ECGchannels=set([
  'Ekg1','Ekg2',
@@ -21,11 +23,21 @@ EMGchannels=set([
  'EMG',
  'BEMG1',
  'BEMG2',
+ 'EMG EMGchin',
+ 'EMG EMGTible',
+ 'EMG EMGTibri',
 ])
 AUXchannels=set([
  'EDA',
  'EDAShape',
  'GSR_MR_100_EDA',
  'EVT',
+ 'Airflow',
+ 'Thorax',
+ 'Abdomen',
+ 'Plethysmogram',
+ 'SpO2',
+ 'Pulse',
+ 'Snoring',
 ])
 NonEEGChannels=set.union(BipolarEOGchannels,ECGchannels,EMGchannels,AUXchannels)

@@ -361,7 +361,7 @@ read_tucker_init(transform_info_ptr tinfo) {
    local_arg->bytes_per_sample=8;
    break;
   default:
-   ERREXIT1(tinfo->emethods, "read_tucker_init: Unknown Version %d\n", local_arg->header.Version);
+   ERREXIT1(tinfo->emethods, "read_tucker_init: Unknown Version %d\n", MSGPARM(local_arg->header.Version));
    break;
  }
  local_arg->bytes_per_point=(local_arg->header.NChan+local_arg->header.NEvents)*local_arg->bytes_per_sample;

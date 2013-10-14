@@ -133,7 +133,7 @@ static struct {
  cairo_region_t *crect;
 #endif
  int fg;
- GdkColor palette[MAXCOLOR];
+ GdkRGBA palette[MAXCOLOR];
  cairo_t *cr;
  cairo_antialias_t antialias;
  Bool backbuffer;
@@ -216,7 +216,7 @@ motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
  GdkModifierType state;
 
  if (event->is_hint) {
-  gdk_window_get_pointer (event->window, &VGUI.lastx, &VGUI.lasty, &state);
+  gdk_window_get_device_position (event->window, event->device, &VGUI.lastx, &VGUI.lasty, &state);
  } else {
   VGUI.lastx = event->x;
   VGUI.lasty = event->y;
@@ -426,15 +426,15 @@ insert_key(GtkWidget *menuitem, gpointer data) {
  notify_input();
 }
 static void
-set_palette_entry(int n, gushort r, gushort g, gushort b) {
+set_palette_entry(int n, gdouble r, gdouble g, gdouble b) {
  VGUI.palette[n].red=r;
  VGUI.palette[n].green=g;
  VGUI.palette[n].blue=b;
+ VGUI.palette[n].alpha=1.0;
 }
 static int
 VGUI_init(void) {
  GtkWidget *box1;
- GtkWidget *handle_box;
  GtkWidget *menubar, *submenu, *menuitem;
  GtkWidget *topitem;
  GSList *colorgroup;
@@ -467,18 +467,14 @@ VGUI_init(void) {
  gtk_container_add (GTK_CONTAINER (VGUI.window), box1);
  gtk_widget_show (box1);
 
- handle_box = gtk_handle_box_new ();
- gtk_box_pack_start (GTK_BOX (box1), handle_box, FALSE, TRUE, 0);
- gtk_widget_show (handle_box);
-
  menubar = gtk_menu_bar_new ();
- gtk_container_add (GTK_CONTAINER (handle_box), menubar);
+ gtk_container_add (GTK_CONTAINER (box1), menubar);
  gtk_widget_show (menubar);
 
  /* Dataset menu */
  submenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -522,7 +518,7 @@ VGUI_init(void) {
  /* Command menu */
  submenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -680,7 +676,7 @@ VGUI_init(void) {
  /* Show menu */
  submenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -734,7 +730,7 @@ VGUI_init(void) {
  /* Select menu */
  submenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -833,7 +829,7 @@ VGUI_init(void) {
  /* Transform menu */
  submenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -883,7 +879,7 @@ VGUI_init(void) {
  /* View menu */
  submenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -1071,14 +1067,14 @@ VGUI_init(void) {
 
  /* Set the colors */
  VGUI.fg = BLACK;
- set_palette_entry(BLACK, 0, 0, 0);
- set_palette_entry(RED, 0xffff, 0, 0);
- set_palette_entry(GREEN, 0, 0xffff, 0);
- set_palette_entry(YELLOW, 0xffff, 0xffff, 0);
- set_palette_entry(BLUE, 0, 0, 0xffff);
- set_palette_entry(MAGENTA, 0xffff, 0, 0xffff);
- set_palette_entry(CYAN, 0, 0xffff, 0xffff);
- set_palette_entry(WHITE, 0xffff, 0xffff, 0xffff);
+ set_palette_entry(BLACK, 0.0, 0.0, 0.0);
+ set_palette_entry(RED, 1.0, 0.0, 0.0);
+ set_palette_entry(GREEN, 0.0, 1.0, 0.0);
+ set_palette_entry(YELLOW, 1.0, 1.0, 0.0);
+ set_palette_entry(BLUE, 0.0, 0.0, 1.0);
+ set_palette_entry(MAGENTA, 1.0, 0.0, 1.0);
+ set_palette_entry(CYAN, 0.0, 1.0, 1.0);
+ set_palette_entry(WHITE, 1.0, 1.0, 1.0);
 
  VGUI.paint_started=FALSE;
 
@@ -1143,7 +1139,7 @@ VGUI_vclear(void) {
  cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
 
  //printf("VGUI_vclear Clear %d %d - %d %d\n", vw, vh, vdevice.sizeSx, vdevice.sizeSy);
- gdk_cairo_set_source_color(cr,&VGUI.palette[VGUI.fg]);
+ gdk_cairo_set_source_rgba(cr,&VGUI.palette[VGUI.fg]);
  cairo_rectangle(cr, vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
  cairo_fill(cr);
  cairo_destroy (cr);
@@ -1228,7 +1224,7 @@ VGUI_begin(void) {
 #endif
   }
 
-  gdk_cairo_set_source_color(VGUI.cr,&VGUI.palette[VGUI.fg]);
+  gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
   cairo_set_line_width(VGUI.cr,VGUI.line_width);
   VGUI.draw_lastx=VGUI.draw_lasty= -1;
  }
@@ -1269,7 +1265,7 @@ static int VGUI_char(char c)
 
  gdk_threads_enter();
  cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
- gdk_cairo_set_source_color(cr,&VGUI.palette[VGUI.fg]);
+ gdk_cairo_set_source_rgba(cr,&VGUI.palette[VGUI.fg]);
  my_set_font(cr);
  cairo_move_to (cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
  cairo_show_text(cr, s);
@@ -1285,7 +1281,7 @@ static int VGUI_string(char *s)
 
  gdk_threads_enter();
  cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
- gdk_cairo_set_source_color(cr,&VGUI.palette[VGUI.fg]);
+ gdk_cairo_set_source_rgba(cr,&VGUI.palette[VGUI.fg]);
  my_set_font(cr);
  cairo_move_to (cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
  cairo_show_text(cr, s);
@@ -1337,7 +1333,7 @@ static int VGUI_mapcolor(int c, int r, int g, int b)
 {
  //printf("VGUI_mapcolor c=%d (%d %d %d)\n", c, r,g,b);
  if (c >= MAXCOLOR || vdevice.depth == 1) return (-1);
- set_palette_entry(c, ((gushort)r)<<8, ((gushort)g)<<8, ((gushort)b)<<8);
+ set_palette_entry(c, (gdouble)(r/255.0), (gdouble)(g/255.0), (gdouble)(b/255.0));
 
  return 1;
 }

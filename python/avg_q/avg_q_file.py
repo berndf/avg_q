@@ -1,6 +1,7 @@
 # Copyright (C) 2008-2010 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import os
+from .avg_q import escape_filename
 
 # Format, list_of_extensions
 formats_and_extensions=[
@@ -19,10 +20,6 @@ formats_and_extensions=[
  ('Tucker', ['.raw', '.RAW']),
  ('Embla', ['.ebm', '.EBM']),
 ]
-
-def escape_filename(path):
- '''Helper function to perform whatever escaping is necessary to send a file name to avg_q within a script.'''
- return path.replace(' ','\\ ')
 
 class avg_q_file(object):
  def __init__(self,filename=None,fileformat=None):

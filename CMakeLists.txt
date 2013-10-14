@@ -18,8 +18,8 @@ PROJECT(avg_q)
 
 OPTION(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)
 # Note that setting this in ccmake doesn't work, pkg_check_modules runs too
-# early and is cached... Use "cmake -DAVG_Q_GTK3=On" instead.
-OPTION(AVG_Q_GTK3 "Build avg_q_ui against GTK3" OFF)
+# early and is cached... Use "cmake -DAVG_Q_GTK3=Off" instead.
+OPTION(AVG_Q_GTK3 "Build avg_q_ui against GTK3" On)
 
 IF(AVG_Q_BUILD_DEBUG)
  SET(CMAKE_BUILD_TYPE Debug)
@@ -32,8 +32,8 @@ cmake_minimum_required(VERSION 2.6)
 INCLUDE("Signatures/Signature.GPL")
 
 SET(CPACK_GENERATOR TBZ2)
-SET(CPACK_PACKAGE_VERSION_MAJOR 4)
-SET(CPACK_PACKAGE_VERSION_MINOR 6)
+SET(CPACK_PACKAGE_VERSION_MAJOR 5)
+SET(CPACK_PACKAGE_VERSION_MINOR 0)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
 INCLUDE(CPack)
 IF(CMAKE_SYSTEM_NAME STREQUAL Windows)

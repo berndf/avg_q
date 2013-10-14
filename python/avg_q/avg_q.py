@@ -45,6 +45,13 @@ valuetype={
 
 break_events=[256,257] # NAV_STARTSTOP, NAV_DCRESET
 
+def escape_filename(path):
+ '''Helper function to perform whatever escaping is necessary to send a file name to avg_q within a script.'''
+ return path.replace(' ','\\ ')
+def escape_channelname(channelname):
+ '''Helper function to perform whatever escaping is necessary to send a channel name to avg_q within a script.'''
+ return channelname.replace(' ','\\ ').replace('-','\\-')
+
 outtuple=[]
 collectvalue=None
 listvalue=[]
@@ -126,6 +133,8 @@ null_sink
   return self.time_to_any(time,[lambda x: float(x)/sfreq,lambda x: float(x[:-1]),lambda x: float(x[:-2])/1000.0])
  def time_to_ms(self,time,sfreq):
   return self.time_to_any(time,[lambda x: float(x)*1000.0/sfreq,lambda x: float(x[:-1])*1000.0,lambda x: float(x[:-2])])
+ def channel_list2arg(self,channel_list):
+  return ','.join([escape_channelname(x) for x in channel_list])
  def get_breakpoints(self,infile):
   '''
   Get those file events causing discontinuities in the (continuous) data. Start at point 0
@@ -281,7 +290,6 @@ class Epochsource(object):
  def set_trigpoints(self,trigpoints):
   if self.trigfile is not None:
    raise Exception("Epochsource: cannot specify both trigpoints and trigfile!")
-  self.trigfile="stdin"
   if isinstance(trigpoints,list):
    self.trigpoints=trigpoints
   else:
@@ -295,7 +303,7 @@ class Epochsource(object):
     epoch=(trigpoint[0] if isinstance(trigpoint,tuple) else trigpoint)+1
     avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, offset=self.offset, fromepoch=epoch, epochs=1)
   else:
-   avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, continuous=self.continuous, fromepoch=self.fromepoch, epochs=self.epochs, offset=self.offset, triglist=self.triglist, trigfile=self.trigfile, trigtransfer=self.trigtransfer)
+   avg_q_instance.getepoch(self.infile, beforetrig=self.beforetrig, aftertrig=self.aftertrig, continuous=self.continuous, fromepoch=self.fromepoch, epochs=self.epochs, offset=self.offset, triglist=self.triglist, trigfile=self.trigfile if self.trigpoints is None else 'stdin', trigtransfer=self.trigtransfer)
   for methodline in self.branch:
    avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):

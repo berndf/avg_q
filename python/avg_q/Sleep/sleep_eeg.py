@@ -168,10 +168,13 @@ echo -F stdout End of medbands\\n
   return trim
  def get_measures(self,cntfile,stage,cycle=None,bands=defaultbands):
   '''Average epochs from cnt and directly measure the result'''
-  c=cntspectsource(cntfile)
-  if c.filename is None:
-   return
+  if isinstance(cntfile,cntspectsource):
+   c=cntfile
+  else:
+   c=cntspectsource(cntfile)
+  if c.filename is None: return
   c.set_stage_cycle(stage,cycle)
+  if len(c.trigpoints)==0: return
   script=avg_q.Script(self)
   script.add_Epochsource(c)
   script.set_collect('average')
@@ -263,17 +266,18 @@ null_sink
 cntspectfile_paths=(
  '/home/charly/tmp/autosleep/',
 )
-# Helpers for the get_measures method
+# Shortcuts for cntspectsource
 stagenames2stagelist={
  'NREM': ['2','3','4'],
  'REM': ['5'],
 }
 
+cntfilecache=None
+
 class cntspectsource(avg_q.Epochsource):
  '''Encapsulate the concept of an epoch source yielding spectra for defined epochs.
     These are read from .cnt files and .trg files used to yield subsets of epochs.
  '''
- dcache=None
  def __init__(self,filename):
   first,ext=os.path.splitext(filename)
   if ext:
@@ -292,11 +296,12 @@ set sfreq 0.03333333333
 ''')
  def locate(self,booknumber):
   from . import bookno
-  if not self.dcache:
+  global cntfilecache
+  if not cntfilecache:
    from .. import idircache
-   self.dcache=idircache.idircache(extensionstrip=('cnt'))
+   cntfilecache=idircache.idircache(extensionstrip=('cnt'))
   file_bookno=bookno.file_bookno(booknumber)
-  self.filename=self.dcache.find(cntspectfile_paths,file_bookno)
+  self.filename=cntfilecache.find(cntspectfile_paths,file_bookno)
  def set_epochfilter(self,epochfilter):
   tfile=self.filename.replace('.cnt','.trg')
   from .. import trgfile

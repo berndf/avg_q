@@ -637,7 +637,7 @@ set_queuevariables(transform_info_ptr tinfo, queue_desc *queue, int argc, char *
     /* Otherwise, accept_argument will reject the new contents: */
     ((transform_argument_writeable *)tinfo->methods->arguments)[argno].is_set=FALSE;
     if (!accept_argument(tinfo, &arg, &tinfo->methods->argument_descriptors[argno])) {
-     ERREXIT1(tinfo->emethods, "set_queuevariables: Argument >%s< not accepted\n", (int)argv[variable-1]);
+     ERREXIT1(tinfo->emethods, "set_queuevariables: Argument >%s< not accepted\n", MSGPARM(argv[variable-1]));
     }
    }
   }

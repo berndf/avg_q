@@ -376,6 +376,7 @@ set_channelposition_init(transform_info_ptr tinfo) {
    c=fgetc(pos_file);
    if (c==EOF) break;
    if (c=='\n') {
+    growing_buf_appendchar(&linebuf, '\0');
     growing_buf_firsttoken(&linebuf);
     strcpy(innames, linebuf.current_token);
     selection->channelnames[channel]=innames;

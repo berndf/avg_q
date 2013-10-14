@@ -88,7 +88,7 @@ class Artifact_Segmentation(avg_q.Script):
   self.end_point=end_point
   self.collected=None
   avg_q.Script.__init__(self,avg_q_instance)
- def collect_artifacts(self,remove_channels=None):
+ def collect_artifacts(self,remove_channels=None,preprocess=''):
   '''Analyze the given section of the continuous file for artifacts. 
      remove_channels is a list of channel names to exclude for detection.'''
   epochsource=avg_q.Epochsource(self.infile,0,self.end_point-self.start_point)
@@ -98,6 +98,7 @@ class Artifact_Segmentation(avg_q.Script):
   script.set_collect('append')
   script.add_postprocess('''
 %(remove_channels)s
+%(preprocess)s
 push
 differentiate
 calc abs
@@ -120,7 +121,8 @@ calc abs
 collapse_channels -h
 write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
 ''' % {
-   'remove_channels': 'remove_channel -n ?' + ",".join(remove_channels) if remove_channels else '',
+   'remove_channels': 'remove_channel -n ?' + self.avg_q_instance.channel_list2arg(remove_channels) if remove_channels else '',
+   'preprocess': preprocess,
    'JumpDetectionThreshold': self.JumpDetectionThreshold,
    'ArtifactDetectionThreshold': self.ArtifactDetectionThreshold})
   crossings=trgfile.trgfile(script.runrdr())

@@ -155,7 +155,7 @@ read_brainvision_get_filestrings(transform_info_ptr tinfo) {
  growing_buf_firsttoken(&local_arg->channelnames_buf);
  //printf("Have found %d channel names!\n", local_arg->channelnames_buf.nr_of_tokens);
  if (local_arg->channelnames_buf.nr_of_tokens!=tinfo->nr_of_channels) {
-  ERREXIT2(tinfo->emethods, "read_brainvision: Channel count mismatch, %d!=%d\n", local_arg->channelnames_buf.nr_of_tokens, tinfo->nr_of_channels);
+  ERREXIT2(tinfo->emethods, "read_brainvision: Channel count mismatch, %d!=%d\n", MSGPARM(local_arg->channelnames_buf.nr_of_tokens), MSGPARM(tinfo->nr_of_channels));
  }
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
   tinfo->channelnames[channel]=innamebuf+(local_arg->channelnames_buf.current_token-local_arg->channelnames_buf.buffer_start);
@@ -163,7 +163,7 @@ read_brainvision_get_filestrings(transform_info_ptr tinfo) {
  }
  if (local_arg->coordinates_buf.buffer_start!=NULL) {
   if (local_arg->coordinates_buf.current_length!=3*tinfo->nr_of_channels*sizeof(double)) {
-   ERREXIT2(tinfo->emethods, "read_brainvision: Coordinates count mismatch, %d!=%d\n", local_arg->coordinates_buf.current_length/sizeof(double), 3*tinfo->nr_of_channels);
+   ERREXIT2(tinfo->emethods, "read_brainvision: Coordinates count mismatch, %d!=%d\n", MSGPARM(local_arg->coordinates_buf.current_length/sizeof(double)), MSGPARM(3*tinfo->nr_of_channels));
   }
   if ((tinfo->probepos=(double *)malloc(3*tinfo->nr_of_channels*sizeof(double)))==NULL) {
    ERREXIT(tinfo->emethods, "read_brainvision: Error allocating probe positions\n");

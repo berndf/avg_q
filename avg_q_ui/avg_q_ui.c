@@ -2022,7 +2022,6 @@ method_menu (GtkWidget *menuitem, gpointer data) {
 LOCAL void
 create_main_window (void) {
  GtkWidget *box1, *hbox;
- GtkWidget *handle_box;
  GtkWidget *menubar, *filemenu, *tracemenu, *menuitem;
  GtkWidget *topitem;
  GtkWidget *scriptpanel;
@@ -2044,18 +2043,14 @@ create_main_window (void) {
  gtk_container_add (GTK_CONTAINER (Avg_Q_Main_Window), box1);
  gtk_widget_show (box1);
 
- handle_box = gtk_handle_box_new ();
- gtk_box_pack_start (GTK_BOX (box1), handle_box, FALSE, TRUE, 0);
- gtk_widget_show (handle_box);
-
  menubar = gtk_menu_bar_new ();
- gtk_container_add (GTK_CONTAINER (handle_box), menubar);
+ gtk_container_add (GTK_CONTAINER (box1), menubar);
  gtk_widget_show (menubar);
 
  /* File menu */
  filemenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -2156,7 +2151,7 @@ create_main_window (void) {
  /* Trace menu */
  tracemenu=gtk_menu_new();
 
- menuitem=gtk_tearoff_menu_item_new();
+ menuitem=gtk_menu_item_new();
  gtk_menu_shell_append (GTK_MENU_SHELL (tracemenu), menuitem);
  gtk_widget_show (menuitem);
 
@@ -2205,7 +2200,7 @@ create_main_window (void) {
   GtkWidget *submenu;
 
   submenu=gtk_menu_new();
-  menuitem=gtk_tearoff_menu_item_new();
+  menuitem=gtk_menu_item_new();
   gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
   gtk_widget_show (menuitem);
 
@@ -2244,26 +2239,17 @@ create_main_window (void) {
  gtk_widget_show(scriptpanel);
  gtk_widget_grab_focus(scriptpanel);
 
- handle_box = gtk_handle_box_new ();
- gtk_box_pack_start (GTK_BOX (box1), handle_box, FALSE, TRUE, 0);
- gtk_widget_show (handle_box);
-
  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
  gtk_widget_show (hbox);
- gtk_container_add (GTK_CONTAINER (handle_box), hbox);
+ gtk_container_add (GTK_CONTAINER (box1), hbox);
 
  Avg_q_StatusBar = gtk_statusbar_new();
- /* FIXME The 'natural width' of the status bar remains 0 irrespective of the text
-  * pushed to it. This means that if the handle_box is torn off, the whole thing
-  * collapses to a mere handle - so we set a minimum width here: */
- gtk_widget_set_size_request(Avg_q_StatusBar, FRAME_SIZE_X/2, -1);
  gtk_box_pack_start (GTK_BOX (hbox), Avg_q_StatusBar, TRUE, TRUE, 0);
  gtk_widget_show (Avg_q_StatusBar);
  Avg_q_StatusContext = gtk_statusbar_get_context_id(GTK_STATUSBAR(Avg_q_StatusBar), "avg_q status");
  set_status("Welcome to avg_q!");
 
  Avg_q_StatusRunBar = gtk_statusbar_new();
- gtk_widget_set_size_request(Avg_q_StatusRunBar, FRAME_SIZE_X/2, -1);
  gtk_box_pack_start (GTK_BOX (hbox), Avg_q_StatusRunBar, TRUE, TRUE, 0);
  gtk_widget_show (Avg_q_StatusRunBar);
  Avg_q_StatusRunContext = gtk_statusbar_get_context_id(GTK_STATUSBAR(Avg_q_StatusRunBar), "script status");
