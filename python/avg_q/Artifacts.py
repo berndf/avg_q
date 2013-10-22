@@ -9,6 +9,7 @@ and selecting artifact-free segments.
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
+from .avg_q import channel_list2arg
 from . import trgfile
 
 class collect_crossings(object):
@@ -121,7 +122,7 @@ calc abs
 collapse_channels -h
 write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
 ''' % {
- 'remove_channels': 'remove_channel -n ?' + avg_q.channel_list2arg(remove_channels) if remove_channels else '',
+ 'remove_channels': 'remove_channel -n ?' + channel_list2arg(remove_channels) if remove_channels else '',
    'preprocess': preprocess,
    'JumpDetectionThreshold': self.JumpDetectionThreshold,
    'ArtifactDetectionThreshold': self.ArtifactDetectionThreshold})

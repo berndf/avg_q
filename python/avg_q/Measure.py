@@ -13,6 +13,7 @@ class Measure_Script(avg_q.Script):
  def __init__(self,avg_q_instance):
   avg_q.Script.__init__(self,avg_q_instance)
   self.sum_range=False # If set, measure the sum, not the average of each range
+  self.output_comment=False # If set, output the epoch comment as second element of the output list
  def measure(self,channels_and_lat_ranges):
   '''channels_and_lat_ranges is a list of channels and associated latency ranges:
      [['PO3',[[90,120],[150,180]]],['Cz',[[370,550]]]]
@@ -46,28 +47,31 @@ scale_by -i 1 xdata
 set leaveright 1
 trim %(average_or_sum)s 0 0
 query -t accepted_epochs stdout
+%(output_comment)s
 query -t channelnames stdout
 echo -F stdout %(lower)g %(upper)g\\t
 write_generic stdout string
 pop
 """ % {
     'average_or_sum': '-s' if self.sum_range else '-a',
+    'output_comment': 'query -t comment stdout' if self.output_comment else '',
     'lower': lat_range[0],
     'upper': lat_range[1],
     })
    self.add_transform('pop')
   rdr=self.runrdr()
   result=[]
+  fixed_elements=3 if self.output_comment else 2
   for l in rdr:
    values=l.split('\t')
    # With N channels we get:
    # epoch,channelname*N,rangename,(amp,lat)*N
-   # So we have 2+N*3 values
-   N=int((len(values)-2)/3)
+   # So we have fixed_elements+N*3 values
+   N=int((len(values)-fixed_elements)/3)
    epoch=int(values[0])+1
    channelnames=",".join(values[1:(1+N)])
    rangename=values[1+N]
    #epoch,channelname,rangename,amp,lat=l.split('\t')
-   result.append([epoch,channelnames,rangename]+[float(x) for x in values[(2+N):]])
+   result.append([epoch,channelnames,rangename]+[float(x) for x in values[(fixed_elements+N):]])
   self.transforms=storetransforms
   return result
