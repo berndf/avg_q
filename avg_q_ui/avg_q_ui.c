@@ -2050,10 +2050,6 @@ create_main_window (void) {
  /* File menu */
  filemenu=gtk_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
-
  menuitem=gtk_menu_item_new_with_label("Change directory");
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(change_dir), NULL);
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
@@ -2151,10 +2147,6 @@ create_main_window (void) {
  /* Trace menu */
  tracemenu=gtk_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (tracemenu), menuitem);
- gtk_widget_show (menuitem);
-
  menuitem=gtk_radio_menu_item_new_with_label(NULL, "0 (only warnings)");
  tracegroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
  g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_tracelevel), (gpointer)0);
@@ -2200,9 +2192,6 @@ create_main_window (void) {
   GtkWidget *submenu;
 
   submenu=gtk_menu_new();
-  menuitem=gtk_menu_item_new();
-  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
-  gtk_widget_show (menuitem);
 
   for (m_select=method_selects; *m_select!=NULL; m_select++) {
    (**m_select)(&tinfostruc);
