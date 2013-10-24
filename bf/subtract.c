@@ -179,15 +179,20 @@ subtract(transform_info_ptr tinfo) {
   if (side_itemskip!=3 && side_itemskip!=4) {
    ERREXIT(tinfo->emethods, "subtract: Not 3 or 4 values per item in side_tinfo to calculate t comparison.\n");
   }
- } else
- if (tinfo->itemsize!=side_tinfo->itemsize || itemskip!=side_itemskip) {
-  ERREXIT(tinfo->emethods, "subtract: Item counts of input epochs don't match.\n");
- }
- if (local_arg->type==SUBTRACT_TYPE_COMPLEXMULTIPLY || local_arg->type==SUBTRACT_TYPE_COMPLEXDIVIDE) {
-  if (tinfo->itemsize%2!=0) {
-   ERREXIT(tinfo->emethods, "subtract: Item size must be divisible by 2 for complex operations.\n");
+ } else {
+  if (tinfo->itemsize!=side_tinfo->itemsize) {
+   /* Note we accept different itemskip values - itemskip takes precedence over side_itemskip. */
+   ERREXIT(tinfo->emethods, "subtract: Item counts of input epochs don't match.\n");
   }
-  itemskip=side_itemskip=2;
+  if (local_arg->type==SUBTRACT_TYPE_COMPLEXMULTIPLY || local_arg->type==SUBTRACT_TYPE_COMPLEXDIVIDE) {
+   if (tinfo->itemsize%2!=0) {
+    ERREXIT(tinfo->emethods, "subtract: Item size must be divisible by 2 for complex operations.\n");
+   }
+   itemskip=side_itemskip=2;
+  } else {
+   /* If leaveright is set, we still want to do something with all single items: */
+   itemskip=side_itemskip=1;
+  }
  }
  if (args[ARGS_RECYCLE_CHANNELS].is_set && tinfo->nr_of_channels>side_tinfo->nr_of_channels) {
   channels1=tinfo->nr_of_channels;
@@ -216,10 +221,22 @@ subtract(transform_info_ptr tinfo) {
       tinfo->tsdata[offset1]+=side_tinfo->tsdata[offset2];
       break;
      case SUBTRACT_TYPE_MEAN:
-      tinfo->tsdata[offset1]=(tinfo->tsdata[offset1]+side_tinfo->tsdata[offset2])/2;
+      /* Work identically here regarding 'sum-only' items as average.c */
+      if (itempart<tinfo->itemsize-tinfo->leaveright) {
+       tinfo->tsdata[offset1]=(tinfo->tsdata[offset1]+side_tinfo->tsdata[offset2])/2;
+      } else {
+       /* Simple sum for the leaveright (`sum-only') items */
+       tinfo->tsdata[offset1]+=side_tinfo->tsdata[offset2];
+      }
       break;
      case SUBTRACT_TYPE_WMEAN:
-      tinfo->tsdata[offset1]=(tinfo->tsdata[offset1]*tinfo->nrofaverages+side_tinfo->tsdata[offset2]*side_tinfo->nrofaverages)/(tinfo->nrofaverages+side_tinfo->nrofaverages);
+      /* Work identically here regarding 'sum-only' items as average.c */
+      if (itempart<tinfo->itemsize-tinfo->leaveright) {
+       tinfo->tsdata[offset1]=(tinfo->tsdata[offset1]*tinfo->nrofaverages+side_tinfo->tsdata[offset2]*side_tinfo->nrofaverages)/(tinfo->nrofaverages+side_tinfo->nrofaverages);
+      } else {
+       /* Non-weighted sum for the leaveright (`sum-only') items */
+       tinfo->tsdata[offset1]+=side_tinfo->tsdata[offset2];
+      }
       break;
      case SUBTRACT_TYPE_SUBTRACT:
       tinfo->tsdata[offset1]-=side_tinfo->tsdata[offset2];
@@ -250,7 +267,7 @@ subtract(transform_info_ptr tinfo) {
       break;
     }
     if (local_arg->ttest) {
-     /*{{{  Calculate t and p values*/
+     /*{{{  Calculate t and p values for tinfo-side_tinfo. It is ensured that type==SUBTRACT_TYPE_SUBTRACT. */
      int const n1=(int const)(itemskip==4 ? tinfo->tsdata[offset1+3] : tinfo->nrofaverages);
      int const n2=(int const)(side_itemskip==4 ? side_tinfo->tsdata[offset2+3] : side_tinfo->nrofaverages);
      /* tsdata[offset+2] is sum(x^2), tsdata[offset+1] is sum(x) */

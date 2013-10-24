@@ -9045,7 +9045,7 @@ subtract
  the mean or weighted mean of the two epochs can be calculated (setting
  the output nrofaverages to 2 or to the sum of the input nrofaverages, respectiv
 ely), or the current epoch can be multiplied or divided by the asc-file
- epoch, all in the same point- and channel-wise manner.
+ epoch, all in the same point-, channel and itempart-wise manner.
  For scalar products, see the 
 \series bold
 project
@@ -9065,6 +9065,20 @@ file are automatically conjugated to form the proper metric product
 \begin_inset Newline newline
 \end_inset
 
+In files with multiple items and `leaveright'>0, the `leaveright' right-most
+ items are actually only summed in mean or weighted mean mode, replicating
+ the behavior of the 
+\series bold
+average
+\series default
+ method.
+ This is useful to combine averages containing the accumulated sums and
+ sums of squares (for computing variance and t tests) as second and third
+ item.
+ In such averages, `leaveright' is automatically set to 2.
+\begin_inset Newline newline
+\end_inset
+
 With the option 
 \series bold
 -t
@@ -9075,19 +9089,20 @@ With the option
  This assumes that the second and third items of both files contain the
  sum and the sum of squares of the samples, respectively, and that a nrofaverage
 s property is specified in both files, as provided by 
-\family typewriter
-ascaverage -t -u
-\family default
+\series bold
+average -t -u
+\series default
 .
- Alternatively, the nrofaverages may be given on a by-point basis in a fourth
- item as output by the 
+ Alternatively, the nrofaverages may be given on a point-by-point basis
+ in a fourth item as output by the 
 \series bold
 average -M -t -u
 \series default
  method.
- Note that the correct number of averages to use for the t test is the actual
- number of values averaged to obtain the given mean and variance measures,
- not the sum of the weights as both 
+ Note that the correct number of averages to use for a t test between groups
+ is the actual number of values averaged to obtain the given mean and variance
+ measures, not the sum of the weights (number of included epochs) as both
+ 
 \family typewriter
 ascaverage
 \family default
@@ -9097,10 +9112,10 @@ average
 \series default
  method output by default.
  Be sure to use the option -N with either of them to force them to output
- the actual number of averages.
+ the number of cases if this is desired.
  
 \series bold
-subtract
+subtract -t
 \series default
  replaces the second and third items of the processed epoch with the 
 \begin_inset Formula $t$
