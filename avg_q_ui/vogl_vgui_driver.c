@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1998-2002,2004,2006-2009,2011-2012 Bernd Feige
+ * Copyright (C) 1998-2002,2004,2006-2009,2011-2013 Bernd Feige
  * 
  * This file is part of avg_q.
  * 
@@ -17,7 +17,7 @@
  * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * GTK driver for VOGL (c) 1998-2002,2004,2006-2009,2011-2012 by Bernd Feige (Feige@ukl.uni-freiburg.de)
+ * GTK driver for VOGL (c) 1998-2002,2004,2006-2009,2011-2013 by Bernd Feige (Feige@ukl.uni-freiburg.de)
  * 
  * To compile:
  * 
@@ -411,7 +411,7 @@ static void
 posplot_about (GtkWidget *menuitem) {
  Notice(
   "posplot/VOGL GUI driver\n"
-  "(c) 2002-2007,2011-2012 by Bernd Feige, Bernd.Feige@gmx.net\n"
+  "(c) 2002-2007,2011-2013 by Bernd Feige, Bernd.Feige@gmx.net\n"
   "Using the free GTK library: See http://www.gtk.org/"
  );
 }
@@ -477,7 +477,7 @@ VGUI_init(void) {
  gtk_widget_show (box1);
 
  menubar = gtk_menu_bar_new ();
- gtk_container_add (GTK_CONTAINER (box1), menubar);
+ gtk_box_pack_start (GTK_BOX (box1), menubar, FALSE, TRUE, 0);
  gtk_widget_show (menubar);
 
  /* Dataset menu */
