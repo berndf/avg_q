@@ -2044,7 +2044,7 @@ create_main_window (void) {
  gtk_widget_show (box1);
 
  menubar = gtk_menu_bar_new ();
- gtk_container_add (GTK_CONTAINER (box1), menubar);
+ gtk_box_pack_start (GTK_BOX (box1), menubar, FALSE, TRUE, 0);
  gtk_widget_show (menubar);
 
  /* File menu */
@@ -2230,7 +2230,7 @@ create_main_window (void) {
 
  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
  gtk_widget_show (hbox);
- gtk_container_add (GTK_CONTAINER (box1), hbox);
+ gtk_box_pack_start (GTK_BOX (box1), hbox, FALSE, TRUE, 0);
 
  Avg_q_StatusBar = gtk_statusbar_new();
  gtk_box_pack_start (GTK_BOX (hbox), Avg_q_StatusBar, TRUE, TRUE, 0);

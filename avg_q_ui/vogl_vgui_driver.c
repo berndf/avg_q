@@ -63,6 +63,9 @@ static GStaticMutex block_thread_mutex=G_STATIC_MUTEX_INIT;
 /* Need some compatibility definitions */
 #if GTK_MAJOR_VERSION==2
 #define gtk_box_new(orientation,spacing) gtk_vbox_new(FALSE,spacing)
+#define GdkRGBA GdkColor
+#define gdk_cairo_set_source_rgba gdk_cairo_set_source_color
+#define gdk_window_get_device_position(window,device,x,y,state) gdk_window_get_pointer(window,x,y,state)
 #endif
 
 /*-------------------------- Keyboard_Buffer ------------------------------*/
@@ -427,10 +430,16 @@ insert_key(GtkWidget *menuitem, gpointer data) {
 }
 static void
 set_palette_entry(int n, gdouble r, gdouble g, gdouble b) {
+#if GTK_MAJOR_VERSION==2
+ VGUI.palette[n].red=0xffff*r;
+ VGUI.palette[n].green=0xffff*g;
+ VGUI.palette[n].blue=0xffff*b;
+#else
  VGUI.palette[n].red=r;
  VGUI.palette[n].green=g;
  VGUI.palette[n].blue=b;
  VGUI.palette[n].alpha=1.0;
+#endif
 }
 static int
 VGUI_init(void) {
