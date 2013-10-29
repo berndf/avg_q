@@ -177,7 +177,7 @@ class avg_q_test_case8(avg_q_test_case):
   epochsource.add_branchtransform('add gaussnoise 100')
   script.add_Epochsource(epochsource)
   script.set_collect('append')
-  script.add_postprocess('posplot')
+  #script.add_postprocess('posplot')
   script.add_postprocess('write_hdf -c o.hdf')
   script.run()
   # Now 

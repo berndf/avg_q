@@ -34,7 +34,7 @@ class numpy_Epochsource(avg_q.Epochsource):
   self.epochs=epochs
   self.branch=[]
  def set_trigpoints(self,trigpoints):
-  raise('numpy_Epochsource: set_trigpoints not implemented')
+  raise Exception('numpy_Epochsource: set_trigpoints not implemented')
  def send(self,avg_q_instance):
   if len(self.epochs)==0: return
   nr_of_points,nr_of_channels=self.epochs[0].data.shape

@@ -115,7 +115,8 @@ class slfile(object):
   (index,time,stage,checks,arousals,myos,eyemovements)=(0,-1, 0, 0, 0, 0, 0);
   while True:
    sl=self.slfile.read(14)
-   if len(sl)<14 or sl.startswith('WA'):
+   if len(sl)<14: break
+   if sl.startswith('WA'):
     sl=sl.rstrip()
     if len(sl)==6:
      hh,mm=int(sl[2:4]),int(sl[4:6])

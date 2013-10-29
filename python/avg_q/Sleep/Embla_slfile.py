@@ -1,5 +1,5 @@
 """
-This provides standard way of handling Embla event staging files.
+This provides a standard way of handling Embla event staging files.
 """
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"

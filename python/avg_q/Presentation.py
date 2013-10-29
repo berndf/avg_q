@@ -14,7 +14,7 @@ class PresLog(object):
   self.log=open(self.logfile,"r")
   fileheader=next(self.log).rstrip('\r\n')
   if not(fileheader.startswith('Scenario -')):
-   raise "PresLog: File doesn't start with 'Scenario'"
+   raise Exception("PresLog: File doesn't start with 'Scenario'")
   self.scenario=fileheader[11:]
   #print("Scenario: %s" % self.scenario)
   fileheader2=next(self.log).rstrip('\r\n')

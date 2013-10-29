@@ -13,7 +13,7 @@ class EmblaChannel(object):
   aStream=open(filename,"rb")
   ss=aStream.read(48)
   if not ss.startswith(b'Embla data file'):
-   raise 'Not an Embla data file!'
+   raise Exception('Not an Embla data file!')
   while True:
    try:
     tag=Sagura.readint32(aStream)

@@ -36,6 +36,7 @@ class collect_crossings(object):
   detection_type=None
   for point,code,description in crossings:
    if len(crossings.preamble.strings)!=preamble_strings_len:
+    # Something was added to the preamble list, i.e. a new detection block has started
     detection_type=crossings.preamble.strings[-1][2:] # Crossings or Extrema
     preamble_strings_len=len(crossings.preamble.strings)
     #print("Detection type=%s %d" % (detection_type,len(self.artifacts)))
