@@ -1,38 +1,39 @@
 """
-Create a staging plot using matplotlib.
+Create a staging plot (Polysomnogram PSG) using matplotlib.
 """
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 stage_to_Y={
-  0: 6,
-  1: 4,
-  2: 3,
-  3: 2,
+  0: 5,
+  1: 3,
+  2: 2,
+  3: 1,
   4: 1,
-  5: 5,
+  5: 4, # REM
+  6: 5, # MT
 }
 
 Y_to_color={
   1: 'blue',
-  2: 'blue',
-  3: 'blue',
-  4: 'blue',
-  5: 'red',
-  6: 'blue',
+  2: 'darkgreen',
+  3: 'lightgreen',
+  4: 'red',
+  5: 'orange',
 }
 Y_to_lw={
-  1: 2,
-  2: 2,
-  3: 2,
-  4: 2,
-  5: 6,
-  6: 2,
+  1: 20,
+  2: 20,
+  3: 20,
+  4: 20,
+  5: 20,
 }
 
 import matplotlib.ticker
-yformatter=matplotlib.ticker.FixedFormatter(['','4','3','2','1','REM','W'])
+yformatter=matplotlib.ticker.FixedFormatter(['N3','N2','N1','REM','W'])
+# Without this the labels jump to other values when panning...
+ylocator=matplotlib.ticker.FixedLocator(range(1,6))
 
 def slplot(sl,realtime=False):
  axes = plt.subplot(111)
@@ -49,19 +50,33 @@ def slplot(sl,realtime=False):
  Y=np.array([stage_to_Y[x.stage] for x in sl.tuples])
  axes.yaxis.set_label_text('Stage')
  axes.yaxis.set_major_formatter(yformatter)
- axes.set_ylim(0,7)
+ axes.yaxis.set_major_locator(ylocator)
+ axes.set_ylim(min(stage_to_Y.values())-1,max(stage_to_Y.values())+1)
  if False:
   # A simple single-line plot
-  axes.plot(X,Y, color = 'blue', linewidth=1, linestyle="-")
+  axes.plot(X,Y, color = 'blue', linewidth=1, linestyle='solid')
  else:
   # Plot each stage with separate horizontal lines
-  for y in np.unique(Y):
-  #for y in [6]:
+  # Note that we go through some lengths so that the vertical grey lines
+  # don't obscure the broad colored stage lines: The vlines are plotted first...
+  uniqueY=np.unique(Y)
+  startend={}
+  for y in uniqueY:
    ind=np.where(Y==y)[0]
-   jumps=np.where(ind[1:]-ind[:(len(ind)-1)]>1)[0]
-   for jumpind in range(-1,len(jumps)):
-    xstart=X[ind[0]] if jumpind== -1 else X[ind[jumps[jumpind]+1]]
-    xend=X[ind[len(ind)-1]] if jumpind==len(jumps)-1 else X[ind[jumps[jumpind+1]]]
-    #print(xstart,xend)
-    axes.hlines(y,xstart,xend,color=Y_to_color[y],linewidth=Y_to_lw[y],linestyle="-")
+   # Find indexes where stage Y changes from y (at Y[ind]) to a different stage (Y[ind+1])
+   jumps=np.where(np.diff(ind)>1)[0]
+   startind=ind[np.concatenate( ([0],jumps+1) )]
+   # endind is already the first index of the next stage
+   endind=ind[np.concatenate( (jumps,[len(ind)-1]) )]+1
+   if endind[-1]==len(X): endind[-1]-=1
+   startend[y]=[startind,endind]
+
+  # Plot vertical lines where the current stage ends
+  for y in uniqueY:
+   startind,endind=startend[y]
+   axes.vlines(X[endind],Y[startind],Y[endind],color='lightgrey',linewidth=1,linestyle='solid')
+  # Plot the horizontal lines
+  for y in uniqueY:
+   startind,endind=startend[y]
+   axes.hlines(Y[startind],X[startind],X[endind],color=Y_to_color[y],linewidth=Y_to_lw[y],linestyle='solid')
  return axes

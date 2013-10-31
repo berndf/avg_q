@@ -73,12 +73,20 @@ class PresLogfile(trgfile.trgfile):
    self.PL.close()
    self.PL=None
  def gettuples_abstime(self):
-  import datetime
+  # We are calculating backwards from the time the log was written, which is given
+  # in local time, and it may happen that a DST switch occurred between start and end.
+  # Most plots, simply working for a given time from the start, are totally okay if you don't
+  # mind that the end times are still in the old frame, but since the local time here may
+  # already be in the new frame we have to correct to achieve this "work-from-start" behavior.
+  import pytz
   tuples=self.gettuples()
   sfreq=float(self.preamble.get('Sfreq'))
-  last_s=datetime.timedelta(seconds=tuples[-1][0]/sfreq)
-  #print(last_s)
+  last_s=pytz.datetime.timedelta(seconds=tuples[-1][0]/sfreq)
+  tz_aware_end=pytz.timezone('Europe/Berlin').localize(self.PL.timestamp)
+  # This computes the correct local start time considering a possible DST switch and
+  # converts it to the TZ-unaware local time we really want...
+  tz_unaware_start=tz_aware_end.tzinfo.normalize(tz_aware_end-last_s).replace(tzinfo=None)
   for i,t in enumerate(tuples):
-   tuples[i]=self.PL.timestamp-last_s+datetime.timedelta(seconds=t[0]/sfreq),t[1],t[2]
+   tuples[i]=tz_unaware_start+pytz.datetime.timedelta(seconds=t[0]/sfreq),t[1],t[2]
   return tuples
 
