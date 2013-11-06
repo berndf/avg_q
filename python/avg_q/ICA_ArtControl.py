@@ -165,7 +165,7 @@ null_sink
   if len(components)==0:
    remove_channel=''
   else:
-   remove_channel='remove_channel -n '+','.join(["%d" % comp for comp in components])
+   remove_channel='remove_channel -n '+channel_list2arg(["%d" % comp for comp in components])
   return remove_channel
  def get_backproject_script(self,components=None):
   if components is None:

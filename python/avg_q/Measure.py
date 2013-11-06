@@ -7,6 +7,7 @@ Measure class.
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
+from .avg_q import escape_channelname
 import copy
 
 class Measure_Script(avg_q.Script):
@@ -31,7 +32,7 @@ extract_item 0
 push
 remove_channel -k %(channel)s
 """ % {
- 'channel': channel,
+ 'channel': escape_channelname(channel),
    })
    for lat_range in lat_ranges:
     self.add_transform("""

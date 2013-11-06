@@ -3,6 +3,7 @@
 from . import Epochsource
 from . import Detector
 from . import avg_q_file
+from .avg_q import escape_channelname
 
 def get_no_avgs(a,infile,fromepoch):
  a.getepoch(infile,fromepoch=fromepoch,epochs=1)
@@ -61,7 +62,7 @@ trim -a -x %(trim)s
 write_generic stdout string
 null_sink
 -
- '''%{'IC':IC, 'process': process, 'trim':trim})
+ '''%{'IC': escape_channelname(IC), 'process': process, 'trim':trim})
    results=[float(x) for x in self.avg_q_instance.runrdr()]
    values.append(results)
   return values

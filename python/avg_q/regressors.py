@@ -8,6 +8,9 @@ filter and potentially orthogonalize the resulting regressors.
 import avg_q
 from . import trgfile
 from . import channelnames2channelpos
+from .avg_q import escape_filename
+from .avg_q import escape_channelname
+from .avg_q import channel_list2arg
 import subprocess
 
 import sys
@@ -88,9 +91,9 @@ class regressors(object):
   for channelname in channelnames:
    script=avg_q.Script(self.avg_q_instance)
    script.add_Epochsource(avg_q.Epochsource(regressor_avg_q_file))
-   script.add_transform('remove_channel -k %s' % channelname)
+   script.add_transform('remove_channel -k %s' % escape_channelname(channelname))
    script.add_transform('detrend') # An offset produces irreparable problems with waver's padding
-   script.add_transform('write_generic %s.dat string' % channelname)
+   script.add_transform('write_generic %s.dat string' % escape_filename(channelname))
    script.run()
    self.add_regressor_file(channelname,'%s.dat' % channelname)
 
@@ -100,7 +103,9 @@ class regressors(object):
   '''
   if not self.regressors:
    self.add_paradigm_regressors()
-  if orthogonalize_order is not None:
+  if orthogonalize_order is None:
+   ordernames=None
+  else:
    ordernames=orthogonalize_order.split(',')
    if len(ordernames)!=len(self.regressor_names) or any([x not in self.regressor_names for x in ordernames]):
     print('''Error: orthogonalize_order must mention all regressor names exactly once.
@@ -129,8 +134,8 @@ null_sink
   'x_offset': self.offset_s,
   'freqstart': freqstart,
   'freqend': freqend,
-  'reorder_orthogonalizeorder': '' if orthogonalize_order is None else 'remove_channel -k %s' % orthogonalize_order,
-  'reorder_originalorder': '' if orthogonalize_order is None else 'remove_channel -k %s' % ','.join(self.regressor_names),
+  'reorder_orthogonalizeorder': '' if ordernames is None else 'remove_channel -k %s' % channel_list2arg(ordernames),
+  'reorder_originalorder':      '' if ordernames is None else 'remove_channel -k %s' % channel_list2arg(self.regressor_names),
   'write_generic_flags': '-x -N' if with_column_names else '',
   })
 

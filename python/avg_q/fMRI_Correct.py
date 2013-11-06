@@ -629,14 +629,17 @@ subtract -d %(singleEPIfile)s_Amplitude.asc
 set sfreq %(nr_of_EPIs)d
 write_hdf -a -c %(residualsfile)s.hdf
 # Don't consider non-EEG channels to judge the fit
-collapse_channels -h !?%(NonEEGChannels)s:collapsed
+# FIXME This currently doesn't work for channel names with spaces in them
+#collapse_channels -h !?%(NonEEGChannels)s:collapsed
+remove_channel -n ?%(NonEEGChannels)s
+collapse_channels -h ALL:collapsed
 reject_bandwidth -m %(avgEPI_Amplitude_Reject_fraction)g
 pop
 ''' % {
    'singleEPIfile': singleEPIfile,
    'nr_of_EPIs': len(self.EPIs),
    'residualsfile': residualsfile,
-   'NonEEGChannels': ','.join(Channeltypes.NonEEGChannels),
+   'NonEEGChannels': channel_list2arg(Channeltypes.NonEEGChannels),
    'avgEPI_Amplitude_Reject_fraction': self.avgEPI_Amplitude_Reject_fraction,
    }
    script=avg_q.Script(self.avg_q_instance)
