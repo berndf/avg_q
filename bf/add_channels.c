@@ -144,7 +144,7 @@ add_channels_or_points(transform_info_ptr const to_tinfo, transform_info_ptr con
      (!zero_newdata && type!=ADD_ITEMS && to_tinfo->itemsize!=from_tinfo->itemsize) ||
      from_tinfo->data_type!=to_tinfo->data_type ||
      from_nrofshifts!=to_nrofshifts) {
-  ERREXIT(to_tinfo->emethods, "add_channels: File sizes do not match.\n");
+  ERREXIT(to_tinfo->emethods, "add_channels: Epoch dimensions do not match.\n");
  }
 
  /* Actually to_tinfo must contain the resulting tinfo at the end. 

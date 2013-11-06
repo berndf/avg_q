@@ -9,18 +9,19 @@ import os
 import getopt
 import fnmatch
 
+try:
+ optlist, args = getopt.getopt(sys.argv[1:],'e:E:f:t:pcid')
+except getopt.GetoptError as err:
+ # print help information and exit:
+ print(str(err)) # will print something like "option -a not recognized"
+ print("Usage: [-f fromepoch] [-e epochs] [-E epochlen] [-t tracelevel] [-{p,c,i}: append points,channels or items instead of linking as epochs] [-d: Debug] file1 file2 ...")
+ sys.exit(2)
+
 fromepoch=None
 epochs=None
 aftertrig=0
 tracelevel=0
-try:
- optlist, args = getopt.getopt(sys.argv[1:],'e:E:f:t:d')
-except getopt.GetoptError as err:
- # print help information and exit:
- print(str(err)) # will print something like "option -a not recognized"
- print("Usage: [-f fromepoch] [-e epochs] [-E epochlen] [-t tracelevel] [-d: Debug] file1 file2 ...")
- sys.exit(2)
-
+appendopt='-l'
 debug=False
 for opt,arg in optlist:
  if opt=='-f':
@@ -31,6 +32,8 @@ for opt,arg in optlist:
   aftertrig=arg
  elif opt=='-t':
   tracelevel=int(arg)
+ elif opt in ['-p','-c','-i']:
+  appendopt=opt
  elif opt=='-d':
   debug=True
 
@@ -88,10 +91,10 @@ if n_files==0:
  print("Oops, don't have any files to display...")
 else:
  a.write('''
-append -l
+append %(appendopt)s
 Post:
 posplot
 -
-''')
+''' % {'appendopt': appendopt})
  a.run()
 a.close()
