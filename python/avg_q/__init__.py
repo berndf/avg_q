@@ -4,6 +4,12 @@
 avg_q module root directory.
 """
 
+__all__=[
+ 'avg_q',
+ 'Script',
+ 'Epochsource',
+ 'avg_q_file',
+]
 # Allow the avg_q object to be addressed by avg_q.avg_q() instead of
 # by avg_q.avg_q.avg_q() ;-)
 from .avg_q import avg_q

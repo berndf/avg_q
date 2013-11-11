@@ -4,4 +4,5 @@
 EOG-related modules.
 """
 
+__all__=['EOG']
 from .EOG import EOG

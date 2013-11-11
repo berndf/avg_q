@@ -130,11 +130,11 @@ extract_item %(itempart)d
        len_overlap1=overlap1[1]-overlap1[0]
        len_overlap2=overlap2[1]-overlap2[0]
        if len_overlap1>0.8*len_overlaprange or len_overlap2>0.8*len_overlaprange:
-	#print "Overlap!",IC_latrange_list[index],IC_latrange_list[index2]
-	IC_latrange_list[index]=[IC,[min(latrange1[0],latrange2[0]),max(latrange1[1],latrange2[1])]]
-	found_ICs[IC][j]=None
-	redo=True
-	break
+        #print "Overlap!",IC_latrange_list[index],IC_latrange_list[index2]
+        IC_latrange_list[index]=[IC,[min(latrange1[0],latrange2[0]),max(latrange1[1],latrange2[1])]]
+        found_ICs[IC][j]=None
+        redo=True
+        break
 
   outlist=[]
   for IC in ICs:

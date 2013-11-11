@@ -1,12 +1,5 @@
 # Copyright (C) 2008,2009 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
-import klinik
-import sqlalchemy as sa
-
-debug=False
-
-klinikdb = sa.create_engine(klinik.klinikurl)
-somno=sa.Table('somno',sa.MetaData(klinikdb),autoload=True)
 
 # Entry is [schemas,booknos,channelnames] where each is a list of strings
 setups=[
@@ -55,9 +48,19 @@ setups=[
   "vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG"]],
 ]
 
+somno=None
+debug=False
+
 import os
 def sleep_channels(infile,nr_of_channels):
  from . import bookno
+ global somno
+ if somno is None:
+  import klinik
+  import sqlalchemy as sa
+  klinikdb = sa.create_engine(klinik.klinikurl)
+  somno=sa.Table('somno',sa.MetaData(klinikdb),autoload=True)
+
  infile,ext=os.path.splitext(infile)
  booknumber=os.path.basename(infile).lower()
  eegnr=bookno.database_bookno(booknumber.upper())

@@ -19,7 +19,7 @@ class ECG(avg_q.Detector.Detector):
  def __init__(self,avg_q_instance,ECGtemplate=None):
   avg_q.Detector.Detector.__init__(self,avg_q_instance)
   self.ECGtemplate=ECGtemplate
-  self.get_ECG_script="remove_channel -k ?%s\n" % avg_q.channel_list2arg(avg_q.Channeltypes.ECGchannels)
+  self.get_ECG_script="remove_channel -k ?%s\n" % channel_list2arg(avg_q.Channeltypes.ECGchannels)
   self.mapfile=None
   self.sessionaverage_ECGfile=None
   self.protect_channels=standard_protect_channels
