@@ -1,5 +1,6 @@
 """
-This provides standard way of handling Bernd Tritschler's SL sleep stage file format.
+This provides a standard way of handling epoch-based scoring,
+with implementation for Bernd Tritschler's SL sleep stage file format.
 """
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
