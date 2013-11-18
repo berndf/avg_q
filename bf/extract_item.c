@@ -51,25 +51,28 @@ extract_item_init(transform_info_ptr tinfo) {
  struct extract_item_storage *local_arg=(struct extract_item_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  int *inbuf;
- growing_buf buf;
- Bool havearg;
+ growing_buf buf, tokenbuf;
 
  growing_buf_init(&buf);
  growing_buf_takethis(&buf, args[ARGS_ITEMNO].arg.s);
- havearg=growing_buf_firsttoken(&buf);
- local_arg->nr_of_item_numbers=buf.nr_of_tokens;
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
+
+ local_arg->nr_of_item_numbers=growing_buf_count_tokens(&buf);
  if ((local_arg->item_numbers=(int *)malloc(local_arg->nr_of_item_numbers*sizeof(int)))==NULL) {
   ERREXIT(tinfo->emethods, "extract_item_init: Error allocating memory\n");
  }
  inbuf=local_arg->item_numbers;
- while (havearg) {
-  *inbuf=atoi(buf.current_token);
+ growing_buf_get_firsttoken(&buf,&tokenbuf);
+ while (tokenbuf.current_length>0) {
+  *inbuf=atoi(tokenbuf.buffer_start);
   if (*inbuf<0 || *inbuf>=tinfo->itemsize) {
    ERREXIT1(tinfo->emethods, "extract_item_init: Invalid item number %d\n", MSGPARM(*inbuf));
   }
   inbuf++;
-  havearg=growing_buf_nexttoken(&buf);
+  growing_buf_get_nexttoken(&buf,&tokenbuf);
  }
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buf);
 
  tinfo->methods->init_done=TRUE;

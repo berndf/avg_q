@@ -214,30 +214,14 @@ read_neurofile_init(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "read_neurofile_init: Error allocating last_values memory\n");
  }
 
+ local_arg->trigcodes=NULL;
  if (!args[ARGS_CONTINUOUS].is_set) {
   /* The actual trigger file is read when the first event is accessed! */
   if (args[ARGS_TRIGLIST].is_set) {
-   growing_buf buf;
-   Bool havearg;
-   int trigno=0;
-
-   growing_buf_init(&buf);
-   growing_buf_takethis(&buf, args[ARGS_TRIGLIST].arg.s);
-   buf.delimiters=",";
-
-   havearg=growing_buf_firsttoken(&buf);
-   if ((local_arg->trigcodes=(int *)malloc((buf.nr_of_tokens+1)*sizeof(int)))==NULL) {
+   local_arg->trigcodes=get_trigcode_list(args[ARGS_TRIGLIST].arg.s);
+   if (local_arg->trigcodes==NULL) {
     ERREXIT(tinfo->emethods, "read_neurofile_init: Error allocating triglist memory\n");
    }
-   while (havearg) {
-    local_arg->trigcodes[trigno]=atoi(buf.current_token);
-    havearg=growing_buf_nexttoken(&buf);
-    trigno++;
-   }
-   local_arg->trigcodes[trigno]=0;   /* End mark */
-   growing_buf_free(&buf);
-  } else {
-   local_arg->trigcodes=NULL;
   }
  } else {
   if (local_arg->aftertrig==0) {

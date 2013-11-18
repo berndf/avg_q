@@ -101,10 +101,11 @@ trim(transform_info_ptr tinfo) {
  array myarray, newarray;
  DATATYPE *oldtsdata;
  DATATYPE *new_xdata=NULL;
- growing_buf ranges;
+ growing_buf ranges, tokenbuf;
  growing_buf triggers;
 
  growing_buf_init(&ranges);
+ growing_buf_init(&tokenbuf);
  growing_buf_init(&triggers);
 
  if (tinfo->data_type==FREQ_DATA) {
@@ -112,26 +113,24 @@ trim(transform_info_ptr tinfo) {
   nrofshifts=tinfo->nrofshifts;
  }
 
- {
  /*{{{  Parse the ranges argument */
- Bool havearg;
-
- havearg=growing_buf_firsttoken(&local_arg->rangearg);
- nr_of_input_ranges=local_arg->rangearg.nr_of_tokens;
+ nr_of_input_ranges=growing_buf_count_tokens(&local_arg->rangearg);
  if (nr_of_input_ranges<=0 || nr_of_input_ranges%2!=0) {
   ERREXIT(tinfo->emethods, "trim: Need an even number of arguments >=2\n");
  }
  nr_of_input_ranges/=2;
  output_points=0;
  growing_buf_allocate(&ranges, 0);
- while (havearg) {
+ growing_buf_allocate(&tokenbuf, 0);
+ growing_buf_get_firsttoken(&local_arg->rangearg,&tokenbuf);
+ while (tokenbuf.current_length>0) {
   struct range thisrange;
   if (args[ARGS_USE_CHANNEL].is_set) {
    int const channel=find_channel_number(tinfo,args[ARGS_USE_CHANNEL].arg.s);
    if (channel>=0) {
-    DATATYPE const minval=get_value(local_arg->rangearg.current_token, NULL);
-    havearg=growing_buf_nexttoken(&local_arg->rangearg);
-    DATATYPE const maxval=get_value(local_arg->rangearg.current_token, NULL);
+    DATATYPE const minval=get_value(tokenbuf.buffer_start, NULL);
+    growing_buf_get_nexttoken(&local_arg->rangearg,&tokenbuf);
+    DATATYPE const maxval=get_value(tokenbuf.buffer_start, NULL);
     array indata;
     tinfo_array(tinfo, &indata);
     indata.current_vector=channel;
@@ -164,13 +163,13 @@ trim(transform_info_ptr tinfo) {
   } else {
    if (args[ARGS_USE_XVALUES].is_set) {
     if (tinfo->xdata==NULL) create_xaxis(tinfo);
-    thisrange.offset=decode_xpoint(tinfo, local_arg->rangearg.current_token);
-    havearg=growing_buf_nexttoken(&local_arg->rangearg);
-    thisrange.length=decode_xpoint(tinfo, local_arg->rangearg.current_token)-thisrange.offset+1;
+    thisrange.offset=decode_xpoint(tinfo, tokenbuf.buffer_start);
+    growing_buf_get_nexttoken(&local_arg->rangearg,&tokenbuf);
+    thisrange.length=decode_xpoint(tinfo, tokenbuf.buffer_start)-thisrange.offset+1;
    } else {
-    thisrange.offset=gettimeslice(tinfo, local_arg->rangearg.current_token);
-    havearg=growing_buf_nexttoken(&local_arg->rangearg);
-    thisrange.length=gettimeslice(tinfo, local_arg->rangearg.current_token);
+    thisrange.offset=gettimeslice(tinfo, tokenbuf.buffer_start);
+    growing_buf_get_nexttoken(&local_arg->rangearg,&tokenbuf);
+    thisrange.length=gettimeslice(tinfo, tokenbuf.buffer_start);
     if (thisrange.length==0) {
      thisrange.length=tinfo->nr_of_points-thisrange.offset;
     }
@@ -181,10 +180,10 @@ trim(transform_info_ptr tinfo) {
    growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
    output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
   }
-  havearg=growing_buf_nexttoken(&local_arg->rangearg);
+  growing_buf_get_nexttoken(&local_arg->rangearg,&tokenbuf);
  }
  /*}}}  */
- }
+
  nr_of_ranges=ranges.current_length/sizeof(struct range);
  if (nr_of_ranges==0) {
   TRACEMS(tinfo->emethods, 0, "trim: No valid ranges selected, rejecting epoch.\n");
@@ -382,6 +381,7 @@ trim(transform_info_ptr tinfo) {
  tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels*tinfo->itemsize*nrofshifts;
  local_arg->current_epoch++;
 
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&ranges);
 
  return newarray.start;

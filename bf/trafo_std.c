@@ -538,14 +538,45 @@ comment2time(char *comment, short *dd, short *mm, short *yy, short *yyyy, short 
 }
 /*}}}  */
 
+/*{{{  get_trigcode_list()*/
+/* Utility function parsing a string of integer codes like "5,3,10" into a 0-terminated list */
+GLOBAL int *
+get_trigcode_list(char const *const csv) {
+ growing_buf buf, tokenbuf;
+ int *trigcodes;
+ int trigno=0;
+
+ growing_buf_init(&buf);
+ growing_buf_takethis(&buf, csv);
+ buf.delimiters=",";
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
+
+ if ((trigcodes=(int *)malloc((growing_buf_count_tokens(&buf)+1)*sizeof(int)))==NULL) {
+  return NULL;
+ }
+ growing_buf_get_firsttoken(&buf,&tokenbuf);
+ while (tokenbuf.current_length>0) {
+  trigcodes[trigno]=atoi(tokenbuf.buffer_start);
+  growing_buf_get_nexttoken(&buf,&tokenbuf);
+  trigno++;
+ }
+ trigcodes[trigno]=0;   /* End mark */
+ growing_buf_free(&tokenbuf);
+ growing_buf_free(&buf);
+ return trigcodes;
+}
+/*}}}  */
 /*{{{  read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint)*/
 GLOBAL int
 read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, char **descriptionp) {
- growing_buf buffer;
+ growing_buf buffer, tokenbuf;
  int code=0;
 
  growing_buf_init(&buffer);
  growing_buf_allocate(&buffer,0);
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
  buffer.delimiters="\t\r\n";
  /* The do while (1) is here to be able to skip comment lines */
  do {
@@ -567,13 +598,12 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
   if (*buffer.buffer_start=='#') continue;
 
   growing_buf_appendchar(&buffer,'\0');
-  growing_buf_firsttoken(&buffer);
-  if (buffer.have_token) {
+  if (growing_buf_get_firsttoken(&buffer,&tokenbuf)) {
    double trigpos;
-   char *inbuffer=buffer.current_token;
+   char *inbuffer=tokenbuf.buffer_start;
    errno=0;
    trigpos=strtod(inbuffer, &inbuffer);
-   if (errno!=0 || inbuffer==buffer.current_token) {
+   if (errno!=0 || inbuffer==tokenbuf.buffer_start) {
     /* Avoid invalid lines. We'd need to generate an error here but don't have the tinfo struct. */
     continue;
    }
@@ -587,20 +617,18 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
    }
    *trigpoint=(long)rint(trigpos);
 
-   growing_buf_nexttoken(&buffer);
-   if (buffer.have_token) {
-    inbuffer=buffer.current_token;
+   if (growing_buf_get_nexttoken(&buffer,&tokenbuf)) {
+    inbuffer=tokenbuf.buffer_start;
     errno=0;
     code=strtol(inbuffer, &inbuffer, 10);
-    if (errno!=0 || inbuffer==buffer.current_token) {
+    if (errno!=0 || inbuffer==tokenbuf.buffer_start) {
      /* Avoid invalid lines. We'd need to generate an error here but don't have the tinfo struct. */
      continue;
     }
-    growing_buf_nexttoken(&buffer);
     if (descriptionp!=NULL) {
-     if (buffer.have_token) {
-      *descriptionp=(char *)malloc(strlen(buffer.current_token)+1);
-      strcpy(*descriptionp,buffer.current_token);
+     if (growing_buf_get_nexttoken(&buffer,&tokenbuf)) {
+      *descriptionp=(char *)malloc(strlen(tokenbuf.buffer_start)+1);
+      strcpy(*descriptionp,tokenbuf.buffer_start);
      } else {
       *descriptionp=NULL;
      }
@@ -612,6 +640,7 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
   }
  } while (1);
 
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buffer);
 
  return code;

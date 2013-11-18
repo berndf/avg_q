@@ -2365,6 +2365,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        top_tinfo->methods= &swap_methods_struct;
        select_dip_fit(top_tinfo);
        setup_method(top_tinfo, &buf);
+       growing_buf_free(&buf);
        (*top_tinfo->methods->transform_init)(top_tinfo);
        (*top_tinfo->methods->transform)(top_tinfo);
        fixedargsp= &((struct dip_fit_storage *)top_tinfo->methods->local_storage)->fixedargs;
@@ -2413,6 +2414,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        tinfo->methods= &swap_methods_struct;
        select_writeasc(tinfo);
        setup_method(tinfo, &buf);
+       growing_buf_free(&buf);
        (*tinfo->methods->transform_init)(tinfo);
        tinfo->methods=org_methods_ptr;
        for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
@@ -2453,6 +2455,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	(*tinfoptr->methods->transform_exit)(tinfoptr);
 	tinfoptr->methods=org_methods_ptr;
        }
+       growing_buf_free(&buf);
        local_arg->red_message="Current point value subtracted from selected datasets.";
        dev=NEWDATA; leave=TRUE;
        }
@@ -2514,6 +2517,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	(*tinfoptr->methods->transform_exit)(tinfoptr);
 	tinfoptr->methods=org_methods_ptr;
        }
+       growing_buf_free(&buf);
        rightleftview=(*((Bool*)swap_methods_struct.local_storage) ? 2:1);
        dev=NEWBORDER; leave=TRUE;
        }

@@ -9,7 +9,7 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 import sys
 import subprocess
 
-__all__ = ['avg_q']
+__all__ = ['avg_q', 'Epochsource', 'Script']
 
 valuetype={
 'sfreq': float,

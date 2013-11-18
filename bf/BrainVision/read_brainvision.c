@@ -143,7 +143,7 @@ LOCAL void
 read_brainvision_get_filestrings(transform_info_ptr tinfo) {
  struct read_brainvision_storage *local_arg=(struct read_brainvision_storage *)tinfo->methods->local_storage;
  char *innamebuf;
- int channel;
+ int channel, ntokens;
 
  tinfo->xdata=NULL;
  if ((tinfo->channelnames=(char **)malloc(tinfo->nr_of_channels*sizeof(char *)))==NULL ||
@@ -152,14 +152,16 @@ read_brainvision_get_filestrings(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "read_brainvision: Error allocating channelnames\n");
  }
  memcpy(innamebuf, local_arg->channelnames_buf.buffer_start, local_arg->channelnames_buf.current_length);
- growing_buf_firsttoken(&local_arg->channelnames_buf);
- //printf("Have found %d channel names!\n", local_arg->channelnames_buf.nr_of_tokens);
- if (local_arg->channelnames_buf.nr_of_tokens!=tinfo->nr_of_channels) {
-  ERREXIT2(tinfo->emethods, "read_brainvision: Channel count mismatch, %d!=%d\n", MSGPARM(local_arg->channelnames_buf.nr_of_tokens), MSGPARM(tinfo->nr_of_channels));
+ ntokens=growing_buf_count_tokens(&local_arg->channelnames_buf);
+ //printf("Have found %d channel names!\n", ntokens);
+ if (ntokens!=tinfo->nr_of_channels) {
+  ERREXIT2(tinfo->emethods, "read_brainvision: Channel count mismatch, %d!=%d\n", MSGPARM(ntokens), MSGPARM(tinfo->nr_of_channels));
  }
+ /* Reset token pointer, just as growing_buf_get_firsttoken does */
+ local_arg->channelnames_buf.current_token=local_arg->channelnames_buf.buffer_start;
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
   tinfo->channelnames[channel]=innamebuf+(local_arg->channelnames_buf.current_token-local_arg->channelnames_buf.buffer_start);
-  growing_buf_nexttoken(&local_arg->channelnames_buf);
+  growing_buf_get_nexttoken(&local_arg->channelnames_buf,NULL);
  }
  if (local_arg->coordinates_buf.buffer_start!=NULL) {
   if (local_arg->coordinates_buf.current_length!=3*tinfo->nr_of_channels*sizeof(double)) {
@@ -381,10 +383,10 @@ reevaluate:
      int const savelength=local_arg->filepath_buf.current_length;
      growing_buf_appendstring(&local_arg->filepath_buf, readbuf.buffer_start+9);
      local_arg->infile=fopen(local_arg->filepath_buf.buffer_start, "rb");
-     local_arg->filepath_buf.current_length=savelength;;
      if(local_arg->infile==NULL) {
       ERREXIT1(tinfo->emethods, "read_brainvision_init: Can't open eeg file %s\n", MSGPARM(local_arg->filepath_buf.buffer_start));
      }
+     local_arg->filepath_buf.current_length=savelength;
      //printf("Opened %s\n", filename);
     } else if (strncmp(readbuf.buffer_start,"MarkerFile=",11)==0) {
      int const savelength=local_arg->filepath_buf.current_length;
@@ -393,7 +395,7 @@ reevaluate:
       ERREXIT(tinfo->emethods, "read_brainvision_init: Error allocating marker name\n");
      }
      strcpy(local_arg->markerfilename, local_arg->filepath_buf.buffer_start);
-     local_arg->filepath_buf.current_length=savelength;;
+     local_arg->filepath_buf.current_length=savelength;
     } else if (strncmp(readbuf.buffer_start,"DataOrientation=",16)==0) {
      /* Can be MULTIPLEXED or VECTORIZED */
      local_arg->multiplexed=(strcmp(readbuf.buffer_start+16, "MULTIPLEXED")==0);
@@ -516,25 +518,10 @@ reevaluate:
  if (!args[ARGS_CONTINUOUS].is_set) {
   /* The actual trigger file is read when the first event is accessed! */
   if (args[ARGS_TRIGLIST].is_set) {
-   growing_buf buf;
-   Bool havearg;
-   int trigno=0;
-
-   growing_buf_init(&buf);
-   growing_buf_takethis(&buf, args[ARGS_TRIGLIST].arg.s);
-   buf.delimiters=",";
-
-   havearg=growing_buf_firsttoken(&buf);
-   if ((local_arg->trigcodes=(int *)malloc((buf.nr_of_tokens+1)*sizeof(int)))==NULL) {
+   local_arg->trigcodes=get_trigcode_list(args[ARGS_TRIGLIST].arg.s);
+   if (local_arg->trigcodes==NULL) {
     ERREXIT(tinfo->emethods, "read_brainvision_init: Error allocating triglist memory\n");
    }
-   while (havearg) {
-    local_arg->trigcodes[trigno]=atoi(buf.current_token);
-    havearg=growing_buf_nexttoken(&buf);
-    trigno++;
-   }
-   local_arg->trigcodes[trigno]=0;   /* End mark */
-   growing_buf_free(&buf);
   }
  } else {
   if (local_arg->aftertrig==0) {
@@ -800,10 +787,11 @@ METHODDEF void
 read_brainvision_exit(transform_info_ptr tinfo) {
  struct read_brainvision_storage * const local_arg=(struct read_brainvision_storage *)tinfo->methods->local_storage;
 
- growing_buf_init(&local_arg->filepath_buf);
+ growing_buf_free(&local_arg->filepath_buf);
  growing_buf_free(&local_arg->triggers);
  growing_buf_free(&local_arg->channelnames_buf);
  growing_buf_free(&local_arg->resolutions_buf);
+ growing_buf_free(&local_arg->coordinates_buf);
  if (local_arg->infile!=NULL) fclose(local_arg->infile);
  free_pointer((void **)&local_arg->markerfilename);
  free_pointer((void **)&local_arg->trigcodes);

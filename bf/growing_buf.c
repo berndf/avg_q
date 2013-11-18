@@ -39,8 +39,6 @@ growing_buf_init(growing_buf *buf) {
  buf->delimiters=" \t\r\n";
  buf->delim_protector='\0'; /* User has to set this explicitly if it is wanted */
  buf->current_length=0;
- buf->nr_of_tokens=0;
- buf->have_token=FALSE;
  buf->can_be_freed=FALSE;
 }
 
@@ -121,32 +119,20 @@ growing_buf_settothis(growing_buf *buf, char *str) {
  buf->buffer_end=buf->buffer_start+buf->current_length;
 }
 
-Bool
-growing_buf_nexttoken(growing_buf *buf) {
- char * const current_end=buf->buffer_start+buf->current_length;
- while (buf->current_token<current_end && *buf->current_token!='\0')
-  buf->current_token++;
- while (buf->current_token<current_end && *buf->current_token=='\0')
-  buf->current_token++;
- if (buf->current_token>=current_end) return (buf->have_token=FALSE);
- return (buf->have_token=TRUE);
+void
+growing_buf_read_line(FILE *infile, growing_buf *buf) {
+ char c;
+ growing_buf_clear(buf);
+ while (1) {
+  c=fgetc(infile);
+  if (c=='\r') continue;
+  if (feof(infile) || c=='\n') break;
+  growing_buf_appendchar(buf, c);
+ }
+ growing_buf_appendchar(buf, '\0');
 }
 
-/* While the former variant is more efficient because no empty tokens
- * are returned, this variant does return an empty token if multiple
- * adjacent delimiters are found. This may be needed if empty lines
- * must be counted as in setup_queue.c	*/
-Bool
-growing_buf_nextsingletoken(growing_buf *buf) {
- char * const current_end=buf->buffer_start+buf->current_length;
- while (buf->current_token<current_end && *buf->current_token!='\0')
-  buf->current_token++;
- if (buf->current_token<current_end && *buf->current_token=='\0')
-  buf->current_token++;
- if (buf->current_token>=current_end) return (buf->have_token=FALSE);
- return (buf->have_token=TRUE);
-}
-
+/* Token parsing implementation */
 static Bool escape=FALSE;
 static Bool
 is_delimiter(growing_buf *buf) {
@@ -154,7 +140,7 @@ is_delimiter(growing_buf *buf) {
   (!escape && strchr(buf->delimiters, *buf->current_token)!=NULL) );
 }
 static void
-transfer_character(growing_buf *buf, char **writepos) {
+transfer_character(growing_buf *buf, growing_buf *writebuf) {
  if (buf->delim_protector!='\0') {
   if (*buf->current_token==buf->delim_protector) {
    if (escape) {
@@ -170,72 +156,66 @@ transfer_character(growing_buf *buf, char **writepos) {
    /* This behavior is somewhat unusual, but we really want
     * to protect *only* delimiters and to leave single backslashes
     * in place otherwise */
-   if (escape && strchr(buf->delimiters, *buf->current_token)==NULL) {
-    *(*writepos)++ = buf->delim_protector;
+   if (escape && strchr(buf->delimiters, *buf->current_token)==NULL && writebuf!=NULL) {
+    growing_buf_appendchar(writebuf,buf->delim_protector);
    }
    escape=FALSE;
   }
  }
- if (*writepos==buf->current_token) {
-  (*writepos)++;
-  buf->current_token++;
- } else {
-  *(*writepos)++ = *buf->current_token++;
- }
+ if (writebuf!=NULL) growing_buf_appendchar(writebuf,*buf->current_token);
+ buf->current_token++;
 }
 static void
-growing_buf_initdelimiters(growing_buf *buf) {
+token_skip_delimiter(growing_buf *buf) {
  char * const current_end=buf->buffer_start+buf->current_length;
- char * writepos=buf->current_token=buf->buffer_start;
- buf->nr_of_tokens= 0;
+ while (buf->current_token<current_end && is_delimiter(buf)) buf->current_token++;
+}
+static void
+token_transfer_nondelimiter(growing_buf *buf, growing_buf *writebuf) {
+ char * const current_end=buf->buffer_start+buf->current_length;
+ while (buf->current_token<current_end && !is_delimiter(buf)) transfer_character(buf, writebuf);
+ if (writebuf!=NULL) growing_buf_appendchar(writebuf,'\0');
+ if (buf->current_token<current_end) buf->current_token++; /* Consume the delimiter */
+}
+Bool
+growing_buf_get_nexttoken(growing_buf *buf, growing_buf *writebuf) {
+ char * const current_end=buf->buffer_start+buf->current_length;
  escape=FALSE;
- while (buf->current_token<current_end && is_delimiter(buf)) {
-  *buf->current_token ='\0';
-  transfer_character(buf, &writepos);
- }
- while (buf->current_token<current_end) {
-  while (buf->current_token<current_end && !is_delimiter(buf)) {
-   transfer_character(buf, &writepos);
-  }
-  while (buf->current_token<current_end && is_delimiter(buf)) {
-   *buf->current_token ='\0';
-   transfer_character(buf, &writepos);
-  }
-  buf->nr_of_tokens++;
- }
- /* Buffer may have been shortened by removing escape characters: */
- buf->current_length=writepos-buf->buffer_start;
+ token_skip_delimiter(buf);
+ if (writebuf!=NULL) growing_buf_clear(writebuf);
+ if (buf->current_token>=current_end) return FALSE;
+ token_transfer_nondelimiter(buf, writebuf);
+ return TRUE;
 }
-
 Bool
-growing_buf_firsttoken(growing_buf *buf) {
- char * const current_end=buf->buffer_start+buf->current_length;
- growing_buf_initdelimiters(buf);
+growing_buf_get_firsttoken(growing_buf *buf, growing_buf *writebuf) {
  buf->current_token=buf->buffer_start;
- while (buf->current_token<current_end && *buf->current_token=='\0')
-  buf->current_token++;
- if (buf->current_token>=current_end) return (buf->have_token=FALSE);
- return (buf->have_token=TRUE);
+ return growing_buf_get_nexttoken(buf, writebuf);
 }
-
+/* While the former variant is more efficient because no empty tokens
+ * are returned, this variant does return an empty token if multiple
+ * adjacent delimiters are found. This may be needed if empty lines
+ * must be counted as in setup_queue.c	*/
 Bool
-growing_buf_firstsingletoken(growing_buf *buf) {
+growing_buf_get_nextsingletoken(growing_buf *buf, growing_buf *writebuf) {
  char * const current_end=buf->buffer_start+buf->current_length;
- growing_buf_initdelimiters(buf);
+ escape=FALSE;
+ if (writebuf!=NULL) growing_buf_clear(writebuf);
+ if (buf->current_token>=current_end) return FALSE;
+ token_transfer_nondelimiter(buf, writebuf);
+ return TRUE;
+}
+Bool
+growing_buf_get_firstsingletoken(growing_buf *buf, growing_buf *writebuf) {
  buf->current_token=buf->buffer_start;
- if (buf->current_token>=current_end) return (buf->have_token=FALSE);
- return (buf->have_token=TRUE);
+ return growing_buf_get_nextsingletoken(buf, writebuf);
 }
 
-void
-growing_buf_read_line(FILE *infile, growing_buf *buf) {
- char c;
- growing_buf_clear(buf);
- while (1) {
-  c=fgetc(infile);
-  if (c=='\r') continue;
-  if (feof(infile) || c=='\n') break;
-  growing_buf_appendchar(buf, c);
- }
- growing_buf_appendchar(buf, '\0');
+int
+growing_buf_count_tokens(growing_buf *buf) {
+ int nr_of_tokens=0;
+ buf->current_token=buf->buffer_start;
+ escape=FALSE;
+ while (growing_buf_get_nexttoken(buf, NULL)) nr_of_tokens++;
+ return nr_of_tokens;
 }

@@ -420,9 +420,11 @@ write_generic(transform_info_ptr tinfo) {
 /*{{{  write_generic_exit(transform_info_ptr tinfo) {*/
 METHODDEF void
 write_generic_exit(transform_info_ptr tinfo) {
+ struct write_generic_storage *local_arg=(struct write_generic_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
 
  if (!args[ARGS_CLOSE].is_set) write_generic_close_file(tinfo);
+ growing_buf_free(&local_arg->epochsep);
 
  tinfo->methods->init_done=FALSE;
 }

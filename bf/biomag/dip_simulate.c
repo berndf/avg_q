@@ -111,7 +111,7 @@ dip_simulate_init(transform_info_ptr tinfo) {
 #endif
  struct dipole_desc *dipole;
  double *pos;
- growing_buf buf;
+ growing_buf buf,tokenbuf;
 
  memcpy(&local_arg->tinfo, tinfo, sizeof(struct transform_info_struct));
  local_arg->epochs=args[ARGS_EPOCHS].arg.i;
@@ -126,23 +126,25 @@ dip_simulate_init(transform_info_ptr tinfo) {
   int i, n=0;
   growing_buf_init(&buf);
   growing_buf_takethis(&buf, args[ARGS_MODULEARGS].arg.s);
-  if (!growing_buf_firsttoken(&buf) || strcmp(buf.current_token, "(")!=0) {
+  growing_buf_init(&tokenbuf);
+  growing_buf_allocate(&tokenbuf,0);
+  if (!growing_buf_get_firsttoken(&buf,&tokenbuf) || strcmp(tokenbuf.buffer_start, "(")!=0) {
    ERREXIT(tinfo->emethods, "dip_simulate_init: Opening bracket expected\n");
   }
-  while (growing_buf_nexttoken(&buf) && strcmp(buf.current_token, ")")!=0) {
+  while (growing_buf_get_nexttoken(&buf,&tokenbuf) && strcmp(tokenbuf.buffer_start, ")")!=0) {
    n++;
   }
-  if (strcmp(buf.current_token, ")")!=0) {
+  if (strcmp(tokenbuf.buffer_start, ")")!=0) {
    ERREXIT(tinfo->emethods, "dip_simulate_init: Closing bracket expected\n");
   }
   if ((subargs=(char **)malloc((n+1)*sizeof(char *)))==NULL) {
    ERREXIT(tinfo->emethods, "dip_simulate_init: Error allocating subargs memory\n");
   }
-  growing_buf_firsttoken(&buf);
-  growing_buf_nexttoken(&buf);
+  growing_buf_get_firsttoken(&buf,&tokenbuf);
+  growing_buf_get_nexttoken(&buf,&tokenbuf);
   for (i=0; i<n; i++) {
-   subargs[i]=buf.current_token;
-   growing_buf_nexttoken(&buf);
+   subargs[i]=tokenbuf.buffer_start;
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
   }
   subargs[n]=NULL;
  }
@@ -150,6 +152,7 @@ dip_simulate_init(transform_info_ptr tinfo) {
  local_arg->source=(*dipole_sim_modules[args[ARGS_MODULENAME].arg.i])(&local_arg->tinfo, subargs);
  if (args[ARGS_MODULEARGS].is_set) {
   free((void *)subargs);
+  growing_buf_free(&tokenbuf);
   growing_buf_free(&buf);
  }
 

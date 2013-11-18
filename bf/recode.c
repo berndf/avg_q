@@ -69,7 +69,7 @@ METHODDEF void
 recode_init(transform_info_ptr tinfo) {
  struct recode_storage *local_arg=(struct recode_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- growing_buf buf;
+ growing_buf buf, tokenbuf;
  struct blockdef *inblocks;
  int nr_of_blocks=0, block;
  Bool havearg;
@@ -94,14 +94,16 @@ recode_init(transform_info_ptr tinfo) {
 
  growing_buf_init(&buf);
  growing_buf_takethis(&buf, args[ARGS_BLOCKS].arg.s);
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
 
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  while (havearg) {
   nr_of_blocks++;
-  havearg=growing_buf_nexttoken(&buf);
+  havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
  }
 
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  if (!havearg || nr_of_blocks%4!=0) {
   ERREXIT(tinfo->emethods, "recode_init: Number of args must be divisible by 4.\n");
  }
@@ -110,10 +112,10 @@ recode_init(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "recode_init: Error allocating blockdefs memory\n");
  }
  for (inblocks=local_arg->blockdefs, block=0; havearg; block++, inblocks++) {
-  inblocks->fromstart=get_value(buf.current_token, NULL); growing_buf_nexttoken(&buf);
-  inblocks->fromend=get_value(buf.current_token, NULL); growing_buf_nexttoken(&buf);
-  inblocks->tostart=get_value(buf.current_token, NULL); growing_buf_nexttoken(&buf);
-  inblocks->toend=get_value(buf.current_token, NULL); havearg=growing_buf_nexttoken(&buf);
+  inblocks->fromstart=get_value(tokenbuf.buffer_start, NULL); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->fromend=get_value(tokenbuf.buffer_start, NULL); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->tostart=get_value(tokenbuf.buffer_start, NULL); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->toend=get_value(tokenbuf.buffer_start, NULL); havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
   inblocks->last_block=(block==nr_of_blocks-1);
   if (isnan(inblocks->fromstart) || isnan(inblocks->fromend)) {
    if (!isnan(inblocks->fromstart) || !isnan(inblocks->fromend)) {
@@ -129,6 +131,7 @@ recode_init(transform_info_ptr tinfo) {
    }
   }
  }
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buf);
 
  tinfo->methods->init_done=TRUE;

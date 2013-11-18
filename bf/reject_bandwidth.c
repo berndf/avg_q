@@ -89,8 +89,11 @@ reject_bandwidth_init(transform_info_ptr tinfo) {
  DATATYPE bandwidth=3500.0e-15;	/* Standard bandwidth limit is 3500 fT */
  char *endptr, *filearg=NULL;
  int channel;
- growing_buf buf;
+ int nr_of_tokens;
+ growing_buf buf, tokenbuf;
  growing_buf_init(&buf);
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf, 0L);
  
  if ((local_arg->bandwidths=(DATATYPE *)malloc(sizeof(DATATYPE)*tinfo->nr_of_channels))==NULL) {
   ERREXIT(tinfo->emethods, "reject_bandwidth_init: Error allocating bandwidth array.\n");
@@ -98,21 +101,21 @@ reject_bandwidth_init(transform_info_ptr tinfo) {
  if (args[ARGS_BANDWIDTH].is_set) {
   double b;
   growing_buf_takethis(&buf, args[ARGS_BANDWIDTH].arg.s);
-  growing_buf_firsttoken(&buf);
-  if (buf.nr_of_tokens>2) {
+  nr_of_tokens=growing_buf_count_tokens(&buf);
+  if (nr_of_tokens>2) {
    ERREXIT(tinfo->emethods, "reject_bandwidth_init: Too many arguments.\n");
   }
-  if (buf.have_token) {
-   b=strtod(buf.current_token, &endptr);
-   if (*endptr!='\0' && strchr(buf.delimiters, *endptr)==NULL) {
+  if (growing_buf_get_firsttoken(&buf,&tokenbuf)) {
+   b=strtod(tokenbuf.buffer_start, &endptr);
+   if (*endptr!='\0') {
     /* The first argument was not a number: must be a file name */
-    filearg=buf.current_token;
-    if (buf.nr_of_tokens>1) {
+    filearg=tokenbuf.buffer_start;
+    if (nr_of_tokens>1) {
      ERREXIT(tinfo->emethods, "reject_bandwidth_init: Two args, but the first is not a number!\n");
     }
    } else {
     bandwidth=b;
-    if (growing_buf_nexttoken(&buf)) filearg=buf.current_token;
+    if (growing_buf_get_nexttoken(&buf,&tokenbuf)) filearg=tokenbuf.buffer_start;
    }
   }
  }
@@ -122,30 +125,35 @@ reject_bandwidth_init(transform_info_ptr tinfo) {
  if (filearg!=NULL) {
   /*{{{  Try reading bandwidth values from a bandwidth file*/
   FILE *bandwidth_file;
-  char linebuffer[80], *inbuf;
+  growing_buf linebuf;
+  char *inbuf;
+  growing_buf_init(&linebuf);
+  growing_buf_allocate(&linebuf, 0L);
 
   if ((bandwidth_file=fopen(filearg, "r"))==NULL) {
    ERREXIT1(tinfo->emethods, "reject_bandwidth_init: Can't open file %s\n", MSGPARM(filearg));
   }
-  while ((fgets(linebuffer, 80, bandwidth_file))!=NULL) {
-   if (*linebuffer=='#') continue;	/* Allow comments */
+  while (TRUE) {
+   growing_buf_read_line(bandwidth_file, &linebuf);
+   if (feof(bandwidth_file)) break;
+   if (*linebuf.buffer_start=='#') continue;	/* Allow comments */
+   nr_of_tokens=growing_buf_count_tokens(&linebuf);
    if (args[ARGS_BYNAME].is_set) {
-    growing_buf_settothis(&buf, linebuffer);
-    growing_buf_firsttoken(&buf);
-    if (buf.nr_of_tokens!=2) {
+    if (nr_of_tokens!=2) {
      ERREXIT(tinfo->emethods, "reject_bandwidth_init: Invalid line in bandwidth file\n");
     }
-    if ((channel=find_channel_number(tinfo, buf.current_token))<0) {
-     ERREXIT1(tinfo->emethods, "reject_bandwidth_init: Unknown channel name >%s<\n", MSGPARM(buf.current_token));
+    growing_buf_get_firsttoken(&linebuf,&tokenbuf);
+    if ((channel=find_channel_number(tinfo, tokenbuf.buffer_start))<0) {
+     ERREXIT1(tinfo->emethods, "reject_bandwidth_init: Unknown channel name >%s<\n", MSGPARM(tokenbuf.buffer_start));
     }
-    growing_buf_nexttoken(&buf);
-    inbuf=buf.current_token;
+    growing_buf_get_nexttoken(&linebuf,&tokenbuf);
+    inbuf=tokenbuf.buffer_start;
    } else {
-   channel=(int)strtod(linebuffer, &endptr)-1;
-   if (channel<0 || endptr==linebuffer) {
-    ERREXIT(tinfo->emethods, "reject_bandwidth_init: Malformed channel number in bandwidth file\n");
-   }
-   inbuf=endptr;
+    channel=(int)strtod(linebuf.buffer_start, &endptr)-1;
+    if (channel<0 || endptr==linebuf.buffer_start) {
+     ERREXIT(tinfo->emethods, "reject_bandwidth_init: Malformed channel number in bandwidth file\n");
+    }
+    inbuf=endptr;
    }
    bandwidth=strtod(inbuf, &endptr);
    if (endptr==inbuf) {
@@ -155,8 +163,10 @@ reject_bandwidth_init(transform_info_ptr tinfo) {
     local_arg->bandwidths[channel]=bandwidth;
   }
   fclose(bandwidth_file);
+  growing_buf_free(&linebuf);
   /*}}}  */
  }
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buf);
 
  tinfo->methods->init_done=TRUE;

@@ -77,27 +77,28 @@ collapse_channels_init(transform_info_ptr tinfo) {
 
  if (args[ARGS_RANGES].is_set) {
   /*{{{  Count and check arguments (=ranges)*/
-  growing_buf buf;
-  Bool havearg;
+  growing_buf buf, tokenbuf;
   int range=0, range_len=0;
   char *in_rangenames, *in_channelnames;
   growing_buf_init(&buf);
   growing_buf_takethis(&buf, args[ARGS_RANGES].arg.s);
-  havearg=growing_buf_firsttoken(&buf);
+  buf.delim_protector='\\';
+  growing_buf_init(&tokenbuf);
+  growing_buf_allocate(&tokenbuf, 0);
 
+  local_arg->nr_of_ranges=growing_buf_count_tokens(&buf);
   local_arg->channelnames_len=0;
-  while (havearg) {
-   char *lasttoken=buf.current_token;
-   char *colon=strchr(lasttoken, ':');
+  growing_buf_get_firsttoken(&buf,&tokenbuf);
+  while (tokenbuf.current_length>0) {
+   char *colon=strchr(tokenbuf.buffer_start, ':');
    if (colon==NULL) {
     ERREXIT(tinfo->emethods, "collapse_channels_init: Range syntax is channels:name\n");
    }
-   range_len+=colon-lasttoken+1;
+   range_len+=colon-tokenbuf.buffer_start+1;
    local_arg->channelnames_len+=strlen(colon+1)+1;
-   havearg=growing_buf_nexttoken(&buf);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
   }
 
-  local_arg->nr_of_ranges=buf.nr_of_tokens;
   if ((local_arg->ranges=(int **)calloc(local_arg->nr_of_ranges, sizeof(int *)))==NULL 
     ||(in_rangenames=(char *)malloc(range_len))==NULL
     ||(in_channelnames=(char *)malloc(local_arg->channelnames_len))==NULL
@@ -106,20 +107,21 @@ collapse_channels_init(transform_info_ptr tinfo) {
    ERREXIT(tinfo->emethods, "collapse_channels_init: Error allocating memory\n");
   }
 
-  havearg=growing_buf_firsttoken(&buf);
-  while (havearg) {
-   char const * const colon=strchr(buf.current_token, ':');
-   strncpy(in_rangenames, buf.current_token, colon-buf.current_token);
+  growing_buf_get_firsttoken(&buf,&tokenbuf);
+  while (tokenbuf.current_length>0) {
+   char const * const colon=strchr(tokenbuf.buffer_start, ':');
+   strncpy(in_rangenames, tokenbuf.buffer_start, colon-tokenbuf.buffer_start);
    local_arg->name_lists[range]=in_rangenames;
-   in_rangenames+=(colon-buf.current_token);
+   in_rangenames+=(colon-tokenbuf.buffer_start);
    *in_rangenames++ ='\0';
    strcpy(in_channelnames, colon+1);
    local_arg->channelnames[range]=in_channelnames;
    in_channelnames+=strlen(in_channelnames)+1;
-   havearg=growing_buf_nexttoken(&buf);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
    range++;
   }
   growing_buf_free(&buf);
+  growing_buf_free(&tokenbuf);
   /*}}}  */
  } else {
   /* No arguments: Collapse over all channels */

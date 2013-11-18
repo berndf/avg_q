@@ -84,32 +84,33 @@ remove_channel_init(transform_info_ptr tinfo) {
   /* These are handled in remove_channel */
  } else if (args[ARGS_REMOVERANGES].is_set) {
   /*{{{  Build remove_ranges*/
-  growing_buf buf;
+  growing_buf buf, tokenbuf;
   int nr_of_ranges_to_remove=0, last_channel;
   int *in_remove_ranges;
-  Bool havearg;
 
   growing_buf_init(&buf);
   growing_buf_takethis(&buf, args[ARGS_REMOVERANGES].arg.s);
+  growing_buf_init(&tokenbuf);
+  growing_buf_allocate(&tokenbuf, 0);
 
-  if (!(havearg=growing_buf_firsttoken(&buf))) {
+  if (!growing_buf_get_firsttoken(&buf, &tokenbuf)) {
    ERREXIT(tinfo->emethods, "remove_channel_init: Not enough arguments\n");
   }
 
   /*{{{  Count ranges and check consistency*/
   last_channel=0;
-  while (havearg) {
+  while (tokenbuf.current_length>0) {
    if (last_channel==0) {
-    last_channel=read_int(tinfo, buf.current_token);
+    last_channel=read_int(tinfo, tokenbuf.buffer_start);
    } else {
-    int const diff=read_int(tinfo, buf.current_token)-last_channel;
+    int const diff=read_int(tinfo, tokenbuf.buffer_start)-last_channel;
     if (diff<0 || last_channel<=0) {
      ERREXIT(tinfo->emethods, "remove_channel_init: Channel start/end pairs must be >0 and ascending\n");
     }
     last_channel=0;
     nr_of_ranges_to_remove++;
    }
-   havearg=growing_buf_nexttoken(&buf);
+   growing_buf_get_nexttoken(&buf, &tokenbuf);
   }
   if (last_channel!=0) nr_of_ranges_to_remove++;
   /*}}}  */
@@ -119,20 +120,19 @@ remove_channel_init(transform_info_ptr tinfo) {
   }
 
   /*{{{  Transfer ranges to remove_ranges list*/
-  havearg=growing_buf_firsttoken(&buf);
+  growing_buf_get_firsttoken(&buf, &tokenbuf);
   last_channel=0;
   in_remove_ranges=local_arg->remove_ranges;
-  while (havearg) {
+  while (tokenbuf.current_length>0) {
    if (last_channel==0) {
-    last_channel=read_int(tinfo, buf.current_token);
+    last_channel=read_int(tinfo, tokenbuf.buffer_start);
    } else {
     *in_remove_ranges++ =last_channel;
-    *in_remove_ranges++ =read_int(tinfo, buf.current_token);
+    *in_remove_ranges++ =read_int(tinfo, tokenbuf.buffer_start);
     last_channel=0;
    }
-   havearg=growing_buf_nexttoken(&buf);
+   growing_buf_get_nexttoken(&buf, &tokenbuf);
   }
-  growing_buf_free(&buf);
   if (last_channel!=0) {
    /* No range end given: Range starts and ends with last_channel */
    *in_remove_ranges++ = last_channel;
@@ -140,6 +140,8 @@ remove_channel_init(transform_info_ptr tinfo) {
   }
   *in_remove_ranges=0;	/* End of list */
   /*}}}  */
+  growing_buf_free(&tokenbuf);
+  growing_buf_free(&buf);
   /*}}}  */
  } else {
   ERREXIT(tinfo->emethods, "remove_channel_init: Not enough arguments\n");

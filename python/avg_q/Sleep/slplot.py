@@ -3,6 +3,7 @@ Create a staging plot (Polysomnogram PSG) using matplotlib.
 """
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker
 import numpy as np
 
 stage_to_Y={
@@ -30,12 +31,9 @@ Y_to_lw={
   5: 20,
 }
 
-import matplotlib.ticker
-yformatter=matplotlib.ticker.FixedFormatter(['N3','N2','N1','REM','W'])
-# Without this the labels jump to other values when panning...
-ylocator=matplotlib.ticker.FixedLocator(range(1,6))
+arousal_tick_length=0.2
 
-def slplot(sl,realtime=False):
+def slplot(sl,lightsonoff=True,arousalplot=True,realtime=False):
  axes = plt.subplot(111)
  #print(sl.tuples)
  if not realtime:
@@ -46,12 +44,27 @@ def slplot(sl,realtime=False):
   axes.xaxis.set_label_text('Time')
   plt.xticks(rotation='vertical')
   plt.subplots_adjust(bottom=.2) # Allow more space for the vertical labels
- axes.set_xlim(X.min(),X.max())
  Y=np.array([stage_to_Y[x.stage] for x in sl.tuples])
+ xmin=X.min()
+ xmax=X.max()
+ ymin=min(stage_to_Y.values())-1
+ arousalplot_Y=max(stage_to_Y.values())+1
+ ymax=arousalplot_Y+(1 if arousalplot else 0)
+ axes.set_xlim(xmin,xmax)
  axes.yaxis.set_label_text('Stage')
+ axes.set_ylim(ymin,ymax)
+ yformatter=matplotlib.ticker.FixedFormatter(['N3','N2','N1','REM','W']+(['Arousal'] if arousalplot else []))
+ # Without this the labels jump to other values when panning...
+ ylocator=matplotlib.ticker.FixedLocator(range(ymin+1,ymax))
  axes.yaxis.set_major_formatter(yformatter)
  axes.yaxis.set_major_locator(ylocator)
- axes.set_ylim(min(stage_to_Y.values())-1,max(stage_to_Y.values())+1)
+ if lightsonoff:
+  axes.vlines(X[[x['offset'] for x in sl.lights_out]],ymin,ymax,color='green',linewidth=1,linestyle='solid')
+  axes.vlines(X[[x['offset'] for x in sl.lights_on]],ymin,ymax,color='red',linewidth=1,linestyle='solid')
+ if arousalplot:
+  #axes.hlines(arousalplot_Y,X.min(),X.max(),color='grey',linewidth=1,linestyle='solid')
+  arousals=np.array([x.arousals for x in sl.tuples])
+  axes.vlines(X[arousals>0],arousalplot_Y-arousal_tick_length,arousalplot_Y+arousal_tick_length*(arousals[arousals>0]-1),color=Y_to_color[stage_to_Y[0]],linewidth=1,linestyle='solid')
  if False:
   # A simple single-line plot
   axes.plot(X,Y, color = 'blue', linewidth=1, linestyle='solid')

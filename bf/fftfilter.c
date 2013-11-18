@@ -75,7 +75,7 @@ LOCAL void
 init_fftfilter_storage(transform_info_ptr tinfo) {
  struct fftfilter_storage *local_arg=(struct fftfilter_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- growing_buf buf;
+ growing_buf buf, tokenbuf;
  struct blockdef *inblocks;
  int nr_of_blocks=0, block;
  Bool havearg;
@@ -85,14 +85,16 @@ init_fftfilter_storage(transform_info_ptr tinfo) {
 
  growing_buf_init(&buf);
  growing_buf_takethis(&buf, args[ARGS_BLOCKS].arg.s);
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
 
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  while (havearg) {
-  if (*buf.current_token!='-') nr_of_blocks++;
-  havearg=growing_buf_nexttoken(&buf);
+  if (*tokenbuf.buffer_start!='-') nr_of_blocks++;
+  havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
  }
 
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  if (!havearg || nr_of_blocks%4!=0) {
   ERREXIT(tinfo->emethods, "fftfilter_init: Number of args must be divisible by 4.\n");
  }
@@ -101,20 +103,20 @@ init_fftfilter_storage(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "fftfilter_init: Error allocating blockdefs memory\n");
  }
  for (inblocks=local_arg->blockdefs, block=0; havearg; block++, inblocks++) {
-  if (*buf.current_token=='-') {
+  if (*tokenbuf.buffer_start=='-') {
    char *endptr;
-   inblocks->factor=strtod(buf.current_token+1, &endptr);
+   inblocks->factor=strtod(tokenbuf.buffer_start+1, &endptr);
    if (*endptr!='\0' || inblocks->factor<0) {
-    ERREXIT1(tinfo->emethods, "fftfilter_init: Invalid factor value: %s\n", MSGPARM(buf.current_token+1));
+    ERREXIT1(tinfo->emethods, "fftfilter_init: Invalid factor value: %s\n", MSGPARM(tokenbuf.buffer_start+1));
    }
-   growing_buf_nexttoken(&buf);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
   } else {
    inblocks->factor=0.0;	/* Complete suppression */
   }
-  inblocks->start=gettimefloat(tinfo, buf.current_token); growing_buf_nexttoken(&buf);
-  inblocks->nullstart=gettimefloat(tinfo, buf.current_token); growing_buf_nexttoken(&buf);
-  inblocks->nullend=gettimefloat(tinfo, buf.current_token); growing_buf_nexttoken(&buf);
-  inblocks->end=gettimefloat(tinfo, buf.current_token); havearg=growing_buf_nexttoken(&buf);
+  inblocks->start=gettimefloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->nullstart=gettimefloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->nullend=gettimefloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->end=gettimefloat(tinfo, tokenbuf.buffer_start); havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
   if (inblocks->start>inblocks->nullstart || inblocks->nullstart>inblocks->nullend || inblocks->nullend>inblocks->end) {
    ERREXIT1(tinfo->emethods, "fftfilter_init: Block %d is not ascending.\n", MSGPARM(block+1));
   }
@@ -123,6 +125,7 @@ init_fftfilter_storage(transform_info_ptr tinfo) {
   }
   inblocks->last_block=(block==nr_of_blocks-1);
  }
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buf);
 
  if (args[ARGS_BYNAME].is_set) {

@@ -240,7 +240,7 @@ void btimontage(transform_info_ptr tinfo, int nRing, double span, double curvatu
 Bool allocate_methodmem(transform_info_ptr tinfo);
 void free_methodmem(transform_info_ptr tinfo);
 char *check_method_args(transform_info_ptr tinfo);
-Bool accept_argument(transform_info_ptr tinfo, growing_buf *args, transform_argument_descriptor *argument_descriptor);
+Bool accept_argument(transform_info_ptr tinfo, growing_buf *args, growing_buf *tokenbuf, transform_argument_descriptor *argument_descriptor);
 Bool setup_method(transform_info_ptr tinfo, growing_buf *args);
 enum SETUP_QUEUE_RESULT {
  QUEUE_AVAILABLE=0, QUEUE_NOT_AVAILABLE, QUEUE_AVAILABLE_EOF, QUEUE_NOT_AVAILABLE_EOF
@@ -275,6 +275,7 @@ void create_channelgrid(transform_info_ptr tinfo);
 void create_channelgrid_ncols(transform_info_ptr tinfo, int const ncols);
 void free_pointer(void **ptr);
 int comment2time(char *comment, short *dd, short *mm, short *yy, short *yyyy, short *hh, short *mi, short *ss);
+int *get_trigcode_list(char const *const csv);
 int read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, char **descriptionp);
 void push_trigger(growing_buf *triggersp, long position, int code, char *description);
 void clear_triggers(growing_buf *triggersp);

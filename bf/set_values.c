@@ -286,26 +286,28 @@ set(transform_info_ptr tinfo) {
    if (strcmp(args[ARGS_VALUE].arg.s, "DELETE")==0) {
     clear_triggers(&tinfo->triggers);
    } else {
-   growing_buf buf;
+   growing_buf buf, tokenbuf;
    long pos;
    int code=1;
    char *description=NULL;
    growing_buf_init(&buf);
    growing_buf_takethis(&buf, args[ARGS_VALUE].arg.s);
    buf.delimiters=":";
-   growing_buf_firsttoken(&buf);
-   if (strncmp(buf.current_token, "x=", 2)==0) {
+   growing_buf_init(&tokenbuf);
+   growing_buf_allocate(&tokenbuf,0);
+   growing_buf_get_firsttoken(&buf,&tokenbuf);
+   if (strncmp(tokenbuf.buffer_start, "x=", 2)==0) {
     if (tinfo->xdata==NULL) create_xaxis(tinfo);
-    pos=decode_xpoint(tinfo, buf.current_token+2);
+    pos=decode_xpoint(tinfo, tokenbuf.buffer_start+2);
    } else {
-    pos=gettimeslice(tinfo, buf.current_token);
+    pos=gettimeslice(tinfo, tokenbuf.buffer_start);
    }
-   if (growing_buf_nexttoken(&buf)) {
-    code=atoi(buf.current_token);
+   if (growing_buf_get_nexttoken(&buf,&tokenbuf)) {
+    code=atoi(tokenbuf.buffer_start);
    }
-   if (growing_buf_nexttoken(&buf)) {
-    description=(char *)malloc(strlen(buf.current_token)+1);
-    strcpy(description,buf.current_token);
+   if (growing_buf_get_nexttoken(&buf,&tokenbuf)) {
+    description=(char *)malloc(strlen(tokenbuf.buffer_start)+1);
+    strcpy(description,tokenbuf.buffer_start);
    }
    if (pos<0) pos=0;
    if (pos>=tinfo->nr_of_points) pos=tinfo->nr_of_points-1;
@@ -325,6 +327,7 @@ set(transform_info_ptr tinfo) {
    /* Set file start point of current epoch */
    ((struct trigger *)tinfo->triggers.buffer_start)->position=local_arg->total_points;
 
+   growing_buf_free(&tokenbuf);
    growing_buf_free(&buf);
    }
    break;

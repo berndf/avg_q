@@ -638,25 +638,10 @@ read_synamps_init(transform_info_ptr tinfo) {
   }
  }
  if (args[ARGS_TRIGLIST].is_set) {
-  growing_buf buf;
-  Bool havearg;
-  int trigno=0;
-
-  growing_buf_init(&buf);
-  growing_buf_takethis(&buf, args[ARGS_TRIGLIST].arg.s);
-  buf.delimiters=",";
-
-  havearg=growing_buf_firsttoken(&buf);
-  if ((local_arg->trigcodes=(int *)malloc((buf.nr_of_tokens+1)*sizeof(int)))==NULL) {
+  local_arg->trigcodes=get_trigcode_list(args[ARGS_TRIGLIST].arg.s);
+  if (local_arg->trigcodes==NULL) {
    ERREXIT(tinfo->emethods, "read_synamps_init: Error allocating triglist memory\n");
   }
-  while (havearg) {
-   local_arg->trigcodes[trigno]=atoi(buf.current_token);
-   havearg=growing_buf_nexttoken(&buf);
-   trigno++;
-  }
-  local_arg->trigcodes[trigno]=0;   /* End mark */
-  growing_buf_free(&buf);
  } else {
   local_arg->trigcodes=NULL;
  }
@@ -1018,6 +1003,7 @@ read_synamps_exit(transform_info_ptr tinfo) {
 
  free_pointer((void **)&local_arg->Channels);
  free_pointer((void **)&local_arg->buffer);
+ free_pointer((void **)&local_arg->trigcodes);
  growing_buf_free(&local_arg->triggers);
  fclose(local_arg->SCAN);
 

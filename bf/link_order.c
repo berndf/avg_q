@@ -56,16 +56,18 @@ link_order_init(transform_info_ptr tinfo) {
  struct link_order_storage *local_arg=(struct link_order_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  int number=0, number1;
- growing_buf buf;
+ growing_buf buf,tokenbuf;
  Bool havearg;
 
  growing_buf_init(&buf);
  growing_buf_takethis(&buf, args[ARGS_NUMBERS].arg.s);
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
 
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  while (havearg) {
   number++;
-  havearg=growing_buf_nexttoken(&buf);
+  havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
  }
 
  if ((local_arg->numbers=(int *)malloc((number+1)*sizeof(int)))==NULL) {
@@ -73,20 +75,21 @@ link_order_init(transform_info_ptr tinfo) {
  }
 
  number=0;
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  while (havearg) {
-  local_arg->numbers[number]=atoi(buf.current_token);
+  local_arg->numbers[number]=atoi(tokenbuf.buffer_start);
   if (local_arg->numbers[number]<=0) {
-   ERREXIT1(tinfo->emethods, "link_order_init: Number '%s' not >0\n", MSGPARM(buf.current_token));
+   ERREXIT1(tinfo->emethods, "link_order_init: Number '%s' not >0\n", MSGPARM(tokenbuf.buffer_start));
   }
   for (number1=0; number1<number; number1++) {
    if (local_arg->numbers[number1]==local_arg->numbers[number]) {
     ERREXIT(tinfo->emethods, "link_order_init: All numbers must be different.\n");
    }
   }
-  havearg=growing_buf_nexttoken(&buf);
+  havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
   number++;
  }
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buf);
  local_arg->numbers[number]=0;
 

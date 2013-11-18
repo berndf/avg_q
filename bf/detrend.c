@@ -81,31 +81,31 @@ detrend_init(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
 
  local_arg->detrend_omitranges=NULL;
+ local_arg->nr_of_omitargs=0;
  if (args[ARGS_LATENCY].is_set) {
   local_arg->detrend_where=gettimeslice(tinfo, args[ARGS_LATENCY].arg.s);
- } else {
+ } else if (args[ARGS_OMITRANGES].is_set) {
   /*{{{  Actual detrending requested: Prepare omitted ranges*/
-  growing_buf buf;
-  Bool havearg=FALSE;
+  growing_buf buf, tokenbuf;
 
   growing_buf_init(&buf);
-  if (args[ARGS_OMITRANGES].is_set && args[ARGS_OMITRANGES].arg.s!=NULL) {
+  growing_buf_init(&tokenbuf);
+  growing_buf_allocate(&tokenbuf, 0);
+  if (args[ARGS_OMITRANGES].arg.s!=NULL) {
    growing_buf_takethis(&buf, args[ARGS_OMITRANGES].arg.s);
-   havearg=growing_buf_firsttoken(&buf);
-   local_arg->nr_of_omitargs=buf.nr_of_tokens;
-  } else {
-   local_arg->nr_of_omitargs=0;
+   local_arg->nr_of_omitargs=growing_buf_count_tokens(&buf);
+   growing_buf_get_firsttoken(&buf,&tokenbuf);
   }
   if (local_arg->nr_of_omitargs>0) {
    int current_omitarg=0;
    if ((local_arg->detrend_omitranges=(long *)malloc(local_arg->nr_of_omitargs*sizeof(long)))==NULL) {
     ERREXIT(tinfo->emethods, "detrend_init: Error allocating omitranges\n");
    }
-   while (havearg) {
+   while (tokenbuf.current_length>0) {
     if (args[ARGS_USE_XVALUES].is_set) {
-     local_arg->detrend_omitranges[current_omitarg]=decode_xpoint(tinfo, buf.current_token);
+     local_arg->detrend_omitranges[current_omitarg]=decode_xpoint(tinfo, tokenbuf.buffer_start);
     } else {
-     local_arg->detrend_omitranges[current_omitarg]=gettimeslice(tinfo, buf.current_token)+tinfo->beforetrig;
+     local_arg->detrend_omitranges[current_omitarg]=gettimeslice(tinfo, tokenbuf.buffer_start)+tinfo->beforetrig;
     }
     if (local_arg->detrend_omitranges[current_omitarg]<0) {
      ERREXIT(tinfo->emethods, "detrend_init: Omitrange boundary<beforetrig.\n");
@@ -114,9 +114,10 @@ detrend_init(transform_info_ptr tinfo) {
      ERREXIT(tinfo->emethods, "detrend_init: Omitranges are not monotonically increasing!\n");
     }
     current_omitarg++;
-    havearg=growing_buf_nexttoken(&buf);
+    growing_buf_get_nexttoken(&buf,&tokenbuf);
    }
   }
+  growing_buf_free(&tokenbuf);
   growing_buf_free(&buf);
   /*}}}  */
  }

@@ -136,8 +136,9 @@ check_method_args(transform_info_ptr tinfo) {
 }
 
 GLOBAL Bool
-accept_argument(transform_info_ptr tinfo, growing_buf *args, transform_argument_descriptor *argument_descriptor) {
+accept_argument(transform_info_ptr tinfo, growing_buf *args, growing_buf *tokenbuf, transform_argument_descriptor *argument_descriptor) {
  transform_argument_writeable *arg=(transform_argument_writeable *)tinfo->methods->arguments+(argument_descriptor-tinfo->methods->argument_descriptors);
+ char *const save_current_token=args->current_token;
  char *endptr;
 
  if (arg->is_set) {
@@ -147,7 +148,8 @@ accept_argument(transform_info_ptr tinfo, growing_buf *args, transform_argument_
   arg->is_set=TRUE;
   return TRUE;
  }
- if (!args->have_token) {
+ if (!growing_buf_get_nexttoken(args,tokenbuf)) {
+  /* At end of arguments */
   if (argument_descriptor->type==T_ARGS_TAKES_SELECTION
       && argument_descriptor->option_letters[0]==' ') {
    /* Allow optional selectors to be satisfied by empty strings -
@@ -158,40 +160,43 @@ accept_argument(transform_info_ptr tinfo, growing_buf *args, transform_argument_
    return FALSE;
   }
  }
- if (args->current_token[0]=='$') {
-  arg->variable=strtol(args->current_token+1, &endptr, 10);
+ if (tokenbuf->buffer_start[0]=='$') {
+  arg->variable=strtol(tokenbuf->buffer_start+1, &endptr, 10);
   if (*endptr!='\0' || arg->variable<=0) {
-   ERREXIT1(tinfo->emethods, "accept_argument: >%s< is not a proper variable identifier.\n", MSGPARM(args->current_token));
+   ERREXIT1(tinfo->emethods, "accept_argument: >%s< is not a proper variable identifier.\n", MSGPARM(tokenbuf->buffer_start));
   }
  } else
  switch (argument_descriptor->type) {
   case T_ARGS_TAKES_LONG:
-   arg->arg.i=strtol(args->current_token, &endptr, 10);
+   arg->arg.i=strtol(tokenbuf->buffer_start, &endptr, 10);
    if (*endptr!='\0') return FALSE;
    break;
   case T_ARGS_TAKES_DOUBLE:
-   arg->arg.d=get_value(args->current_token, &endptr);
+   arg->arg.d=get_value(tokenbuf->buffer_start, &endptr);
    if (*endptr!='\0') return FALSE;
    break;
   case T_ARGS_TAKES_FILENAME:
   case T_ARGS_TAKES_STRING_WORD:
-   arg->arg.s=args->current_token;
+   arg->arg.s=strdup(tokenbuf->buffer_start);
    break;
   case T_ARGS_TAKES_SENTENCE: {
-   char *inbuf=args->current_token;
-   char *current_end=args->buffer_start+args->current_length-1;
-   while (inbuf<current_end) {
-    if (*inbuf=='\0') *inbuf=' ';
-    inbuf++;
-   }
-   arg->arg.s=args->current_token;
-   args->current_token=current_end;
+   char * const save_delimiters=args->delimiters;
+   /* Ensure that the whole remaining line is taken */
+   args->current_token=save_current_token;
+   args->delimiters="";
+   growing_buf_get_nexttoken(args,tokenbuf);
+   arg->arg.s=strdup(tokenbuf->buffer_start);
+   args->delimiters=save_delimiters;
    }
    break;
   case T_ARGS_TAKES_SELECTION: {
    const char *const *inchoices=argument_descriptor->choices;
-   while (*inchoices!=NULL && strcmp(*inchoices, args->current_token)!=0) inchoices++;
-   if (*inchoices==NULL) return FALSE;
+   while (*inchoices!=NULL && strcmp(*inchoices, tokenbuf->buffer_start)!=0) inchoices++;
+   if (*inchoices==NULL) {
+    /* No choice fitted, don't consume this token */
+    args->current_token=save_current_token;
+    return FALSE;
+   }
    arg->arg.i=inchoices-argument_descriptor->choices;
    }
    break;
@@ -199,14 +204,12 @@ accept_argument(transform_info_ptr tinfo, growing_buf *args, transform_argument_
    break;
  }
  arg->is_set=TRUE;
- growing_buf_nexttoken(args);
  return TRUE;
 }
 
 GLOBAL Bool 
 setup_method(transform_info_ptr tinfo, growing_buf *args) {
  int optno=0;
- Bool found_option=TRUE;
  char *message;
  
  if (!allocate_methodmem(tinfo)) {
@@ -216,53 +219,64 @@ setup_method(transform_info_ptr tinfo, growing_buf *args) {
  /* Allow args==NULL for methods without required arguments */
  if (args!=NULL) {
   transform_argument_descriptor *argument_descriptor;
-  growing_buf_firsttoken(args);
+  Bool argument_found;
+  growing_buf tokenbuf;
+  growing_buf_init(&tokenbuf);
+  growing_buf_allocate(&tokenbuf,0);
+  tokenbuf.delim_protector='\\';
+  /* Reset token pointer, just as growing_buf_get_firsttoken does */
+  args->current_token=args->buffer_start;
   /* Scan all the optional parameters that may be issued at the start */
-  while (args->have_token && found_option) {
+  do {
    argument_descriptor=tinfo->methods->argument_descriptors;
-   if (strcmp(args->current_token, "--")==0) {
-    growing_buf_nexttoken(args);
-    break;
-   }
-   found_option=FALSE;
+   argument_found=FALSE;
    for (optno=0; optno<tinfo->methods->nr_of_arguments && argument_descriptor->option_letters[0]!='\0'; optno++) {
+    /* Take care: this loop also skips over the optional arguments, so the last repetition of do {} must not be
+     * terminated prematurely */
+    if (args->current_token>=args->buffer_start+args->current_length) continue;
     if (argument_descriptor->option_letters[0]==' ') {
      /* Optional argument without option switch */
-     int skip_args=atoi(argument_descriptor->option_letters+1);
-     found_option=accept_argument(tinfo, args, argument_descriptor);
-     if (found_option) {
+     int const skip_args=atoi(argument_descriptor->option_letters+1);
+     argument_found=accept_argument(tinfo, args, &tokenbuf, argument_descriptor);
+     if (argument_found) {
       int skipno;
       for (skipno=0; skipno<skip_args; skipno++) {
        argument_descriptor++; optno++;
-       if (!accept_argument(tinfo, args, argument_descriptor)) {
+       if (!accept_argument(tinfo, args, &tokenbuf, argument_descriptor)) {
         ERREXIT2(tinfo->emethods, "setup_method %s: Required argument to option >%s< is missing\n", MSGPARM(tinfo->methods->method_name), MSGPARM((argument_descriptor-skipno-1)->description));
        }
       }
       break;
      }
      argument_descriptor+=skip_args; optno+=skip_args;
-    } else if (args->current_token[0]=='-' && strcmp(args->current_token+1, argument_descriptor->option_letters)==0) {
-     growing_buf_nexttoken(args);
-     if (!accept_argument(tinfo, args, argument_descriptor)) {
-      ERREXIT2(tinfo->emethods, "setup_method %s: Error setting up option -%s\n", MSGPARM(tinfo->methods->method_name), MSGPARM(argument_descriptor->option_letters));
+    } else {
+     /* Check for option with option switch */
+     char *const save_current_token=args->current_token;
+     if (growing_buf_get_nexttoken(args,&tokenbuf) && tokenbuf.buffer_start[0]=='-' && strcmp(tokenbuf.buffer_start+1, argument_descriptor->option_letters)==0) {
+      if (!accept_argument(tinfo, args, &tokenbuf, argument_descriptor)) {
+       ERREXIT2(tinfo->emethods, "setup_method %s: Error setting up option -%s\n", MSGPARM(tinfo->methods->method_name), MSGPARM(argument_descriptor->option_letters));
+      }
+      argument_found=TRUE; break;
+     } else {
+      args->current_token=save_current_token;
      }
-     found_option=TRUE; break;
     }
     argument_descriptor++;
    }
-  }
+  } while (argument_found);
   /* Now process the required arguments */
   argument_descriptor=tinfo->methods->argument_descriptors+optno;
-  for (; args->have_token && optno<tinfo->methods->nr_of_arguments; optno++) {
-   Bool argument_found=accept_argument(tinfo, args, argument_descriptor);
+  for (; optno<tinfo->methods->nr_of_arguments; optno++) {
+   argument_found=accept_argument(tinfo, args, &tokenbuf, argument_descriptor);
    if (!argument_found && argument_descriptor->option_letters[0]=='\0') {
     ERREXIT2(tinfo->emethods, "setup_method %s: No argument found for `%s'\n", MSGPARM(tinfo->methods->method_name), MSGPARM(argument_descriptor->description));
    }
    argument_descriptor++;
   }
-  if (args->have_token) {
+  if (growing_buf_get_nexttoken(args,NULL)) {
    ERREXIT1(tinfo->emethods, "setup_method %s: Too many arguments.\n", MSGPARM(tinfo->methods->method_name));
   }
+  growing_buf_free(&tokenbuf);
  }
  if ((message=check_method_args(tinfo))!=NULL) {
   ERREXIT2(tinfo->emethods, "setup_method %s: %s\n", MSGPARM(tinfo->methods->method_name), MSGPARM(message));
@@ -343,7 +357,8 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
  const transform_methods_ptr storemethods=tinfo->methods;
  queue_desc *queue=iter_queue;
  int last_collect_position= -1;
- growing_buf script= *scriptp;
+ Bool have_line;
+ growing_buf script= *scriptp, linebuf, tokenbuf;
  script.delimiters="\n";	/* High-level parsing is by lines */
 
  init_queue_storage(iter_queue);
@@ -352,17 +367,19 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
 
  /* Both current_input_script and current_input_line should be initialized to 0 by the caller and start with 1 on return: */
  iter_queue->current_input_script++; post_queue->current_input_script++;
+ growing_buf_init(&linebuf);
+ growing_buf_allocate(&linebuf,0);
+ linebuf.delim_protector='\\';
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
+ tokenbuf.delim_protector='\\';
 
- growing_buf_firstsingletoken(&script);
- while (script.have_token) {
+ have_line=growing_buf_get_firstsingletoken(&script,&linebuf);
+ while (have_line) {
   Bool within_branch=FALSE;
   Bool get_epoch_override=FALSE;
-  growing_buf linebuf;
-  growing_buf_settothis(&linebuf, script.current_token);
-  linebuf.delim_protector='\\';
 
   iter_queue->current_input_line++; post_queue->current_input_line++;
-  growing_buf_nextsingletoken(&script);	/* Skip to the start of the next line now */
 
   /* Remove comment if it exists, unless escaped */
   if ((inbuf=strchr(linebuf.buffer_start, '#'))!=NULL) {
@@ -380,12 +397,12 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
    *linebuf.buffer_start=' ';
   }
   
-  inbuf=linebuf.buffer_start;
-  growing_buf_firsttoken(&linebuf);
+  linebuf.delimiters=" \t\r\n"; /* Get only the first word */
+  growing_buf_get_firsttoken(&linebuf,&tokenbuf);
 
-  if (linebuf.have_token) {	/* Non-empty line ? */
+  if (tokenbuf.current_length>0) {	/* Non-empty line ? */
    /*{{{  'Post:' keyword ? Switch to post processing queue*/
-   if (strcmp(linebuf.current_token, "Post:")==0) {
+   if (strcmp(tokenbuf.buffer_start, "Post:")==0) {
     if (queue==post_queue) {
      ERREXIT(tinfo->emethods, "setup_queue: Multiple 'Post:' lines not allowed.\n");
     }
@@ -393,6 +410,7 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
     init_queue_storage(queue);
     tinfo->methods=queue->start;
     queue->current_get_epoch_method= -1; /* No more get_epoch methods allowed */
+    have_line=growing_buf_get_nextsingletoken(&script,&linebuf);
     continue;
    }
    /*}}}  */
@@ -421,10 +439,10 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
    /*{{{  Locate the method and configure it*/
    for (m_select=m_selects; *m_select!=NULL; m_select++) {
     (**m_select)(tinfo);
-    if (strcmp(linebuf.current_token, tinfo->methods->method_name)==0) break;
+    if (strcmp(tokenbuf.buffer_start, tinfo->methods->method_name)==0) break;
    }
    if (*m_select==NULL) {
-    ERREXIT1(tinfo->emethods, "setup_queue: Unknown method %s\n", MSGPARM(linebuf.current_token));
+    ERREXIT1(tinfo->emethods, "setup_queue: Unknown method %s\n", MSGPARM(tokenbuf.buffer_start));
    }
 
    if (get_epoch_override && tinfo->methods->method_type!=TRANSFORM_METHOD) {
@@ -466,18 +484,9 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
    tinfo->methods->within_branch=within_branch;
    tinfo->methods->get_epoch_override=get_epoch_override;
 
-   growing_buf_nexttoken(&linebuf);
-   if (linebuf.have_token) {
-    growing_buf args;
-    growing_buf_init(&args);
-    /* Protect from a second replacement of delimiters 
-     * This would void the backslash-escaping of delimiters
-     * from the previous parse */
-    args.delimiters="";
-    args.buffer_start=linebuf.current_token;
-    args.buffer_end=linebuf.buffer_end;
-    args.current_length=linebuf.current_length-(args.buffer_start-linebuf.buffer_start);
-    setup_method(tinfo, &args);
+   linebuf.delimiters=""; /* Get the rest of the line */
+   if (growing_buf_get_nexttoken(&linebuf,&tokenbuf)) {
+    setup_method(tinfo, &tokenbuf);
    } else {
     setup_method(tinfo, NULL);
    }
@@ -485,7 +494,10 @@ setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(tran
    tinfo->methods++; queue->nr_of_methods++;
    /*}}}  */
   }
+  have_line=growing_buf_get_nextsingletoken(&script,&linebuf);
  }
+ growing_buf_free(&tokenbuf);
+ growing_buf_free(&linebuf);
 
  /*{{{  Perform final checks on queue consistency*/
  if (iter_queue->nr_of_methods>0 && iter_queue->start[iter_queue->nr_of_methods-1].method_type!=COLLECT_METHOD) {
@@ -621,7 +633,10 @@ GLOBAL int
 set_queuevariables(transform_info_ptr tinfo, queue_desc *queue, int argc, char **argv) {
  int i;
  int max_variable_accessed=0;
- growing_buf arg;
+ growing_buf arg, tokenbuf;
+
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
 
  for (i=0; i<queue->nr_of_methods; i++) {
   int argno;
@@ -633,15 +648,17 @@ set_queuevariables(transform_info_ptr tinfo, queue_desc *queue, int argc, char *
     if (variable>argc || argv[variable-1]==NULL) continue;
     growing_buf_settothis(&arg, argv[variable-1]);
     arg.delimiters=""; /* Ensure that the whole argument becomes the first token */
-    growing_buf_firsttoken(&arg);
     /* Otherwise, accept_argument will reject the new contents: */
     ((transform_argument_writeable *)tinfo->methods->arguments)[argno].is_set=FALSE;
-    if (!accept_argument(tinfo, &arg, &tinfo->methods->argument_descriptors[argno])) {
+    /* Reset token pointer, just as growing_buf_get_firsttoken does */
+    arg.current_token=arg.buffer_start;
+    if (!accept_argument(tinfo, &arg, &tokenbuf, &tinfo->methods->argument_descriptors[argno])) {
      ERREXIT1(tinfo->emethods, "set_queuevariables: Argument >%s< not accepted\n", MSGPARM(argv[variable-1]));
     }
    }
   }
  }
+ growing_buf_free(&tokenbuf);
  return max_variable_accessed;
 }
 /*}}}  */

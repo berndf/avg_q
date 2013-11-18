@@ -38,8 +38,6 @@ typedef struct {
  char *delimiters;
  char delim_protector;
  char *current_token;
- Bool have_token;
- int nr_of_tokens;
 } growing_buf;
 
 extern void growing_buf_clear(growing_buf *buf);
@@ -54,10 +52,11 @@ extern void growing_buf_free(growing_buf *buf);
 
 extern void growing_buf_settothis(growing_buf *buf, char *str);
 
-extern Bool growing_buf_firsttoken(growing_buf *buf);
-extern Bool growing_buf_firstsingletoken(growing_buf *buf);
-extern Bool growing_buf_nexttoken(growing_buf *buf);
-extern Bool growing_buf_nextsingletoken(growing_buf *buf);
-
 extern void growing_buf_read_line(FILE *infile, growing_buf *buf);
+
+extern Bool growing_buf_get_firsttoken(growing_buf *buf, growing_buf *writebuf);
+extern Bool growing_buf_get_nexttoken(growing_buf *buf, growing_buf *writebuf);
+extern Bool growing_buf_get_firstsingletoken(growing_buf *buf, growing_buf *writebuf);
+extern Bool growing_buf_get_nextsingletoken(growing_buf *buf, growing_buf *writebuf);
+extern int growing_buf_count_tokens(growing_buf *buf);
 #endif

@@ -750,6 +750,11 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
  int current_argument;
  void (* const * const method_selects)(transform_info_ptr)=get_method_list();
 
+ growing_buf tokenbuf;
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
+ tokenbuf.delim_protector='\\';
+
  /* Remove comment if it exists */
  if ((inbuf=strchr(linebuf->buffer_start, '#'))!=NULL) {
   while (*inbuf!='\0') *inbuf++ = '\0';
@@ -762,45 +767,36 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
   method.get_epoch_override=TRUE;
   *linebuf->buffer_start=' ';
  }
- growing_buf_firsttoken(linebuf);
- if (!linebuf->have_token) {
+ linebuf->delimiters=" \t\r\n"; /* Get only the first word */
+ if (!growing_buf_get_firsttoken(linebuf,&tokenbuf)) {
   snprintf(errormessage, ERRORMESSAGE_SIZE, "setup_queue: Empty line.");
   set_status(errormessage);
   return FALSE;
  }
  for (m_select=method_selects; *m_select!=NULL; m_select++) {
   (**m_select)(&instance_tinfo);
-  if (strcmp(linebuf->current_token, method.method_name)==0) break;
+  if (strcmp(tokenbuf.buffer_start, method.method_name)==0) break;
  }
  if (*m_select==NULL) {
   /* The method name was not found - as a convenience, we look for
    * the first method with a name starting like the current name */
   for (m_select=method_selects; *m_select!=NULL; m_select++) {
    (**m_select)(&instance_tinfo);
-   if (strncmp(linebuf->current_token, method.method_name, strlen(linebuf->current_token))==0) break;
+   if (strncmp(tokenbuf.buffer_start, method.method_name, strlen(tokenbuf.buffer_start))==0) break;
   }
   if (*m_select==NULL) {
-   snprintf(errormessage, ERRORMESSAGE_SIZE, "setup_queue: Unknown method %s", linebuf->current_token);
+   snprintf(errormessage, ERRORMESSAGE_SIZE, "setup_queue: Unknown method %s", tokenbuf.buffer_start);
    set_status(errormessage);
    return FALSE;
   }
  }
- growing_buf_nexttoken(linebuf);
  /* And as another convenience (too convenient? I don't think so), if the line
   * is not accepted by setup_method, configure from defaults: */
  switch (setjmp(instance_emethod.error_jmp)) {
   case 0:
-   if (linebuf->have_token) {
-    growing_buf myargs;
-    growing_buf_init(&myargs);
-    /* Protect from a second replacement of delimiters 
-     * This would void the backslash-escaping of delimiters
-     * from the previous parse */
-    myargs.delimiters="";
-    myargs.buffer_start=linebuf->current_token;
-    myargs.buffer_end=linebuf->buffer_end;
-    myargs.current_length=linebuf->current_length-(myargs.buffer_start-linebuf->buffer_start);
-    setup_method(&instance_tinfo, &myargs);
+   linebuf->delimiters=""; /* Get the rest of the line */
+   if (growing_buf_get_nexttoken(linebuf,&tokenbuf)) {
+    setup_method(&instance_tinfo, &tokenbuf);
    } else {
     setup_method(&instance_tinfo, NULL);
    }
@@ -843,6 +839,7 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
     continue;
   }
  }
+ growing_buf_free(&tokenbuf);
  return TRUE;
 }
 LOCAL void
@@ -1095,16 +1092,20 @@ MethodInstance_build_dialog(void) {
        variable<=nr_of_script_variables &&
        script_variables[variable-1]!=NULL &&
        argument->is_set) {
-    growing_buf arg;
+    growing_buf arg, tokenbuf;
     growing_buf_settothis(&arg, script_variables[variable-1]);
     arg.delimiters="";
-    growing_buf_firsttoken(&arg);
+    growing_buf_init(&tokenbuf);
+    growing_buf_allocate(&tokenbuf,0);
 #if 0
     printf("Variable %d found: Setting %s to >%s<\n", variable, argument_descriptor->description, script_variables[variable-1]);
 #endif
     /* Otherwise, accept_argument will reject the new contents: */
     argument->is_set=FALSE;
-    accept_argument(&instance_tinfo, &arg, &method.argument_descriptors[current_argument]);
+    /* Reset token pointer, just as growing_buf_get_firsttoken does */
+    arg.current_token=arg.buffer_start;
+    accept_argument(&instance_tinfo, &arg, &tokenbuf, &method.argument_descriptors[current_argument]);
+    growing_buf_free(&tokenbuf);
    }
 
    if (!variables_only || variable!=0) {
@@ -2252,7 +2253,8 @@ LOCAL void
 usage(FILE *stream) {
 #define BUFFER_SIZE 2048
  char buffer[BUFFER_SIZE];
- growing_buf buf;
+ growing_buf buf, tokenbuf;
+ Bool have_token;
 
 #ifndef STANDALONE
  snprintf(buffer, BUFFER_SIZE, "Usage: %s [options] Configfile [script_argument1 ...]\n"
@@ -2291,16 +2293,19 @@ usage(FILE *stream) {
 
  growing_buf_settothis(&buf, buffer);
  buf.delimiters="\n";
- growing_buf_firstsingletoken(&buf);
- while (buf.have_token) {
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf,0);
+ have_token=growing_buf_get_firstsingletoken(&buf,&tokenbuf);
+ while (have_token) {
   if (stream==NULL) {
-   TRACEMS(tinfostruc.emethods, -1, buf.current_token);
+   TRACEMS(tinfostruc.emethods, -1, tokenbuf.buffer_start);
    TRACEMS(tinfostruc.emethods, -1, "\n");
   } else {
-   fprintf(stream,"%s\n",buf.current_token);
+   fprintf(stream,"%s\n",tokenbuf.buffer_start);
   }
-  growing_buf_nextsingletoken(&buf);
+  have_token=growing_buf_get_nextsingletoken(&buf,&tokenbuf);
  }
+ growing_buf_free(&tokenbuf);
 #undef BUFFER_SIZE
 }
 #ifdef STANDALONE

@@ -306,63 +306,60 @@ set_channelposition_init(transform_info_ptr tinfo) {
  char *innames;
  Bool havearg;
  int string_space=0, channel;
- growing_buf buf;
+ growing_buf buf, tokenbuf;
  growing_buf_init(&buf);
  growing_buf_takethis(&buf, args[ARGS_ARGS].arg.s);
  buf.delim_protector='\\';
+ growing_buf_init(&tokenbuf);
+ growing_buf_allocate(&tokenbuf, 0);
 
- havearg=growing_buf_firsttoken(&buf);
+ havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
  if (!havearg) {
   ERREXIT(tinfo->emethods, "set_channelposition_init: No arguments found!\n");
  }
 
  selection->use_builtin_set=BUILTIN_NONE;
- if (*buf.current_token=='=') {
+ if (*tokenbuf.buffer_start=='=') {
   /*{{{  Use builtin set*/
   char **in_builtin_sets;
   if (args[ARGS_SETNAMES].is_set) {
    ERREXIT(tinfo->emethods, "set_channelposition_init: -s cannot be used with builtin sets.\n");
   }
   for (in_builtin_sets=builtin_sets; *in_builtin_sets!=NULL; in_builtin_sets++) {
-   if (strcmp(buf.current_token+1, *in_builtin_sets)==0) {
+   if (strcmp(tokenbuf.buffer_start+1, *in_builtin_sets)==0) {
     selection->use_builtin_set=(enum BUILTIN_SET_ENUM)(in_builtin_sets-builtin_sets)+1;
    }
   }
   if (selection->use_builtin_set==BUILTIN_NONE) {
-   ERREXIT1(tinfo->emethods, "set_channelposition_init: Unknown builtin set >%s<\n",MSGPARM(buf.current_token+1));
+   ERREXIT1(tinfo->emethods, "set_channelposition_init: Unknown builtin set >%s<\n",MSGPARM(tokenbuf.buffer_start+1));
   }
   /*}}}  */
- } else if (*buf.current_token=='@') {
+ } else if (*tokenbuf.buffer_start=='@') {
   /*{{{  Read channels and positions from ascii file*/
   int nr_of_channels=0;
-  FILE *pos_file=fopen(buf.current_token+1, "r");
-  growing_buf linebuf;
-  int c;
+  FILE *pos_file=fopen(tokenbuf.buffer_start+1, "r");
+  growing_buf linebuf, linetokenbuf;
 
   if (pos_file==NULL) {
-   ERREXIT1(tinfo->emethods, "set_channelposition_init: Can't open position file >%s<\n", MSGPARM(buf.current_token+1));
+   ERREXIT1(tinfo->emethods, "set_channelposition_init: Can't open position file >%s<\n", MSGPARM(tokenbuf.buffer_start+1));
   }
   growing_buf_init(&linebuf);
   growing_buf_allocate(&linebuf, 0);
   linebuf.delimiters="\t";
+  growing_buf_init(&linetokenbuf);
+  growing_buf_allocate(&linetokenbuf, 0);
 
   /*{{{  Count lines and neccessary string space*/
-  while (TRUE) {
-   c=fgetc(pos_file);
-   if (c==EOF) break;
-   if (c=='\n') {
-    growing_buf_appendchar(&linebuf, '\0');
-    growing_buf_firsttoken(&linebuf);
-    if (linebuf.nr_of_tokens!=4) {
+  do {
+   growing_buf_read_line(pos_file,&linebuf);
+   if (growing_buf_get_firsttoken(&linebuf,&linetokenbuf)) {
+    if (growing_buf_count_tokens(&linebuf)!=4) {
      ERREXIT(tinfo->emethods, "set_channelposition_init: Not 3 positions for each channel\n");
     }
+    string_space+=linetokenbuf.current_length;
     nr_of_channels++;
-    string_space+=strlen(linebuf.current_token)+1;
-    growing_buf_clear(&linebuf);
-   } else {
-    growing_buf_appendchar(&linebuf, c);
    }
-  }
+  } while (!feof(pos_file));
   /*}}}  */
 
   if ((selection->channelnames=(char **)malloc(nr_of_channels*sizeof(char *)))==NULL
@@ -373,49 +370,46 @@ set_channelposition_init(transform_info_ptr tinfo) {
   fseek(pos_file, 0, 0);
 
   channel=0;
-  while (TRUE) {
-   c=fgetc(pos_file);
-   if (c==EOF) break;
-   if (c=='\n') {
-    growing_buf_appendchar(&linebuf, '\0');
-    growing_buf_firsttoken(&linebuf);
-    strcpy(innames, linebuf.current_token);
+  do {
+   growing_buf_read_line(pos_file,&linebuf);
+   if (growing_buf_get_firsttoken(&linebuf,&linetokenbuf)) {
+    strcpy(innames, linetokenbuf.buffer_start);
     selection->channelnames[channel]=innames;
     innames+=strlen(innames)+1;
-    growing_buf_nexttoken(&linebuf);
-    selection->positions[3*channel  ]=atof(linebuf.current_token);
-    growing_buf_nexttoken(&linebuf);
-    selection->positions[3*channel+1]=atof(linebuf.current_token);
-    growing_buf_nexttoken(&linebuf);
-    selection->positions[3*channel+2]=atof(linebuf.current_token);
-    growing_buf_clear(&linebuf);
+    growing_buf_get_nexttoken(&linebuf,&linetokenbuf);
+    selection->positions[3*channel  ]=atof(linetokenbuf.buffer_start);
+    growing_buf_get_nexttoken(&linebuf,&linetokenbuf);
+    selection->positions[3*channel+1]=atof(linetokenbuf.buffer_start);
+    growing_buf_get_nexttoken(&linebuf,&linetokenbuf);
+    selection->positions[3*channel+2]=atof(linetokenbuf.buffer_start);
     channel++;
-   } else {
-    growing_buf_appendchar(&linebuf, c);
    }
-  }
+  } while (!feof(pos_file));
   selection->nr_of_channels=nr_of_channels;
+  growing_buf_free(&linetokenbuf);
   growing_buf_free(&linebuf);
   fclose(pos_file);
   /*}}}  */
  } else {
   /*{{{  Determine nr_of_channels*/
-  if (buf.nr_of_tokens%4!=0) {
+  int const ntokens=growing_buf_count_tokens(&buf);
+  if (ntokens%4!=0) {
    ERREXIT(tinfo->emethods, "set_channelposition_init: Not 3 positions for each channel\n");
   }
-  selection->nr_of_channels=buf.nr_of_tokens/4;
+  selection->nr_of_channels=ntokens/4;
   if (selection->nr_of_channels==0) {
    ERREXIT(tinfo->emethods, "set_channelposition_init: Need at least 4 arguments.\n");
   }
   /*}}}  */
 
   /*{{{  Determine neccessary string space*/
+  havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
   for (channel=0; havearg; channel++) {
-   string_space+=strlen(buf.current_token)+1;
-   growing_buf_nexttoken(&buf);
-   growing_buf_nexttoken(&buf);
-   growing_buf_nexttoken(&buf);
-   havearg=growing_buf_nexttoken(&buf);
+   string_space+=strlen(tokenbuf.buffer_start)+1;
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
+   havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
   }
   /*}}}  */
 
@@ -428,22 +422,23 @@ set_channelposition_init(transform_info_ptr tinfo) {
   /*}}}  */
 
   /*{{{  Note the names and positions*/
-  havearg=growing_buf_firsttoken(&buf);
+  havearg=growing_buf_get_firsttoken(&buf,&tokenbuf);
   for (channel=0; havearg; channel++) {
-   strcpy(innames, buf.current_token);
+   strcpy(innames, tokenbuf.buffer_start);
    selection->channelnames[channel]=innames;
    innames+=strlen(innames)+1;
-   growing_buf_nexttoken(&buf);
-   selection->positions[3*channel  ]=atof(buf.current_token);
-   growing_buf_nexttoken(&buf);
-   selection->positions[3*channel+1]=atof(buf.current_token);
-   growing_buf_nexttoken(&buf);
-   selection->positions[3*channel+2]=atof(buf.current_token);
-   havearg=growing_buf_nexttoken(&buf);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
+   selection->positions[3*channel  ]=atof(tokenbuf.buffer_start);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
+   selection->positions[3*channel+1]=atof(tokenbuf.buffer_start);
+   growing_buf_get_nexttoken(&buf,&tokenbuf);
+   selection->positions[3*channel+2]=atof(tokenbuf.buffer_start);
+   havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
   }
   /*}}}  */
  }
  selection->wholelen=string_space;
+ growing_buf_free(&tokenbuf);
  growing_buf_free(&buf);
 
  tinfo->methods->init_done=TRUE;

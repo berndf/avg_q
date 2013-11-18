@@ -92,6 +92,8 @@ fftfilter %(filter_start)g %(filter_zerostart)g 1 1
    }
   self.overviewfilename=self.base + '_overview.asc'
   self.templatefilename=self.base + '_template.asc'
+  # List extended by subtract_EPI
+  self.correctedfiles=[]
  def get_fromtoepoch(self,start_s,end_s):
   fromepoch=int(math.floor(start_s*1000.0/self.TR))+1
   if end_s:
@@ -472,6 +474,7 @@ subtract %(avgEPIfile)s
    t.preamble['Sfreq']=self.correctedfile_sfreq
    t.writetuples(trgtuples,trgout)
    trgout.close()
+   self.correctedfiles.append(self.correctedfile + '.hdf')
 
 class avgEPI(object):
  def __init__(self,avg_q_instance,base,infile,sfreq,upsample):
@@ -629,10 +632,7 @@ subtract -d %(singleEPIfile)s_Amplitude.asc
 set sfreq %(nr_of_EPIs)d
 write_hdf -a -c %(residualsfile)s.hdf
 # Don't consider non-EEG channels to judge the fit
-# FIXME This currently doesn't work for channel names with spaces in them
-#collapse_channels -h !?%(NonEEGChannels)s:collapsed
-remove_channel -n ?%(NonEEGChannels)s
-collapse_channels -h ALL:collapsed
+collapse_channels -h !?%(NonEEGChannels)s:collapsed
 reject_bandwidth -m %(avgEPI_Amplitude_Reject_fraction)g
 pop
 ''' % {
