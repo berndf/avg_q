@@ -600,7 +600,7 @@ MethodInstance_config_from_defaults(void) {
     if (argument_descriptor->choices==NULL) {
      argument->arg.s=NULL;
     } else {
-     argument->arg.s=(char *)argument_descriptor->choices;
+     argument->arg.s=strdup((char *)argument_descriptor->choices);
     }
     break;
    case T_ARGS_TAKES_SELECTION:
@@ -829,7 +829,7 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
     if (argument_descriptor->choices==NULL) {
      argument->arg.s=NULL;
     } else {
-     argument->arg.s=(char *)argument_descriptor->choices;
+     argument->arg.s=strdup((char *)argument_descriptor->choices);
     }
     break;
    case T_ARGS_TAKES_SELECTION:

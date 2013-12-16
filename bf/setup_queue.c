@@ -85,6 +85,18 @@ allocate_methodmem(transform_info_ptr tinfo) {
 GLOBAL void
 free_methodmem(transform_info_ptr tinfo) {
  if (tinfo->methods->arguments!=NULL) {
+  int optno;
+  for (optno=0; optno<tinfo->methods->nr_of_arguments; optno++) {
+   switch (tinfo->methods->argument_descriptors[optno].type) {
+    case T_ARGS_TAKES_FILENAME:
+    case T_ARGS_TAKES_STRING_WORD:
+    case T_ARGS_TAKES_SENTENCE:
+     free_pointer((void **)&tinfo->methods->arguments[optno].arg.s);
+     break;
+    default:
+     break;
+   }
+  }
   free(tinfo->methods->arguments);
  } else {
   if (tinfo->methods->local_storage!=NULL) free(tinfo->methods->local_storage);

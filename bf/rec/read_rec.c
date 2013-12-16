@@ -74,11 +74,12 @@ struct read_rec_storage {
  int *trigcodes;
  int current_trigger;
  growing_buf triggers;
- short **recordbuf;
+ uint8_t **recordbuf;
  float *sampling_step;
  int *samples_per_record;
  int total_samples_per_record;
  int max_samples_per_record;
+ int bytes_per_sample;	/* 2 for EDF, 3 for BDF */
  long current_record;
  int current_sample;
  long current_point;
@@ -242,6 +243,8 @@ read_rec_init(transform_info_ptr tinfo) {
  strcat(local_arg->comment, "; ");
  strncat(local_arg->comment, fileheader.recording, recording_length);
  sprintf(local_arg->comment+patient_length+recording_length+2, " %02d/%02d/%02d,%02d:%02d:%02d", mm, dd, yy, hh, mi, ss);
+ /* BDF: 3 bytes per sample, 24 bit; EDF (version='0'): 2 bytes, 16 bit */
+ local_arg->bytes_per_sample=(fileheader.version[0]=='\xff' ? 3 : 2);
  /*}}}  */
  /*{{{  Read the channel header*/
  /* Length of the file header is included in this number... */
@@ -286,8 +289,8 @@ read_rec_init(transform_info_ptr tinfo) {
      (local_arg->rec_factor=(DATATYPE *)malloc(local_arg->nr_of_channels*sizeof(DATATYPE)))==NULL) {
   ERREXIT(tinfo->emethods, "read_rec_init: Error allocating offset+factor memory\n");
  }
- if ((local_arg->recordbuf=(short **)malloc(local_arg->nr_of_channels*sizeof(short *)))==NULL ||
-     (local_arg->recordbuf[0]=(short *)malloc(local_arg->total_samples_per_record*sizeof(short)))==NULL) {
+ if ((local_arg->recordbuf=(uint8_t **)malloc(local_arg->nr_of_channels*sizeof(uint8_t *)))==NULL ||
+     (local_arg->recordbuf[0]=(uint8_t *)malloc(local_arg->total_samples_per_record*local_arg->bytes_per_sample))==NULL) {
   ERREXIT(tinfo->emethods, "read_rec_init: Error allocating recordbuf memory\n");
  }
  if ((local_arg->sampling_step=(float *)malloc(local_arg->nr_of_channels*sizeof(float)))==NULL) {
@@ -311,7 +314,7 @@ read_rec_init(transform_info_ptr tinfo) {
   local_arg->rec_offset[channel]=physmin-digmin*local_arg->rec_factor[channel];
 
   if (channel>=1) {
-   local_arg->recordbuf[channel]=local_arg->recordbuf[channel-1]+local_arg->samples_per_record[channel-1];
+   local_arg->recordbuf[channel]=local_arg->recordbuf[channel-1]+local_arg->bytes_per_sample*local_arg->samples_per_record[channel-1];
   }
   
   local_arg->sampling_step[channel]=((float)local_arg->samples_per_record[channel])/local_arg->max_samples_per_record;
@@ -328,10 +331,10 @@ read_rec_init(transform_info_ptr tinfo) {
  }
  fstat(fileno(local_arg->infile),&statbuff);
  local_arg->filesize = statbuff.st_size;
- if (local_arg->filesize!=local_arg->nr_of_records*local_arg->total_samples_per_record*(int)sizeof(short)+local_arg->bytes_in_header) {
-  long const nr_of_records=(local_arg->filesize-local_arg->bytes_in_header)/sizeof(short)/local_arg->total_samples_per_record;
+ if (local_arg->filesize!=local_arg->nr_of_records*local_arg->total_samples_per_record*local_arg->bytes_per_sample+local_arg->bytes_in_header) {
+  long const nr_of_records=(local_arg->filesize-local_arg->bytes_in_header)/local_arg->bytes_per_sample/local_arg->total_samples_per_record;
   if (local_arg->nr_of_records==nr_of_records) {
-   TRACEMS1(tinfo->emethods, 1, "read_rec_init: %d excess bytes in file.\n", MSGPARM(local_arg->filesize-local_arg->nr_of_records*local_arg->total_samples_per_record*(int)sizeof(short)-local_arg->bytes_in_header));
+   TRACEMS1(tinfo->emethods, 1, "read_rec_init: %d excess bytes in file.\n", MSGPARM(local_arg->filesize-local_arg->nr_of_records*local_arg->total_samples_per_record*local_arg->bytes_per_sample-local_arg->bytes_in_header));
   } else {
    TRACEMS2(tinfo->emethods, 0, "read_rec_init: File size is incompatible with %d records, correcting to %d\n", MSGPARM(local_arg->nr_of_records), MSGPARM(nr_of_records));
    local_arg->nr_of_records=nr_of_records;
@@ -484,9 +487,9 @@ read_rec(transform_info_ptr tinfo) {
   long const startrecord=d.quot;
   local_arg->current_sample=d.rem;
   if (startrecord!=local_arg->current_record) {
-   long const filepos=local_arg->bytes_in_header+startrecord*local_arg->total_samples_per_record*sizeof(short);
+   long const filepos=local_arg->bytes_in_header+startrecord*local_arg->total_samples_per_record*local_arg->bytes_per_sample;
    fseek(local_arg->infile, filepos, SEEK_SET);
-   samples_read=fread(local_arg->recordbuf[0], sizeof(short), local_arg->total_samples_per_record, local_arg->infile);
+   samples_read=fread(local_arg->recordbuf[0], local_arg->bytes_per_sample, local_arg->total_samples_per_record, local_arg->infile);
    /* Keep on readin' until an error occurs... That should be EOF... */
    if (samples_read!=local_arg->total_samples_per_record) {
     if (samples_read!=0) {
@@ -495,18 +498,26 @@ read_rec(transform_info_ptr tinfo) {
     array_free(&myarray);
     return NULL;
    }
-   /*{{{  Swap byte order if necessary*/
-#   ifndef LITTLE_ENDIAN
-   {uint16_t *inrecbuf=local_arg->recordbuf[0], *recbufend=inrecbuf+local_arg->total_samples_per_record;
-    while (inrecbuf<recbufend) Intel_int16(inrecbuf++);
-   }
-#   endif
-   /*}}}  */
    local_arg->current_record=startrecord;
   }
   /*}}}  */
   for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-   array_write(&myarray, local_arg->rec_offset[channel]+local_arg->rec_factor[channel]*local_arg->recordbuf[channel][(int)(local_arg->current_sample*local_arg->sampling_step[channel])]);
+   int32_t sample;
+   uint8_t * const samplepos=local_arg->recordbuf[channel]+(int)(local_arg->current_sample*local_arg->sampling_step[channel])*local_arg->bytes_per_sample;
+   if (local_arg->bytes_per_sample==3) {
+    memcpy(&sample,samplepos,3);
+    ((uint8_t *)&sample)[3]=((((uint8_t *)&sample)[2]&'\x80') ? '\xff' : '\x00');
+#   ifndef LITTLE_ENDIAN
+    Intel_int32((uint32_t *)&sample);
+#   endif
+   } else {
+    int16_t sample16=*(int16_t *)samplepos;
+#   ifndef LITTLE_ENDIAN
+    Intel_int16((uint16_t *)&sample16);
+#   endif
+    sample=(int32_t)sample16;
+   }
+   array_write(&myarray, local_arg->rec_offset[channel]+local_arg->rec_factor[channel]*sample);
   }
   local_arg->current_sample++;
  }

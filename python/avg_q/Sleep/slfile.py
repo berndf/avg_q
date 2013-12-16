@@ -71,6 +71,8 @@ class slfile(object):
   self.Date=None
   self.Time=None
   self.slfile=None
+  self.lights_out=[] # List of lights_out events of form {'hour': hour, 'minute': minute, 'offset': offset}
+  self.lights_on=[] # List of lights_on events of form {'hour': hour, 'minute': minute, 'offset': offset}
   # Allow the object to be created uninitialized as well
   if filename:
    self.init_from_file(filename,minutes_per_epoch)
@@ -78,8 +80,6 @@ class slfile(object):
   self.filename=filename
   self.minutes_per_epoch=0.5 if not minutes_per_epoch else minutes_per_epoch
   self.first,self.ext=os.path.splitext(filename)
-  self.lights_out=[] # List of lights_out events of form {'hour': hour, 'minute': minute, 'offset': offset}
-  self.lights_on=[] # List of lights_on events of form {'hour': hour, 'minute': minute, 'offset': offset}
   self.rdr=self.rdr3
   if self.ext:
    if self.ext.lower()=='.sl':
@@ -259,8 +259,8 @@ class slfile(object):
    self.sfile=None
  def find_datetime(self,timestamp):
   '''Convenience function to locate the stage for a given absolute time.'''
-  if timestamp<self.realtime[0]: return None
-  for row,rt in enumerate(self.realtime):
+  if timestamp<self.abstime[0]: return None
+  for row,rt in enumerate(self.abstime):
    if timestamp>=rt and timestamp<rt+self.step: return row
   return None
  # Lazy evaluation functions to get the epoch-wise data (tuples) and REM/NREM cycle (remcycles)
@@ -288,10 +288,10 @@ class slfile(object):
    abl_datum=sa.select(columns=[sa.func.date(somno.c.abldatum)],whereclause=somno.c.bn==booknumber).execute().fetchone()[0]
    la_time=datetime.datetime.combine(abl_datum,datetime.time(self.lights_out[0]['hour'],self.lights_out[0]['minute']))
    self.start_timestamp=la_time-self.lights_out[0]['offset']*self.step
- def create_realtime(self):
-  self.realtime=[]
+ def create_abstime(self):
+  self.abstime=[]
   for row,tup in enumerate(self.tuples):
-   self.realtime.append(self.start_timestamp+row*self.step)
+   self.abstime.append(self.start_timestamp+row*self.step)
  def create_remcycles(self):
   self.remcycles=[]
   self.n_remcycles,self.n_nremcycles,in_REM= -1,0,False
@@ -378,7 +378,7 @@ class slfile(object):
   'tuples': create_tuples,
   'step': create_step,
   'start_timestamp': create_start_timestamp,
-  'realtime': create_realtime,
+  'abstime': create_abstime,
   'remcycles': create_remcycles,
   'n_remcycles': create_remcycles,
   'n_nremcycles': create_remcycles,

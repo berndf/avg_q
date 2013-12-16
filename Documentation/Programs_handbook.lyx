@@ -3624,19 +3624,17 @@ EDF=REC (sleep) data format
 
 \end_inset
 
- (`European sleep signal'); an Internet site containing a description is
- 
-\family typewriter
-ftp://\SpecialChar \-
-sigftp.cs.tut.fi/\SpecialChar \-
-pub/\SpecialChar \-
-eeg-data/\SpecialChar \-
-stan\SpecialChar \-
-dards
-\family default
-.
+ (
+\begin_inset CommandInset href
+LatexCommand href
+name "European Data Format"
+target "http://www.edfplus.info/"
+
+\end_inset
+
+).
  The format consists of file and channel headers in pure ASCII and data
- in binary, Intel-ordered short integers.
+ in binary, Intel-ordered short (16-bit) integers.
  In REC files, each channel has its own name, scaling and offset, but no
  position.
  
@@ -3648,8 +3646,21 @@ read_rec
  different sampling rates for different channels.
  avg_q uses the maximum sampling rate present in the file for all channels,
  and values sampled slower are extended by replication.
- Presently, avg_q does not know about triggers stored within REC files;
- such triggers can only be supplied using a trigger file.
+ 
+\series bold
+read_rec
+\series default
+ also transparently detects and reads the 24-bit variant called 
+\begin_inset CommandInset href
+LatexCommand href
+name "BDF"
+target "http://www.biosemi.com/faq/file_format.htm"
+
+\end_inset
+
+.
+ Presently, avg_q does not know about triggers stored within REC files (EDF+
+ or BDF+); however, triggers can be supplied using a trigger file.
 \begin_inset Foot
 status collapsed
 

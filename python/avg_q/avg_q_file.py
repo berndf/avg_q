@@ -4,21 +4,22 @@ import os
 from .avg_q import escape_filename
 
 # Format, list_of_extensions
+# Extensions are first matched case sensitive, then lowercased.
 formats_and_extensions=[
  ('NeuroScan', ['.avg','.eeg','.cnt']),
  ('BrainVision', ['.vmrk','.vhdr','.eeg']),
  ('asc', ['.asc']),
  ('hdf', ['.hdf']),
- ('rec', ['.edf','.rec']),
+ ('rec', ['.edf','.rec', '.bdf']),
  ('freiburg', ['.co']),
  ('neurofile', ['.eeg']),
  ('Inomed', ['.emg','.trg']),
- ('sound', ['.wav','.WAV','.au','.AU','.snd','.SND']),
+ ('sound', ['.wav','.au','.snd']),
  ('Coherence', ['.Eeg']),
- ('Konstanz', ['.sum', '.SUM', '.raw', '.RAW']),
- ('Vitaport', ['.vpd', '.VPD', '.raw', '.RAW']),
- ('Tucker', ['.raw', '.RAW']),
- ('Embla', ['.ebm', '.EBM']),
+ ('Konstanz', ['.sum', '.raw']),
+ ('Vitaport', ['.vpd', '.raw']),
+ ('Tucker', ['.raw']),
+ ('Embla', ['.ebm']),
 ]
 
 class avg_q_file(object):
@@ -135,6 +136,9 @@ null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
   def findformat(ext):
    for format,extlist in formats_and_extensions:
     if ext in extlist:
+     return format
+   for format,extlist in formats_and_extensions:
+    if ext.lower() in extlist:
      return format
    return None
   fileformat=findformat(ext)

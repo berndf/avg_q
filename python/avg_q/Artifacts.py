@@ -98,6 +98,8 @@ class Artifact_Segmentation(avg_q.Script):
   script=avg_q.Script(self.avg_q_instance)
   script.add_Epochsource(epochsource)
   script.set_collect('append')
+  import tempfile
+  tempscalefile=tempfile.NamedTemporaryFile()
   script.add_postprocess('''
 %(remove_channels)s
 %(preprocess)s
@@ -106,9 +108,9 @@ differentiate
 calc abs
 push
 trim -M 0 0
-writeasc -b -c scale.asc
+writeasc -b -c %(tempscalefile)s
 pop
-subtract -d -P -c scale.asc
+subtract -d -P -c %(tempscalefile)s
 push
 collapse_channels -h
 write_crossings -E collapsed %(JumpDetectionThreshold)g stdout
@@ -118,18 +120,20 @@ recode 0 0 1 1  0 Inf 0 0
 write_crossings collapsed 0.5 stdout
 pop
 fftfilter 0 0 30Hz 35Hz
-subtract -d -P -c scale.asc
+subtract -d -P -c %(tempscalefile)s
 calc abs
 collapse_channels -h
 write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
 ''' % {
  'remove_channels': 'remove_channel -n ?' + channel_list2arg(remove_channels) if remove_channels else '',
    'preprocess': preprocess,
+   'tempscalefile': tempscalefile.name,
    'JumpDetectionThreshold': self.JumpDetectionThreshold,
    'ArtifactDetectionThreshold': self.ArtifactDetectionThreshold})
   crossings=trgfile.trgfile(script.runrdr())
   self.collected=collect_crossings(self.min_blocking_points)
   self.collected.add_crossings(crossings,self.start_point,self.end_point)
+  tempscalefile.close() # The temp file will be deleted at this point.
  def add_Epochsource_contfile_excluding_artifacts(self,margin_points,nr_of_points=None,step_points=None,additional_breakpoints=None):
   return self.add_Epochsource_contfile_excluding_breakpoints(self.infile,self.start_point,self.end_point,self.collected.artifacts+additional_breakpoints if additional_breakpoints else self.collected.artifacts,margin_points,nr_of_points,step_points)
  def show_artifacts(self, epochlength=0):

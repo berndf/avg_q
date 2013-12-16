@@ -85,8 +85,6 @@ class PresLogfile(trgfile.trgfile):
   tz_aware_end=pytz.timezone('Europe/Berlin').localize(self.PL.timestamp)
   # This computes the correct local start time considering a possible DST switch and
   # converts it to the TZ-unaware local time we really want...
-  tz_unaware_start=tz_aware_end.tzinfo.normalize(tz_aware_end-last_s).replace(tzinfo=None)
-  for i,t in enumerate(tuples):
-   tuples[i]=tz_unaware_start+pytz.datetime.timedelta(seconds=t[0]/sfreq),t[1],t[2]
-  return tuples
+  self.start_datetime=tz_aware_end.tzinfo.normalize(tz_aware_end-last_s).replace(tzinfo=None)
+  return trgfile.trgfile.gettuples_abstime(self)
 

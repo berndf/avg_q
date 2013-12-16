@@ -33,14 +33,14 @@ Y_to_lw={
 
 arousal_tick_length=0.2
 
-def slplot(sl,lightsonoff=True,arousalplot=True,realtime=False):
+def slplot(sl,lightsonoff=True,arousalplot=True,abstime=False):
  axes = plt.subplot(111)
  #print(sl.tuples)
- if not realtime:
+ if not abstime:
   X=np.array([x.time for x in sl.tuples])
   axes.xaxis.set_label_text('Time[min]')
  else:
-  X=np.array(sl.realtime)
+  X=np.array(sl.abstime)
   axes.xaxis.set_label_text('Time')
   plt.xticks(rotation='vertical')
   plt.subplots_adjust(bottom=.2) # Allow more space for the vertical labels

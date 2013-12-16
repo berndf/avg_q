@@ -31,6 +31,7 @@ class trgfile(object):
  def __init__(self,source=None):
   self.trgfile=None
   self.reader=None
+  self.tuples=None
   self.description_codes=None
   if isinstance(source,str):
    self.filename=self.trgfile
@@ -40,6 +41,7 @@ class trgfile(object):
    if source:
     self.reader=iter(source)
   self.preamble=Preamble()
+  self.start_datetime=None
  def __del__(self):
   """Destructor."""
   self.close()
@@ -121,7 +123,18 @@ class trgfile(object):
     point=None
    yield self.translate((point, int(code), description))
  def gettuples(self):
-  return [tup for tup in self.rdr()]
+  if not self.tuples:
+   self.tuples=[tup for tup in self.rdr()]
+  return self.tuples
+ def gettuples_abstime(self):
+  import datetime
+  if not self.start_datetime:
+   self.start_datetime=datetime.datetime.strptime('2013-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+  tuples=self.gettuples()
+  sfreq=float(self.preamble.get('Sfreq',100.0))
+  for i,t in enumerate(tuples):
+   tuples[i]=self.start_datetime+datetime.timedelta(seconds=t[0]/sfreq),t[1],t[2]
+  return tuples
  def writetuples(self,tuples,outfile):
   outfile.write(str(self.preamble))
   for tup in tuples:
