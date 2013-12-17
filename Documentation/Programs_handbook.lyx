@@ -3659,8 +3659,18 @@ target "http://www.biosemi.com/faq/file_format.htm"
 \end_inset
 
 .
- Presently, avg_q does not know about triggers stored within REC files (EDF+
- or BDF+); however, triggers can be supplied using a trigger file.
+ avg_q reads EDF+ or BDF+ 
+\begin_inset CommandInset citation
+LatexCommand citep
+key "Kemp:2003"
+
+\end_inset
+
+ annotation markers as triggers; a trigger code 1 is assigned to the start
+ and for events with non-zero duration a second trigger with the same annotation
+ text as description and a trigger code -1 is assigned to start+duration.
+ Time-keeping annotations are discarded.
+ As usual, triggers can also be supplied using a trigger file.
 \begin_inset Foot
 status collapsed
 

@@ -95,6 +95,7 @@ struct read_rec_storage {
  long filesize;
 
  int nr_of_channels;
+ int nr_of_signals; /* nr_of_channels minus annotation channels */
  long beforetrig;
  long aftertrig;
  long offset;
@@ -110,8 +111,9 @@ LOCAL int
 actual_fieldlength(char *thisentry, char *nextentry) {
  char *endchar=nextentry-1;
  /* VERY strange... In their example file, they don't fill with blanks only,
-  * but also zeroes are lurking somewhere... Have to skip any of these... */
- while (endchar>=thisentry && (*endchar=='\0' || strchr(" \t\r\n", *endchar)!=NULL)) endchar--;
+  * but also zeroes are lurking somewhere... Have to skip any of these... 
+  * Additionally we stop at characters 20 or 21 which structure annotations. */
+ while (endchar>=thisentry && (*endchar=='\0' || strchr(" \t\r\n\x14\x15", *endchar)!=NULL)) endchar--;
  return (endchar-thisentry+1);
 }
 /*}}}  */
@@ -133,6 +135,36 @@ read_2_digit_integer(char * const start) {
  return ret;
 }
 /*}}}  */
+
+LOCAL Bool
+is_annotation(struct read_rec_storage *local_arg, int channel) {
+ return strncmp(local_arg->channelnames[channel]+1,"DF Annotations",14)==0;
+}
+/* This returns the trigger code, 0 for no more annotations */
+LOCAL int
+parse_annotation(char **in_annotationp, char *end_annotation, DATATYPE sfreq, long *trigpointp, long *durationp, growing_buf *descriptionp) {
+ char *inin_annotation;
+ if (*in_annotationp>end_annotation || **in_annotationp=='\0') return 0;
+ if (**in_annotationp=='+'  || **in_annotationp=='-') {
+  /* Start of a new offset/duration block 
+   * Otherwise the old offset and duration are reused! */
+  *trigpointp=strtod(*in_annotationp,&inin_annotation)*sfreq;
+  if (*inin_annotation=='\x15') {
+   *durationp=strtod((char *)inin_annotation+1,&inin_annotation)*sfreq;
+  } else {
+   *durationp=0;
+  }
+  inin_annotation++; /* Skip the '\x14' */
+ }
+ while (*inin_annotation!='\x14') {
+  growing_buf_appendchar(descriptionp,*inin_annotation);
+  inin_annotation++;
+ }
+ growing_buf_appendchar(descriptionp,'\0');
+ *in_annotationp=inin_annotation+1; /* Skip the '\x14' */
+ if (*in_annotationp<=end_annotation && **in_annotationp=='\0') (*in_annotationp)++;
+ return 1;
+}
 
 /*{{{  Maintaining the triggers list*/
 LOCAL void 
@@ -168,7 +200,50 @@ read_rec_build_trigbuffer(transform_info_ptr tinfo) {
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  } else {
-  TRACEMS(tinfo->emethods, 0, "read_rec_build_trigbuffer: No trigger source known.\n");
+  if (local_arg->nr_of_channels==local_arg->nr_of_signals) {
+   TRACEMS(tinfo->emethods, 0, "read_rec_build_trigbuffer: No trigger source known.\n");
+  } else {
+   long startrecord=0;
+   growing_buf description;
+   growing_buf_init(&description);
+   growing_buf_allocate(&description,0);
+   /* We have to read the whole file... */
+   while (startrecord<local_arg->nr_of_records) {
+    long const filepos=local_arg->bytes_in_header+startrecord*local_arg->total_samples_per_record*local_arg->bytes_per_sample;
+    long samples_read;
+    int channel;
+    fseek(local_arg->infile, filepos, SEEK_SET);
+    samples_read=fread(local_arg->recordbuf[0], local_arg->bytes_per_sample, local_arg->total_samples_per_record, local_arg->infile);
+    /* Keep on readin' until an error occurs... That should be EOF... */
+    if (samples_read!=local_arg->total_samples_per_record) {
+     if (samples_read!=0) {
+      TRACEMS1(tinfo->emethods, 0, "read_rec warning: REC file %s appears to be truncated.\n", MSGPARM(args[ARGS_IFILE].arg.s));
+     }
+     break;
+    }
+    for (channel=0; channel<local_arg->nr_of_channels; channel++) {
+     if (is_annotation(local_arg,channel)) {
+      char * in_annotation=(char *)local_arg->recordbuf[channel];
+      /* Last byte of annotation! */
+      char * const end_annotation=in_annotation+local_arg->bytes_per_sample*local_arg->samples_per_record[channel]-1;
+      int code;
+      long trigpoint=0L, duration=0L;
+      while (TRUE) {
+       growing_buf_clear(&description);
+       if ((code=parse_annotation(&in_annotation,end_annotation,tinfo->sfreq,&trigpoint,&duration,&description))==0) break;
+       /* We skip entries without description, such as time-keeping annotations */
+       //printf("%ld %ld >%s<\n", trigpoint, duration, description.buffer_start);
+       if (description.current_length>1) {
+	push_trigger(&local_arg->triggers, trigpoint, code, strdup(description.buffer_start));
+	if (duration>0) push_trigger(&local_arg->triggers, trigpoint+duration, -code, strdup(description.buffer_start));
+       }
+      }
+     }
+    }
+    startrecord++;
+   }
+   growing_buf_free(&description);
+  }
  }
 }
 /*}}}  */
@@ -276,6 +351,7 @@ read_rec_init(transform_info_ptr tinfo) {
  local_arg->max_samples_per_record=local_arg->total_samples_per_record=0;
  for (channel=0; channel<local_arg->nr_of_channels; channel++) {
   local_arg->channelnames_length+=actual_fieldlength(channelheader.label[channel], channelheader.label[channel+1])+1;
+  local_arg->nr_of_signals++;
 
   local_arg->samples_per_record[channel]=atoi(channelheader.samples_per_record[channel]);
   local_arg->total_samples_per_record+=local_arg->samples_per_record[channel];
@@ -300,6 +376,7 @@ read_rec_init(transform_info_ptr tinfo) {
  local_arg->current_sample=0;
 
  setlocale(LC_NUMERIC, "C"); /* Make fractional numbers be read correctly */
+ local_arg->nr_of_signals=0;
  for (channel=0; channel<local_arg->nr_of_channels; channel++) {
   const DATATYPE physmin=atof(channelheader.physmin[channel]), physmax=atof(channelheader.physmax[channel]);
   const short digmin=atoi(channelheader.digmin[channel]), digmax=atoi(channelheader.digmax[channel]);
@@ -309,6 +386,8 @@ read_rec_init(transform_info_ptr tinfo) {
   strncpy(innames, channelheader.label[channel], n);
   innames[n]='\0';
   innames+=n+1;
+
+  if (!is_annotation(local_arg,channel)) local_arg->nr_of_signals++;
 
   local_arg->rec_factor[channel]=(physmax-physmin)/(digmax-digmin);
   local_arg->rec_offset[channel]=physmin-digmin*local_arg->rec_factor[channel];
@@ -385,7 +464,7 @@ read_rec(transform_info_ptr tinfo) {
  struct read_rec_storage *local_arg=(struct read_rec_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  char *innamebuf;
- int channel, point;
+ int channel, point, signal;
  array myarray;
  Bool not_correct_trigger=FALSE;
  long trigger_point, file_start_point, file_end_point;
@@ -395,7 +474,7 @@ read_rec(transform_info_ptr tinfo) {
  tinfo->beforetrig=local_arg->beforetrig;
  tinfo->aftertrig=local_arg->aftertrig;
  tinfo->nr_of_points=local_arg->beforetrig+local_arg->aftertrig;
- tinfo->nr_of_channels=local_arg->nr_of_channels;
+ tinfo->nr_of_channels=local_arg->nr_of_signals;
  tinfo->nrofaverages=1;
  if (tinfo->nr_of_points<=0) {
   ERREXIT1(tinfo->emethods, "read_rec: Invalid nr_of_points %d\n", MSGPARM(tinfo->nr_of_points));
@@ -501,23 +580,25 @@ read_rec(transform_info_ptr tinfo) {
    local_arg->current_record=startrecord;
   }
   /*}}}  */
-  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-   int32_t sample;
-   uint8_t * const samplepos=local_arg->recordbuf[channel]+(int)(local_arg->current_sample*local_arg->sampling_step[channel])*local_arg->bytes_per_sample;
-   if (local_arg->bytes_per_sample==3) {
-    memcpy(&sample,samplepos,3);
-    ((uint8_t *)&sample)[3]=((((uint8_t *)&sample)[2]&'\x80') ? '\xff' : '\x00');
+  for (channel=0; channel<local_arg->nr_of_channels; channel++) {
+   if (!is_annotation(local_arg,channel)) {
+    int32_t sample;
+    uint8_t * const samplepos=local_arg->recordbuf[channel]+(int)(local_arg->current_sample*local_arg->sampling_step[channel])*local_arg->bytes_per_sample;
+    if (local_arg->bytes_per_sample==3) {
+     memcpy(&sample,samplepos,3);
+     ((uint8_t *)&sample)[3]=((((uint8_t *)&sample)[2]&'\x80') ? '\xff' : '\x00');
 #   ifndef LITTLE_ENDIAN
-    Intel_int32((uint32_t *)&sample);
+     Intel_int32((uint32_t *)&sample);
 #   endif
-   } else {
-    int16_t sample16=*(int16_t *)samplepos;
+    } else {
+     int16_t sample16=*(int16_t *)samplepos;
 #   ifndef LITTLE_ENDIAN
-    Intel_int16((uint16_t *)&sample16);
+     Intel_int16((uint16_t *)&sample16);
 #   endif
-    sample=(int32_t)sample16;
+     sample=(int32_t)sample16;
+    }
+    array_write(&myarray, local_arg->rec_offset[channel]+local_arg->rec_factor[channel]*sample);
    }
-   array_write(&myarray, local_arg->rec_offset[channel]+local_arg->rec_factor[channel]*sample);
   }
   local_arg->current_sample++;
  }
@@ -531,8 +612,11 @@ read_rec(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "read_rec: Error allocating channelnames\n");
  }
  memcpy(innamebuf, local_arg->channelnames[0], local_arg->channelnames_length);
- for (channel=0; channel<tinfo->nr_of_channels; channel++) {
-  tinfo->channelnames[channel]=innamebuf+(local_arg->channelnames[channel]-local_arg->channelnames[0]);
+ for (signal=channel=0; channel<local_arg->nr_of_channels; channel++) {
+  if (!is_annotation(local_arg,channel)) {
+   tinfo->channelnames[signal]=innamebuf+(local_arg->channelnames[channel]-local_arg->channelnames[0]);
+   signal++;
+  }
  }
  create_channelgrid(tinfo);
  strcpy(tinfo->comment, local_arg->comment);
