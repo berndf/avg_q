@@ -1,3 +1,5 @@
+# Copyright (C) 2011,2013 Bernd Feige
+# This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 '''
 bookno: Sleep 'book' number conventions
 These two functions return a book number in the form without leading

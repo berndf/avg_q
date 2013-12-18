@@ -1,6 +1,6 @@
-# vim: set fileencoding=utf-8 :
-# Copyright (C) 2009-2011 Bernd Feige
+# Copyright (C) 2009-2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+# vim: set fileencoding=utf-8 :
 """
 Specialized class derived from avg_q including methods for
 sleep spectral analysis.

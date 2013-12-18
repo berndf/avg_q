@@ -1,20 +1,8 @@
 /*
  * Copyright (C) 1993,2003,2004 Bernd Feige
+ * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+ */
  * 
- * This file is part of avg_q.
- * 
- * avg_q is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * avg_q is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with avg_q.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
  * btimontage.c modified version of Bernd Luetkenhoener's BTi37montage.c
@@ -56,7 +44,7 @@
 /*     }                                                                */
 /*                                                                      */
 /*  Author:                                                             */
-/*     B. L》kenh馬er (January, 1993)                                   */
+/*     B. Lﾃｼtkenhﾃｶner (January, 1993)                                   */
 /*                                                                      */
 /*  History:                                                            */
 /*     FORTRAN function BTi37coilconfiguration                          */
@@ -104,7 +92,7 @@ void btimontage(transform_info_ptr tinfo, int nRing, double Span,
  if (Axis0 != NULL) {
   /*{{{  Calculate rotation matrix*/
   /* rotation matrix:  axis0 ---> z axis  (a23 is always zero) */
-  /* (see L》kenh馬er, 1992 (M］ster: Lit))        */
+  /* (see Lﾃｼtkenhﾃｶner, 1992 (Mﾂ］ster: Lit))        */
   xxyy = Axis0[0]*Axis0[0] + Axis0[1]*Axis0[1];
   sqrtxxyy = sqrt(xxyy);
   r0magn = sqrt( xxyy + Axis0[2]*Axis0[2] );

@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Bernd Feige
+# Copyright (C) 2010,2011,2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 from . import Epochsource
 from . import Detector

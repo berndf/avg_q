@@ -1,5 +1,4 @@
-# The Python launcher tries to interpret #! lines...
-##!/bin/env python
+#!/usr/bin/env python
 
 # Set the path to the avg_q python installation here if you
 # didn't add it to the global python path

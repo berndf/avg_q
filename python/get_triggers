@@ -6,28 +6,9 @@ import avg_q
 import avg_q.trgfile
 from avg_q.avg_q_file import formats_and_extensions
 
-import getopt
-try:
- optlist, args = getopt.getopt(sys.argv[1:],'aA:')
-except getopt.GetoptError as err:
- # print help information and exit:
- print(str(err)) # will print something like "option -a not recognized"
- print("Usage: [-a: output absolute time] [-A start_datetime: output absolute time using this start timestamp]")
- sys.exit(2)
-
-output_abstime=False
-start_datetime=None
-for opt,arg in optlist:
- if opt=='-a':
-  output_abstime=True
- if opt=='-A':
-  import datetime
-  output_abstime=True
-  start_datetime=datetime.datetime.strptime(arg,"%Y-%m-%d %H:%M:%S")
-
 a=avg_q.avg_q()
 #a.debug=True
-for filename in args:
+for filename in sys.argv[1:]:
  parts=filename.split(':')
  if len(parts)==2 and parts[0] in dict(formats_and_extensions):
   filetype,filename=parts
@@ -48,18 +29,12 @@ for filename in args:
  else:
   infile=avg_q.avg_q_file(filename,filetype)
   trg=a.get_filetriggers(infile)
- if start_datetime:
-  trg.start_datetime=start_datetime
- triggers=trg.gettuples_abstime() if output_abstime else trg.gettuples()
- sfreq=float(trg.preamble.get('Sfreq',100.0))
+ triggers=trg.gettuples()
+ sfreq=float(trg.preamble.get('Sfreq'))
  for point, code, description in triggers:
-  if output_abstime:
-   pos=str(point)
-  else:
-   pos="%gs" % (point/sfreq)
   if description:
-   print("%s\t%d\t%s" % (pos, code, description))
+   print("%gs\t%d\t%s" % (point/sfreq, code, description))
   else:
-   print("%s\t%d" % (pos, code))
+   print("%gs\t%d" % (point/sfreq, code))
  trg.close()
 a.close()

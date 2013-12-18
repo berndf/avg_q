@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2011 Bernd Feige
+# Copyright (C) 2008-2011,2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 This provides a derived version of avg_q_file which encapsulates access to sleep EEG files.

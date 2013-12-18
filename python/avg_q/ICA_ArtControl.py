@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2011 Bernd Feige
+# Copyright (C) 2008-2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Class to classify and project out artifacts by using ICA

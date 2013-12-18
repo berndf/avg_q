@@ -1,3 +1,5 @@
+# Copyright (C) 2008-2013 Bernd Feige
+# This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 This provides a standard way of handling epoch-based scoring,
 with implementation for Bernd Tritschler's SL sleep stage file format.

@@ -45,8 +45,6 @@ bf/Inomed/read_Inomed.c
 bf/LabView/LabView.h
 bf/LabView/LabView_sm.c
 bf/LabView/LabView_smd.c
-bf/LabView/Mannheim.c
-bf/LabView/extcode.h
 bf/LabView/read_labview.c
 bf/TriAn/Array.cc
 bf/TriAn/Array.hh
@@ -218,6 +216,8 @@ bf/transform.h
 bf/trim.c
 bf/tucker/read_tucker.c
 bf/tucker/tucker_sm.c
+bf/tucker/tucker_smd.c
+bf/tucker/dump_tucker_header.c
 bf/validate.c
 bf/vitaport/dump_vitaport_header.c
 bf/vitaport/put_vitaport_events.c

@@ -1,3 +1,5 @@
+bf/LabView/Mannheim.c
+bf/LabView/extcode.h
 bf/fourier.c
 bf/linreg.c
 bf/biomag/biomag_leadfield2_sphere.c
