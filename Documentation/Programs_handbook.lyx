@@ -6014,6 +6014,12 @@ Options:
 
 \begin_deeper
 \begin_layout Description
+-e: Epoch mode: Start anew for each epoch.
+ Normally the last value of the previous epoch is carried over to yield
+ a continuous differentiation.
+\end_layout
+
+\begin_layout Description
 -i
 \begin_inset space ~
 \end_inset
@@ -6786,6 +6792,12 @@ Options:
 \end_layout
 
 \begin_deeper
+\begin_layout Description
+-e: Epoch mode: Start anew for each epoch.
+ Normally the last value of the previous epoch is carried over to yield
+ a continuous integration.
+\end_layout
+
 \begin_layout Description
 -i
 \begin_inset space ~
