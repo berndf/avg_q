@@ -8,18 +8,18 @@ with implementation for Bernd Tritschler's SL sleep stage file format.
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 sl2file_paths=(
- '/ncp/slserver/sldaten/Schlafdiagnostik/TABNEU',
- '/ncp/slserver/sldaten/Schlafdiagnostik/TAB_BU',
- '/ncp/slserver/sldaten/Schlafdiagnostik/TAB_BU/PL',
- '/ncp/slserver/sldaten/Schlafdiagnostik/TAB_BU/NIKO'
+ '/AD/Group/PPT-A-Schlaflabor-Daten/tabneu',
+ '/AD/Group/PPT-A-Schlaflabor-Daten/tab_bu',
+ '/AD/Group/PPT-A-Schlaflabor-Daten/tab_bu/pl',
+ '/AD/Group/PPT-A-Schlaflabor-Daten/tab_bu/niko'
 )
-# 2009-09-11 Note: New somno5 *.sl3 files are below /ncp/slserver/sldaten/Schlafdiagnostik/TAB_slx
+# New somno5 *.sl3 files are below tab_slx
 # Main sep: '#' (epoch specifier, stage specifier, details ...); each line also starts with '#'
 # '*' is used instead of whitespace...
 # Stage specifier: 'Stage*[W1234R]'
 # Details are: 'rem*xx' for REMs, 'Arousal', 'LM', 'LMA', 'BM'
 sl3file_paths=(
- '/ncp/slserver/sldaten/Schlafdiagnostik/TAB_slx',
+ '/AD/Group/PPT-A-Schlaflabor-Daten/tab_slx',
 )
 stages2={
  'W': 0,

@@ -25,15 +25,17 @@ class Detector(avg_q.Script):
   "write_crossings channelnames threshold stdout" (formerly called detectionscript).
   '''
   self.sfreq=self.avg_q_instance.get_description(self.Epochsource_list[0].infile,'sfreq')
-  self.breakpoints=self.avg_q_instance.get_breakpoints(self.Epochsource_list[0].infile)
-  self.distance_from_breakpoint_points=self.distance_from_breakpoint_s*self.sfreq
+  if self.distance_from_breakpoint_s is not None:
+   # Getting breakpoints can be expensive, so it can be disabled by setting self.distance_from_breakpoint_s to None
+   self.breakpoints=self.avg_q_instance.get_breakpoints(self.Epochsource_list[0].infile)
+   self.distance_from_breakpoint_points=self.distance_from_breakpoint_s*self.sfreq
 
   crossings=trgfile.trgfile(self.runrdr())
   outtuples=[]
   for point,code,description in crossings:
    if self.detection_start is not None and (point<self.detection_start or point>=self.detection_start+self.detection_length) \
     or maxvalue is not None and float(description)>maxvalue \
-    or any([abs(point-breakpoint)<self.distance_from_breakpoint_points for breakpoint in self.breakpoints]):
+    or self.distance_from_breakpoint_s is not None and any([abs(point-breakpoint)<self.distance_from_breakpoint_points for breakpoint in self.breakpoints]):
     continue
    if not description and 'Channel' in crossings.preamble:
     channel=crossings.preamble['Channel']
@@ -63,7 +65,10 @@ class Detector(avg_q.Script):
   for outtuple in outtuples:
    #print outtuple
    lat,slope,description=[x for x in outtuple] 
-   condition, channel= description.split(' ')
+   if ' ' in description:
+    condition, channel= description.split(' ')
+   else:
+    channel=description
    trigger_dict.setdefault(channel,[]).append([lat,slope]) 
 
   channel_latrange_list=[]
@@ -77,14 +82,6 @@ class Detector(avg_q.Script):
     if not entry[0][1]==expected_slope:
      del entry[0]
    
-   # Build a [[start, end],...] list; if two latency windows are only separated by 1 sampling point, fuse them
-   lastend=None
-   for x in range(0,len(entry),2):
-    start,end=entry[x][0],entry[x+1][0]
-    if lastend and (start-lastend)*self.sfreq/1000.0<=1:
-     # Modify the last entry, extending it to the new end
-     channel_latrange_list[-1]=[channel, [channel_latrange_list[-1][1][0],end]]
-    else:
-     channel_latrange_list.append([channel, [start,end]])
-    lastend=end
+   # Add a [[channel, [start,end]],...] list
+   channel_latrange_list.extend([[channel, [entry[x][0],entry[x+1][0]]] for x in range(0,len(entry),2)]);
   return channel_latrange_list

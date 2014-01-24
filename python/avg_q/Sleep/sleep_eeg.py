@@ -60,11 +60,10 @@ class sleep_eeg(avg_q.avg_q):
  def add_cntbandssource(self,script,cntsource,bands=defaultbands):
   collapse_args=self.get_channel_collapse_args(cntsource.infile,bands)
   script.add_Epochsource(cntsource)
+  # Sum frequency bins across the given bands
   cntsource.add_branchtransform('''
 calc exp
-set leaveright 1
-collapse_channels %(collapse_args)s
-set leaveright 0
+collapse_channels -s %(collapse_args)s
 calc log
 ''' % {'collapse_args': ' '.join(collapse_args)})
  def cnt2trg(self,sl,cntfile):
@@ -74,7 +73,13 @@ calc log
   if c.filename is None:
    return
   tfile=c.filename.replace('.cnt','.trg')
-  if os.path.exists(tfile) and os.path.getsize(tfile)>0:
+  # trg file exists; leave 0-length files untouched if sl is still None
+  if os.path.exists(tfile) and (os.path.getsize(tfile)>0 or sl is None):
+   return
+  # Create 0-length file
+  if sl is None:
+   with open(tfile,'w') as f:
+    pass
    return
 
   c.aftertrig=0 # Read the whole cnt file as one epoch
