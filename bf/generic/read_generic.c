@@ -481,9 +481,8 @@ read_generic(transform_info_ptr tinfo) {
   /* First trigger entry holds file_start_point */
   push_trigger(&tinfo->triggers, file_start_point, -1, NULL);
   read_generic_reset_triggerbuffer(tinfo);
-  for (trigs_in_epoch=1; code=read_generic_read_trigger(tinfo, &trigpoint, &thisdescription), 
-	 (code!=0 && trigpoint<=file_end_point); ) {
-   if (trigpoint>=file_start_point) {
+  for (trigs_in_epoch=1; (code=read_generic_read_trigger(tinfo, &trigpoint, &thisdescription))!=0;) {
+   if (trigpoint>=file_start_point && trigpoint<=file_end_point) {
     push_trigger(&tinfo->triggers, trigpoint-file_start_point, code, thisdescription);
     trigs_in_epoch++;
    }
