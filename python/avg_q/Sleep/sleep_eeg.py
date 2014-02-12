@@ -171,14 +171,14 @@ echo -F stdout End of medbands\\n
   for fromHz,toHz,name in bands:
    trim+= ' '+fromHz+' '+toHz
   return trim
- def get_measures(self,cntfile,stage,cycle=None,bands=defaultbands):
+ def get_measures_using_epochfilter(self,cntfile,epochfilter,bands=defaultbands):
   '''Average epochs from cnt and directly measure the result'''
   if isinstance(cntfile,cntspectsource):
    c=cntfile
   else:
    c=cntspectsource(cntfile)
   if c.filename is None: return
-  c.set_stage_cycle(stage,cycle)
+  c.set_epochfilter(epochfilter)
   if len(c.trigpoints)==0: return
   script=avg_q.Script(self)
   script.add_Epochsource(c)
@@ -201,6 +201,9 @@ write_generic -P stdout string
    else:
     yield outline+[float(x) for x in line.split('\t')]
     outline=[]
+ def get_measures(self,cntfile,stage,cycle=None,bands=defaultbands):
+  '''Average epochs from cnt and directly measure the result'''
+  return self.get_measures_using_epochfilter(cntfile,cntspectsource.get_epochfilter_stage_cycle(stage,cycle),bands)
  def get_Delta_slope(self,booknumber):
   # cf. Esser:2007
   from . import sleep_file
@@ -330,13 +333,13 @@ set sfreq 0.03333333333
 
   self.continuous=False
   self.set_trigpoints(trigpoints)
- def set_stage_cycle(self,stagename,cycle=None):
+ def get_epochfilter_stage_cycle(stagename,cycle=None):
   if isinstance(stagename,list):
    stagenames=stagename
   else:
    stagenames=[stagename]
-  stagelist=[]
-  for stagename in stagenames:
-   stagelist.extend(stagenames2stagelist.get(stagename,[stagename]))
-  self.set_epochfilter(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
+  stagelist=[x for x in stagenames2stagelist.get(stagename,[stagename]) for stagename in stagenames]
+  return(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
    stage in stagelist and code>0 and (cycle==None or remcycle==cycle))
+ def set_stage_cycle(self,stagename,cycle=None):
+  self.set_epochfilter(self.get_epochfilter_stage_cycle(stagename,cycle))

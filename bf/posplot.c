@@ -632,7 +632,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->linestyle_type=0; 
  local_arg->function=TS_RAW;
  local_arg->dev=NEWBORDER;
- local_arg->red_message="This is posplot (c) 1993-2012 by Bernd Feige.";
+ local_arg->red_message="This is posplot (c) 1993-2014 by Bernd Feige.";
 
  if (tinfo->data_type==FREQ_DATA) tinfo->nr_of_points=tinfo->nroffreq;
  local_arg->lastselected= 0.0;

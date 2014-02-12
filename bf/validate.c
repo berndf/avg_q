@@ -25,7 +25,7 @@
 
 LOCAL char const * const sig=
  "avg_q multichannel (EEG/MEG) data processing tool\n"
- "(c) 1992-2013 by Bernd Feige, Bernd.Feige@gmx.net\n"
+ "(c) 1992-2014 by Bernd Feige, Bernd.Feige@gmx.net\n"
  "This version (" VERSION ", " FLOAT_SIZE ") was compiled on " DATE ".\n"
  SIGNATURE;
 

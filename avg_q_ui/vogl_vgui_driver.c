@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 1998-2002,2004,2006-2013 Bernd Feige
+ * Copyright (C) 1998-2002,2004,2006-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
- * GTK driver for VOGL (c) 1998-2002,2004,2006-2009,2011-2013 by Bernd Feige (Feige@ukl.uni-freiburg.de)
+ * GTK driver for VOGL (c) 1998-2002,2004,2006-2014 by Bernd Feige (Bernd.Feige@uniklinik-freiburg.de)
  * 
  * To compile:
  * 
@@ -117,16 +117,12 @@ static struct {
  int draw_lastx, draw_lasty;
  GtkWidget *window;
  GtkWidget *canvas;
-#if GTK_MAJOR_VERSION==2
-#else
- cairo_region_t *crect;
-#endif
  int fg;
  GdkRGBA palette[MAXCOLOR];
  cairo_t *cr;
+ cairo_surface_t *surface;
  cairo_antialias_t antialias;
- Bool backbuffer;
- Bool paint_started;
+ Bool in_frontbuffer;
 } VGUI;
 
 // ----------------------- VOGL part ----------------------------
@@ -215,7 +211,7 @@ motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
  notify_input();
  //printf("motion_notify_event: %d %d %d\n", VGUI.lastbutton, VGUI.lastx, VGUI.lasty);
 
- return TRUE;
+ return FALSE;
 }
 static Bool
 key_press_event(GtkWidget *widget, GdkEventKey *event) {
@@ -325,38 +321,54 @@ window_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
 static Bool
 canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
  GtkAllocation allocation;
+ cairo_text_extents_t te;
  //printf("canvas_configure_event\n");
+
  gtk_widget_get_allocation(widget,&allocation);
-
- vdevice.sizeSx = vdevice.sizeX = allocation.width;
- vdevice.sizeSy = vdevice.sizeY = allocation.height;
+ vdevice.sizeX = 1;
+ vdevice.sizeY = 1;
+ vdevice.minVx = vdevice.minVy = 0;
+ vdevice.maxVx = vdevice.sizeSx = allocation.width;
+ vdevice.maxVy = vdevice.sizeSy = allocation.height;
  vdevice.depth = 3;
- //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
- if (VGUI.paint_started) {
-#if GTK_MAJOR_VERSION==2
-  GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
-  gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect));
-#else
-  cairo_rectangle_int_t const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
-  gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
-  if (VGUI.crect!=NULL) {
-   cairo_region_destroy(VGUI.crect);
-  }
-  VGUI.crect=cairo_region_create_rectangle(&crect);
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),VGUI.crect);
-#endif
-  VGUI.paint_started=TRUE;
+ if (VGUI.cr!=NULL) {
+  cairo_destroy (VGUI.cr);
+  cairo_surface_destroy (VGUI.surface);
  }
-
+ VGUI.surface= gdk_window_create_similar_surface (gtk_widget_get_window (VGUI.canvas),
+  CAIRO_CONTENT_COLOR, vdevice.sizeSx, vdevice.sizeSy);
+ VGUI.cr = cairo_create(VGUI.surface);
+ cairo_set_antialias(VGUI.cr,VGUI.antialias);
+ my_set_font(VGUI.cr);
+ cairo_text_extents (VGUI.cr, "A", &te);
+ vdevice.hheight = te.height;
+ vdevice.hwidth = te.x_advance;
+ VGUI.line_width=1;
+ //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
  Keyboard_Buffer_push('');	// queue a redraw command
  notify_input();
  return TRUE;
 }
+#if GTK_MAJOR_VERSION==2
+static void update_canvas(void); /* Forward ref */
 static Bool
-canvas_expose_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
- return canvas_configure_event(widget,NULL);
+canvas_expose_event(GtkWidget *widget, GdkEventExpose *event) {
+ update_canvas();
+ return FALSE;
 }
+#else
+/* Redraw the screen from the surface. Note that the ::draw
+ * signal receives a ready-to-be-used cairo_t that is already
+ * clipped to only draw the exposed areas of the widget
+ */
+static Bool
+canvas_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
+ //printf("canvas_draw_event %ld %ld %ld\n", widget, cr, user_data);
+ cairo_set_source_surface (cr, VGUI.surface, 0, 0);
+ cairo_paint (cr);
+ return FALSE;
+}
+#endif
 static Bool
 window_destroy_event(GtkWidget *windowp, gpointer data, GtkWidget *widget) {
  /* We don't want the default handler to be executed: */
@@ -366,15 +378,9 @@ window_destroy_event(GtkWidget *windowp, gpointer data, GtkWidget *widget) {
  return TRUE;
 }
 static void
-toggle_backbuffer(GtkWidget *menuitem, gpointer data) {
- VGUI_frontbuffer(); /* Be sure to finish buffered drawing */
- VGUI.backbuffer=gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menuitem));
- Keyboard_Buffer_push('');	// queue a redraw command
- notify_input();
-}
-static void
 toggle_antialias(GtkWidget *menuitem, gpointer data) {
  VGUI.antialias=gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menuitem)) ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE;
+ cairo_set_antialias(VGUI.cr,VGUI.antialias);
  Keyboard_Buffer_push('');	// queue a redraw command
  notify_input();
 }
@@ -397,7 +403,7 @@ static void
 posplot_about (GtkWidget *menuitem) {
  Notice(
   "posplot/VOGL GUI driver\n"
-  "(c) 2002-2007,2011-2013 by Bernd Feige, Bernd.Feige@gmx.net\n"
+  "(c) 1998-2007,2011-2014 by Bernd Feige, Bernd.Feige@gmx.net\n"
   "Using the free GTK library: See http://www.gtk.org/"
  );
 }
@@ -433,9 +439,6 @@ VGUI_init(void) {
  GtkWidget *menubar, *submenu, *menuitem;
  GtkWidget *topitem;
  GSList *colorgroup;
- GtkAllocation allocation;
- cairo_t *cr;
- cairo_text_extents_t te;
 
 #ifdef USE_THREADING
  block_thread=g_cond_new();
@@ -517,14 +520,10 @@ VGUI_init(void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
 
- menuitem=gtk_check_menu_item_new_with_label("Use screen backbuffer");
- gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), TRUE);
- g_signal_connect (G_OBJECT (menuitem), "toggled", G_CALLBACK(toggle_backbuffer), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
+ /* Antialiasing doesn't look nice with lines */
+ VGUI.antialias=CAIRO_ANTIALIAS_NONE;
  menuitem=gtk_check_menu_item_new_with_label("Antialias screen plot lines");
- gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), FALSE);
+ gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), VGUI.antialias==CAIRO_ANTIALIAS_DEFAULT);
  g_signal_connect (G_OBJECT (menuitem), "toggled", G_CALLBACK(toggle_antialias), NULL);
  gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
  gtk_widget_show (menuitem);
@@ -1005,10 +1004,10 @@ VGUI_init(void) {
  /* Catch Keypress events also when the mouse points to the open menu: */
  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
 
-
+ VGUI.cr = NULL; /* Allocated by canvas_configure_event */
+ VGUI.surface = NULL;
  VGUI.canvas = gtk_drawing_area_new ();
  gtk_widget_set_name (VGUI.canvas, "posplot");
- gtk_widget_set_double_buffered (VGUI.canvas, FALSE);
 
  gtk_box_pack_start (GTK_BOX (box1), VGUI.canvas, TRUE, TRUE, 0);
  /* Otherwise, a DrawingArea cannot receive key presses: */
@@ -1022,7 +1021,7 @@ VGUI_init(void) {
 #if GTK_MAJOR_VERSION==2
  g_signal_connect (G_OBJECT (VGUI.canvas), "expose_event", G_CALLBACK (canvas_expose_event), NULL);
 #else
- g_signal_connect (G_OBJECT (VGUI.canvas), "draw", G_CALLBACK (canvas_expose_event), NULL);
+ g_signal_connect (G_OBJECT (VGUI.canvas), "draw", G_CALLBACK (canvas_draw_event), NULL);
 #endif
  g_signal_connect (G_OBJECT (VGUI.canvas), "key_press_event", G_CALLBACK (key_press_event), NULL);
  g_signal_connect (G_OBJECT (VGUI.canvas), "button_press_event", G_CALLBACK (button_press_event), NULL);
@@ -1034,30 +1033,8 @@ VGUI_init(void) {
  gtk_widget_show (VGUI.window);
 
  VGUI.lastbutton=0;
+ VGUI.in_frontbuffer=FALSE;
 
- /* This is here for security, since a configure_event should have already
-  * occurred at this point (actually at the creation of the canvas) */
- gtk_widget_get_allocation(VGUI.canvas, &allocation);
- vdevice.sizeSx = vdevice.sizeX = allocation.width;
- vdevice.sizeSy = vdevice.sizeY = allocation.height;
- vdevice.depth = 3;
- //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
- VGUI.cr=NULL;
-#if GTK_MAJOR_VERSION==2
-#else
- VGUI.crect=NULL;
-#endif
- /* Antialiasing doesn't look nice with lines */
- VGUI.antialias=CAIRO_ANTIALIAS_NONE;
- VGUI.backbuffer=TRUE;
-
- cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
- my_set_font(cr);
- cairo_text_extents (cr, "A", &te);
- vdevice.hheight = te.height;
- vdevice.hwidth = te.x_advance;
- VGUI.line_width=1;
- cairo_destroy (cr);
  gdk_threads_leave();
 
  /* Set the colors */
@@ -1071,8 +1048,6 @@ VGUI_init(void) {
  set_palette_entry(CYAN, 0.0, 1.0, 1.0);
  set_palette_entry(WHITE, 1.0, 1.0, 1.0);
 
- VGUI.paint_started=FALSE;
-
  //printf("VGUI_init end\n");
 
  return (1);
@@ -1082,42 +1057,32 @@ VGUI_init(void) {
  * VGUI_frontbuffer, VGUI_backbuffer, VGUI_swapbuffers
  * 
  */
+static void
+update_canvas(void) {
+ cairo_t * const cr=gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
+ cairo_set_source_surface (cr, VGUI.surface, 0, 0);
+ cairo_paint (cr);
+ cairo_destroy(cr);
+}
+
 static int 
 VGUI_frontbuffer(void) {
  //printf("VGUI_frontbuffer\n");
- if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
- VGUI.paint_started=FALSE;
+ VGUI.in_frontbuffer=TRUE;
  return (0);
 }
 
 static int 
 VGUI_backbuffer(void) {
  //printf("VGUI_backbuffer\n");
- if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
- if (VGUI.backbuffer) {
-#if GTK_MAJOR_VERSION==2
-  GdkRectangle const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),gdk_region_rectangle(&crect)),
-#else
-  cairo_rectangle_int_t const crect={0, 0, vdevice.sizeSx, vdevice.sizeSy};
-  if (VGUI.crect!=NULL) {
-   cairo_region_destroy(VGUI.crect);
-  }
-  VGUI.crect=cairo_region_create_rectangle(&crect);
-  gdk_window_begin_paint_region(gtk_widget_get_window(VGUI.canvas),VGUI.crect);
-#endif
-  VGUI.paint_started=TRUE;
- }
+ VGUI.in_frontbuffer=FALSE;
  return (0);
 }
 
 static int 
 VGUI_swapbuffers(void) {
- if (vdevice.inbackbuffer) {
-  //printf("VGUI_swapbuffers\n");
-  if (VGUI.paint_started) gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
-  VGUI.paint_started=FALSE;
- }
+ //printf("VGUI_swapbuffers\n");
+ update_canvas();
  return (0);
 }
 
@@ -1131,13 +1096,10 @@ VGUI_vclear(void) {
  int const vw = vdevice.maxVx - vdevice.minVx + 1;
  int const vh = vdevice.maxVy - vdevice.minVy + 1;
  gdk_threads_enter();
- cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
-
- //printf("VGUI_vclear Clear %d %d - %d %d\n", vw, vh, vdevice.sizeSx, vdevice.sizeSy);
- gdk_cairo_set_source_rgba(cr,&VGUI.palette[VGUI.fg]);
- cairo_rectangle(cr, vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
- cairo_fill(cr);
- cairo_destroy (cr);
+ //printf("VGUI_vclear Clear %d %d - %d %d\n", vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
+ gdk_cairo_set_source_rgba (VGUI.cr, &VGUI.palette[VGUI.fg]);
+ cairo_rectangle(VGUI.cr, vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
+ cairo_fill(VGUI.cr);
  gdk_threads_leave();
  return (1);
 }
@@ -1152,16 +1114,11 @@ VGUI_exit(void) {
  //printf("VGUI_exit\n");
 
  gdk_threads_enter();
- if (VGUI.paint_started) {
-  gdk_window_end_paint(gtk_widget_get_window(VGUI.canvas));
-  VGUI.paint_started=FALSE;
+ if (VGUI.cr!=NULL) {
+  cairo_destroy (VGUI.cr);
+  cairo_surface_destroy (VGUI.surface);
+  VGUI.cr=NULL;
  }
-#if GTK_MAJOR_VERSION==2
-#else
- if (VGUI.crect!=NULL) {
-  cairo_region_destroy(VGUI.crect);
- }
-#endif
  gtk_widget_destroy (VGUI.window);
  gdk_threads_leave();
 #ifdef USE_THREADING
@@ -1175,8 +1132,6 @@ static int
 VGUI_begin(void) {
  //printf("VGUI_begin\n");
  if (vdevice.bgnmode == VLINE) {
-  VGUI.cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
-  cairo_set_antialias(VGUI.cr,VGUI.antialias);
   /* Dash transfer was shamelessly copied from the VOGL X11.c driver... */
   //65535=solid
   if (VGUI.line_style != 0xffff) {
@@ -1210,13 +1165,11 @@ VGUI_begin(void) {
 #undef ON
 #undef OFF
    cairo_set_dash (VGUI.cr,dashes,n,0);
-#if 0
   } else {
    /* Solid lines are the default anyway */
    gdk_threads_enter();
    cairo_set_dash (VGUI.cr,NULL,0,0);
    gdk_threads_leave();
-#endif
   }
 
   gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
@@ -1231,9 +1184,8 @@ VGUI_sync(void) {
  //printf("VGUI_sync\n");
  if (vdevice.bgnmode == VLINE) {
   cairo_stroke (VGUI.cr);
-  cairo_destroy (VGUI.cr);
-  VGUI.cr=NULL;
  }
+ if (VGUI.in_frontbuffer) update_canvas();
  return (1);
 };
 
@@ -1259,12 +1211,10 @@ static int VGUI_char(char c)
  //printf("VGUI_char %c %d %d\n", c, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
 
  gdk_threads_enter();
- cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
- gdk_cairo_set_source_rgba(cr,&VGUI.palette[VGUI.fg]);
- my_set_font(cr);
- cairo_move_to (cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
- cairo_show_text(cr, s);
- cairo_destroy (cr);
+ gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
+ my_set_font(VGUI.cr);
+ cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+ cairo_show_text(VGUI.cr, s);
  gdk_threads_leave();
 
  return (1);
@@ -1275,12 +1225,10 @@ static int VGUI_string(char *s)
  //printf("VGUI_string %s %d %g (vdevice.sizeSy=%d, vdevice.cpVy=%d, vdevice.hheight=%g)\n", s, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy - vdevice.hheight, vdevice.sizeSy, vdevice.cpVy, vdevice.hheight);
 
  gdk_threads_enter();
- cairo_t *cr = gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
- gdk_cairo_set_source_rgba(cr,&VGUI.palette[VGUI.fg]);
- my_set_font(cr);
- cairo_move_to (cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
- cairo_show_text(cr, s);
- cairo_destroy (cr);
+ gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
+ my_set_font(VGUI.cr);
+ cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
+ cairo_show_text(VGUI.cr, s);
  gdk_threads_leave();
 
  return (1);
@@ -1292,12 +1240,10 @@ static int VGUI_draw(int x, int y)
  //printf("VGUI_solid %d %d\n", x, y);
 
  gdk_threads_enter();
- if (VGUI.cr!=NULL) {
-  if (vdevice.cpVx!=VGUI.draw_lastx || vdevice.cpVy!=VGUI.draw_lasty) {
-   cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
-  }
-  cairo_line_to (VGUI.cr, x, vdevice.sizeSy - y);
+ if (vdevice.cpVx!=VGUI.draw_lastx || vdevice.cpVy!=VGUI.draw_lasty) {
+  cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
  }
+ cairo_line_to (VGUI.cr, x, vdevice.sizeSy - y);
  gdk_threads_leave();
 
  VGUI.draw_lastx = vdevice.cpVx = x;

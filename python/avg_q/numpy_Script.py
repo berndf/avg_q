@@ -6,15 +6,14 @@ import copy
 
 # Layout helper function to get a 2D arrangement of nplots plots
 def nrows_ncols_from_nplots(nplots):
- import numpy as np
- ncols=np.sqrt(nplots)
+ ncols=numpy.sqrt(nplots)
  if ncols.is_integer():
   nrows=ncols
  else:
-  ncols=np.ceil(ncols)
+  ncols=numpy.ceil(ncols)
   nrows=nplots/ncols
   if not nrows.is_integer():
-   nrows=np.ceil(nrows)
+   nrows=numpy.ceil(nrows)
  return int(nrows),int(ncols)
 
 class numpy_epoch(object):
@@ -145,7 +144,8 @@ write_generic stdout float32
     if -zmin>zmax:
      zmax= -zmin
     plt.subplot(nrows,ncols,thisplot+1)
-    gplot=plt.pcolor(xi,yi,zi,norm=plt.Normalize(vmin=-zmax,vmax=zmax),antialiaseds=False) # shading="faceted"
+    # pcolormesh is described to be much faster than pcolor
+    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=-zmax,vmax=zmax),antialiaseds=False) # shading="faceted"
     #gplot=plt.contourf(g,ncontours)
     #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
     plt.contour(xi,yi,zi,[0],colors='black') # Draw zero line
@@ -159,24 +159,30 @@ write_generic stdout float32
   for epoch in self.epochs:
    mapplot(numpy.array([xyz[0] for xyz in epoch.channelpos]),numpy.array([xyz[1] for xyz in epoch.channelpos]),epoch.data)
   self.transforms=storetransforms
- def plot_traces(self, vmin=None, vmax=None):
-  '''This creates one 2d plot for each channel, like for time-freq data (freq=x, time=epoch)'''
+ def plot_traces(self, vmin=None, vmax=None, xlim=None, ylim=None, x_is_latency=False):
+  '''This creates one 2d plot for each channel, like for time-freq data (freq=x, time=epoch).
+  If x_is_latency=True, each matrix is transposed so x and y swapped.'''
   import matplotlib.pyplot as plt
 
-  def traceplot(z):
+  def traceplot(z,xlim=None,ylim=None,transpose=False):
    #ncontours=15
    nplots=len(z)
    nrows,ncols=nrows_ncols_from_nplots(nplots)
    thisplot=0
    for z1 in z:
     z1=numpy.array(z1)
+    if transpose: z1=numpy.transpose(z1)
     plt.subplot(nrows,ncols,thisplot+1)
-    gplot=plt.pcolor(z1,norm=plt.Normalize(vmin=vmin,vmax=vmax)) # shading="faceted"
+    x=numpy.linspace(xlim[0],xlim[1],num=z1.shape[1]) if xlim else numpy.array(range(z1.shape[1]))
+    y=numpy.linspace(ylim[0],ylim[1],num=z1.shape[0]) if ylim else numpy.array(range(z1.shape[0]))
+
+    # pcolormesh is described to be much faster than pcolor
+    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax))
     #gplot=plt.contourf(z1,ncontours)
     gplot.axes.set_axis_off()
     #print z1.shape
-    gplot.axes.set_xlim(0,z1.shape[1])
-    gplot.axes.set_ylim(0,z1.shape[0])
+    gplot.axes.set_xlim(min(x),max(x))
+    gplot.axes.set_ylim(min(y),max(y))
     thisplot+=1
 
   storetransforms=copy.copy(self.transforms)
@@ -197,5 +203,5 @@ write_generic stdout float32
        z[channel][point].append(channels[channel])
     point+=1
 
-  traceplot(z)
+  traceplot(z,xlim=xlim,ylim=ylim,transpose=x_is_latency)
   self.transforms=storetransforms

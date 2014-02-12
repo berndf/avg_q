@@ -247,4 +247,28 @@ project -C -n -p 0 -m %(mapstmp)s 0
   'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
   'mapstmp': mapstmp,
   }
+ def get_weighted_extractor_script(self,components=None):
+  '''Special application: Linear superposition of weights, like reconstruct but with weights instead of maps'''
+  if components is None:
+   components=self.notArtComponents()
+  weightstmp='%s_weights_scaled_tmpproject.asc' % self.base
+  self.avg_q_instance.write('''
+readasc %(base)s_weights_scaled.asc
+%(trim)s
+writeasc -b %(weightstmp)s
+null_sink
+-
+''' % {
+  'base': self.base,
+  'weightstmp': weightstmp,
+  'trim': self.get_trim_from_components(components),
+  })
+  self.tmpfiles.append(weightstmp)
+  return '''
+%(remove_channels)s
+project -C -n -p 0 -m %(weightstmp)s 0
+''' % {
+  'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
+  'weightstmp': weightstmp,
+  }
 

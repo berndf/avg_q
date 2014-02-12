@@ -179,7 +179,7 @@ class slfile(object):
     if self.Date=='1.1.1900':
      self.Date=None
     continue
-   if not sl.startswith('Ep*'): continue
+   if not sl.lower().startswith('ep*'): continue
    fields=sl.split('#')
    epochfields=fields[0].split('*') # 'Ep',index,time(s)
    fields=fields[1:]
@@ -259,11 +259,11 @@ class slfile(object):
   if self.slfile:
    self.slfile.close()
    self.sfile=None
- def find_datetime(self,timestamp):
+ def find_datetime(self,datetime):
   '''Convenience function to locate the stage for a given absolute time.'''
-  if timestamp<self.abstime[0]: return None
+  if datetime<self.abstime[0]: return None
   for row,rt in enumerate(self.abstime):
-   if timestamp>=rt and timestamp<rt+self.step: return row
+   if datetime>=rt and datetime<rt+self.step: return row
   return None
  # Lazy evaluation functions to get the epoch-wise data (tuples) and REM/NREM cycle (remcycles)
  def create_tuples(self):
@@ -271,13 +271,13 @@ class slfile(object):
  def create_step(self):
   import datetime
   self.step=datetime.timedelta(minutes=self.minutes_per_epoch)
- def create_start_timestamp(self):
+ def create_start_datetime(self):
   import datetime
   len(self.tuples) # Ensure that the sl file was read
   if self.Date is not None:
    day,month,year=(int(x) for x in self.Date.split('.'))
    hour,minute,second=(int(x) for x in self.Time.split(':'))
-   self.start_timestamp=datetime.datetime(year,month,day,hour,minute,second)
+   self.start_datetime=datetime.datetime(year,month,day,hour,minute,second)
   else:
    import klinik
    import sqlalchemy as sa
@@ -289,11 +289,11 @@ class slfile(object):
    booknumber=bookno.database_bookno(booknumber)
    abl_datum=sa.select(columns=[sa.func.date(somno.c.abldatum)],whereclause=somno.c.bn==booknumber).execute().fetchone()[0]
    la_time=datetime.datetime.combine(abl_datum,datetime.time(self.lights_out[0]['hour'],self.lights_out[0]['minute']))
-   self.start_timestamp=la_time-self.lights_out[0]['offset']*self.step
+   self.start_datetime=la_time-self.lights_out[0]['offset']*self.step
  def create_abstime(self):
   self.abstime=[]
   for row,tup in enumerate(self.tuples):
-   self.abstime.append(self.start_timestamp+row*self.step)
+   self.abstime.append(self.start_datetime+row*self.step)
  def create_remcycles(self):
   self.remcycles=[]
   self.n_remcycles,self.n_nremcycles,in_REM= -1,0,False
@@ -379,7 +379,7 @@ class slfile(object):
  creator_functions={
   'tuples': create_tuples,
   'step': create_step,
-  'start_timestamp': create_start_timestamp,
+  'start_datetime': create_start_datetime,
   'abstime': create_abstime,
   'remcycles': create_remcycles,
   'n_remcycles': create_remcycles,

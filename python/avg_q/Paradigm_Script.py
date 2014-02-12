@@ -16,9 +16,10 @@ import avg_q
 class Paradigm_Script(avg_q.Script):
  def calc_shiftwidth(self, list_of_latencies):
   '''
-  this is needed in average_trials(),
+  This is needed in average_trials(),
   calculate a shiftwidth around which the response avgs will be shifted in order
   to plot equivalent sections of the component over each other. 
+  The actual formula implements the geometric mean.
   '''
   import math
   return math.exp(sum([math.log(x) for x in list_of_latencies])/len(list_of_latencies))
