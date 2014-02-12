@@ -2,8 +2,6 @@
  * Copyright (C) 1992-1998,2003,2007,2011-2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfx_file.c i/o module to handle the multi-channel MFX (M"unster file exchange)
  * format.					Bernd Feige 23.11.1992

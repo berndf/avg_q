@@ -2,8 +2,6 @@
  * Copyright (C) 1993,1994,1999 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfxwritetrigs mfxfile triggerfile
  * is a small mfx application that writes trigger codes to the

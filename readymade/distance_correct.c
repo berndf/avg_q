@@ -2,8 +2,6 @@
  * Copyright (C) 1994,1998 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * distance_correct takes a bf 'asc' file as input, which should contain
  * a N data sets with N channels of complex 'phase align' data, the first

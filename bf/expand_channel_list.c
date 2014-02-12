@@ -2,8 +2,6 @@
  * Copyright (C) 1995-1998,2001,2003,2011 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* expand_channel_list.c was derived from the channel selection part of
  * mfx_file. It takes a channel selection string and returns a malloc'ed
  * list of channel_index+1 values terminated by 0. If no channel was selected,

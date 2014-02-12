@@ -2,8 +2,6 @@
  * Copyright (C) 1995,1997,2012 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * fix_headers encapsulates the process of changing the various MFX headers
  * between little- and big-endian number representation. Calling any of these 

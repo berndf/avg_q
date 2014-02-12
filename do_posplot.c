@@ -2,8 +2,6 @@
  * Copyright (C) 1996-2000,2004 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * do_posplot reads data sets from a file using the readasc method
  * and plots all or the given range of data sets using the posplot

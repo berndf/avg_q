@@ -2,8 +2,6 @@
  * Copyright (C) 1995,2008,2012,2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* This module provides routines to rearrange the order of various
  * binary values within memory between little- and big-endian.
  * Two calls to one function will result in the original ordering.

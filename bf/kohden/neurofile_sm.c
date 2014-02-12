@@ -2,8 +2,6 @@
  * Copyright (C) 1997 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* Definition of `structure member' arrays for the NeuroFile format
  *			-- Bernd Feige 26.09.1997 */
 

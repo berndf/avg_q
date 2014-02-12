@@ -2,8 +2,6 @@
  * Copyright (C) 1993-1996 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfxtriggers.c - A small mfx application which lists the trigger codes 
  * found in the channel named TRIGGER of the named mfx file.

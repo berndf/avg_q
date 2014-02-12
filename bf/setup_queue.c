@@ -2,8 +2,6 @@
  * Copyright (C) 1996-2004,2006-2009,2011,2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * setup_queue.c -- Central module for dealing with queues or pipelines
  * of processing methods starting with a list of method select function

@@ -2,8 +2,6 @@
  * Copyright (C) 1994,1995,1997,1998,2004,2011 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * Spline gridder: Gridder using surface splines to interpolate the data
  * input given by a 3-d array of irregular input points z(x, y).

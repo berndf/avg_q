@@ -2,9 +2,6 @@
  * Copyright (C) 1993,1994,1996-1999,2003,2004,2010 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * swap_xz global function to transform a linked tinfo chain into another
  * in which the former x coordinate is the z coordinate and vice versa.

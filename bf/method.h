@@ -2,9 +2,6 @@
  * Copyright (C) 1996,1997,2001,2002,2008 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * method.h contains the basic definitions and constructs for method-
  * oriented programming, following Thomas G. Lane's JPEG software.

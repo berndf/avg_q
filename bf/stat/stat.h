@@ -2,8 +2,6 @@
  * Copyright (C) 1994,2009 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 #ifndef STAT_H
 #define STAT_H
 

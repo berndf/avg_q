@@ -2,8 +2,6 @@
  * Copyright (C) 1994,1998 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * malloc_trace module -- keeps track of allocated memory patches and
  * frees only those that were actually allocated before. Freeing memory

@@ -2,8 +2,6 @@
  * Copyright (C) 1995-1997 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 #define FREIBURG_HEADER_LENGTH 64
 
 /* This is just one header fragment as seen in some averaged files.

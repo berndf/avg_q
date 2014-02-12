@@ -2,8 +2,6 @@
  * Copyright (C) 1993 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfx_errors.c. This module defines the plain text messages corresponding 
  * to the error numbers defined in mfx_file.h.	Bernd Feige 8.02.1993

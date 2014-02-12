@@ -2,8 +2,6 @@
  * Copyright (C) 1996-1999,2001,2004 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * extspec C program to extract values for a single channel from an 'asc'
  * file in a format suitable to feed, eg, into gnuplot.

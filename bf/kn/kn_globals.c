@@ -2,8 +2,6 @@
  * Copyright (C) 1995,1996 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* This module holds global values that are needed for the kn (Patrick Berg)
  * library.			-- Bernd Feige 4.06.1995
  */

@@ -2,8 +2,6 @@
  * Copyright (C) 1996 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* Definition of `structure member' arrays for the tucker format
  *			-- Bernd Feige 16.12.1996 */
 

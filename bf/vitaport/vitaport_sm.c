@@ -2,8 +2,6 @@
  * Copyright (C) 1996,2000 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* Definition of `structure member' arrays for the Vitaport format
  *			-- Bernd Feige 17.12.1995 */
 

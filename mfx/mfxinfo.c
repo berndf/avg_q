@@ -2,8 +2,6 @@
  * Copyright (C) 1993-1995 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfxinfo.c - A small mfx application which uses mfx_infoout to print
  * the file header information to stdout.	Bernd Feige 10.02.1993

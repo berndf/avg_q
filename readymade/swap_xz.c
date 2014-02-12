@@ -2,8 +2,6 @@
  * Copyright (C) 1996-1998,2000,2003,2004 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * swap_xz reads data sets from a file using the readasc method
  * and reorganizes them into a version with swapped `x' and `z' axes

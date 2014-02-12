@@ -2,8 +2,6 @@
  * Copyright (C) 1996-2003,2007,2010,2012,2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*{{{}}}*/
 
 /*{{{  Includes*/

@@ -2,8 +2,6 @@
  * Copyright (C) 1995,1996,2001,2003,2012 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* read_struct module to read and write structures in an architecture- and 
  * compiler-independent way (byte alignment and big/little-endian order)
  * 		-- Bernd Feige 6.08.1995 */

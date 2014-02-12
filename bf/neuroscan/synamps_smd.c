@@ -2,8 +2,6 @@
  * Copyright (C) 1996-1998,2000,2001 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* Definition of `structure member description' arrays for the synamps format
  *			-- Bernd Feige 13.08.1996 */
 

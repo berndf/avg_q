@@ -2,8 +2,6 @@
  * Copyright (C) 1996-1999,2001-2003,2008 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * get_mfxepoch.c method to read epoch data from an mfx file
  *	-- Bernd Feige 11.02.1993

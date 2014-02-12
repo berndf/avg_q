@@ -2,9 +2,6 @@
  * Copyright (C) 1996,1998,2000,2001,2004 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * asccalc.c - Program to do simple calculations with data sets within an
  *  ascii input file, producing an ascii result file on stdout

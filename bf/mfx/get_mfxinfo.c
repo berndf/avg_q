@@ -2,9 +2,6 @@
  * Copyright (C) 1996-1998,2002,2004,2008 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * get_mfxinfo.c module to transfer header data from an open
  * mfx file to a transform_info_struct structure

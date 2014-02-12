@@ -2,8 +2,6 @@
  * Copyright (C) 1996-1998,2000,2001,2003,2004 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * ascaverage reads data sets from files using the readasc method
  * and outputs the result to stdout.	Bernd Feige 19.02.1993

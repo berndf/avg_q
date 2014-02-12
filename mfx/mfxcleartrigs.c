@@ -2,8 +2,6 @@
  * Copyright (C) 1993,1994 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfxcleartrigs mfxfile
  * is a small mfx application that clears all trigger codes in the

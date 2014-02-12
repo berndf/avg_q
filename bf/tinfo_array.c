@@ -2,8 +2,6 @@
  * Copyright (C) 1993,1994,1997,1998,2001 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * tinfo_array.c provides an interface to access the 'tsdata'
  * using the array interface (preferred method !).

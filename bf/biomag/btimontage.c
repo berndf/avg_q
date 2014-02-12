@@ -2,8 +2,6 @@
  * Copyright (C) 1993,2003,2004 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * btimontage.c modified version of Bernd Luetkenhoener's BTi37montage.c
  * 	Bernd Feige 14.07.1993

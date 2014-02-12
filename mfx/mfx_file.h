@@ -2,9 +2,6 @@
  * Copyright (C) 1992-1994,1997,2003,2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * mfx_file.h definitions for implementation and use of mfx_file.c
  * Bernd Feige 23.11.1992

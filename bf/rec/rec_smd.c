@@ -2,8 +2,6 @@
  * Copyright (C) 2000,2008 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* Definition of `structure member description' arrays for the EDF format
  *			-- Bernd Feige 3.3.2000 */
 

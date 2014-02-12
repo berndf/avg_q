@@ -2,9 +2,6 @@
  * Copyright (C) 1993-2004,2006,2007,2009,2011-2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * trafo_std.c provides the default error and trace handling functions
  * for the transform modules	-- Bernd Feige 15.01.1993

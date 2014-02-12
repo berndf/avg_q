@@ -2,9 +2,6 @@
  * Copyright (C) 1993,1994,2002,2003 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * chg_multiplex.c provides the global functions to change the data organisation
  * in memory between multiplexed [column, row] and non-multiplexed [row, column]

@@ -2,8 +2,6 @@
  * Copyright (C) 1992-1994 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfx_infoout dumps the contents of the file and channel headers
  * to the stream outfile (in ASCII). This is modeled after corresponding

@@ -2,8 +2,6 @@
  * Copyright (C) 1992-1994 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * mfx_header_format.h
  * 

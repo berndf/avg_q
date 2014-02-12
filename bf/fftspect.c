@@ -2,9 +2,6 @@
  * Copyright (C) 1996-1999,2001-2003,2010,2013 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
-
 /*
  * fftspect.c module to calculate successive (spectral power) spectra
  * in a sliding data window. Spectral power calculation based on programs

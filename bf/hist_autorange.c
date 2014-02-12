@@ -2,8 +2,6 @@
  * Copyright (C) 1993,1994,1997,1998 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * hist_autorange.c provides the global function hist_autorange(tinfo)
  * to automatically allocate the hist_boundaries structure for all

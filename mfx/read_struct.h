@@ -2,8 +2,6 @@
  * Copyright (C) 1995,1996,2001 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /* This include file defines the data structures necessary to implement
  * an architecture- and compiler-independent reading of structures into
  * memory. 					-- Bernd Feige 6.08.1995 */

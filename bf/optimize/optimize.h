@@ -2,8 +2,6 @@
  * Copyright (C) 1993 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
- * 
- */
 /*
  * optimize.h defines memory structures that should be able to contain
  * whatever is necessary to optimize (find zeros, min values...) an
