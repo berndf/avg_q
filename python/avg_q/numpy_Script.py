@@ -66,13 +66,20 @@ read_generic -c -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin 0 %(after
 
 class numpy_Script(avg_q.Script):
  epochs=[] # List of numpy_epoch objects
+ savedstate=[] # List of (transform,collect,postprocess) tuples
+ def save_state(self):
+  self.savedstate.append((copy.copy(self.transforms),copy.copy(self.collect),copy.copy(self.postprocess_transforms)))
+ def restore_state(self):
+  self.transforms,self.collect,self.postprocess_transforms=self.savedstate.pop()
  def read(self):
   '''Read the current epoch into numpy array self.data, channels=columns
+     We support both reading all epochs from the iterated queue (if no collect
+     method is set) and reading the single result of the post-processing queue.
   '''
-  # Save and restore the current list of transforms, since we work by (temporally)
-  # appending to this list
-  storetransforms=copy.copy(self.transforms)
-  self.add_transform("""
+  # Save and restore the current state, since we work by (temporally)
+  # adding our own transforms
+  self.save_state()
+  transform="""
 echo -F stdout Epoch Dataset\\n
 query channelpositions stdout
 query -N comment stdout
@@ -81,7 +88,11 @@ query -N nr_of_points stdout
 query -N itemsize stdout
 echo -F stdout Data:\\n
 write_generic stdout float32
-""")
+"""
+  if self.collect=='null_sink':
+   self.add_transform(transform)
+  else:
+   self.add_postprocess(transform)
   rdr=self.runrdr()
   self.epochs=[]
   while True:
@@ -123,7 +134,7 @@ write_generic stdout float32
    epoch.data=numpy.frombuffer(buf,dtype=numpy.float32,count=epoch.nr_of_points*epoch.nr_of_channels*epoch.itemsize)
    epoch.data.shape=(epoch.nr_of_points,epoch.nr_of_channels*epoch.itemsize)
    self.epochs.append(epoch)
-  self.transforms=storetransforms
+  self.restore_state()
  def plot_maps(self):
   import matplotlib.mlab as mlab
   import matplotlib.pyplot as plt
@@ -153,12 +164,15 @@ write_generic stdout float32
     gplot.axes.set_xlim(xmin,xmax)
     gplot.axes.set_ylim(ymin,ymax)
 
-  storetransforms=copy.copy(self.transforms)
+  self.save_state()
   self.add_transform('extract_item 0')
+  # Arrange for epochs to be appended for plotting maps
+  if self.collect=='null_sink':
+   self.set_collect('append')
   self.read()
   for epoch in self.epochs:
    mapplot(numpy.array([xyz[0] for xyz in epoch.channelpos]),numpy.array([xyz[1] for xyz in epoch.channelpos]),epoch.data)
-  self.transforms=storetransforms
+  self.restore_state()
  def plot_traces(self, vmin=None, vmax=None, xlim=None, ylim=None, x_is_latency=False):
   '''This creates one 2d plot for each channel, like for time-freq data (freq=x, time=epoch).
   If x_is_latency=True, each matrix is transposed so x and y swapped.'''
@@ -185,7 +199,7 @@ write_generic stdout float32
     gplot.axes.set_ylim(min(y),max(y))
     thisplot+=1
 
-  storetransforms=copy.copy(self.transforms)
+  self.save_state()
   self.add_transform('extract_item 0')
   self.read()
   z=[] # One array per *channel*, each array collects all time points and epochs, epochs varying fastest
@@ -204,4 +218,4 @@ write_generic stdout float32
     point+=1
 
   traceplot(z,xlim=xlim,ylim=ylim,transpose=x_is_latency)
-  self.transforms=storetransforms
+  self.restore_state()
