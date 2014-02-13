@@ -465,6 +465,7 @@ project(transform_info_ptr tinfo) {
    copy_channelinfo(tinfo, project_args->save_side_tinfo.channelnames, project_args->save_side_tinfo.probepos);
    tinfo->nr_of_points=indata.nr_of_vectors;
    tinfo->itemsize=indata.element_skip;
+   tinfo->length_of_output_region=tinfo->nr_of_channels*tinfo->nr_of_points*tinfo->itemsize;
    retvalue=indata.start;
    tinfo->multiplexed=TRUE;
    break;
