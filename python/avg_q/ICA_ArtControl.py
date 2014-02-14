@@ -158,14 +158,15 @@ null_sink
   else:
    trim='trim '+' '.join(['%d 1' % (x-1) for x in sorted(components)])
   return trim
- def get_remove_channels_from_components(self,components):
+ def get_remove_channels_from_components(self,components,keep=False):
   '''Utility function to get the 'remove_channel' statement for removing channels corresponding to components.
-  Note that this selection is negative, ie removes channels for these components, therefore the
-  order is not important.'''
-  if len(components)==0:
+  Note that this selection is negative by default, ie removes channels for these components;
+  With keep=True it keeps these channels instead. In this case order is important, which is why we sort components
+  just as in get_trim_from_components.'''
+  if not keep and len(components)==0:
    remove_channel=''
   else:
-   remove_channel='remove_channel -n '+channel_list2arg(["%d" % comp for comp in components])
+   remove_channel='remove_channel ' +('-k ' if keep else '-n ')+channel_list2arg(["%d" % comp for comp in sorted(components)])
   return remove_channel
  def get_backproject_script(self,components=None):
   if components is None:
