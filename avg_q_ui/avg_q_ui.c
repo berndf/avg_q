@@ -461,8 +461,8 @@ change_dir(GtkWidget *menuitem) {
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a directory to change to",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-  GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+  "_Cancel", GTK_RESPONSE_CANCEL,
+  "_Open", GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  if (g_path_is_absolute(filename)) {
@@ -940,8 +940,8 @@ method_fileselect_all(method_file_sel_data *data) {
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a file argument",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_SAVE,
-  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-  GTK_STOCK_PASTE, GTK_RESPONSE_ACCEPT,
+  "_Cancel", GTK_RESPONSE_CANCEL,
+  "_Use", GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  if (text!=NULL) {
@@ -1624,8 +1624,8 @@ open_file(GtkWidget *menuitem) {
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a script file to load",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_OPEN,
-  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-  GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+  "_Cancel", GTK_RESPONSE_CANCEL,
+  "_Open", GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
@@ -1686,8 +1686,8 @@ save_file_as(GtkWidget *menuitem) {
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a script file name to save to",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_SAVE,
-  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-  GTK_STOCK_SAVE_AS, GTK_RESPONSE_ACCEPT,
+  "_Cancel", GTK_RESPONSE_CANCEL,
+  "_Save", GTK_RESPONSE_ACCEPT,
   NULL);
  gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  if (g_path_is_absolute(filename)) {
@@ -1923,8 +1923,8 @@ dump_file_as(GtkWidget *menuitem) {
  GtkWidget *filesel=gtk_file_chooser_dialog_new("Select an include file name to dump to",
   GTK_WINDOW(Avg_Q_Main_Window),
   GTK_FILE_CHOOSER_ACTION_SAVE,
-  GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-  GTK_STOCK_SAVE_AS, GTK_RESPONSE_ACCEPT,
+  "_Cancel", GTK_RESPONSE_CANCEL,
+  "_Save", GTK_RESPONSE_ACCEPT,
   NULL);
  GtkFileFilter *filter=gtk_file_filter_new();
  GtkFileFilter *allfiles=gtk_file_filter_new();
