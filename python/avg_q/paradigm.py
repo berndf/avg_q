@@ -45,6 +45,10 @@ class paradigm(object):
  Name='UNKNOWN'
  stimulus_set=set()
  response_set=set()
+ # This defines a low-level correction of occurrence times per code (stimulus or response),
+ # for example to account for delayed onset of the sound in a stimulus sound file (positive)
+ # or for a delay in registering a key press (negative).
+ onset_correction_ms={}
  # This defines the order of the conditions appearing as keys in the output of get_trials
  correct_conditions=[]
  error_conditions=[]
@@ -74,12 +78,14 @@ class paradigm(object):
   '''
   The base class can also be instantated to use the basic triggerstats() function.
   '''
+  self.sfreq=sfreq
   # Filter the events so that we can do clear decisions
   self.triggers=[]
   for point, code, description in triggers:
    if len(self.stimulus_set)==0 and len(self.response_set)==0 or code in self.stimulus_set or code in self.response_set:
+    if code in self.onset_correction_ms:
+     point+=self.onset_correction_ms[code]*self.sfreq/1000
     self.triggers.append((point, code, description))
-  self.sfreq=sfreq
   self.conditions=self.correct_conditions+self.error_conditions
 
   # These are automatically computed on first access:

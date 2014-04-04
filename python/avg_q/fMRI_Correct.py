@@ -94,13 +94,6 @@ fftfilter %(filter_start)g %(filter_zerostart)g 1 1
   self.templatefilename=self.base + '_template.asc'
   # List extended by subtract_EPI
   self.correctedfiles=[]
- def get_fromtoepoch(self,start_s,end_s):
-  fromepoch=int(math.floor(start_s*1000.0/self.TR))+1
-  if end_s:
-   epochs=int(math.ceil(end_s*1000.0/self.TR))+1-fromepoch 
-  else:
-   epochs=None
-  return (fromepoch,epochs)
  def get_overview(self):
   # We have to do the overview exactly in steps of TR in order to get constant
   # overview values also in the interleaved case.
@@ -146,8 +139,8 @@ null_sink
   end_s=None
   def add_start_end():
    global start_s,fromto
-   start_s1=start_s if start_s!=None else 0
-   end_s1=end_s if end_s!=None else overview_points*self.TR/1000.0
+   start_s1=start_s if start_s is not None else 0
+   end_s1=end_s if end_s is not None else overview_points*self.TR/1000.0
    if end_s1-start_s1<self.min_scan_duration_s:
     print("Overview: Not using short 'scan' %g-%g!" % (start_s1,end_s1))
    else:
@@ -197,16 +190,16 @@ writeasc -b %(templatefilename)s
    script.run()
    self.haveTemplate=True
  def get_threshold(self,start_s):
-   self.avg_q_instance.getcontepoch(self.infile, '0s', '1s', fromepoch=start_s, epochs=5)
-   self.avg_q_instance.write(self.collapseit)
-   self.avg_q_instance.write('''
-trim -h 0 0
-minmax
-Post:
-write_generic stdout string
--
-''')
-   for line in self.avg_q_instance.runrdr():
+   '''Derive a workable EPI threshold from the first 5s of data with EPI artefact.'''
+   script=avg_q.Script(self.avg_q_instance)
+   epochsource=avg_q.Epochsource(self.infile,'0s','5s')
+   epochsource.set_trigpoints('%gs' % start_s)
+   script.add_Epochsource(epochsource)
+   script.add_transform(self.collapseit)
+   script.add_transform('''trim -h 0 0''')
+   script.set_collect('minmax')
+   script.add_postprocess('write_generic stdout string')
+   for line in script.runrdr():
     minval,maxval=line.split()
     self.threshold=float(maxval)*0.5
     print("Automatically set threshold to %g" % self.threshold)
@@ -224,7 +217,6 @@ write_generic stdout string
   runindex=0
   for start_s,end_s in fromto:
    self.haveTemplate=False
-   fromepoch,epochs=self.get_fromtoepoch(start_s,end_s)
    runindex+=1
 
    if not self.checkmode:
@@ -241,7 +233,9 @@ write_generic stdout string
    outtuples=trgfile.HighresTriggers(self.upsample)
 
    # First, only look for the first EPI peak and extract a short template
-   self.avg_q_instance.getcontepoch(self.infile, '0s', '%gms' % self.TR, fromepoch=fromepoch, epochs=epochs)
+   script=avg_q.Script(self.avg_q_instance)
+   epochsource=avg_q.Epochsource(self.infile,'0s','%gms' % (5*self.TR))
+   epochsource.set_trigpoints('%gs' % start_s)
    detect_first_EPI_script='''
 write_crossings -E -R %(refractory_time)gms collapsed %(threshold)g triggers
 %(posplot)s
@@ -252,17 +246,17 @@ null_sink
 ''' % {
    'refractory_time': self.TR,
    'threshold': self.threshold,
-   'posplot': 'posplot' if self.checkmode else ''
+   'posplot': 'set_comment Finding first EPI peak...\nposplot' if self.checkmode else ''
    }
-   self.avg_q_instance.write(self.collapseit)
-   self.avg_q_instance.write(detect_first_EPI_script)
-   trgfile_crs=trgfile.trgfile(self.avg_q_instance.runrdr())
+   script.add_Epochsource(epochsource)
+   script.add_transform(self.collapseit)
+   script.add_transform(detect_first_EPI_script)
+   trgfile_crs=trgfile.trgfile(script.runrdr())
    trgpoints=trgfile_crs.gettuples()
    if len(trgpoints)==0:
     print("Can't find a single trigger in %s, continuing..." % self.base)
     continue
-   pointoffset=int((fromepoch-1)*self.TR/1000.0*self.sfreq) if fromepoch else 0
-   trigpoint=pointoffset+trgpoints[0][0]
+   trigpoint=int(start_s*self.sfreq)+trgpoints[0][0]
    self.getTemplate(trigpoint)
    
    # Read the whole fMRI run in steps of TR
@@ -270,11 +264,13 @@ null_sink
    correct_correct=None
    while not end_s or trigpoint<end_s*self.sfreq:
     readpoint,trimcorrection=trgfile.get_ints(trigpoint,self.upsample)
+    # Note that this still needs to be finalized for the '%s' template in write_crossings!
     epi_detection_script='''
 convolve %(templatefilename)s 1
 trim %(trimstart)f %(trimlength)f
-write_crossings -E collapsed %(convolvethreshold)g stdout
+write_crossings %%s collapsed %(convolvethreshold)g triggers
 %(posplot)s
+query triggers_for_trigfile stdout
 ''' % {
     'templatefilename': self.templatefilename,
     'trimstart': self.upsample*(self.template_points/2)+trimcorrection,
@@ -289,12 +285,24 @@ write_crossings -E collapsed %(convolvethreshold)g stdout
     script.add_Epochsource(epochsource)
     script.add_transform(self.collapseit)
     script.add_transform(self.upsampleit)
-    script.add_transform(epi_detection_script)
+    script.add_transform(epi_detection_script % '-E') # Detect extrema. May fail if no extremum is assumed.
     trgfile_crs=trgfile.trgfile(script.runrdr())
     trgpoints=trgfile_crs.gettuples()
-    if len(trgpoints)==0: break; # Trigger position beyond file length
-    correction=float(trgpoints[0][0])/self.upsample-self.refine_points/2
-    if correct_correct==None:
+    if len(trgpoints)==0:
+     # No extremum found. Check whether there is a signal of EPI-like amplitude at all.
+     script=avg_q.Script(self.avg_q_instance)
+     script.add_Epochsource(epochsource)
+     script.add_transform(self.collapseit)
+     script.add_transform(self.upsampleit)
+     script.add_transform(epi_detection_script % '') # Detect crossings to check whether a signal is present at all
+     trgfile_crs=trgfile.trgfile(script.runrdr())
+     trgpoints=trgfile_crs.gettuples()
+     if len(trgpoints)==0: break # No EPI signal.
+     print("EPI peak detection failed - trying to continue without correction...")
+     correction=correct_correct if correct_correct is not None else 0
+    else:
+     correction=float(trgpoints[0][0])/self.upsample-self.refine_points/2
+    if correct_correct is None:
      correct_correct=correction
     else:
      correction-=correct_correct
@@ -307,12 +315,16 @@ write_crossings -E collapsed %(convolvethreshold)g stdout
    # Check the end of the scan - does it fit with TR?
    epi_end_detection_script='''
 scale_by invpointmax
-write_crossings -E collapsed 0.75 stdout
-#write_crossings -E collapsed 0.75 triggers
-#posplot
-'''
-   readpoint=trigpoint-self.TR_points
-   points_to_read=2*self.TR_points
+write_crossings -E collapsed 0.75 triggers
+%(posplot)s
+query triggers_for_trigfile stdout
+''' % {
+   'posplot': 'set_comment Detecting end of scan...\nposplot' if self.checkmode else ''
+   }
+   read_TS_before_trigpoint=2
+   read_TS_after_trigpoint=1
+   readpoint=trigpoint-read_TS_before_trigpoint*self.TR_points
+   points_to_read=(read_TS_before_trigpoint+read_TS_after_trigpoint)*self.TR_points
    # Sigh... Detect whether the EEG was stopped *immediately* after the scan
    if readpoint+points_to_read>self.points_in_file:
     points_to_read=self.points_in_file-readpoint
@@ -325,8 +337,8 @@ write_crossings -E collapsed 0.75 stdout
    trgfile_crs=trgfile.trgfile(script.runrdr())
    trgpoints=trgfile_crs.gettuples()
    point,code,description=trgpoints[-1]
-   deviation=(point-self.TS_points)/self.TS_points
-   print("Last peak %gs after last EPI, deviation %g*TS" % (point/self.sfreq,deviation))
+   deviation=(point-read_TS_before_trigpoint*self.TS_points)/self.TS_points
+   print("Last peak %gs after last EPI, deviation %g*TS" % ((point-read_TS_before_trigpoint*self.TR_points)/self.sfreq,deviation))
    if deviation< -0.05:
     print("Deviation too large, dropping last EPI - Check TS=%gms!" % self.TS)
     outtuples.pop(-1)
@@ -390,6 +402,7 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
    # Pass parameters to avgEPI()
    if self.avgEPI_Amplitude_Reject_fraction:
     myEPI.avgEPI_Amplitude_Reject_fraction=self.avgEPI_Amplitude_Reject_fraction
+   myEPI.remove_channels=self.remove_channels
    myEPI.checkmode=self.checkmode
    myEPI.avgEPI(crsfile,runindex)
 
@@ -496,6 +509,7 @@ class avgEPI(object):
   self.override_upsample=None
   self.upsampleit=None
   self.filterit=None
+  self.remove_channels=Channeltypes.NonEEGChannels
  def set_upsample(self,upsample):
   self.upsample=upsample
   if self.upsample==1:
@@ -548,7 +562,7 @@ class avgEPI(object):
   if avg_sfreq!=expected_sfreq:
    print("Average file sfreq mismatch, %g!=%g" % (avg_sfreq, expected_sfreq))
    return False
-  if nr_of_points==None:
+  if nr_of_points is None:
    print("Average file nr_of_points missing!")
    return False
   TR1=(nr_of_points-(2*self.upsample if self.upsample!=1 else 0))*1000.0/avg_sfreq
@@ -632,14 +646,14 @@ subtract -d %(singleEPIfile)s_Amplitude.asc
 set sfreq %(nr_of_EPIs)d
 write_hdf -a -c %(residualsfile)s.hdf
 # Don't consider non-EEG channels to judge the fit
-collapse_channels -h !?%(NonEEGChannels)s:collapsed
+collapse_channels -h !?%(remove_channels)s:collapsed
 reject_bandwidth -m %(avgEPI_Amplitude_Reject_fraction)g
 pop
 ''' % {
    'singleEPIfile': singleEPIfile,
    'nr_of_EPIs': len(self.EPIs),
    'residualsfile': residualsfile,
-   'NonEEGChannels': channel_list2arg(Channeltypes.NonEEGChannels),
+   'remove_channels': channel_list2arg(self.remove_channels),
    'avgEPI_Amplitude_Reject_fraction': self.avgEPI_Amplitude_Reject_fraction,
    }
    script=avg_q.Script(self.avg_q_instance)

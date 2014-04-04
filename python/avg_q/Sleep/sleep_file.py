@@ -11,8 +11,8 @@ from .. import avg_q_file
 import os
 
 rawfile_paths=(
- '/ncp/slserver/sldaten/Sl-Daten/',
- '/ncp/slserver/sldaten/Sl-Daten/EDF/',
+ '/AD/sldaten01/',
+ '/AD/sldaten01/EDF/',
  '/usermount/charly/sleepdata/01/',
  '/usermount/charly/sleepdata/EDF_Axxx/',
  '/usermount/charly/sleepdata2/A3000_Axxxx/',

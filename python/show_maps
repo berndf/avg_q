@@ -54,14 +54,14 @@ for ascfile in args:
  script.add_Epochsource(epochsource)
  if demean_maps:
   script.add_transform("demean_maps")
- script.read()
  script.plot_maps()
  if save_fig:
   plt.savefig(pngfile,format='png',transparent=True)
-  plt.clf()
+  plt.close()
  else:
   figno+=1
 a.close()
 
 if not save_fig:
  plt.show()
+ plt.close()

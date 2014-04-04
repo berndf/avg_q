@@ -77,13 +77,13 @@ single_sliding_average(sliding_data *sdata) {
   * The second and third implementations are mathematically equivalent. */
  if (sdata->ssize==1) {
   for (spoint=0; spoint<sdata->allocated_outpoints; spoint++) { /* Loop across target points */
-   int const middle_point=(int)rint(spoint*sdata->sstep);
+   int const middle_point=(int)floorf(spoint*sdata->sstep);
    sdata->tostart[spoint*sdata->toskip]=sdata->fromstart[middle_point*sdata->fromskip];
   }
  } else if (sdata->sstep>sdata->ssize/2) {
   /* Compute the whole average anew */
   for (spoint=0; spoint<sdata->allocated_outpoints; spoint++) { /* Loop across target points */
-   int const middle_point=(int)rint(spoint*sdata->sstep);
+   int const middle_point=(int)floorf(spoint*sdata->sstep);
    int const new_left_point= (middle_point-sdata->leftover>0 ? middle_point-sdata->leftover : 0);
    int const new_right_point=(middle_point+sdata->rightover<sdata->inpoints ? middle_point+sdata->rightover : sdata->inpoints)-1;
    DATATYPE sum=0.0;
@@ -99,7 +99,7 @@ single_sliding_average(sliding_data *sdata) {
   int left_point= -1, right_point= -1;
   DATATYPE sum=0.0;
   for (spoint=0; spoint<sdata->allocated_outpoints; spoint++) { /* Loop across target points */
-   int const middle_point=(int)rint(spoint*sdata->sstep);
+   int const middle_point=(int)floorf(spoint*sdata->sstep);
    int const new_left_point= (middle_point-sdata->leftover>0 ? middle_point-sdata->leftover : 0);
    int const new_right_point=(middle_point+sdata->rightover<sdata->inpoints ? middle_point+sdata->rightover : sdata->inpoints)-1;
    int point;
@@ -137,7 +137,7 @@ single_sliding_median(sliding_data *sdata) {
  a.nr_of_vectors=a.element_skip=sdata->fromskip;
 
  for (spoint=0; spoint<sdata->allocated_outpoints; spoint++) { /* Loop across target points */
-  int const middle_point=(int)rint(spoint*sdata->sstep);
+  int const middle_point=(int)floorf(spoint*sdata->sstep);
   int const new_left_point= (middle_point-sdata->leftover>0 ? middle_point-sdata->leftover : 0);
   int const new_right_point=(middle_point+sdata->rightover<sdata->inpoints ? middle_point+sdata->rightover : sdata->inpoints)-1;
   a.start=sdata->fromstart+new_left_point*sdata->fromskip;

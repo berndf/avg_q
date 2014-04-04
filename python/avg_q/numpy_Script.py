@@ -17,15 +17,25 @@ def nrows_ncols_from_nplots(nplots):
  return int(nrows),int(ncols)
 
 class numpy_epoch(object):
- def __init__(self):
-  self.sfreq=None
+ def __init__(self,data=None):
   self.comment=None
   self.channelnames=[]
   self.channelpos=[]
   self.nr_of_points=0
   self.nr_of_channels=0
   self.itemsize=0
-  self.data=None
+  if data is None:
+   self.data=None
+   self.nr_of_points=0
+   self.nr_of_channels=0
+   self.sfreq=None
+  else:
+   if type(data) is numpy.array:
+    self.data=data
+   else:
+    self.data=numpy.array(data,'float32')
+   self.nr_of_points,self.nr_of_channels=self.data.shape
+   self.sfreq=1
  def __str__(self):
   return(((self.comment+': ') if self.comment else "")+
   "%d x %d sfreq %g" % (self.nr_of_points,self.nr_of_channels,self.sfreq))
@@ -156,7 +166,8 @@ write_generic stdout float32
      zmax= -zmin
     plt.subplot(nrows,ncols,thisplot+1)
     # pcolormesh is described to be much faster than pcolor
-    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=-zmax,vmax=zmax),antialiaseds=False) # shading="faceted"
+    # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
+    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=-zmax,vmax=zmax),shading='flat',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(g,ncontours)
     #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
     plt.contour(xi,yi,zi,[0],colors='black') # Draw zero line
@@ -191,7 +202,8 @@ write_generic stdout float32
     y=numpy.linspace(ylim[0],ylim[1],num=z1.shape[0]) if ylim else numpy.array(range(z1.shape[0]))
 
     # pcolormesh is described to be much faster than pcolor
-    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax))
+    # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
+    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax),shading='flat',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(z1,ncontours)
     gplot.axes.set_axis_off()
     #print z1.shape
