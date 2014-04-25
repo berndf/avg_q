@@ -16,12 +16,15 @@ class Measure_Script(avg_q.Script):
   self.sum_range=False # If set, measure the sum, not the average of each range
   self.output_comment=False # If set, output the epoch comment as second element of the output list
  def measure(self,channels_and_lat_ranges):
-  '''channels_and_lat_ranges is a list of channels and associated latency ranges:
+  '''Measure mean amplitude and center-of-gravity latency in latency ranges.
+     channels_and_lat_ranges is a list of channels and associated latency ranges to measure:
      [['PO3',[[90,120],[150,180]]],['Cz',[[370,550]]]]
      Channels can actually be any avg_q channel list specification like 'PO3,Cz' or 'ALL'.
      The output is a list of [epoch,channelnames,rangename,amp1,lat1,amp2,lat2,...] with
      amp1,amp2 etc. the measurements for the channels. channelnames is the explicit
      comma-separated list of measured channels.
+     Note that the latency algorithm assumes positive-going amplitudes by default. To measure in negative
+     direction, add a third value -1 to the given range.
   '''
   # Save and restore the current list of transforms, since we measure by (temporally)
   # appending to this list
@@ -39,9 +42,8 @@ remove_channel -k %(channel)s
 push
 trim -x %(lower)g %(upper)g
 extract_item 0 0
-# Subtract a line between the first and the last data point:
-#detrend -i 1 -I
-calc -i 1 abs
+%(calc_neg)s
+add -i 1 negpointmin
 scale_by -i 1 invpointsum
 scale_by -i 1 xdata
 # This arranges for item 1 to actually be SUMMED:
@@ -58,6 +60,7 @@ pop
     'output_comment': 'query -t comment stdout' if self.output_comment else '',
     'lower': lat_range[0],
     'upper': lat_range[1],
+    'calc_neg': 'calc -i 1 neg' if len(lat_range)==3 and lat_range[2]== -1 else '',
     })
    self.add_transform('pop')
   rdr=self.runrdr()
