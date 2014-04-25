@@ -13,15 +13,15 @@ import os
 rawfile_paths=(
  '/AD/sldaten01/',
  '/AD/sldaten01/EDF/',
- '/usermount/charly/sleepdata/01/',
- '/usermount/charly/sleepdata/EDF_Axxx/',
- '/usermount/charly/sleepdata2/A3000_Axxxx/',
- '/usermount/charly/sleepdata2/A4000_Axxxx/',
- '/usermount/charly/sleepdata2/A5000_Axxxx/',
- '/usermount/charly/sleepdata2/A6000_Axxxx/',
- '/usermount/charly/sleepdata2/A7000_Axxxx/',
- '/usermount/charly/sleepdata2/A8000_Axxxx/',
- '/usermount/charly/sleepdata2/A9000_Axxxx/',
+ '/AD/slarchiv/01/',
+ '/AD/slarchiv/EDF_Axxx/',
+ '/AD/slarchiv/A3000_Axxxx/',
+ '/AD/slarchiv/A4000_Axxxx/',
+ '/AD/slarchiv/A5000_Axxxx/',
+ '/AD/slarchiv/A6000_Axxxx/',
+ '/AD/slarchiv/A7000_Axxxx/',
+ '/AD/slarchiv/A8000_Axxxx/',
+ '/AD/slarchiv/A9000_Axxxx/',
 )
 
 from .. import idircache
@@ -44,7 +44,7 @@ class sleep_file(avg_q_file):
     raise Exception('Can\'t locate raw file for book number %s' % filename)
   if self.ext.lower()=='.co':
    from . import freiburg_setup
-   from . import channelnames2channelpos
+   from .. import channelnames2channelpos
    self.f=avg_q_file(self.first,fileformat='freiburg')
    a=avg_q.avg_q()
    nr_of_channels=a.get_description(self.f,'nr_of_channels')
@@ -87,7 +87,7 @@ class sleep_file(avg_q_file):
     # NOTE that n3039.co is a special case; n3039 and n3039b were started
     # with 9 channels, n3039c with 12, which is correct! So n3039c becomes
     # the full n3039.edf (must be done by hand)
-    contfile=self.first + appendix 
+    contfile=self.first + appendix
     if os.path.exists(contfile + self.ext):
      # Note that according to BT, skipping the first epoch is automatic in the
      # stager, so the same happens in the second section of data.

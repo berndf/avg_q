@@ -154,7 +154,7 @@ echo -F stdout End of medbands\\n
 
    check=arousals+2*checks+checkmark
    code=(0 if remcycle<0 else remcycle)*8+stage+1
-   if check!=0: code= -code 
+   if check!=0: code= -code
    tuples.append([point, code, stage, remcycle, nremcycle, arousals, myos, eyemovements, checks]+checkmarks)
    point+=1
 
@@ -333,7 +333,7 @@ set sfreq 0.03333333333
 
   self.continuous=False
   self.set_trigpoints(trigpoints)
- def get_epochfilter_stage_cycle(stagename,cycle=None):
+ def get_epochfilter_stage_cycle(self,stagename,cycle=None):
   if isinstance(stagename,list):
    stagenames=stagename
   else:

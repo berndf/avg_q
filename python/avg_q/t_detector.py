@@ -14,8 +14,8 @@ null_sink
 ''')
  out=[x for x in a.runrdr()]
  no_avgs=int(out[0])
- return no_avgs 
-   
+ return no_avgs
+
 class T_avgs(Detector.Detector):
  '''
 uses the Detector module to evaluate crossings of z-scores, calculated from the t-averages
@@ -25,11 +25,11 @@ uses the Detector module to evaluate crossings of z-scores, calculated from the 
  # The filter to use before detection. Set to None to disable!
  filterspec='0.5 0.55 1 1'
 
- def detect_z_crossings(self,theta,raw=False): 
+ def detect_z_crossings(self,theta,raw=False):
   '''
   detects the crossings of IC's z_scores above threshold
   this must be called for the positive and negative threshold separately if desired
-  ''' 
+  '''
   self.add_transform('''
 %(filtercmd)s
 trim -x 0 Inf
@@ -40,7 +40,7 @@ write_crossings -x -i %(itempart)s ALL %(threshold)f stdout
    'itempart': self.itempart,
    'threshold': theta,
    'scale': '' if raw else 'scale_by -i %s invsqrtnrofaverages' % self.itempart,
-  })   
+  })
   return self.detect()
 
  def measure_ranges(self,infile,available_epochs,IC_latrange_list,process='extract_item 0'):
@@ -48,13 +48,13 @@ write_crossings -x -i %(itempart)s ALL %(threshold)f stdout
   for latency intervals of the ICs in each condition, extract the means in the
   ranges of all the conditions,e.g.{1: {'39': ['5.14966', '5.26555'...
   '''
-    
+
   values=[]
   for IC,latrange in IC_latrange_list:
    trim="%g %g" % (latrange[0],latrange[1])
-   for epochs in available_epochs: 
+   for epochs in available_epochs:
     for epoch in epochs:
-     self.avg_q_instance.getepoch(infile,fromepoch=epoch,epochs=1) 
+     self.avg_q_instance.getepoch(infile,fromepoch=epoch,epochs=1)
    self.avg_q_instance.write('''
 remove_channel -k %(IC)s
 %(process)s
@@ -72,7 +72,7 @@ null_sink
   for latency intervals of the ICs in each condition, extract the t-values of all the conditions,e.g.{1: {'39': ['5.14966', '5.26555'
   and calculate z-scores
   '''
-    
+
   return self.measure_ranges(infile,available_epochs,IC_latrange_list,'''
 extract_item %(itempart)d
 %(scale)s
@@ -80,7 +80,7 @@ extract_item %(itempart)d
    'itempart': self.itempart,
    'scale': '' if raw else 'scale_by invsqrtnrofaverages',
   })
- 
+
  def measure_conditions(self,ascfile,conditions,zthreshold,raw=False):
   infile=avg_q_file(ascfile)
   triggers=self.avg_q_instance.get_filetriggers(infile).gettuples()
@@ -89,7 +89,7 @@ extract_item %(itempart)d
   for condition in conditions:
    found_epochs=[position+1 for position,code,description in triggers if condition in description]
    available_epochs.append(found_epochs)
-  
+
   allmeasures=[]
   IC_latrange_list=[]
   for condition_index,condition in enumerate(conditions):
@@ -107,10 +107,10 @@ extract_item %(itempart)d
   for index, (IC,latrange) in enumerate(IC_latrange_list):
    found_ICs.setdefault(IC,[]).append(index)
   ICs=found_ICs.keys()
-  ICs.sort(cmp=lambda x,y: cmp(int(x),int(y)))
-  
+  ICs.sort(key=lambda x: int(x))
+
   for IC in ICs:
-   found_ICs[IC].sort(cmp=lambda x,y: cmp(IC_latrange_list[x][1][0],IC_latrange_list[y][1][0]))
+   found_ICs[IC].sort(key=lambda x: IC_latrange_list[x][1][0])
    for i,index in enumerate(found_ICs[IC]):
     if index==None: continue
     redo=True
