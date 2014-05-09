@@ -2309,11 +2309,28 @@ Load_Script_Now(gpointer data) {
 #endif
 /*}}}  */
 
+#ifdef __MINGW32__
+LOCAL int 
+setenv(const char *name, const char *value, int overwrite) {
+ char *envbuffer=malloc((strlen(name)+strlen(value)+2)*sizeof(char));
+ if (envbuffer==NULL) {
+  fprintf(stderr, "avg_q_ui: Error allocating envbuffer!\n");
+  exit(1);
+ }
+ sprintf(envbuffer, "%s=%s", name, value);
+ putenv(envbuffer);
+ /* Note that the buffer cannot be free()d while the
+  * program runs, otherwise `unexpected results' occur... 
+  * This is documented behavior: envbuffer becomes part of the environment. */ 
+ return 0;
+}
+#endif
+
 /*{{{ main()*/
 int
 main (int argc, char *argv[]) {
  int errflag=0, c;
- char *vdevice, *envbuffer;
+ char *vdevice;
  char const * const validate_msg=validate(argv[0]);
 #ifndef STANDALONE
  void (* const * const method_selects)(transform_info_ptr)=get_method_list();
@@ -2333,16 +2350,8 @@ main (int argc, char *argv[]) {
  if ((vdevice=getenv("VGUIDEVICE"))==NULL) {
   vdevice="VGUI";
  }
- envbuffer=malloc((strlen(vdevice)+9)*sizeof(char));
- if (envbuffer==NULL) {
-  fprintf(stderr, "avg_q_ui: Error allocating envbuffer!\n");
-  exit(1);
- }
- sprintf(envbuffer, "VDEVICE=%s", vdevice);
- putenv(envbuffer);
- /* Note that the buffer cannot be free()d while the
-  * program runs, otherwise `unexpected results' occur... 
-  * This is documented behavior: envbuffer becomes part of the environment. */ 
+
+ setenv("VDEVICE",vdevice,TRUE);
 
 #ifdef USE_THREADING
  /* init threads */

@@ -1221,7 +1221,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       if (data>selmax) selmax=data;
      }
    }
-   lastsel_changed=0;
+   lastsel_changed=FALSE;
    /*}}}  */
   }
 
@@ -2191,7 +2191,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	local_arg->lastselected=tinfo_to_use->xdata[whichpoint];
        }
        }
-       lastsel_changed=1;
+       lastsel_changed=TRUE;
        dev=KEYBD;
        break;
       case 'I': {
@@ -2231,7 +2231,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	local_arg->lastselected=tinfo_to_use->xdata[whichpoint];
        }
        }
-       lastsel_changed=1;
+       lastsel_changed=TRUE;
        dev=KEYBD;
        break;
       case '[':
@@ -2635,7 +2635,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
          local_arg->lastsel_pos=find_pointnearx(tinfo_to_use, local_arg->lastselected);
         }
 	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=get_first_selected_channel(local_arg);
-        lastsel_changed=1;
+        lastsel_changed=TRUE;
         /*}}}  */
         dev=KEYBD;
        } else {
@@ -2805,7 +2805,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       * channel display: The shown value is automatically the one of the
       * current channel.
       */
-     local_arg->lastsel_entry=entry; lastsel_changed=1;
+     local_arg->lastsel_entry=entry; lastsel_changed=TRUE;
      if (dev==LEFTMOUSE) {
       /*{{{  Select this point*/
       local_arg->lastselected=tinfo_to_use->xdata[i];
