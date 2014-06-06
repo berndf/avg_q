@@ -1,6 +1,6 @@
+# vim: set fileencoding=utf-8 :
 # Copyright (C) 2009-2013 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
-# vim: set fileencoding=utf-8 :
 """
 Specialized class derived from avg_q including methods for
 sleep spectral analysis.
@@ -203,7 +203,7 @@ write_generic -P stdout string
     outline=[]
  def get_measures(self,cntfile,stage,cycle=None,bands=defaultbands):
   '''Average epochs from cnt and directly measure the result'''
-  return self.get_measures_using_epochfilter(cntfile,cntspectsource.get_epochfilter_stage_cycle(stage,cycle),bands)
+  return self.get_measures_using_epochfilter(cntfile,get_epochfilter_stage_cycle(stage,cycle),bands)
  def get_Delta_slope(self,booknumber):
   # cf. Esser:2007
   from . import sleep_file
@@ -279,6 +279,14 @@ stagenames2stagelist={
  'NREM': ['2','3','4'],
  'REM': ['5'],
 }
+def get_epochfilter_stage_cycle(stagename,cycle=None):
+ if isinstance(stagename,list):
+  stagenames=stagename
+ else:
+  stagenames=[stagename]
+ stagelist=[x for x in stagenames2stagelist.get(stagename,[stagename]) for stagename in stagenames]
+ return(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
+  (stage in stagelist) and code>0 and (cycle is None or remcycle==cycle))
 
 cntfilecache=None
 
@@ -333,13 +341,5 @@ set sfreq 0.03333333333
 
   self.continuous=False
   self.set_trigpoints(trigpoints)
- def get_epochfilter_stage_cycle(self,stagename,cycle=None):
-  if isinstance(stagename,list):
-   stagenames=stagename
-  else:
-   stagenames=[stagename]
-  stagelist=[x for x in stagenames2stagelist.get(stagename,[stagename]) for stagename in stagenames]
-  return(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
-   stage in stagelist and code>0 and (cycle==None or remcycle==cycle))
  def set_stage_cycle(self,stagename,cycle=None):
-  self.set_epochfilter(self.get_epochfilter_stage_cycle(stagename,cycle))
+  self.set_epochfilter(get_epochfilter_stage_cycle(stagename,cycle))
