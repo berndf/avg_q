@@ -79,10 +79,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 
 /*{{{  Definition of set_storage*/
 struct set_storage {
- FILE *trigfile;
- long trigpoint;
- long trigcode;
- char *description;
+ growing_buf triggers;
  long total_points;
 };
 /*}}}  */
@@ -93,21 +90,23 @@ set_init(transform_info_ptr tinfo) {
  struct set_storage *local_arg=(struct set_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
 
- /* This is needed for C_TRIGGERS_FROM_TRIGFILE: */
- local_arg->trigfile=NULL;
- local_arg->trigpoint= -1;	/* This tells that no value has been read yet */
- local_arg->trigcode=0;
- local_arg->description=NULL;
- local_arg->total_points=0;
-
+ growing_buf_init(&local_arg->triggers);
  if ((enum variables_choice)args[ARGS_VARNAME].arg.i==C_TRIGGERS_FROM_TRIGFILE) {
-  if (strcmp(args[ARGS_VALUE].arg.s,"stdin")==0) {
-   local_arg->trigfile=stdin;
-  } else
-  if ((local_arg->trigfile=fopen(args[ARGS_VALUE].arg.s, "r"))==NULL) {
+  FILE * const triggerfile=(strcmp(args[ARGS_VALUE].arg.s,"stdin")==0 ? stdin : fopen(args[ARGS_VALUE].arg.s, "r"));
+  TRACEMS(tinfo->emethods, 1, "set_init: Reading event file\n");
+  if (triggerfile==NULL) {
    ERREXIT1(tinfo->emethods, "set_init: Can't open trigger file >%s<\n", MSGPARM(args[ARGS_VALUE].arg.s));
   }
+  while (TRUE) {
+   long trigpoint;
+   char *description;
+   int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
+   if (code==0) break;
+   push_trigger(&local_arg->triggers, trigpoint, code, description);
+  }
+  if (triggerfile!=stdin) fclose(triggerfile);
  }
+ local_arg->total_points=0;
 
  tinfo->methods->init_done=TRUE;
 }
@@ -308,19 +307,17 @@ set(transform_info_ptr tinfo) {
     /* Remove the old end marker */
     tinfo->triggers.current_length-=sizeof(struct trigger);
    }
-   push_trigger(&tinfo->triggers, pos, code, description);
-   push_trigger(&tinfo->triggers, 0L, 0, NULL); /* End of list */
    /* Set file start point of current epoch */
    ((struct trigger *)tinfo->triggers.buffer_start)->position=local_arg->total_points;
+   push_trigger(&tinfo->triggers, pos, code, description);
+   push_trigger(&tinfo->triggers, 0L, 0, NULL); /* End of list */
 
    growing_buf_free(&tokenbuf);
    growing_buf_free(&buf);
    }
    break;
-  case C_TRIGGERS_FROM_TRIGFILE:
-   if (tinfo->triggers.buffer_start==NULL) {
-    growing_buf_allocate(&tinfo->triggers, 0);
-   }
+  case C_TRIGGERS_FROM_TRIGFILE: {
+   struct trigger *triggerptr=(struct trigger *)local_arg->triggers.buffer_start;
    if (tinfo->triggers.current_length==0) {
     /* First trigger entry holds file_start_point */
     push_trigger(&tinfo->triggers, 0, -1, NULL);
@@ -328,21 +325,17 @@ set(transform_info_ptr tinfo) {
     /* Remove the old end marker */
     tinfo->triggers.current_length-=sizeof(struct trigger);
    }
-   while (local_arg->trigpoint== -1 || 
-          (local_arg->trigcode!=0
-        && local_arg->trigpoint>=local_arg->total_points
-	&& local_arg->trigpoint<local_arg->total_points+tinfo->nr_of_points)) {
-    if (local_arg->trigpoint== -1) {
-     /* Be sure to allow this route of entering the loop only once */
-     local_arg->trigpoint=0;
-    } else {
-     push_trigger(&tinfo->triggers, local_arg->trigpoint-local_arg->total_points, local_arg->trigcode, local_arg->description);
-     /* Set file start point of current epoch */
-     ((struct trigger *)tinfo->triggers.buffer_start)->position=local_arg->total_points;
+   /* Set file start point of current epoch */
+   ((struct trigger *)tinfo->triggers.buffer_start)->position=local_arg->total_points;
+   while ((char *)triggerptr-local_arg->triggers.buffer_start<local_arg->triggers.current_length) {
+    if (triggerptr->position>=local_arg->total_points
+     && triggerptr->position<local_arg->total_points+tinfo->nr_of_points) {
+     push_trigger(&tinfo->triggers, triggerptr->position-local_arg->total_points, triggerptr->code, triggerptr->description);
     }
-    local_arg->trigcode=read_trigger_from_trigfile(local_arg->trigfile, tinfo->sfreq, &local_arg->trigpoint, &local_arg->description);
+    triggerptr++;
    }
    push_trigger(&tinfo->triggers, 0, 0, NULL); /* End of list */
+   }
    break;
   default:
    break;
@@ -358,10 +351,7 @@ METHODDEF void
 set_exit(transform_info_ptr tinfo) {
  struct set_storage *local_arg=(struct set_storage *)tinfo->methods->local_storage;
 
- if (local_arg->trigfile!=NULL) {
-  if (local_arg->trigfile!=stdin) fclose(local_arg->trigfile);
-  local_arg->trigfile=NULL;
- }
+ growing_buf_free(&local_arg->triggers);
 
  tinfo->methods->init_done=FALSE;
 }
