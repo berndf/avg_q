@@ -114,15 +114,15 @@ write_generic stdout float32
    epoch=numpy_epoch()
    for r in rdr:
     if '=' in r: break
-    channelname,x,y,z=r.split()
+    channelname,x,y,z=r.split('\t')
     epoch.channelnames.append(channelname)
     epoch.channelpos.append((float(x),float(y),float(z)))
    while r:
     if r=='Data:': break
-    name,value=r.split('=')
-    if name=='comment': 
+    name,value=r.split('=',maxsplit=1)
+    if name=='comment':
      epoch.comment=value
-    elif name=='sfreq': 
+    elif name=='sfreq':
      epoch.sfreq=float(value)
     elif name=='nr_of_points':
      epoch.nr_of_points=int(value)
@@ -145,7 +145,8 @@ write_generic stdout float32
    epoch.data.shape=(epoch.nr_of_points,epoch.nr_of_channels*epoch.itemsize)
    self.epochs.append(epoch)
   self.restore_state()
- def plot_maps(self):
+ def plot_maps(self, vmin=None, vmax=None, globalscale=False, isolines=[0]):
+  '''globalscale arranges for vmin,vmax to actually be -1,+1 after global max(abs) scaling.'''
   import matplotlib.mlab as mlab
   import matplotlib.pyplot as plt
 
@@ -160,17 +161,14 @@ write_generic stdout float32
    for thisplot in range(0,nplots):
     # cf. http://www.scipy.org/Cookbook/Matplotlib/Gridding_irregularly_spaced_data
     zi=mlab.griddata(xpos,ypos,z[thisplot],xi,yi)
-    # Ensure a color mapping symmetric around 0
-    zmin,zmax=zi.min(),zi.max()
-    if -zmin>zmax:
-     zmax= -zmin
     plt.subplot(nrows,ncols,thisplot+1)
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
-    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=-zmax,vmax=zmax),shading='flat',edgecolors='face',antialiaseds=False)
+    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=vmin,vmax=vmax),shading='flat',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(g,ncontours)
     #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
-    plt.contour(xi,yi,zi,[0],colors='black') # Draw zero line
+    if isolines:
+     plt.contour(xi,yi,zi,isolines,colors='black',linestyles='solid')
     gplot.axes.set_axis_off()
     gplot.axes.set_xlim(xmin,xmax)
     gplot.axes.set_ylim(ymin,ymax)
@@ -182,6 +180,14 @@ write_generic stdout float32
    self.set_collect('append')
   self.read()
   for epoch in self.epochs:
+   if globalscale:
+    vmin=epoch.data.min()
+    vmax=epoch.data.max()
+    # Ensure symmetric scaling around 0
+    scale=numpy.max([-vmin,vmax])
+    epoch.data=epoch.data/scale
+    vmin= -1
+    vmax=  1
    mapplot(numpy.array([xyz[0] for xyz in epoch.channelpos]),numpy.array([xyz[1] for xyz in epoch.channelpos]),epoch.data)
   self.restore_state()
  def plot_traces(self, vmin=None, vmax=None, xlim=None, ylim=None, x_is_latency=False):

@@ -48,19 +48,20 @@ def readstring(filehandle,start=b""):
  if zeroindex>=0:
   return start[:zeroindex].decode('latin1')
  string=start.decode('latin1')
+ if sys.version<"3":
+  string=string.encode('utf-8')
  # Garbage detection
  if any([char not in accepted_characters for char in string]):
   return None
  while True:
   char=filehandle.read(1).decode('latin1')
   if ord(char)==0: break
+  if sys.version<"3":
+   char=char.encode('utf-8')
   # Garbage detection
   if char not in accepted_characters or len(string)>=max_stringlength:
    return None
-  if sys.version<"3":
-   string+=char.encode('utf-8')
-  else:
-   string+=char
+  string+=char
  return string
 
 data_offset=5359
@@ -134,7 +135,10 @@ class CoherenceFile(object):
     # readstring's garbage detection kicked in
     if marker is None: break
     # At any rate, avoid CRs in markers which would corrupt the marker file
-    marker=marker.translate(str.maketrans('','','\r\n'))
+    if sys.version<"3":
+     marker=marker.translate(None,'\r\n')
+    else:
+     marker=marker.translate(str.maketrans('','','\r\n'))
    push_event(pos,marker)
   return events
  def close(self):

@@ -37,7 +37,7 @@ triggers=50 5
 # Read CNT file - Trigger lists
 class avg_q_test_case2(avg_q_test_case):
  script='''
-read_synamps -t 1,3,7,9,5 o.cnt 100ms 400ms 
+read_synamps -t 1,3,7,9,5 o.cnt 100ms 400ms
 query -N condition stdout
 query -N accepted_epochs stdout
 null_sink
@@ -67,9 +67,9 @@ accepted_epochs=9'''
 # Sub-scripts, fftspect, averaging
 class avg_q_test_case3(avg_q_test_case):
  script='''
-read_synamps o.cnt 100ms 400ms 
+read_synamps o.cnt 100ms 400ms
 >fftspect 0 1 1
-read_synamps -f 3 o.cnt 100ms 400ms 
+read_synamps -f 3 o.cnt 100ms 400ms
 >set nrofaverages 2
 >fftspect 0 1 1
 average -M -W
@@ -98,7 +98,7 @@ write_generic stdout string
 # collapse_channels
 class avg_q_test_case4(avg_q_test_case):
  script='''
-read_synamps o.cnt 100ms 400ms 
+read_synamps o.cnt 100ms 400ms
 collapse_channels A1-A15:A1_to_A15 A16-A37:A16_to_A37
 average
 Post:
@@ -109,10 +109,10 @@ write_generic -N stdout string
  expected_output='''A1_to_A15	A16_to_A37
 4.69333	-2.21818'''
 
-# scale_by: Test behavior when no channel is selected 
+# scale_by: Test behavior when no channel is selected
 class avg_q_test_case5(avg_q_test_case):
  script='''
-read_synamps o.cnt 100ms 400ms 
+read_synamps o.cnt 100ms 400ms
 scale_by -n ?ECG,EDA,other_unknown_channel 0
 average
 Post:
@@ -133,12 +133,12 @@ class avg_q_test_case6(avg_q_test_case):
   M.add_Epochsource(epochsource)
   result=M.measure([['A17',[[90,120],[150,180]]],['A10',[[370,550]]]])
   return [str(x) for x in result]
- expected_output='''[1, 'A17', '90 120', -13.5, 111.667]
-[1, 'A17', '150 180', -5.5, 161.923]
-[1, 'A10', '370 550', 9.05263, 445.968]
-[2, 'A17', '90 120', 3.25, 100.286]
-[2, 'A17', '150 180', -25.75, 165.049]
-[2, 'A10', '370 550', 12.1053, 468.944]'''
+ expected_output='''[1, 'A17', '90 120', -13.5, 94.4118]
+[1, 'A17', '150 180', -5.5, 174.839]
+[1, 'A10', '370 550', 9.05263, 453.279]
+[2, 'A17', '90 120', 3.25, 94.8649]
+[2, 'A17', '150 180', -25.75, 164.615]
+[2, 'A10', '370 550', 12.1053, 465.367]'''
 
 # get_description test
 class avg_q_test_case7(avg_q_test_case):
@@ -180,7 +180,7 @@ class avg_q_test_case8(avg_q_test_case):
   #script.add_postprocess('posplot')
   script.add_postprocess('write_hdf -c o.hdf')
   script.run()
-  # Now 
+  # Now do the artifact analysis
   infile=avg_q.avg_q_file('o.hdf')
   points_in_file=self.avg_q_instance.get_description(infile,'points_in_file')
   segmentation=avg_q.Artifacts.Artifact_Segmentation(self.avg_q_instance,infile,0,points_in_file)

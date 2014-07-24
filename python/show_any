@@ -4,43 +4,30 @@
 
 import avg_q
 from avg_q.avg_q_file import formats_and_extensions
-import sys
 import os
-import getopt
 import fnmatch
 
-try:
- optlist, args = getopt.getopt(sys.argv[1:],'e:E:f:t:pcid')
-except getopt.GetoptError as err:
- # print help information and exit:
- print(str(err)) # will print something like "option -a not recognized"
- print("Usage: [-f fromepoch] [-e epochs] [-E epochlen] [-t tracelevel] [-{p,c,i}: append points,channels or items instead of linking as epochs] [-d: Debug] file1 file2 ...")
- sys.exit(2)
+import argparse
+argparser = argparse.ArgumentParser(description='Load multichannel data and show it using avg_q.posplot')
+argparser.add_argument('files', nargs='+', help='''files to show.
+This takes the form [format:]datapath[+triggerfile]
+where format is one of the format identifiers known to avg_q (default: autodetect based upon file extension) and
+triggerfile is an avg_q (text) format trigger file from which to load event markers.''')
+argparser.add_argument('-f', '--fromepoch', type=int, dest='fromepoch', help='Start with this epoch instead of 1')
+argparser.add_argument('-e', '--epochs', type=int, dest='epochs', help='Load at most this number of epochs')
+argparser.add_argument('-E', '--epochlen', default=0, dest='epochlen', help='''
+Epoch duration in avg_q points (eg 100, 5.5s, 200ms).
+The default 0 reads full epochs from epoched file formats
+or entire continuous files as a single epoch.''')
+argparser.add_argument('-a', '--appendopt', default='l', choices=['l','p','c','i'], dest='appendopt', help='(l)ink epochs in memory (default) or append (p)oints, (c)hannels or (i)tems')
+argparser.add_argument('-t', '--tracelevel', type=int, default=0, dest='tracelevel', help='Set avg_q trace level (verbosity)')
+argparser.add_argument('-d', '--debug', dest='debug', action='store_true', help='Debug mode, ie dump avg_q scripts to stdout during processing')
+args = argparser.parse_args()
 
-fromepoch=None
-epochs=None
-aftertrig=0
-tracelevel=0
-appendopt='-l'
-debug=False
-for opt,arg in optlist:
- if opt=='-f':
-  fromepoch=int(arg)
- elif opt=='-e':
-  epochs=int(arg)
- elif opt=='-E':
-  aftertrig=arg
- elif opt=='-t':
-  tracelevel=int(arg)
- elif opt in ['-p','-c','-i']:
-  appendopt=opt
- elif opt=='-d':
-  debug=True
-
-a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=tracelevel,iconify=True)
-a.debug=debug
+a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=args.tracelevel,iconify=True)
+a.debug=args.debug
 n_files=0
-for filename_and_triggerfile in args:
+for filename_and_triggerfile in args.files:
  fsplit=filename_and_triggerfile.split('+')
  if len(fsplit)==1:
   filename=filename_and_triggerfile
@@ -80,9 +67,9 @@ for filename_and_triggerfile in args:
   infile.trigfile=trgfile
  if fnmatch.fnmatch(filename,'*_residuals[0-9][0-9].hdf'):
   # Show fMRI gradient correction residual files
-  a.getcontepoch(infile, 0, '1s', fromepoch=fromepoch, epochs=epochs)
+  a.getcontepoch(infile, 0, '1s', fromepoch=args.fromepoch, epochs=args.epochs)
  else:
-  a.getcontepoch(infile, 0, aftertrig, fromepoch=fromepoch, epochs=epochs, trigtransfer=True)
+  a.getcontepoch(infile, 0, args.epochlen, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=True)
  if addmethods:
   for line in addmethods:
    a.write('>'+line+'\n')
@@ -91,10 +78,10 @@ if n_files==0:
  print("Oops, don't have any files to display...")
 else:
  a.write('''
-append %(appendopt)s
+append -%(appendopt)s
 Post:
 posplot
 -
-''' % {'appendopt': appendopt})
+''' % {'appendopt': args.appendopt})
  a.run()
 a.close()

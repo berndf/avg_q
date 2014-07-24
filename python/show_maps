@@ -1,42 +1,32 @@
 #!/usr/bin/env python
-# Copyright (C) 2010-2013 Bernd Feige
+# Copyright (C) 2010-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
-import sys
-import getopt
-
-def usage():
- print("Usage: [-d: demean_maps] [-s: save_fig] mapfile")
-
-try:
- optlist, args = getopt.getopt(sys.argv[1:],'ds')
-except getopt.GetoptError as err:
- # print help information and exit:
- print(str(err)) # will print something like "option -a not recognized"
- usage()
- sys.exit(2)
-
-if len(args)==0:
- usage()
- sys.exit(1)
-
-demean_maps=False
-save_fig=False
-for opt,arg in optlist:
- if opt=='-d':
-  demean_maps=True
- elif opt=='-s':
-  save_fig=True
+import argparse
+argparser = argparse.ArgumentParser(description='Show asc file as color maps')
+argparser.add_argument('ascfiles', nargs='+', help='asc files to plot')
+argparser.add_argument('-d', '--demean_maps', dest='demean_maps', action='store_true', help='Demean (common average rereference) maps before plotting')
+argparser.add_argument('-i', '--isolines', dest='isolines', help='Draw iso lines at these values (comma separated; default: 0, Don\'t plot: None)')
+argparser.add_argument('-l', '--scale_local', dest='scale_local', action='store_true', help='Scale each map instead of global max(abs)')
+argparser.add_argument('-s', '--save_fig', dest='save_fig', action='store_true', help='Save plots to .png instead of showing them')
+args = argparser.parse_args()
 
 import avg_q
 import avg_q.numpy_Script
 import matplotlib.pyplot as plt
 
+isolines=[0]
+if args.isolines:
+ if args.isolines=='None':
+  isolines=None
+ else:
+  isolines=[float(x) for x in args.isolines.split(',')]
+
 a=avg_q.avg_q()
 figno=1
 pngfile=None
-for ascfile in args:
- if save_fig:
+for ascfile in args.ascfiles:
+ if args.save_fig:
   import os
   base,ext=os.path.splitext(ascfile)
   pngfile=base+'.png'
@@ -52,16 +42,19 @@ for ascfile in args:
  epochsource=avg_q.Epochsource(f)
  script=avg_q.numpy_Script.numpy_Script(a)
  script.add_Epochsource(epochsource)
- if demean_maps:
+ if args.demean_maps:
   script.add_transform("demean_maps")
- script.plot_maps()
- if save_fig:
+ if ascfile.endswith('_maps_scaled.asc'):
+  script.plot_maps(vmin=-1,vmax=1,isolines=isolines)
+ else:
+  script.plot_maps(globalscale=not args.scale_local,isolines=isolines)
+ if args.save_fig:
   plt.savefig(pngfile,format='png',transparent=True)
   plt.close()
  else:
   figno+=1
 a.close()
 
-if not save_fig:
+if not args.save_fig:
  plt.show()
  plt.close()
