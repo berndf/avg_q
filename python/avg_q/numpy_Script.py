@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Bernd Feige
+# Copyright (C) 2013-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import avg_q
 import numpy
@@ -24,6 +24,7 @@ class numpy_epoch(object):
   self.nr_of_points=0
   self.nr_of_channels=0
   self.itemsize=0
+  self.xdata=None
   if data is None:
    self.data=None
    self.nr_of_points=0
@@ -50,8 +51,9 @@ class numpy_Epochsource(avg_q.Epochsource):
   if len(self.epochs)==0: return
   nr_of_points,nr_of_channels=self.epochs[0].data.shape
   avg_q_instance.write('''
-read_generic -c -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin 0 %(aftertrig)d float32
+read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin 0 %(aftertrig)d float32
 ''' % {
+   'readx': '-x xdata' if self.epochs[0].xdata is not None else '',
    'sfreq': self.epochs[0].sfreq if self.epochs[0].sfreq else 100.0,
    'epochs': len(self.epochs),
    'aftertrig': nr_of_points,
@@ -71,7 +73,8 @@ read_generic -c -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin 0 %(after
   for epoch in self.epochs:
    # It's a bit unfortunate that array.array does support tofile() with pipes but numpy.array doesn't...
    # So we have to take the route via a string buffer just as with reading
-   avg_q_instance.avg_q.stdin.write(epoch.data.tostring())
+   thisdata=numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data
+   avg_q_instance.avg_q.stdin.write(thisdata.tostring())
    avg_q_instance.avg_q.stdin.flush()
 
 class numpy_Script(avg_q.Script):
@@ -97,7 +100,7 @@ query -N sfreq stdout
 query -N nr_of_points stdout
 query -N itemsize stdout
 echo -F stdout Data:\\n
-write_generic stdout float32
+write_generic -x stdout float32
 """
   if self.collect=='null_sink':
    self.add_transform(transform)
@@ -133,7 +136,8 @@ write_generic stdout float32
    #print(epoch)
 
    # Problem: If executed too quickly, the read() below will return only partial data...
-   datalength=4*epoch.nr_of_points*epoch.nr_of_channels*epoch.itemsize
+   datapoints=epoch.nr_of_points*(1+epoch.nr_of_channels*epoch.itemsize)
+   datalength=4*datapoints
    buf=self.avg_q_instance.avg_q.stdout.read(datalength)
    while len(buf)!=datalength:
     buf2=self.avg_q_instance.avg_q.stdout.read(datalength-len(buf))
@@ -141,8 +145,10 @@ write_generic stdout float32
 
    #print(len(buf))
    # http://docs.scipy.org/doc/numpy-1.7.0/reference/generated/numpy.frombuffer.html
-   epoch.data=numpy.frombuffer(buf,dtype=numpy.float32,count=epoch.nr_of_points*epoch.nr_of_channels*epoch.itemsize)
-   epoch.data.shape=(epoch.nr_of_points,epoch.nr_of_channels*epoch.itemsize)
+   data=numpy.frombuffer(buf,dtype=numpy.float32,count=datapoints)
+   data.shape=(epoch.nr_of_points,1+epoch.nr_of_channels*epoch.itemsize)
+   epoch.xdata=data[:,0]
+   epoch.data=data[:,1:]
    self.epochs.append(epoch)
   self.restore_state()
  def plot_maps(self, vmin=None, vmax=None, globalscale=False, isolines=[0]):
@@ -158,9 +164,15 @@ write_generic stdout float32
    yi=numpy.linspace(ymin,ymax,nsteps)
    nplots=z.shape[0]
    nrows,ncols=nrows_ncols_from_nplots(nplots)
+   # Default 'nn' interpolation of griddata requires package mpl_toolkits.natgrid, currently py2 only
+   try:
+    import mpl_toolkits.natgrid
+    interpolation = 'nn'
+   except ImportError:
+    interpolation = 'linear'
    for thisplot in range(0,nplots):
     # cf. http://www.scipy.org/Cookbook/Matplotlib/Gridding_irregularly_spaced_data
-    zi=mlab.griddata(xpos,ypos,z[thisplot],xi,yi)
+    zi=mlab.griddata(xpos,ypos,z[thisplot],xi,yi,interp=interpolation)
     plt.subplot(nrows,ncols,thisplot+1)
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
@@ -220,6 +232,13 @@ write_generic stdout float32
   self.save_state()
   self.add_transform('extract_item 0')
   self.read()
+  if self.epochs[0].xdata is not None:
+   if x_is_latency:
+    if xlim is None:
+     xlim=(min(self.epochs[0].xdata),max(self.epochs[0].xdata))
+   else:
+    if ylim is None:
+     ylim=(min(self.epochs[0].xdata),max(self.epochs[0].xdata))
   z=[] # One array per *channel*, each array collects all time points and epochs, epochs varying fastest
   # z[channel][point] is a list of values (epochs)
   for epoch in self.epochs:
