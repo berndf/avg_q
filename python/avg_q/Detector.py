@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2011 Bernd Feige
+# Copyright (C) 2008-2011,2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Detector base class.
@@ -17,6 +17,9 @@ class Detector(avg_q.Script):
   # Detect within the whole file by default
   self.detection_start=None
   self.detection_length=None
+  self.sfreq=None
+  self.breakpoints=None
+  self.distance_from_breakpoint_points=None
  def detect(self,outtrigfile=None,maxvalue=None):
   '''
   Returns a trgfile object and also, if outtrigfile is given, writes the
@@ -51,37 +54,49 @@ class Detector(avg_q.Script):
    trgout.close()
   return outtuples
 
- def get_ranges(self,outtuples,direction=1):
+ def get_ranges(self,outtuples,direction=1,min_length=None,debounce_dist=None):
   '''
   takes the trigger tuples and returns a list of channel names and latency ranges in which
   the threshold is crossed in the given direction.
   The target ranges are between a positive and a negative crossing for
   positive direction and between a negative and a positive for negative direction.
+  If min_length is defined, ranges shorter than this are discarded.
+  If debounce_dist is defined, adjacent accepted ranges separated by less than this distance
+  are joined.
   '''
-  expected_slope=1 if direction>0 else -1
-  
-  ###sort triggers####
-  trigger_dict={}  
-  for outtuple in outtuples:
-   #print outtuple
-   lat,slope,description=[x for x in outtuple] 
+  expected_code=1 if direction>0 else -1
+
+  # Separate triggers by channel
+  trigger_dict={}
+  for lat,code,description in outtuples:
    if ' ' in description:
     condition, channel= description.split(' ')
    else:
     channel=description
-   trigger_dict.setdefault(channel,[]).append([lat,slope]) 
+   trigger_dict.setdefault(channel,[]).append([lat,code])
 
   channel_latrange_list=[]
-  for channel, entry in trigger_dict.items():
-   ###check and delete single crossings###
-   if entry[-1][-1]==expected_slope:  
-    del entry[-1]
-   if entry==[]:# if channel was only crossing at one point and after deletion, no cross is left-> delete key 
-    del trigger_dict[channel]
-   else:
-    if not entry[0][1]==expected_slope:
-     del entry[0]
-   
-   # Add a [[channel, [start,end]],...] list
-   channel_latrange_list.extend([[channel, [entry[x][0],entry[x+1][0]]] for x in range(0,len(entry),2)]);
+  for channel, crossings in trigger_dict.items():
+   latrange_list=[]
+   last_start=last_end=None
+   debounce=False
+   for lat,code in crossings:
+    if code==expected_code:
+     if debounce_dist and last_end and lat-last_end<=debounce_dist:
+      debounce=True
+     else:
+      debounce=False
+     last_start=lat
+    elif last_start:
+     if not min_length or lat-last_start>=min_length:
+      if debounce:
+       # Extend the last range instead of creating a new one
+       latrange_list[-1]=(latrange_list[-1][0],lat)
+      else:
+       latrange_list.append((last_start,lat))
+      last_end=lat
+     last_start=None
+
+   # Construct a [[channel, [start,end]],...] list
+   channel_latrange_list.extend([[channel, r] for r in latrange_list])
   return channel_latrange_list

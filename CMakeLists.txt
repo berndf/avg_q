@@ -23,34 +23,37 @@ SET(CPACK_PACKAGE_VERSION_MAJOR 5)
 SET(CPACK_PACKAGE_VERSION_MINOR 1)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
 INCLUDE(CPack)
-IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
+IF(CMAKE_SYSTEM_NAME MATCHES Windows)
  SET(BUILD_SHARED_LIBS OFF)
- SET(VOGL_LIBS vogl)
- SET(HDF_INCLUDES 
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/mfhdf/libsrc
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/hdf/src
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/zlib-1.2.3/include
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/jpeg-6b/include
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/szip-2.1/src/include)
- SET(HDF_LIBPATH
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/mfhdf/libsrc
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/4.2r1-hrepack-p4/hdf/src
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/zlib-1.2.3/lib
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/jpeg-6b/lib
-  ${CMAKE_SOURCE_DIR}/winlibs/HDF/szip-2.1/src/lib)
- SET(HDF_LIBS mfhdf df sz jpeg z ws2_32) # Without ws2_32, "undefined reference to `_htonl@4'" results
- #SET(HDF_DEFINES -D_DLL) # Use the multithreaded DLLs
- SET(HDF_DEFINES -U_MT) # Disable multithreading for static linking
  SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
  SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
  SET(INSTALLDIR "bin")
- SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O4 -ffast-math -mms-bitfields -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
- SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs/libf2c)
- SET(ICA_LIBS lapack_win32 blas_win32 f2c)
- SET(ICA_LIBPATH "${CMAKE_SOURCE_DIR}/winlibs")
- SET(SOX_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs/sox/src)
+ SET(VOGL_LIBS vogl)
+ SET(HDF_INCLUDES 
+  ${CMAKE_SOURCE_DIR}/winlibs64/HDF/hdf-4.2.10/hdf/src
+  ${CMAKE_SOURCE_DIR}/winlibs64/HDF/hdf-4.2.10/mfhdf/libsrc
+  ${CMAKE_SOURCE_DIR}/winlibs64/HDF/hdf)
+ SET(HDF_LIBS mfhdf hdf xdr jpeg z ws2_32) # Without ws2_32, "undefined reference to `_htonl@4'" results
+ #SET(HDF_DEFINES -D_DLL) # Use the multithreaded DLLs
+ SET(HDF_DEFINES -U_MT) # Disable multithreading for static linking
+ SET(ICA_LIBS lapack blas f2c)
  SET(AVG_Q_DEFINES -DLITTLE_ENDIAN ${HDF_DEFINES})
-ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
+ IF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
+  SET(HDF_LIBPATH
+   /home/charly/tmp/Infos/Computer/wingtk3/usr/x86_64-w64-mingw32/sys-root/mingw/lib)
+  SET(CMAKE_C_FLAGS_RELEASE "-march=athlon64 -O4 -ffast-math -mms-bitfields -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs64/libf2c)
+  SET(ICA_LIBPATH "${CMAKE_SOURCE_DIR}/winlibs64")
+  SET(SOX_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs64/sox/src)
+ ELSE(CMAKE_SYSTEM_VARIANT STREQUAL win64)
+  SET(HDF_LIBPATH
+   /home/charly/tmp/Infos/Computer/wingtk3/usr/i686-w64-mingw32/sys-root/mingw/lib)
+  SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O4 -ffast-math -mms-bitfields -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs32/libf2c)
+  SET(ICA_LIBPATH "${CMAKE_SOURCE_DIR}/winlibs32")
+  SET(SOX_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs32/sox/src)
+ ENDIF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
+ELSE(CMAKE_SYSTEM_NAME MATCHES Windows)
  IF(CMAKE_BUILD_TYPE STREQUAL Debug)
   SET(BUILD_SHARED_LIBS OFF)
  ELSE(CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -79,7 +82,7 @@ ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
   # -D_FILE_OFFSET_BITS=64 is necessary to have working fstat() on CIFS mounts
   SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O4 -D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
  ENDIF(UNAME MATCHES "x86_64")
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES Windows)
 
 INCLUDE(FindOpenMP)
 IF(OPENMP_FOUND)

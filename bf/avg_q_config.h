@@ -5,7 +5,11 @@
 #ifndef AVG_Q_CONFIG_H
 #define AVG_Q_CONFIG_H
 
-#define POINTER_SIZE __WORDSIZE
+#if defined __x86_64__ && !defined __ILP32__
+# define POINTER_SIZE	64
+#else
+# define POINTER_SIZE	32
+#endif
 
 #undef INTTYPES_OK
 

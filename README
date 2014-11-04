@@ -10,7 +10,8 @@ or the Programs_handbook.pdf file.
 
 *Binary distribution downloads*: Github disabled the service providing arbitrary
 file downloads. You can now find compiled packages here:
- Windows 32-Bit http://dl.dropbox.com/u/36380353/avg_q/avg_q_GTK3_win32.zip
+ Windows 32-Bit http://dl.dropbox.com/u/36380353/avg_q/avg_q_win32.zip
+ Windows 64-Bit http://dl.dropbox.com/u/36380353/avg_q/avg_q_win64.zip
 I can make other binary packages (Linux 64-bit) available upon request.
 
 avg_q is free software: you can redistribute it and/or modify

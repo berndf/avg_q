@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2013 Bernd Feige
+# Copyright (C) 2007-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Python interface to avg_q.
@@ -326,6 +326,12 @@ class Script(object):
     to read epochs around supplied points, which requires sending the full script followed
     by triggers read by the get_epoch methods.
  '''
+ savedstate=[] # List of (transform,collect,postprocess) tuples
+ def save_state(self):
+  import copy
+  self.savedstate.append((copy.copy(self.transforms),copy.copy(self.collect),copy.copy(self.postprocess_transforms)))
+ def restore_state(self):
+  self.transforms,self.collect,self.postprocess_transforms=self.savedstate.pop()
  def __init__(self,avg_q_instance):
   self.avg_q_instance=avg_q_instance
   self.Epochsource_list=[]

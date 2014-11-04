@@ -6,9 +6,10 @@
 #include <string.h>
 #include <time.h>
 #include <bf.h>
+#include <avg_q_config.h>
 
 #ifndef VERSION
-#define VERSION "4.x.x"
+#define VERSION "5.x.x"
 #endif
 #ifndef DATE
 #define DATE " UNKNOWN "
@@ -49,12 +50,12 @@ GLOBAL char const *
 get_avg_q_signature(void) {
  static char *sign=NULL;
  if (sign==NULL) {
-  sign=(char *)malloc(strlen(sig)+9+4);
+  sign=(char *)malloc(strlen(sig)+7+9+4);
  }
 #ifdef TIMEOUT
- sprintf(sign, "%s; %9ld\n", sig, TIMEOUT-time(NULL));
+ sprintf(sign, "%s; %02dbit; %09ld\n", sig, POINTER_SIZE, (long)(TIMEOUT-time(NULL)));
 #else
- sprintf(sign, "%s;\n", sig);
+ sprintf(sign, "%s; %02dbit\n", sig, POINTER_SIZE);
 #endif
  return sign;
 }

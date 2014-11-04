@@ -2,7 +2,6 @@
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import avg_q
 import numpy
-import copy
 
 # Layout helper function to get a 2D arrangement of nplots plots
 def nrows_ncols_from_nplots(nplots):
@@ -79,11 +78,6 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin
 
 class numpy_Script(avg_q.Script):
  epochs=[] # List of numpy_epoch objects
- savedstate=[] # List of (transform,collect,postprocess) tuples
- def save_state(self):
-  self.savedstate.append((copy.copy(self.transforms),copy.copy(self.collect),copy.copy(self.postprocess_transforms)))
- def restore_state(self):
-  self.transforms,self.collect,self.postprocess_transforms=self.savedstate.pop()
  def read(self):
   '''Read the current epoch into numpy array self.data, channels=columns
      We support both reading all epochs from the iterated queue (if no collect
