@@ -1,0 +1,1 @@
+cmake -DCMAKE_TOOLCHAIN_FILE=/home/charly/work/avg_q/winlibs64/CMake_Toolchain_mingw64.txt $*
