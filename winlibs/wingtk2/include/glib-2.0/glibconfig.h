@@ -1,1 +1,0 @@
-../../lib/glib-2.0/include/glibconfig.h

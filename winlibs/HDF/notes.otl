@@ -1,5 +1,0 @@
-jpeg: typedef commented out
-mfhdf/ncgen/Makefile
- Need to remove rule for generating ctest0$(EXEEXT)
- (wrongly depending on ncgen instead of ncgen$(EXEEXT) but running
- ncgen won't work anyway while cross-compiling...)
