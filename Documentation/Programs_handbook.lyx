@@ -1,5 +1,5 @@
-#LyX 2.0 created this file. For more info see http://www.lyx.org/
-\lyxformat 413
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
 \begin_document
 \begin_header
 \textclass bfown
@@ -27,13 +27,13 @@
 \font_roman default
 \font_sans default
 \font_typewriter default
+\font_math auto
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
-
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -54,15 +54,24 @@
 \pdf_quoted_options "linkcolor=blue,citecolor=blue"
 \papersize default
 \use_geometry true
-\use_amsmath 1
-\use_esint 0
-\use_mhchem 1
-\use_mathdots 1
-\cite_engine natbib_authoryear
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 0
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine natbib
+\cite_engine_type authoryear
+\biblio_style plainnat
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
 \suppress_date false
+\justification true
 \use_refstyle 0
 \index Index
 \shortcut idx
@@ -231,7 +240,7 @@ status open
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -626,8 +635,8 @@ file1.asc
 \family typewriter
 file2.asc
 \family default
-' was missing, but the script would terminate with an error message afterwards
- when trying to access `
+' was missing, failing with an error message only when trying to access
+ `
 \family typewriter
 file2.asc
 \family default
@@ -660,11 +669,11 @@ echo
 \series bold
 run
 \series default
-, which do not access the data in any way, should be disguised as `Get_\SpecialChar \-
+, which in contrast to most transform methods do not try to access the epoch
+ data in any way, should be disguised as `Get_\SpecialChar \-
 Epoch_\SpecialChar \-
-Met
-hod's, since all data pointers are initialized to NULL, causing an exception
- when accessed.
+Method's, since all
+ data pointers are initialized to NULL, causing an exception when accessed.
  Clearly, a `disguised' method will only be called once and never yield
  any valid epoch -- if a transform method does not touch the data, pointers
  will remain NULL, indicating to the executor that the method has no epoch
@@ -811,10 +820,6 @@ avg_q
  leaves backslashes not followed by either white space or another backslash
  intact - channel selection, for example, uses backslashes to protect hyphens
  from being interpreted as range indicators.
- However, one quirk does exist with backslash processing: In methods taking
- a variable number of arguments, the last (and variable) argument block
- is processed by the method itself, thus requiring two backslashes to protect
- a blank.
 \end_layout
 
 \begin_layout Standard
@@ -1849,13 +1854,14 @@ trigger file format
  line should contain a pair of values of the form `point code' giving the
  point number around which to read and the trigger code assigned to this
  point.
- Any further columns appearing in the file are ignored (this feature is
- used by 
+ Any further columns appearing in the file (`description') are read and
+ written transparently, and displayed by posplot, but not used for epoch
+ selection.
+ This feature is, for example, used by 
 \series bold
 write_crossings -E
 \series default
-, which creates a third column containing the measured value of the extremum
- while its output is still a valid trigger file).
+, which creates a third column containing the measured value of the extremum.
  The point number is the sampling point number relative to the first point
  in the file, starting with 0.
  It is also possible to enter the trigger point in time units, where 
@@ -1870,11 +1876,11 @@ avg_q
 \begin_layout Standard
 A trigger code of 0 (`point' being irrelevant) signals the end of the trigger
  list just as the End of File does.
- This is useful as instead of an actual file name, `stdin' being given as
- a trigger file name will read trigger lines from standard input instead.
+ This is useful when, instead of an actual file name, `stdin' is used as
+ a trigger file name.
+ This will read trigger lines from standard input.
  Usually, no End of File condition is desired on the standard input stream;
- instead, you should signal the end of the trigger list by a zero trigger
- code.
+ instead, the end of the trigger list is marked by a zero trigger code.
 \end_layout
 
 \begin_layout Standard
@@ -6357,7 +6363,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
