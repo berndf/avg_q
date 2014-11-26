@@ -172,7 +172,8 @@ echo -F stdout End of medbands\\n
    trim+= ' '+fromHz+' '+toHz
   return trim
  def get_measures_using_epochfilter(self,cntfile,epochfilter,bands=defaultbands):
-  '''Average epochs from cnt and directly measure the result'''
+  '''Average epochs from cnt and directly measure the result.
+     If bands is None, don't collapse bands at all but average frequency bins as-is.'''
   if isinstance(cntfile,cntspectsource):
    c=cntfile
   else:
@@ -186,9 +187,11 @@ echo -F stdout End of medbands\\n
   script.add_postprocess('''
 swap_fc
 trim -x 0+1 48
+'''+('''
 calc exp
 '''+self.get_spect_trim(bands)+'''
 calc log
+''' if bands else '')+'''
 query -N nrofaverages
 write_generic -P stdout string
 ''')

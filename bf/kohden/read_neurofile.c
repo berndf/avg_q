@@ -361,6 +361,7 @@ read_neurofile(transform_info_ptr tinfo) {
  tinfo->channelnames=NULL; tinfo->probepos=NULL;
  create_channelgrid(tinfo); /* Create defaults for any missing channel info */
 
+ tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
  tinfo->sfreq=local_arg->sfreq;
  tinfo->tsdata=myarray.start;

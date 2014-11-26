@@ -148,7 +148,7 @@ trim(transform_info_ptr tinfo) {
    }
   } else {
    if (args[ARGS_USE_XVALUES].is_set) {
-    if (tinfo->xdata==NULL) create_xaxis(tinfo);
+    if (tinfo->xdata==NULL) create_xaxis(tinfo, NULL);
     thisrange.offset=decode_xpoint(tinfo, tokenbuf.buffer_start);
     growing_buf_get_nexttoken(&local_arg->rangearg,&tokenbuf);
     thisrange.length=decode_xpoint(tinfo, tokenbuf.buffer_start)-thisrange.offset+1;

@@ -9,7 +9,7 @@
 #include <avg_q_config.h>
 
 #ifndef VERSION
-#define VERSION "5.x.x"
+#define VERSION "6.x.x"
 #endif
 #ifndef DATE
 #define DATE " UNKNOWN "

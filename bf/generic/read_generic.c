@@ -570,6 +570,7 @@ read_generic(transform_info_ptr tinfo) {
  tinfo->channelnames=NULL; tinfo->probepos=NULL;
  create_channelgrid(tinfo); /* Create defaults for any missing channel info */
 
+ tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
  if (args[ARGS_XCHANNELNAME].is_set) tinfo->xchannelname=args[ARGS_XCHANNELNAME].arg.s;
  tinfo->sfreq=local_arg->sfreq;

@@ -179,7 +179,7 @@ scale_by(transform_info_ptr tinfo) {
   /* Operations which are done on maps */
   case SCALE_BY_XDATA:
   case SCALE_BY_INVXDATA:
-   if (tinfo->xdata==NULL) create_xaxis(tinfo);
+   if (tinfo->xdata==NULL) create_xaxis(tinfo, NULL);
   case SCALE_BY_NORMALIZE:
   case SCALE_BY_INVNORM:
   case SCALE_BY_INVSQUARENORM:

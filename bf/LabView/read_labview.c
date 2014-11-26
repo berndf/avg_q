@@ -228,6 +228,7 @@ read_labview(transform_info_ptr tinfo) {
  create_channelgrid(tinfo);
 
  /*{{{  Setup tinfo values*/
+ tinfo->file_start_point=local_arg->current_epoch*tinfo->nr_of_points;
  tinfo->z_label=NULL;
  tinfo->tsdata=myarray.start;
  tinfo->aftertrig=tinfo->nr_of_points-tinfo->beforetrig;

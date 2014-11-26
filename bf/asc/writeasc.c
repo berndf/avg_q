@@ -173,7 +173,7 @@ writeasc(transform_info_ptr calltinfo) {
  }
  for (; tinfo!=NULL; tinfo=tinfo->next) {
   DATATYPE * const orig_tsdata=tinfo->tsdata;
- if (tinfo->xdata==NULL) create_xaxis(tinfo);
+ if (tinfo->xdata==NULL) create_xaxis(tinfo,NULL);
  if (tinfo->data_type==FREQ_DATA) {
   tinfo->nr_of_points=tinfo->nroffreq;
   tsdata_steps=tinfo->nrofshifts;

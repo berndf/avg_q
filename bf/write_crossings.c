@@ -256,7 +256,7 @@ write_crossings(transform_info_ptr tinfo) {
 
      if (args[ARGS_REPORT_XVALUE].is_set) {
       if (tinfo->xdata==NULL) {
-       create_xaxis(tinfo);
+       create_xaxis(tinfo, NULL);
       }
       if (local_point>0) {
        snprintf(where, WHERE_SIZE, "%s=%g", tinfo->xchannelname, tinfo->xdata[local_point-1]);
@@ -293,7 +293,7 @@ write_crossings(transform_info_ptr tinfo) {
 
    if (args[ARGS_REPORT_XVALUE].is_set) {
     if (tinfo->xdata==NULL) {
-     create_xaxis(tinfo);
+     create_xaxis(tinfo, NULL);
     }
     snprintf(where, WHERE_SIZE, "%s=%g", tinfo->xchannelname, tinfo->xdata[local_point]);
    } else {

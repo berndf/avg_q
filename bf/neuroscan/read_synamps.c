@@ -755,6 +755,7 @@ read_synamps(transform_info_ptr tinfo) {
    do {
     read_synamps_get_singlepoint(tinfo, &myarray);
    } while (myarray.message!=ARRAY_ENDOFSCAN);
+   tinfo->file_start_point=file_start_point;
    }
    break;
   case NST_EPOCHS: {

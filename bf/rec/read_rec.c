@@ -607,6 +607,7 @@ read_rec(transform_info_ptr tinfo) {
  strcpy(tinfo->comment, local_arg->comment);
  /*}}}  */
 
+ tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
  tinfo->tsdata=myarray.start;
  tinfo->leaveright=0;

@@ -183,6 +183,7 @@ struct transform_info_struct {
  int shiftwidth;
  int nroffreq;
 	/* Set by get-epoch methods: */
+ long file_start_point;	/* Starting point for epoch in file */
  long points_in_file;
 	/* Set by average: */
  int nrofaverages;

@@ -177,11 +177,11 @@ set(transform_info_ptr tinfo) {
    strcpy(tinfo->xchannelname, args[ARGS_VALUE].arg.s);
    break;
   case C_XDATA:
-   if (atof(args[ARGS_VALUE].arg.s)!=0.0) {
-    create_xaxis(tinfo);
-   } else {
+   if (args[ARGS_VALUE].arg.s[0]=='0') {
     tinfo->xchannelname=NULL;
     free_pointer((void **)&tinfo->xdata);
+   } else {
+    create_xaxis(tinfo, args[ARGS_VALUE].arg.s);
    }
    break;
   case C_XDATA_FROM_CHANNEL: {
@@ -191,7 +191,7 @@ set(transform_info_ptr tinfo) {
     array indata;
     tinfo_array(tinfo, &indata);
     indata.current_vector=channel;
-    if (tinfo->xdata==NULL) create_xaxis(tinfo);
+    if (tinfo->xdata==NULL) create_xaxis(tinfo, NULL);
     for (i=0; i<tinfo->nr_of_points; i++) {
      tinfo->xdata[i]=array_scan(&indata);
     }
@@ -282,7 +282,7 @@ set(transform_info_ptr tinfo) {
    growing_buf_allocate(&tokenbuf,0);
    growing_buf_get_firsttoken(&buf,&tokenbuf);
    if (strncmp(tokenbuf.buffer_start, "x=", 2)==0) {
-    if (tinfo->xdata==NULL) create_xaxis(tinfo);
+    if (tinfo->xdata==NULL) create_xaxis(tinfo, NULL);
     pos=decode_xpoint(tinfo, tokenbuf.buffer_start+2);
    } else {
     pos=gettimeslice(tinfo, tokenbuf.buffer_start);

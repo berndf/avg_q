@@ -80,6 +80,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 struct dip_simulate_storage {
  struct transform_info_struct tinfo;
  long epochs;
+ int current_epoch;
  struct source_desc *source;
 };
 /*}}}  */ 
@@ -101,6 +102,7 @@ dip_simulate_init(transform_info_ptr tinfo) {
 
  memcpy(&local_arg->tinfo, tinfo, sizeof(struct transform_info_struct));
  local_arg->epochs=args[ARGS_EPOCHS].arg.i;
+ local_arg->current_epoch=0;
  local_arg->tinfo.sfreq=args[ARGS_SFREQ].arg.d;
  local_arg->tinfo.beforetrig=gettimeslice(&local_arg->tinfo, args[ARGS_BEFORETRIG].arg.s);
  local_arg->tinfo.aftertrig=gettimeslice(&local_arg->tinfo, args[ARGS_AFTERTRIG].arg.s);
@@ -237,8 +239,14 @@ dip_simulate(transform_info_ptr tinfo) {
  struct dipole_desc *dipole;
  array newepoch;
 
+ int const rejected_epochs=tinfo->rejected_epochs;
+ int const accepted_epochs=tinfo->accepted_epochs;
+ int const failed_assertions=tinfo->failed_assertions;
  if (local_arg->epochs--==0) return NULL;
  deepcopy_tinfo(tinfo, &local_arg->tinfo);
+ tinfo->rejected_epochs=rejected_epochs;
+ tinfo->accepted_epochs=accepted_epochs;
+ tinfo->failed_assertions=failed_assertions;
  tinfo->nrofaverages=1;
 
  /* The following arrangement corresponds to 'Non-multiplexed' */
@@ -264,12 +272,14 @@ dip_simulate(transform_info_ptr tinfo) {
   }
  }
 
+ tinfo->file_start_point=local_arg->current_epoch*tinfo->nr_of_points;
  tinfo->z_label=NULL;
  tinfo->multiplexed=FALSE;
  tinfo->itemsize=1;
  tinfo->leaveright=0;
  tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels;
  tinfo->data_type=TIME_DATA;
+ local_arg->current_epoch++;
  
  return newepoch.start;
 }

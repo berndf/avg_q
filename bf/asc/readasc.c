@@ -85,6 +85,7 @@ struct readasc_storage {
  Bool otherdatatype; /* Indicates float data where DATATYPE==double or vice versa */
  int fromepoch;
  int epochs;
+ int current_epoch;
  int nrofaverages;
 };
 #define ASCFILEPTR (local_arg->ascfile)
@@ -300,6 +301,7 @@ readasc_init(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
 
  local_arg->fromepoch=(args[ARGS_FROMEPOCH].is_set ? args[ARGS_FROMEPOCH].arg.i : 1);
+ local_arg->current_epoch=local_arg->fromepoch-1;
  local_arg->epochs=(args[ARGS_EPOCHS].is_set ? args[ARGS_EPOCHS].arg.i : -1);
  if (!args[ARGS_CLOSE].is_set) readasc_open_file(tinfo);
 
@@ -432,6 +434,7 @@ readasc(transform_info_ptr tinfo) {
  }
 
  /* Initialize values also modifiable via local attributes from global defaults */
+ tinfo->file_start_point=local_arg->current_epoch*tinfo->nr_of_points;
  tinfo->sfreq=local_arg->sfreq;
  tinfo->beforetrig=local_arg->beforetrig;
  tinfo->leaveright=local_arg->leaveright;
@@ -672,6 +675,7 @@ readasc(transform_info_ptr tinfo) {
 
  tinfo->aftertrig=tinfo->nr_of_points-tinfo->beforetrig;
  tinfo->data_type=TIME_DATA;
+ local_arg->current_epoch++;
 
  return tinfo->tsdata;
 }

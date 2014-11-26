@@ -48,6 +48,7 @@ struct read_sound_storage {
  long aftertrig;
  int fromepoch;
  int epochs;
+ int current_epoch;
  long epochlength;
  size_t buflen;
  sox_sample_t *inbuf;
@@ -130,6 +131,9 @@ read_sound_init(transform_info_ptr tinfo) {
   if (sox_seek(local_arg->informat, seek, SOX_SEEK_SET) != SOX_SUCCESS) {
    ERREXIT(tinfo->emethods, "read_sound_init: sox init failed.\n");
   }
+  local_arg->current_epoch=args[ARGS_FROMEPOCH].arg.i-1;
+ } else {
+  local_arg->current_epoch=0;
  }
  /*}}}  */
 
@@ -194,10 +198,12 @@ read_sound(transform_info_ptr tinfo) {
  strcpy(tinfo->comment, local_arg->informat->handler.description);
  /*}}}  */
 
+ tinfo->file_start_point=local_arg->current_epoch*tinfo->nr_of_points;
  tinfo->tsdata=myarray.start;
  tinfo->sfreq=local_arg->informat->signal.rate;
  tinfo->leaveright=0;
  tinfo->data_type=TIME_DATA;
+ local_arg->current_epoch++;
 
  return tinfo->tsdata;
 }

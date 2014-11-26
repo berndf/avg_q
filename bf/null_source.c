@@ -44,6 +44,7 @@ struct null_source_storage {
  long beforetrig;
  long aftertrig;
  long epochs;
+ long current_epoch;
  float sfreq;
 };
 /*}}}  */
@@ -58,6 +59,7 @@ null_source_init(transform_info_ptr tinfo) {
  local_arg->itemsize=(args[ARGS_ITEMSIZE].is_set ? args[ARGS_ITEMSIZE].arg.i : 1);
  tinfo->sfreq=local_arg->sfreq=args[ARGS_SFREQ].arg.d;
  local_arg->epochs=args[ARGS_EPOCHS].arg.i;
+ local_arg->current_epoch=0;
  local_arg->nr_of_channels=args[ARGS_NROFCHANNELS].arg.i;
  if (local_arg->itemsize<=0 || 
      local_arg->sfreq<=0 || 
@@ -108,12 +110,14 @@ null_source(transform_info_ptr tinfo) {
  tinfo->channelnames=NULL; tinfo->probepos=NULL;
  create_channelgrid(tinfo); /* Create defaults for any missing channel info */
 
+ local_arg->current_epoch=0;
  tinfo->z_label=NULL;
  tinfo->sfreq=local_arg->sfreq;
  tinfo->tsdata=myarray.start;
  tinfo->length_of_output_region=tinfo->nr_of_channels*tinfo->nr_of_points*tinfo->itemsize;
  tinfo->leaveright=0;
  tinfo->data_type=TIME_DATA;
+ local_arg->current_epoch++;
 
  return tinfo->tsdata;
 }

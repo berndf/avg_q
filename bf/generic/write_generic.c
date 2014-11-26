@@ -256,7 +256,7 @@ write_generic(transform_info_ptr tinfo) {
  outfile=local_arg->outfile;
 
  if (args[ARGS_WRITE_XDATA].is_set && tinfo->xdata==NULL) {
-  create_xaxis(tinfo);
+  create_xaxis(tinfo,NULL);
  }
 
  if (local_arg->epochsep.buffer_start!=NULL && !local_arg->beginning_of_file) {

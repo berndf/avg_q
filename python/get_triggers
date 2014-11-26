@@ -1,28 +1,33 @@
 #!/usr/bin/env python
 
-import argparse
-
-class get_timestamp(argparse.Action):
- def __call__(self, parser, namespace, values, option_string=None):
-  import datetime
-  setattr(namespace, self.dest, datetime.datetime.strptime(values,"%Y-%m-%d %H:%M:%S"))
-  # starttime implies abstime
-  setattr(namespace, 'abstime', True)
-
-argparser = argparse.ArgumentParser(description='Read triggers from any file supported by avg_q and output as text trigger file to stdout.')
-argparser.add_argument('files', nargs='+', help='Input files')
-argparser.add_argument('-a', '--abstime', dest='abstime', action='store_true', help='Output absolute time')
-argparser.add_argument('-A', '--starttime', dest='starttime', action=get_timestamp, help='Output absolute time using this start timestamp')
-args = argparser.parse_args()
-
+import sys
 import os
 import avg_q
 import avg_q.trgfile
 from avg_q.avg_q_file import formats_and_extensions
 
+import getopt
+try:
+ optlist, args = getopt.getopt(sys.argv[1:],'aA:')
+except getopt.GetoptError as err:
+ # print help information and exit:
+ print(str(err)) # will print something like "option -a not recognized"
+ print("Usage: [-a: output absolute time] [-A start_datetime: output absolute time using this start timestamp]")
+ sys.exit(2)
+
+output_abstime=False
+start_datetime=None
+for opt,arg in optlist:
+ if opt=='-a':
+  output_abstime=True
+ if opt=='-A':
+  import datetime
+  output_abstime=True
+  start_datetime=datetime.datetime.strptime(arg,"%Y-%m-%d %H:%M:%S")
+
 a=avg_q.avg_q()
 #a.debug=True
-for filename in args.files:
+for filename in args:
  parts=filename.split(':')
  if len(parts)==2 and parts[0] in dict(formats_and_extensions):
   filetype,filename=parts
@@ -43,12 +48,12 @@ for filename in args.files:
  else:
   infile=avg_q.avg_q_file(filename,filetype)
   trg=a.get_filetriggers(infile)
- if args.starttime:
-  trg.start_datetime=args.starttime
- triggers=trg.gettuples_abstime() if args.abstime else trg.gettuples()
+ if start_datetime:
+  trg.start_datetime=start_datetime
+ triggers=trg.gettuples_abstime() if output_abstime else trg.gettuples()
  sfreq=float(trg.preamble.get('Sfreq',100.0))
  for point, code, description in triggers:
-  if args.abstime:
+  if output_abstime:
    pos=str(point)
   else:
    pos="%gs" % (point/sfreq)

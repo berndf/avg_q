@@ -1061,7 +1061,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
  xposmax=yposmax=zposmax= -FLT_MAX;
 
  for (i=1, tinfoptr=tinfo; tinfoptr!=NULL; i++, tinfoptr=tinfoptr->next) {
-  if (tinfoptr->xdata==NULL) create_xaxis(tinfoptr);
+  if (tinfoptr->xdata==NULL) create_xaxis(tinfoptr, NULL);
   if (tinfoptr->z_label==NULL) {
    tinfoptr->z_label="Nr";
    tinfoptr->z_value=i;

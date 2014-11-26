@@ -755,6 +755,7 @@ read_brainvision(transform_info_ptr tinfo) {
    break;
  }
 
+ tinfo->file_start_point=file_start_point;
  tinfo->sfreq=local_arg->sfreq;
  tinfo->tsdata=myarray.start;
  tinfo->length_of_output_region=tinfo->nr_of_channels*tinfo->nr_of_points*tinfo->itemsize;

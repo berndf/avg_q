@@ -143,7 +143,7 @@ mailto:bernd.feige@uniklinik-freiburg.de
 \begin_layout Standard
 \noindent
 \align center
-Version 5.1.0
+Version 6.0.0
 \end_layout
 
 \begin_layout Standard
@@ -1864,13 +1864,14 @@ write_crossings -E
 , which creates a third column containing the measured value of the extremum.
  The point number is the sampling point number relative to the first point
  in the file, starting with 0.
- It is also possible to enter the trigger point in time units, where 
-\series bold
-avg_q
-\series default
- calculates the point number using the known sampling frequency: If `point'
- ends with an `s', the value is taken as seconds, and likewise as milliseconds
- if it ends with `ms'.
+ It can be given in time units by the general convention below (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:Point_and_time_units"
+
+\end_inset
+
+).
 \end_layout
 
 \begin_layout Standard
@@ -1907,6 +1908,37 @@ avg_q
  or stored separately and so forth); When dealing with random access to
  data segments, however, extra steps may be needed to produce an ASCII trigger
  list first.
+\end_layout
+
+\begin_layout Subsection
+Entering point numbers or time values
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "Sec:Point_and_time_units"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Wherever a time value (duration, window length etc) is required in 
+\series bold
+avg_q
+\series default
+ - be it in a method configuration or a trigger file, a number without any
+ suffix is treated as a number of sampling points.
+ By appending the unit shortcut (without intervening space), 
+\series bold
+avg_q
+\series default
+ uses the known sampling frequency value (`sfreq') to compute the corresponding
+ number of points.
+ Unit shortcuts are `us' (microseconds), `ms' (milliseconds), `s' (seconds),
+ `min' (minutes) and `h' (hours).
 \end_layout
 
 \begin_layout Subsection
@@ -2076,7 +2108,14 @@ channel
  These three values are sufficient to create a default epoch-local time
  axis.
  A heuristic based upon the sampling rate is used to determine the time
- unit (µs, ms, s, min or h) and the x axis name constructed as 
+ unit (µs, ms, s, min or h, the same as in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:Point_and_time_units"
+
+\end_inset
+
+) and the x axis name constructed as 
 \begin_inset Quotes eld
 \end_inset
 
@@ -2099,6 +2138,7 @@ Freq[Hz]
 
  and the values constructed using nroffreq and basefreq properties of the
  epoch.
+ `set xdata' can be used to specify the unit explicitly.
 \end_layout
 
 \begin_layout Section
@@ -5582,7 +5622,14 @@ ng to a scalar product) and then divided by the number of filter points.
 
 .
  sliding_step may be fractional and may also be entered as time value by
- appending the time units `m', `s' or `ms' as usual.
+ appending time units as usual (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:Point_and_time_units"
+
+\end_inset
+
+).
  There may be either only one channel in convolve_file or as many channels
  as in the current epoch; in case of one channel, the same wave form is
  used for all input channels, otherwise each input channel is convolved
@@ -6556,8 +6603,6 @@ padto: Zero-pad the window to padto points before FFT
 \begin_layout Standard
 The `windowsize' argument defines the length of the window from which a
  single spectral estimate is obtained.
- It can be given in points (default), minutes, seconds or milliseconds (`m',
- `s' or `ms' appended).
  `nrofshifts' requests a number of linearly spaced window shifts (latencies)
  within the epoch and `overlaps'
 \begin_inset Formula $\cdot2$
@@ -7783,20 +7828,21 @@ sfreq nr_of_points nr_of_channels itemsize leaveright length_\SpecialChar \-
 of_\SpecialChar \-
 output_\SpecialChar \-
 region
- points_\SpecialChar \-
+ file_start_point points_\SpecialChar \-
 in_\SpecialChar \-
-file beforetrig aftertrig nroffreq nrofaverages accepted_\SpecialChar \-
-epochs
- rejected_\SpecialChar \-
+file beforetrig aftertrig nroffreq nrofaverages
+ accepted_\SpecialChar \-
+epochs rejected_\SpecialChar \-
 epochs failed_\SpecialChar \-
 assertions condition z_\SpecialChar \-
 label z_\SpecialChar \-
-value comment datetime
- xchannelname xdata channelnames channelpositions triggers triggers_for_trigfile
- triggers_for_trigfile_s triggers_for_trigfile_ms filetriggers_\SpecialChar \-
+value
+ comment datetime xchannelname xdata channelnames channelpositions triggers
+ triggers_for_trigfile triggers_for_trigfile_s triggers_for_trigfile_ms
+ filetriggers_\SpecialChar \-
 for_\SpecialChar \-
-trigfile
- filetriggers_for_trigfile_s filetriggers_for_trigfile_ms CWD
+trigfile filetriggers_for_trigfile_s filetriggers_for_trigfile
+_ms CWD
 \begin_inset Newline newline
 \end_inset
 
@@ -7832,6 +7878,11 @@ avg_q
 \begin_inset Newline newline
 \end_inset
 
+`file_start_point' is set to the starting point of the current epoch in
+ the current file by most Get_Epoch_Methods reading from continuous input.
+\begin_inset Newline newline
+\end_inset
+
 `points_in_file' gives the total number of points (samples) in the input
  file.
  This is a special informational value provided by some Get_\SpecialChar \-
@@ -7857,7 +7908,7 @@ set_channelposition
 \series default
 
 \begin_inset Foot
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -7908,7 +7959,7 @@ _ms
 \begin_inset Quotes erd
 \end_inset
 
- at the end store the trigger positions in seconds amd milliseconds, respectivel
+ at the end store the trigger positions in seconds and milliseconds, respectivel
 y.
 \begin_inset Newline newline
 \end_inset
@@ -8534,14 +8585,18 @@ trigfile
 \begin_inset Newline newline
 \end_inset
 
-Here, 
+
 \shape italic
 sfreq
 \shape default
- is the sampling frequency used to calculate back and forth between times
+ sets the sampling frequency used to calculate back and forth between times
  and sampling point numbers.
  
 \emph on
+
+\begin_inset Newline newline
+\end_inset
+
 sfreq_from_xdata
 \emph default
  calculates the sampling frequency from the first two values of xdata (
@@ -8555,6 +8610,10 @@ value
  is ignored).
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 leaveright
 \shape default
 
@@ -8579,6 +8638,10 @@ set_leaveright
 ns.
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 beforetrig
 \shape default
  and 
@@ -8608,12 +8671,20 @@ beforetrig
  value will form the baseline (x axis data must be available for this operation).
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 nrofaverages
 \shape default
  sets the file property with this name, which can be used, for example,
  for weighted averaging.
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 accepted_\SpecialChar \-
 epochs
 \shape default
@@ -8625,6 +8696,10 @@ epochs
  are the respective epoch counters.
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 failed_\SpecialChar \-
 assertions
 \shape default
@@ -8635,6 +8710,10 @@ assert
  method whenever the assert condition is not met.
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 condition
 \shape default
  is the condition code of the epoch (if set by the Get_\SpecialChar \-
@@ -8642,30 +8721,63 @@ Epoch_\SpecialChar \-
 Method).
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 xchannelname
 \shape default
  sets the name of the x axis (e.g.
  `Lat[ms]').
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 xdata
 \shape default
- either deletes the current explicit x axis information (value==0) or creates
- explicit x axis information anew from the variables beforetrig and sfreq.
- After `set xdata 0', 
+ either deletes the current explicit x axis information (value==0)
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Note that after removing xdata with `set xdata 0', 
 \series bold
 avg_q
 \series default
- will rebuild the x axis later when it is needed.
+ will rebuild the x axis using default heuristics whenever it is needed.
+\end_layout
+
+\end_inset
+
+ or creates an explicit x axis information anew.
+ For time domain data, value can be one of the known units of time: us (=µs),
+ ms, s, min, or h.
+ For any other value, it falls back to use the standard heuristic.
+ Normally this calculates the latency within the current epoch, using the
+ variables beforetrig and sfreq.
+ If `abs_' is prepended (no space!) before the unit name, absolute time
+ is computed using file_start_point, which is set to the starting point
+ of the current epoch in the file by most Get_Epoch_Methods reading from
+ continuous input.
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 xdata_from_channel 
 \shape default
 copies the data of the named channel to xdata, allowing for example to plot
  channels as Lissajous figures.
 
 \shape italic
- posdata
+ 
+\begin_inset Newline newline
+\end_inset
+
+posdata
 \shape default
  uses 
 \series bold
@@ -8677,6 +8789,10 @@ avg_q
  number of columns (value>1) or both (value<0, number of columns is abs(value)).
  
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 z_label
 \shape default
  is the label and 
@@ -8721,8 +8837,11 @@ epochs
 condition
 \shape default
  by specifying these names as value instead of a numeric constant.
- set 
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 FREQ_DATA
 \shape default
  will convert the data set to frequency-domain data if value!=0 and to time-doma
@@ -8733,28 +8852,46 @@ in data if value==0.
 fftspect
 \series default
 ).
- set 
+ 
+\begin_inset Newline newline
+\end_inset
+
+
 \shape italic
 basefreq
 \shape default
  sets the value of the internal frequency resolution variable, which is
  used for x axis calculations in frequency domain data.
- set 
+
 \shape italic
+ 
+\begin_inset Newline newline
+\end_inset
+
 trigger
 \shape default
  will insert a trigger into the epoch's trigger memory.
  The value is of the form [x=]point[:code[:description]], where point is
- the offset in points, counted from the epoch start (can be followed by
- `s' or `ms' specifiers as usual) or, if preceded by x=, the x value of
- the point on which to set the trigger, and code is the trigger code.
+ the offset in points, counted from the epoch start (can be given in time
+ units as usual, 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:Point_and_time_units"
+
+\end_inset
+
+) or, if preceded by x=, the x value of the point on which to set the trigger,
+ and code is the trigger code.
  If the colon and code part is left out, code is set to 1.
  Value can also be DELETE, which will clear the epoch trigger memory.
  A trigger code of 0 will not actually be inserted into the trigger list
  but sets the `file position' of the trigger list, intended to contain the
  offset of the current epoch relative to the input file.
- set 
 \shape italic
+
+\begin_inset Newline newline
+\end_inset
+
 triggers_from_trigfile
 \shape default
  accepts the name of a standard 
@@ -9022,7 +9159,14 @@ median
 )
  and upsampling is possible as well as downsampling.
  Both values may also be entered as time values by appending the time units
- `m', `s' or `ms' as usual.
+ as usual (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:Point_and_time_units"
+
+\end_inset
+
+).
  In this way, the target sampling interval can be entered independently
  of the input sampling frequency: e.g.
  if sliding_step is specified as `5ms', the output will have a sampling

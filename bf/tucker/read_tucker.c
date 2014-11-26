@@ -501,6 +501,7 @@ read_tucker(transform_info_ptr tinfo) {
   read_tucker_get_singlepoint(tinfo, &myarray);
  } while (myarray.message!=ARRAY_ENDOFSCAN);
 
+ tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
  tinfo->sfreq=local_arg->header.SampRate;
  tinfo->tsdata=myarray.start;

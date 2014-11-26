@@ -29,6 +29,7 @@ LOCAL const char *const variables_choice[]={
  "length_of_output_region",
  "beforetrig",
  "aftertrig",
+ "file_start_point",
  "points_in_file",
  "nroffreq",
  "nrofaverages",
@@ -63,6 +64,7 @@ enum variables_choice {
  C_LENGTH_OF_OUTPUT_REGION,
  C_BEFORETRIG,
  C_AFTERTRIG,
+ C_FILESTARTPOINT,
  C_POINTSINFILE,
  C_NROFFREQ,
  C_NROFAVERAGES,
@@ -205,6 +207,9 @@ query(transform_info_ptr tinfo) {
   case C_AFTERTRIG:
    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->aftertrig, local_arg->delimiter); myflush(tinfo, buffer);
    break;
+  case C_FILESTARTPOINT:
+   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld%s", tinfoptr->file_start_point, local_arg->delimiter); myflush(tinfo, buffer);
+   break;
   case C_POINTSINFILE:
    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld%s", tinfoptr->points_in_file, local_arg->delimiter); myflush(tinfo, buffer);
    break;
@@ -250,7 +255,7 @@ query(transform_info_ptr tinfo) {
    break;
   case C_XDATA:
    if (tinfoptr->xdata==NULL) {
-    create_xaxis(tinfoptr);
+    create_xaxis(tinfoptr, NULL);
    }
    for (point=0; point<tinfoptr->nr_of_points; point++) {
     snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%g%s", tinfoptr->xdata[point], local_arg->delimiter); myflush(tinfo, buffer);

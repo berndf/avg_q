@@ -65,7 +65,7 @@ change_axes(transform_info_ptr tinfo) {
 
  /*{{{  Scale xdata*/
  if (tinfo->xdata==(DATATYPE *)NULL) {
-  create_xaxis(tinfo);
+  create_xaxis(tinfo, NULL);
  }
  for (i=0; i<tinfo->nr_of_points; i++) {
   tinfo->xdata[i]=(tinfo->xdata[i]+args[ARGS_XOFFSET].arg.d)*args[ARGS_XFACTOR].arg.d;

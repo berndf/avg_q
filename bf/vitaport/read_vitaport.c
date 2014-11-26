@@ -829,6 +829,7 @@ read_vitaport(transform_info_ptr tinfo) {
   } while (myarray.message!=ARRAY_ENDOFSCAN);
  }
 
+ tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
  tinfo->sfreq=local_arg->max_sfreq;
  tinfo->tsdata=myarray.start;

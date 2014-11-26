@@ -611,6 +611,7 @@ read_hdf(transform_info_ptr tinfo) {
  create_channelgrid(tinfo);
 
  /*{{{  Setup tinfo values*/
+ tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
  tinfo->tsdata=myarray.start;
  tinfo->aftertrig=tinfo->nr_of_points-tinfo->beforetrig;

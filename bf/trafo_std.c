@@ -163,6 +163,18 @@ get_value(char const *number, char **EndPointer) {
 }
 /*}}}  */
 
+/* This is used both in gettimefloat and in create_xaxis */
+#define NR_OF_TIME_UNITS 5
+LOCAL struct {
+ float unit;	/* In seconds */
+ char *name;
+} time_units_and_names[NR_OF_TIME_UNITS]={
+ {1e-6, "us"},
+ {1e-3, "ms"},
+ {1.0,  "s"},
+ {60.0, "min"},
+ {3600.0, "h"}
+};
 /*{{{  gettimeslice(transform_info_ptr tinfo, char *number)*/
 /* gettimeslice returns the number of data points corresponding
  * to the number string; if number ends with "s" or "ms", the sampling
@@ -179,27 +191,24 @@ GLOBAL double
 gettimefloat(transform_info_ptr tinfo, char const *number) {
  char *EndPointer;
  double value;
+ int i;
 
  value=get_value(number, &EndPointer);
- if (EndPointer[0]=='s') {
-  /* Range given in seconds: transform to timeslice */
-  value*=tinfo->sfreq;
-  EndPointer++;
- } else if (EndPointer[0]=='m' && EndPointer[1]=='s') {
-  /* Range given in milliseconds: transform to timeslice */
-  value*=tinfo->sfreq/1000;
-  EndPointer+=2;
- } else if (EndPointer[0]=='m') {
-  /* Range given in minutes: transform to timeslice */
-  value*= 60*tinfo->sfreq;
-  EndPointer++;
- } else if (EndPointer[0]=='H' && EndPointer[1]=='z') {
-  /* A value given in Hertz is converted to a fraction of half the sfreq: */
-  value/=tinfo->sfreq/2;
-  EndPointer+=2;
- }
  if (EndPointer[0]!='\0') {
-  ERREXIT1(tinfo->emethods, "gettimefloat: Invalid float value: %s\n", MSGPARM(number));
+  if (strcmp(EndPointer,"Hz")==0) {
+   /* A value given in Hertz is converted to a fraction of half the sfreq: */
+   value/=tinfo->sfreq/2;
+  } else {
+   for (i=0; i<NR_OF_TIME_UNITS; i++) {
+    if (strcmp(EndPointer,time_units_and_names[i].name)==0) {
+     value*=tinfo->sfreq*time_units_and_names[i].unit;
+     break;
+    }
+   }
+   if (i==NR_OF_TIME_UNITS) {
+    ERREXIT1(tinfo->emethods, "gettimefloat: Invalid float value: %s\n", MSGPARM(number));
+   }
+  }
  }
  return value;
 }
@@ -213,7 +222,7 @@ GLOBAL long
 find_pointnearx(transform_info_ptr tinfo, DATATYPE x) {
  long pointno;
  if (tinfo->nr_of_points<=1) return 0;
- if (tinfo->xdata==NULL) create_xaxis(tinfo);
+ if (tinfo->xdata==NULL) create_xaxis(tinfo, NULL);
  for (pointno=1; pointno<tinfo->nr_of_points-1 && tinfo->xdata[pointno]<x; pointno++);
  if (fabs(x-tinfo->xdata[pointno-1])<fabs(x-tinfo->xdata[pointno])) pointno--;
  return pointno;
@@ -237,26 +246,42 @@ decode_xpoint(transform_info_ptr tinfo, char *token) {
 }
 /*}}}  */
 
-/*{{{  create_xaxis(transform_info_ptr tinfo)*/
+/*{{{  create_xaxis(transform_info_ptr tinfo, char const *unitname)*/
 /* create_xaxis allocates space for and fills values into the xdata array
  * and sets default strings for xchannelname, depending on the data_type.
  */
-#define LENGTH_OF_XCHANNELNAME 10
+#define LENGTH_OF_XCHANNELNAME 15
 #define TARGET_POINTS_PER_UNIT 5.0
-#define NR_OF_TIME_UNITS 5
-LOCAL struct {
- float unit;	/* In seconds */
- char *name;
-} time_units_and_names[NR_OF_TIME_UNITS]={
- {1e-6, "us"},
- {1e-3, "ms"},
- {1.0,  "s"},
- {60.0, "min"},
- {3600.0, "h"}
-};
 GLOBAL void
-create_xaxis(transform_info_ptr tinfo) {
+create_xaxis(transform_info_ptr tinfo, char const *unitname) {
+ /* If unitname==NULL, a heuristic is applied.
+  * Another valid unitname is "points".
+  * When "abs_" is prepended, we try to reconstruct the absolute position in the input. */
  int i;
+ char const *_unitname=unitname;
+ Bool absolute=FALSE;
+ DATATYPE factor=tinfo->sfreq;
+ DATATYPE unit=1.0;
+ long int offset= -tinfo->beforetrig;
+ if (_unitname!=NULL) {
+  if (strncmp(_unitname,"abs_",4)==0) {
+   absolute=TRUE;
+   _unitname+=4;
+   offset=tinfo->file_start_point;
+  }
+  if (strcmp(_unitname,"points")==0) {
+   factor=1.0;
+  } else {
+   for (i=0; i<NR_OF_TIME_UNITS; i++) {
+    if (strcmp(_unitname,time_units_and_names[i].name)==0) {
+     unit=time_units_and_names[i].unit;
+     break;
+    }
+   }
+   /* If not found, fall back to heuristic */
+   if (i==NR_OF_TIME_UNITS) _unitname=NULL;
+  }
+ }
 
  if (tinfo->data_type==FREQ_DATA) tinfo->nr_of_points=tinfo->nroffreq;
  if (tinfo->xdata!=NULL) free(tinfo->xdata);
@@ -264,24 +289,26 @@ create_xaxis(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "create_xaxis: Error allocating xdata memory\n");
  }
  /* Note that xchannelname has a special treatment; Within avg_q, this
-  * string is not generally allocated separately. */
+  * string is not allocated separately. */
  tinfo->xchannelname=(char *)(tinfo->xdata+tinfo->nr_of_points);
  if (tinfo->data_type==FREQ_DATA) {
   for (i=0; i<tinfo->nroffreq; i++) tinfo->xdata[i]=i*tinfo->basefreq;
   strcpy(tinfo->xchannelname, "Freq[Hz]");
  } else {
-  float unit;
-  /* The heuristic to choose a unit accepts a unit if the defined
-   * TARGET_POINTS_PER_UNIT value falls in the interval of 
-   * (sampling-)points_per_unit values resulting from this and the next unit */
-  for (i=0; i<NR_OF_TIME_UNITS-1 && 
-       (tinfo->sfreq*time_units_and_names[i].unit>TARGET_POINTS_PER_UNIT || 
-        tinfo->sfreq*time_units_and_names[i+1].unit<=TARGET_POINTS_PER_UNIT); 
-       i++);
-  unit=time_units_and_names[i].unit;
-  snprintf(tinfo->xchannelname, LENGTH_OF_XCHANNELNAME, "Lat[%s]", time_units_and_names[i].name);
+  if (_unitname==NULL) {
+   /* The heuristic to choose a unit accepts a unit if the defined
+    * TARGET_POINTS_PER_UNIT value falls in the interval of 
+    * (sampling-)points_per_unit values resulting from this and the next unit */
+   for (i=0; i<NR_OF_TIME_UNITS-1 && 
+	(tinfo->sfreq*time_units_and_names[i].unit>TARGET_POINTS_PER_UNIT || 
+	 tinfo->sfreq*time_units_and_names[i+1].unit<=TARGET_POINTS_PER_UNIT); 
+	i++);
+   unit=time_units_and_names[i].unit;
+   _unitname=time_units_and_names[i].name;
+  }
+  snprintf(tinfo->xchannelname, LENGTH_OF_XCHANNELNAME, "%s[%s]", absolute ? "Abs" : "Lat", _unitname);
   for (i=0; i<tinfo->nr_of_points; i++)
-   tinfo->xdata[i]=(float)(i-tinfo->beforetrig)/tinfo->sfreq/unit;
+   tinfo->xdata[i]=(DATATYPE)(i+offset)/factor/unit;
  }
 }
 /*}}}  */

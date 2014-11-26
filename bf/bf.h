@@ -252,7 +252,7 @@ long gettimeslice(transform_info_ptr tinfo, char const *number);
 double gettimefloat(transform_info_ptr tinfo, char const *number);
 long find_pointnearx(transform_info_ptr tinfo, DATATYPE x);
 long decode_xpoint(transform_info_ptr tinfo, char *token);
-void create_xaxis(transform_info_ptr tinfo);
+void create_xaxis(transform_info_ptr tinfo, char const *unitname);
 void copy_channelinfo(transform_info_ptr tinfo, char **channelnames, double *probepos);
 void deepcopy_tinfo(transform_info_ptr to_tinfo, transform_info_ptr from_tinfo);
 void deepfree_tinfo(transform_info_ptr tinfo);
