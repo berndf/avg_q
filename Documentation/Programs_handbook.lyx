@@ -7762,15 +7762,15 @@ push
 pop
 \series default
  is to save an epoch at some point in time, apply one set of transformations,
- possibly saving the result, and then restore the epoch and apply some other
- transformations.
- This can be useful if reading or transforming the data to the current point
- is time consuming; another important use is in conjunction with Reject_\SpecialChar \-
-Methods:
- The rejection criterion can be applied to the spectra of certain channels,
- for example, and then the original data set can be restored if the criterion
- is met, restricting further analysis to those epochs meeting the frequency-doma
-in criterion.
+ possibly saving the result or using it to apply rejection criteria, and
+ then restore the epoch and apply some other transformations.
+ This can be useful if reading or transforming the data up to the current
+ stage is time consuming; another important use is in conjunction with Reject_\SpecialChar \-
+Me
+thods: The rejection criterion can be applied to the spectra of certain
+ channels, for example, and then the original data set can be restored if
+ the criterion is met, restricting further analysis to those epochs meeting
+ the frequency-domain criterion.
 \end_layout
 
 \begin_deeper
@@ -7791,7 +7791,7 @@ pop
 \end_inset
 
  `Transform' method to free the current data set and replace it by the second
- one, possibly previously stored by the last 
+ one, such as previously stored by the last 
 \series bold
 push
 \series default
@@ -7815,11 +7815,8 @@ query
 
 \end_inset
 
- `Transform' method to query some values used by 
-\series bold
-avg_q
-\series default
-.
+ `Transform' method to query epoch properties, writing the result to a text
+ file or stream.
  var_name can be any of the following words:
 \begin_inset Newline newline
 \end_inset
@@ -8558,46 +8555,42 @@ set
 
 \end_inset
 
- transform method to set some values used by 
-\series bold
-avg_q
-\series default
- in a fashion corresponding to 
+ transform method to set epoch properties just as 
 \series bold
 query
 \series default
-.
+ queries them.
  var_name can be any of the following words:
 \begin_inset Newline newline
 \end_inset
 
 sfreq sfreq_from_xdata leaveright beforetrig aftertrig beforetrig_at_xvalue
- nrofaverages accepted_\SpecialChar \-
+ file_start_point nrofaverages accepted_\SpecialChar \-
 epochs rejected_\SpecialChar \-
 epochs failed_\SpecialChar \-
-assertions condition
- xchannel\SpecialChar \-
+assertions
+ condition xchannel\SpecialChar \-
 name xdata posdata z_label z_value FREQ_\SpecialChar \-
-DATA basefreq trigger triggers_\SpecialChar \-
-
+DATA basefreq
+ trigger triggers_\SpecialChar \-
 from_\SpecialChar \-
 trigfile
 \begin_inset Newline newline
 \end_inset
 
-
-\shape italic
-sfreq
-\shape default
- sets the sampling frequency used to calculate back and forth between times
- and sampling point numbers.
+`sfreq' sets the sampling frequency used to calculate back and forth between
+ times and sampling point numbers.
  
 \emph on
 
 \begin_inset Newline newline
 \end_inset
 
+`
+\emph default
 sfreq_from_xdata
+\emph on
+'
 \emph default
  calculates the sampling frequency from the first two values of xdata (
 \begin_inset Quotes eld
@@ -8609,14 +8602,10 @@ value
 
  is ignored).
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-leaveright
-\shape default
-
+`leaveright'
 \begin_inset Foot
 status collapsed
 
@@ -8637,107 +8626,67 @@ set_leaveright
  is the number of items of each point that are to be neglected during calculatio
 ns.
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-beforetrig
-\shape default
- and 
-\shape italic
-aftertrig
-\shape default
- are the number of points before and after the zero point (
-\shape italic
-beforetrig
-\shape default
- points are used for the baseline) and setting any of these two also modifies
- the second so that their sum corresponds to the total number of points
- in the epoch.
- As a special case, 
-\shape italic
-beforetrig_at_xvalue
-\shape default
- sets 
-\shape italic
-beforetrig
-\shape default
- to the index of the point (
+`beforetrig' and `aftertrig' are the number of points before and after the
+ zero point (beforetrig points are used for the baseline) and setting any
+ of these two also modifies the second so that their sum corresponds to
+ the total number of points in the epoch.
+ As a special case, beforetrig_at_xvalue sets beforetrig to the index of
+ the point (
 \begin_inset Formula $\geq$
 \end_inset
 
 0) with x value closest to this value; therefore, the points before this
  value will form the baseline (x axis data must be available for this operation).
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-nrofaverages
-\shape default
- sets the file property with this name, which can be used, for example,
- for weighted averaging.
+`file_start_point' sets the absolute point number at which the epoch started
+ in an input file, normally set by most Get_Epoch_Methods and used for absolute
+ xdata computation (see below).
+\begin_inset Newline newline
+\end_inset
+
+`nrofaverages' sets the number of averages for the current epoch, which
+ can be used, for example, for weighted averaging.
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-accepted_\SpecialChar \-
-epochs
-\shape default
- and 
-\shape italic
-rejected_\SpecialChar \-
-epochs
-\shape default
- are the respective epoch counters.
+`accepted_\SpecialChar \-
+epochs' and rejected_\SpecialChar \-
+epochs' are the respective epoch counters.
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-failed_\SpecialChar \-
-assertions
-\shape default
- is the counter increased by the 
+`failed_\SpecialChar \-
+assertions' is the counter increased by the 
 \series bold
 assert
 \series default
  method whenever the assert condition is not met.
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-condition
-\shape default
- is the condition code of the epoch (if set by the Get_\SpecialChar \-
+`condition is the condition code of the epoch (if set by the Get_\SpecialChar \-
 Epoch_\SpecialChar \-
 Method).
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-xchannelname
-\shape default
- sets the name of the x axis (e.g.
+`xchannelname' sets the name of the x axis (e.g.
  `Lat[ms]').
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-xdata
-\shape default
- either deletes the current explicit x axis information (value==0)
+`xdata' either deletes the current explicit x axis information (value==0)
 \begin_inset Foot
 status collapsed
 
@@ -8762,24 +8711,16 @@ avg_q
  of the current epoch in the file by most Get_Epoch_Methods reading from
  continuous input.
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-xdata_from_channel 
-\shape default
-copies the data of the named channel to xdata, allowing for example to plot
- channels as Lissajous figures.
-
-\shape italic
+`xdata_from_channel' copies the data of the named channel to xdata, allowing
+ for example to plot channels as Lissajous figures.
  
 \begin_inset Newline newline
 \end_inset
 
-posdata
-\shape default
- uses 
+`posdata' uses 
 \series bold
 avg_q
 \series default
@@ -8788,19 +8729,11 @@ avg_q
  (value==1, simply enumerate channels starting with 1), a grid with given
  number of columns (value>1) or both (value<0, number of columns is abs(value)).
  
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-z_label
-\shape default
- is the label and 
-\shape italic
-z_value
-\shape default
- the value which localizes the epoch on the `z axis' as explained in section
- 
+`z_label' is the label and `z_value' the value which localizes the epoch
+ on the `z axis' as explained in section 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "Sec:ReadascFormat"
@@ -8808,44 +8741,18 @@ reference "Sec:ReadascFormat"
 \end_inset
 
 .
- 
-\shape italic
-z_label
-\shape default
- can be set to the NULL pointer (meaning `no z axis information') by specifying
- `NULL' as value.
- 
-\shape italic
-z_value
-\shape default
- can be set to the current value of either 
-\shape italic
-nrofaverages
-\shape default
-, 
-\shape italic
-accepted_\SpecialChar \-
-epochs
-\shape default
-, 
-\shape italic
-rejected_\SpecialChar \-
-epochs
-\shape default
- or 
-\shape italic
-condition
-\shape default
- by specifying these names as value instead of a numeric constant.
-\shape italic
-
+ z_label can be set to the NULL pointer (meaning `no z axis information')
+ by specifying `NULL' as value.
+ `z_value' can be set to the current value of either `nrofaverages', `accepted_\SpecialChar \-
+e
+pochs', `rejected_\SpecialChar \-
+epochs' or `condition' by specifying these names as value
+ instead of a numeric constant.
 \begin_inset Newline newline
 \end_inset
 
-FREQ_DATA
-\shape default
- will convert the data set to frequency-domain data if value!=0 and to time-doma
-in data if value==0.
+`FREQ_DATA' will convert the data set to frequency-domain data if value!=0
+ and to time-domain data if value==0.
  The conversion to time-domain data will only work for single-shift data
  (see 
 \series bold
@@ -8856,21 +8763,13 @@ fftspect
 \begin_inset Newline newline
 \end_inset
 
-
-\shape italic
-basefreq
-\shape default
- sets the value of the internal frequency resolution variable, which is
- used for x axis calculations in frequency domain data.
-
-\shape italic
+`basefreq' sets the value of the internal frequency resolution variable,
+ which is used for x axis calculations in frequency domain data.
  
 \begin_inset Newline newline
 \end_inset
 
-trigger
-\shape default
- will insert a trigger into the epoch's trigger memory.
+`trigger' will insert a trigger into the epoch's trigger memory.
  The value is of the form [x=]point[:code[:description]], where point is
  the offset in points, counted from the epoch start (can be given in time
  units as usual, 
@@ -8887,14 +8786,10 @@ reference "Sec:Point_and_time_units"
  A trigger code of 0 will not actually be inserted into the trigger list
  but sets the `file position' of the trigger list, intended to contain the
  offset of the current epoch relative to the input file.
-\shape italic
-
 \begin_inset Newline newline
 \end_inset
 
-triggers_from_trigfile
-\shape default
- accepts the name of a standard 
+`triggers_from_trigfile' accepts the name of a standard 
 \series bold
 avg_q
 \series default

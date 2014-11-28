@@ -26,6 +26,7 @@ LOCAL const char *const variables_choice[]={
  "beforetrig",
  "aftertrig",
  "beforetrig_at_xvalue",
+ "file_start_point",
  "nrofaverages",
  "accepted_epochs",
  "rejected_epochs",
@@ -50,6 +51,7 @@ enum variables_choice {
  C_BEFORETRIG,
  C_AFTERTRIG,
  C_BEFORETRIG_AT_XVALUE,
+ C_FILESTARTPOINT,
  C_NROFAVERAGES,
  C_ACCEPTED_EPOCHS,
  C_REJECTED_EPOCHS,
@@ -153,6 +155,9 @@ set(transform_info_ptr tinfo) {
    tinfo->beforetrig= find_pointnearx(tinfo, value);
    tinfo->aftertrig=tinfo->nr_of_points-tinfo->beforetrig;
    }
+   break;
+  case C_FILESTARTPOINT:
+   tinfo->file_start_point=gettimeslice(tinfo, args[ARGS_VALUE].arg.s);
    break;
   case C_NROFAVERAGES:
    tinfo->nrofaverages=atoi(args[ARGS_VALUE].arg.s);
