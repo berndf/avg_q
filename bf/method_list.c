@@ -93,6 +93,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_null_sink,
 
  select_writeasc,
+ select_write_brainvision,
  select_write_freiburg,
  select_write_generic,
  select_write_hdf,

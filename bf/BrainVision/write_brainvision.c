@@ -27,6 +27,13 @@ LOCAL const char *const datatype_choice[]={
  "IEEE_FLOAT_64",
  NULL
 };
+LOCAL int datatype_size[]={
+ sizeof(int8_t),
+ sizeof(int16_t),
+ sizeof(int32_t),
+ sizeof(float),
+ sizeof(double),
+};
 enum DATATYPE_ENUM {
  DT_INT8=0,
  DT_INT16,
@@ -87,10 +94,10 @@ write_brainvision_open_file(transform_info_ptr tinfo) {
  growing_buf_appendstring(&eegfilename,".eeg");
  growing_buf_appendstring(&vmrkfilename,".vmrk");
 
- local_arg->outfile=fopen(eegfilename.buffer_start, "r+b");
- if (!args[ARGS_APPEND].is_set || local_arg->outfile==NULL) {   /* target does not exist*/
+ vhdrfile=fopen(args[ARGS_OFILE].arg.s, "r+");
+ if (!args[ARGS_APPEND].is_set || vhdrfile==NULL) {   /* target does not exist*/
   /*{{{  Create files*/
-  if (local_arg->outfile!=NULL) fclose(local_arg->outfile);
+  if (vhdrfile!=NULL) fclose(vhdrfile);
 
   if ((local_arg->outfile=fopen(eegfilename.buffer_start, "wb"))==NULL) {
    ERREXIT1(tinfo->emethods, "write_brainvision_open_file: Can't open %s\n", MSGPARM(eegfilename.buffer_start));
@@ -151,11 +158,16 @@ DataFile=%s\n\
 ",
    eegfilename.buffer_start
   );
+  local_arg->total_points=0;	/* For computing absolute trigger points */
   TRACEMS1(tinfo->emethods, 1, "write_brainvision_open_file: Creating file %s\n", MSGPARM(eegfilename.buffer_start));
   /*}}}  */
  } else {
   /*{{{  Append to file*/
-  fseek(local_arg->outfile, 0, SEEK_END);
+  fclose(vhdrfile);
+  if ((local_arg->outfile=fopen(eegfilename.buffer_start, "ab"))==NULL) {
+   ERREXIT1(tinfo->emethods, "write_brainvision_open_file: Can't open %s\n", MSGPARM(eegfilename.buffer_start));
+  }
+  local_arg->total_points=ftell(local_arg->outfile)/tinfo->nr_of_channels/datatype_size[args[ARGS_DATATYPE].arg.i];	/* For computing absolute trigger points */
   if ((local_arg->vmrkfile=fopen(vmrkfilename.buffer_start, "a"))==NULL) {
    ERREXIT1(tinfo->emethods, "write_brainvision_open_file: Can't open %s\n", MSGPARM(vmrkfilename.buffer_start));
   }
@@ -195,7 +207,6 @@ write_brainvision_init(transform_info_ptr tinfo) {
 
  if (!args[ARGS_CLOSE].is_set) write_brainvision_open_file(tinfo);
 
- local_arg->total_points=0;	/* For computing absolute trigger points */
  local_arg->current_trigger=1;	/* This is for counting the marker numbers in Mk1,Mk2,... */
 
  tinfo->methods->init_done=TRUE;

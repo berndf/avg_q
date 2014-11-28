@@ -2571,6 +2571,128 @@ run
 \end_deeper
 \end_deeper
 \begin_layout Description
+read_brainvision:
+\begin_inset Index idx
+status collapsed
+
+\begin_layout Plain Layout
+read
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+_
+\end_layout
+
+\end_inset
+
+brainvision
+\end_layout
+
+\end_inset
+
+ Read Brain Vision (tm) files.
+ This format consists of at least three files with endings .vhdr, .vmrk and
+ .eeg.
+ The .vhdr file is the main header file explicitly containing the names of
+ the other two files, therefore this file must be specified as Inputfile.
+ Markers are contained in the .vmrk file, while the actual data is in the
+ .eeg file.
+ The other files are opened with the same path as the .vhdr file.
+ Note that when the files are renamed from whatever was specified during
+ saving, the names in the .vhdr text file must be changed as well.
+\begin_inset Newline newline
+\end_inset
+
+Also, markers or event types are stored as text labels rather than with
+ numerical codes as required by avg_q; read_brainvision has a built-in list
+ to convert known labels into codes.
+ Unknown labels appear as code -1.
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Arguments: Inputfile beforetrig aftertrig
+\end_layout
+
+\begin_layout Description
+Options:
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+-c: Continuous: Read a continuous file in adjacent chunks of the given size
+ disregarding triggers 
+\end_layout
+
+\begin_layout Description
+-T: Transfer a list of triggers within the read epoch 
+\end_layout
+
+\begin_layout Description
+-R
+\begin_inset space ~
+\end_inset
+
+trigger_file: Read trigger points and codes from file trigger_file in the
+ format described in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+, page 
+\begin_inset CommandInset ref
+LatexCommand pageref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Description
+-t
+\begin_inset space ~
+\end_inset
+
+trigger_list: Restrict epochs to those marked with a condition code contained
+ in the trigger_list.
+ The list consists of comma-separated integer values, for example: 5,2,3.
+\end_layout
+
+\begin_layout Description
+-f
+\begin_inset space ~
+\end_inset
+
+fromepoch: Specify start epoch beginning with 1 
+\end_layout
+
+\begin_layout Description
+-e
+\begin_inset space ~
+\end_inset
+
+epochs: Specify maximum number of epochs to get 
+\end_layout
+
+\begin_layout Description
+-o
+\begin_inset space ~
+\end_inset
+
+offset: The zero point `beforetrig' is shifted by offset 
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Description
 read_freiburg:
 \begin_inset Index idx
 status collapsed
@@ -2762,128 +2884,6 @@ Repair_offset: Don't use the header, start at this file offset (continuous
 
 \begin_layout Description
 -z: Check for and eliminate data points with all channels zero 
-\end_layout
-
-\end_deeper
-\end_deeper
-\begin_layout Description
-read_brainvision:
-\begin_inset Index idx
-status collapsed
-
-\begin_layout Plain Layout
-read
-\begin_inset ERT
-status collapsed
-
-\begin_layout Plain Layout
-
-
-\backslash
-_
-\end_layout
-
-\end_inset
-
-brainvision
-\end_layout
-
-\end_inset
-
- Read Brain Vision (tm) files.
- This format consists of at least three files with endings .vhdr, .vmrk and
- .eeg.
- The .vhdr file is the main header file explicitly containing the names of
- the other two files, therefore this file must be specified as Inputfile.
- Markers are contained in the .vmrk file, while the actual data is in the
- .eeg file.
- The other files are opened with the same path as the .vhdr file.
- Note that when the files are renamed from whatever was specified during
- saving, the names in the .vhdr text file must be changed as well.
-\begin_inset Newline newline
-\end_inset
-
-Also, markers or event types are stored as text labels rather than with
- numerical codes as required by avg_q; read_brainvision has a built-in list
- to convert known labels into codes.
- Unknown labels appear as code -1.
-\end_layout
-
-\begin_deeper
-\begin_layout Description
-Arguments: Inputfile beforetrig aftertrig
-\end_layout
-
-\begin_layout Description
-Options:
-\end_layout
-
-\begin_deeper
-\begin_layout Description
--c: Continuous: Read a continuous file in adjacent chunks of the given size
- disregarding triggers 
-\end_layout
-
-\begin_layout Description
--T: Transfer a list of triggers within the read epoch 
-\end_layout
-
-\begin_layout Description
--R
-\begin_inset space ~
-\end_inset
-
-trigger_file: Read trigger points and codes from file trigger_file in the
- format described in section 
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "Sec:TriggerFile"
-
-\end_inset
-
-, page 
-\begin_inset CommandInset ref
-LatexCommand pageref
-reference "Sec:TriggerFile"
-
-\end_inset
-
-.
- 
-\end_layout
-
-\begin_layout Description
--t
-\begin_inset space ~
-\end_inset
-
-trigger_list: Restrict epochs to those marked with a condition code contained
- in the trigger_list.
- The list consists of comma-separated integer values, for example: 5,2,3.
-\end_layout
-
-\begin_layout Description
--f
-\begin_inset space ~
-\end_inset
-
-fromepoch: Specify start epoch beginning with 1 
-\end_layout
-
-\begin_layout Description
--e
-\begin_inset space ~
-\end_inset
-
-epochs: Specify maximum number of epochs to get 
-\end_layout
-
-\begin_layout Description
--o
-\begin_inset space ~
-\end_inset
-
-offset: The zero point `beforetrig' is shifted by offset 
 \end_layout
 
 \end_deeper
@@ -10533,6 +10533,118 @@ Options:
 
 \begin_layout Description
 -L: Write all linked datasets
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Description
+write_brainvision: 
+\begin_inset Index idx
+status collapsed
+
+\begin_layout Plain Layout
+write
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+_
+\end_layout
+
+\end_inset
+
+brainvision
+\end_layout
+
+\end_inset
+
+ Put-epoch method to write data in Brain Products (TM) 
+\begin_inset Quotes eld
+\end_inset
+
+Brain Vision Data Exchange
+\begin_inset Quotes erd
+\end_inset
+
+ format (cf.
+ 
+\series bold
+read_brainvision
+\series default
+).
+ This format consists of three files, 
+\begin_inset Quotes eld
+\end_inset
+
+xx.vhdr
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+xx.vmrk
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+xx.eeg
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The VHDR file, with text-format metadata including data format and channel
+ specifications, should be given as `Outfile' argument.
+ Triggers are written to the VMRK file and the binary EEG data is written
+ to the EEG file.
+\begin_inset Newline newline
+\end_inset
+
+data_type can be INT_8, INT_16, INT_32, IEEE_FLOAT_32 or IEEE_FLOAT_64.
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Arguments: Outfile data_type
+\end_layout
+
+\begin_layout Description
+Options:
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+-a: Append data if file exists
+\end_layout
+
+\begin_layout Description
+-c: Close the file after writing each epoch (and open it again next time)
+\end_layout
+
+\begin_layout Description
+-S: Swap byte order relative to the current machine.
+ This would be used when writing data on a machine with a different endianness
+ than the one on which the data is going to be read.
+\end_layout
+
+\begin_layout Description
+-P: Points vary fastest in the output file (`nonmultiplexed', called 
+\begin_inset Quotes eld
+\end_inset
+
+VECTORIZED
+\begin_inset Quotes erd
+\end_inset
+
+ in the format).
+ This only makes sense for writing a single epoch of data.
 \end_layout
 
 \end_deeper

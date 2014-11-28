@@ -3,4 +3,5 @@
 
 SET(bf_sources
  read_brainvision.c
+ write_brainvision.c
 )
