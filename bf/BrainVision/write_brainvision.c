@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2014 Bernd Feige
+ * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+ */
 /*{{{}}}*/
 /*{{{  Description*/
 /*
@@ -81,7 +85,7 @@ write_brainvision_open_file(transform_info_ptr tinfo) {
  growing_buf eegfilename,vmrkfilename;
  FILE *vhdrfile;
  char *scratch;
- int channel;
+ int channel, skippath;
  growing_buf_init(&eegfilename);
  growing_buf_init(&vmrkfilename);
  growing_buf_takethis(&eegfilename,args[ARGS_OFILE].arg.s);
@@ -93,6 +97,10 @@ write_brainvision_open_file(transform_info_ptr tinfo) {
  growing_buf_takethis(&vmrkfilename,eegfilename.buffer_start);
  growing_buf_appendstring(&eegfilename,".eeg");
  growing_buf_appendstring(&vmrkfilename,".vmrk");
+
+ /* Note how many characters should be skipped to skip the path component */
+ scratch=strrchr(eegfilename.buffer_start,PATHSEP);
+ skippath= scratch==NULL ? 0 : scratch-eegfilename.buffer_start+1;
 
  vhdrfile=fopen(args[ARGS_OFILE].arg.s, "r+");
  if (!args[ARGS_APPEND].is_set || vhdrfile==NULL) {   /* target does not exist*/
@@ -129,8 +137,8 @@ BinaryFormat=%s\n\
 ; Fields are delimited by commas, some fields might be omitted (empty).\n\
 ; Commas in channel names are coded as \"\\1\".\n\
 ",
-   eegfilename.buffer_start, 
-   vmrkfilename.buffer_start, 
+   eegfilename.buffer_start+skippath, 
+   vmrkfilename.buffer_start+skippath, 
    args[ARGS_POINTSFASTEST].is_set ? "VECTORIZED" : "MULTIPLEXED",
    tinfo->nr_of_channels,
    1e6/tinfo->sfreq,
@@ -156,7 +164,7 @@ DataFile=%s\n\
 ; Fields are delimited by commas, some fields might be omitted (empty).\n\
 ; Commas in type or description text are coded as \"\\1\".\n\
 ",
-   eegfilename.buffer_start
+   eegfilename.buffer_start+skippath
   );
   local_arg->total_points=0;	/* For computing absolute trigger points */
   TRACEMS1(tinfo->emethods, 1, "write_brainvision_open_file: Creating file %s\n", MSGPARM(eegfilename.buffer_start));
