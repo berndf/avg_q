@@ -75,10 +75,11 @@ trim -a 0 0
   epochsource.continuous=True
   epochsource.epochs=1
   epochsource.trigtransfer=True
-  self.add_transform('''
-subtract %s
-write_synamps -a -c %s 1
-''' % (tempepochfile.name,outfilename))
+  self.add_transform('subtract %s' % tempepochfile.name)
+  if outfilename.endswith('.cnt'):
+   self.add_transform('write_synamps -a -c %s 1' % outfilename)
+  else:
+   self.add_transform('write_brainvision -a %s IEEE_FLOAT_32' % outfilename)
   epoch=self.epochs[0]
   import os
   if os.path.exists(outfilename): os.unlink(outfilename)
