@@ -12,11 +12,11 @@
 '''
 
 import avg_q
-import avg_q.numpy_Script
+from . import numpy_Script
 
-class DC_Correct_Script(avg_q.numpy_Script.numpy_Script):
+class DC_Correct_Script(numpy_Script.numpy_Script):
  def __init__(self,avg_q_instance,epochlen_s=1):
-  avg_q.numpy_Script.numpy_Script.__init__(self,avg_q_instance)
+  numpy_Script.numpy_Script.__init__(self,avg_q_instance)
   self.interpolators=None
   self.epochlen_s=epochlen_s
 
@@ -89,11 +89,11 @@ trim -a 0 0
    data=numpy.empty((self.epochlen_s*sfreq,epoch.nr_of_channels))
    for channel,s in enumerate(self.interpolators):
     data[:,channel]=s(x)
-   newepoch=avg_q.numpy_Script.numpy_epoch(data)
+   newepoch=numpy_Script.numpy_epoch(data)
    newepoch.channelnames=epoch.channelnames
    newepoch.channelpos=epoch.channelpos
    newepoch.sfreq=sfreq
-   tmpepochsource=avg_q.numpy_Script.numpy_Epochsource([newepoch])
+   tmpepochsource=numpy_Script.numpy_Epochsource([newepoch])
    tmpscript=avg_q.Script(self.avg_q_instance)
    tmpscript.add_Epochsource(tmpepochsource)
    tmpscript.add_transform('writeasc -b %s' % tempepochfile.name)
