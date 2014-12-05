@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 Bernd Feige
+# Copyright (C) 2008-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Paradigm base class to classify an event train into trial types.
@@ -67,7 +67,7 @@ class paradigm(object):
  # value. This defines the code to be used for any matching code sequence.
  # For example, this can be used to define a signal followed by a stop signal as a stop condition,
  # or for associating a sequence of 5 times a given code with a new code.
- # max_sequence_pause_ms defines the maximum duration of a sequence between last and first stimulus.
+ # max_sequence_length_ms defines the maximum duration of a sequence between last and first stimulus.
  # The point in time will remain that of the first trigger. If no fit is found, the first code
  # will be used unmodified, continuing normally (matching will be tried again with the next code).
  stimulus_sequence_codes={}
@@ -106,7 +106,7 @@ class paradigm(object):
    raise AttributeError('\'paradigm\' object has no attribute \''+name+'\'');
  def parse_trials(self):
   '''Iterator to output single trials together with their classification.
-     This can be used to create output in the order of trials, rather than sorted by condition.'''
+     This can be used from outside to obtain output in the order of trials, rather than sorted by condition.'''
   if self.stimuli:
    for stimulus in self.stimuli:
     self.stimulus_count[stimulus]=0
@@ -143,8 +143,8 @@ class paradigm(object):
     if i+1<len(self.triggers):
      (rpoint, rcode, rdescription)=self.triggers[i+1]
      if rcode in self.response_set:
-      response_latency_ms=(rpoint-point)/self.sfreq*1000.0
-      #print code, rcode, response_latency_ms
+      response_latency_ms=self.get_RT(trial+[self.triggers[i+1]])
+      #print(code, rcode, response_latency_ms)
       # Classify RTs > maxRT_ms or <minRT as non-response,
       # counting the number of occurrances of these conditions as diagnostic
       if self.minRT_ms and response_latency_ms<self.minRT_ms:

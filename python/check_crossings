@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2009-2013 Bernd Feige
+# Copyright (C) 2009-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import sys
@@ -39,7 +39,7 @@ for filename in sys.argv[1:]:
  else:
   p=avg_q.paradigm.paradigm(triggers)
  stats=p.triggerstats()
- for code in stats:
+ for code in sorted(stats):
   result=stats[code]
   if result.n<=1:
    print("%s Code %d: %d" % (filename, code, result.n))
