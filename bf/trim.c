@@ -24,12 +24,14 @@
 enum collapse_choices {
  COLLAPSE_BY_AVERAGING,
  COLLAPSE_BY_SUMMATION,
+ COLLAPSE_BY_Q10,
  COLLAPSE_BY_MEDIAN,
+ COLLAPSE_BY_Q90,
  COLLAPSE_BY_HIGHEST,
  COLLAPSE_BY_LOWEST,
 };
 LOCAL const char *const collapse_choice[]={
- "-a", "-s", "-M", "-h", "-l", NULL
+ "-a", "-s", "-q10", "-M", "-q90", "-h", "-l", NULL
 };
 enum ARGS_ENUM {
  ARGS_COLLAPSE=0, 
@@ -39,7 +41,7 @@ enum ARGS_ENUM {
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
- {T_ARGS_TAKES_SELECTION, "Collapse ranges by averaging, summation, median, highest or lowest value", " ", 0, collapse_choice},
+ {T_ARGS_TAKES_SELECTION, "Collapse ranges by averaging, summation, q10, median, q90, highest or lowest value", " ", 0, collapse_choice},
  {T_ARGS_TAKES_STRING_WORD, "channelname: Use value regions of this channel instead of point or x value regions", "n", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_NOTHING, "xstart and xend are used to specify ranges instead of offset and length", "x", FALSE, NULL},
  {T_ARGS_TAKES_SENTENCE, "Ranges: offset1 length1 [offset2 length2 ...]", "", ARGDESC_UNUSED, NULL}
@@ -243,13 +245,27 @@ trim(transform_info_ptr tinfo) {
    } else {
     newarray.current_element=current_output_point+new_startpoint;
    }
-   if (args[ARGS_COLLAPSE].is_set && args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_MEDIAN) {
+   if (args[ARGS_COLLAPSE].is_set && (
+     args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_Q10 ||
+     args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_MEDIAN ||
+     args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_Q90
+     )) {
     array helparray=myarray;
     helparray.ringstart=ARRAY_ELEMENT(&myarray);
     helparray.current_element=helparray.current_vector=0;
     helparray.nr_of_vectors=1;
     helparray.nr_of_elements=rangep->length;
-    sum=array_median(&helparray);
+    switch (args[ARGS_COLLAPSE].arg.i) {
+     case COLLAPSE_BY_Q10:
+      sum=array_quantile(&helparray,0.1);
+      break;
+     case COLLAPSE_BY_MEDIAN:
+      sum=array_median(&helparray);
+      break;
+     case COLLAPSE_BY_Q90:
+      sum=array_quantile(&helparray,0.9);
+      break;
+    }
     myarray.message=ARRAY_CONTINUE;
    } else
    do {

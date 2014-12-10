@@ -9714,9 +9714,10 @@ Options:
 
 \begin_deeper
 \begin_layout Description
--{asMhl}: Collapse ranges by averaging (-a), summation (-s) or by calculating
- the median value across each range (-M); by choosing the highest (-h) or
- the lowest (-l) value within each range.
+-{a,s,q10,M,q90,h,l}: Collapse ranges by averaging (-a), summation (-s),
+ by calculating the 10% quantile (-q10), median (-M) or 90% quantile (-q90)
+ across each range, or by choosing the highest (-h) or the lowest (-l) value
+ within each range.
 \end_layout
 
 \begin_layout Description
