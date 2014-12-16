@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 Bernd Feige
+# Copyright (C) 2008-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Class to classify and project out artifacts by using ICA
@@ -52,15 +52,15 @@ null_sink
   self.ArtComponents.update(AddComponents)
  def notArtComponents(self):
   return set(range(1,self.nr_of_components+1)).difference(self.ArtComponents)
- def get_Artifact_Components(self,artifactfile,relative_cutoff):
+ def get_Artifact_Components(self,artifactfile,relative_cutoff,fromepoch=1):
   '''This version is optimized for working with averaged artifact traces
      such as averaged EOG. The components are extracted by relative importance,
      assuming that there must be some components clearly representing this
      activity. Due to 'scale_by invmax', the maximum component will carry the
-     weight 1 and therefore will always be selected. 
+     weight 1 and therefore will always be selected.
      Compare get_Artifact_Components2 below.'''
   self.avg_q_instance.write('''
-readasc %(artifactfile)s
+readasc -f %(fromepoch)d -e 1 %(artifactfile)s
 %(remove_channels)s
 project -C -n -p 0 %(base)s_weights_scaled.asc 0
 #posplot
@@ -71,6 +71,7 @@ write_generic -N -P stdout string
 null_sink
 -
 ''' % {
+  'fromepoch': fromepoch,
   'remove_channels': self.get_remove_channels(),
   'artifactfile': artifactfile,
   'base': self.base,
@@ -111,7 +112,7 @@ null_sink
   if start: ranges.append((start,nr_of_points))
   if len(ranges)==0: ranges.append((0,nr_of_points))
   return '  '.join(["%d %d" % (start,end-start) for start,end in ranges])
- def get_Artifact_Components2(self,artifactfile,relative_cutoff,relative_strength_cutoff=0.3):
+ def get_Artifact_Components2(self,artifactfile,relative_cutoff,relative_strength_cutoff=0.3,fromepoch=1):
   '''In contrast to get_Artifact_Components, This version tries to normalize
      the incoming maps, without enforcing that the maximum component will
      always be selected. Components will only be selected if the similarity
@@ -119,9 +120,10 @@ null_sink
      extract maps with sufficient power from the input.
      Set relative_strength_cutoff=0 to really include all incoming maps.'''
   getepochscript='''
-readasc %(artifactfile)s
+readasc -f %(fromepoch)d -e 1 %(artifactfile)s
 %(remove_channels)s
 ''' % {
+  'fromepoch': fromepoch,
   'remove_channels': self.get_remove_channels(),
   'artifactfile': artifactfile,
   }

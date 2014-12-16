@@ -1,4 +1,4 @@
-# Copyright (C) 2008,2010-2013 Bernd Feige
+# Copyright (C) 2008,2010-2014 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import avg_q
 import avg_q.Detector
@@ -79,7 +79,7 @@ write_crossings -E -R 0.5s ECG 1 stdout
    script.add_transform('''
 scale_by -n ?%(protect_channels)s 0
 ''' % {
-   'protect_channels': channel_list2arg(self.protect_channels), 
+   'protect_channels': channel_list2arg(self.protect_channels),
    })
   script.add_transform('''
 baseline_subtract
@@ -125,11 +125,9 @@ writeasc -b %s
     nrofaverages=int(line)
   return nrofaverages
  def sessionAverage(self,infiles):
-  if self.sessionaverage_ECGfile and os.path.exists(self.sessionaverage_ECGfile):
-   return
   ecgfiles=[]
   for infile in infiles:
    self.set_Epochsource(avg_q.Epochsource(infile,continuous=True))
    self.average_ECG()
    ecgfiles.append(self.avgECGfile)
-  self.sessionaverage_ECG(ecgfiles)
+  return self.sessionaverage_ECG(ecgfiles)

@@ -21,6 +21,8 @@ ECGchannels=set([
 ])
 EMGchannels=set([
  'EMG',
+ 'EMG_L',
+ 'EMG_R',
  'BEMG1',
  'BEMG2',
  'EMG EMGchin',
