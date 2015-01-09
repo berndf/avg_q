@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998,1999,2001-2004,2008,2010,2013 Bernd Feige
+ * Copyright (C) 1996,1998,1999,2001-2004,2008,2010,2013,2015 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -34,15 +34,15 @@
 
 /*{{{  Argument defs*/
 LOCAL const char *const bits_choice[]={
- "-8", "-16", "-32", "-float", "-double", "-ieee", NULL
+ "-8", "-16", "-24", "-32", "-float", "-double", "-ieee", NULL
 };
 LOCAL int bits_sizes[]={
- 8, 16, 32, 32, 64, 64
+ 8, 16, 24, 32, 32, 64, 64
 };
 LOCAL const char *const encoding_choice[]={
  "-u", "-s", "-ul", "-al",
  "-float", "-adpcm", "-ima_adpcm", "-gsm", 
- "-inv_ul", "-inv_al", NULL
+ NULL
 };
 LOCAL int encoding_codes[]={
  SOX_ENCODING_UNSIGNED, SOX_ENCODING_SIGN2, SOX_ENCODING_ULAW, SOX_ENCODING_ALAW,
@@ -75,7 +75,7 @@ struct write_sound_storage {
 #define EXPORT
 
 EXPORT Bool sox_init_done=FALSE;
-EXPORT char *myname;
+EXPORT char const *myname;
 EXPORT external_methods_ptr sox_emethods;
 
 LOCAL char msgbuf[MESSAGE_BUFLEN];
@@ -117,13 +117,42 @@ write_sound_init(transform_info_ptr tinfo) {
  sox_globalsp->output_message_handler=&avg_q_sox_output_message_handler;
 
  if (args[ARGS_HELP].is_set) {
-  //st_list_formats();
+  unsigned const *val;
+  sox_format_handler_t const *handler=sox_write_handler(ofile,NULL,NULL);
+  /*
+  sox_format_tab_t const *formattab=sox_get_format_fns();
+  for (; formattab->name!=NULL; formattab++) {
+   printf("%s\n", formattab->name);
+  }
+  */
+  if (handler==NULL) {
+   ERREXIT(tinfo->emethods, "write_sound: No such format.\n");
+  }
+  /* will be local_arg->outformat->handler.write_formats after opening */
+  snprintf(msgbuf, MESSAGE_BUFLEN, "Supported encodings for format '%s':\n", handler->description);
+  TRACEMS(tinfo->emethods, -1, msgbuf);
+  for (val=handler->write_formats; *val!=0; val++) {
+   char const * encoding_opt="UNKNOWN";
+   int i, len;
+   for (i=0; encoding_choice[i]!=NULL; i++) {
+    if (encoding_codes[i]== *val) encoding_opt=encoding_choice[i];
+   }
+   snprintf(msgbuf, MESSAGE_BUFLEN, "Encoding '%s':", encoding_opt);
+   for (val++; *val!=0; val++) {
+    len=strlen(msgbuf);
+    snprintf(msgbuf+len, MESSAGE_BUFLEN-len, " %d", *val);
+   }
+   len=strlen(msgbuf);
+   snprintf(msgbuf+len, MESSAGE_BUFLEN-len, " bits.\n");
+   TRACEMS(tinfo->emethods, -1, msgbuf);
+  }
   ERREXIT(tinfo->emethods, "write_sound: Help request by user.\n");
  }
 
  signal.rate=(sox_rate_t)tinfo->sfreq;
  signal.channels=tinfo->nr_of_channels;
  if (args[ARGS_ENCODING].is_set) {
+  sox_init_encodinginfo(&encodingstruct);
   encodingstruct.encoding=encoding_codes[args[ARGS_ENCODING].arg.i];
   encodingstruct.bits_per_sample=(args[ARGS_BITS].is_set ? bits_sizes[args[ARGS_BITS].arg.i] : 16);
   encoding=&encodingstruct;
