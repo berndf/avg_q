@@ -156,6 +156,7 @@ Notice(gchar *message) {
  }
 
  Notice_window=gtk_dialog_new();
+ gtk_window_set_transient_for(GTK_WINDOW (Notice_window), GTK_WINDOW (VGUI.window));
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK(Notice_window_close), NULL);
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 

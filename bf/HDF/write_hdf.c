@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998,1999,2001,2003,2006-2010,2012 Bernd Feige
+ * Copyright (C) 1996,1998,1999,2001,2003,2006-2010,2012,2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -292,7 +292,10 @@ write_hdf_exit(transform_info_ptr tinfo) {
    push_trigger(&local_arg->triggers,0L,0,NULL); /* End of list */
    write_triggers(tinfo,&local_arg->triggers,local_arg->sdsid);
   }
-  growing_buf_free(&local_arg->triggers);
+  if (local_arg->triggers.buffer_start!=NULL) {
+   clear_triggers(&local_arg->triggers);
+   growing_buf_free(&local_arg->triggers);
+  }
   SDendaccess(local_arg->sdsid);
  }
  SDend(local_arg->fileid);

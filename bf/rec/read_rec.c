@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2003,2005,2007,2009-2013 Bernd Feige
+ * Copyright (C) 1996-2003,2005,2007,2009-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -183,6 +183,7 @@ read_rec_build_trigbuffer(transform_info_ptr tinfo) {
    int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
    if (code==0) break;
    push_trigger(&local_arg->triggers, trigpoint, code, description);
+   free_pointer((void **)&description);
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  } else {
@@ -220,8 +221,8 @@ read_rec_build_trigbuffer(transform_info_ptr tinfo) {
        /* We skip entries without description, such as time-keeping annotations */
        //printf("%ld %ld >%s<\n", trigpoint, duration, description.buffer_start);
        if (description.current_length>1) {
-	push_trigger(&local_arg->triggers, trigpoint, code, strdup(description.buffer_start));
-	if (duration>0) push_trigger(&local_arg->triggers, trigpoint+duration, -code, strdup(description.buffer_start));
+	push_trigger(&local_arg->triggers, trigpoint, code, description.buffer_start);
+	if (duration>0) push_trigger(&local_arg->triggers, trigpoint+duration, -code, description.buffer_start);
        }
       }
      }
@@ -640,7 +641,11 @@ read_rec_exit(transform_info_ptr tinfo) {
  free_pointer((void **)&local_arg->rec_factor);
  free_pointer((void **)&local_arg->comment);
  free_pointer((void **)&local_arg->trigcodes);
- growing_buf_free(&local_arg->triggers);
+
+ if (local_arg->triggers.buffer_start!=NULL) {
+  clear_triggers(&local_arg->triggers);
+  growing_buf_free(&local_arg->triggers);
+ }
 
  tinfo->methods->init_done=FALSE;
 }

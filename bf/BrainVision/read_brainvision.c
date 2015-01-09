@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2013 Bernd Feige
+ * Copyright (C) 2007-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -197,6 +197,7 @@ read_brainvision_build_trigbuffer(transform_info_ptr tinfo) {
    int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
    if (code==0) break;
    push_trigger(&local_arg->triggers, trigpoint, code, description);
+   free_pointer((void **)&description);
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  } else if (local_arg->markerfilename!=NULL) {
@@ -249,10 +250,8 @@ reevaluate:
 	   break;
 	  }
 	 }
-	 if (code==0) {
-	  /* Allow 0 codes in triggercodes to cause dropping of these triggers */
-	  free(description);
-	 } else {
+	 /* Allow 0 codes in triggercodes to cause dropping of these triggers */
+	 if (code!=0) {
 	  if (code==-1) {
 	   if (strncmp("Stimulus,S",description,10)==0) {
 	    code=atoi(description+10);
@@ -264,6 +263,7 @@ reevaluate:
 	  }
 	  push_trigger(&local_arg->triggers, trigpoint, code, description);
 	 }
+	 free(description);
 	}
        }
       }
@@ -774,13 +774,17 @@ read_brainvision_exit(transform_info_ptr tinfo) {
  struct read_brainvision_storage * const local_arg=(struct read_brainvision_storage *)tinfo->methods->local_storage;
 
  growing_buf_free(&local_arg->filepath_buf);
- growing_buf_free(&local_arg->triggers);
  growing_buf_free(&local_arg->channelnames_buf);
  growing_buf_free(&local_arg->resolutions_buf);
  growing_buf_free(&local_arg->coordinates_buf);
  if (local_arg->infile!=NULL) fclose(local_arg->infile);
  free_pointer((void **)&local_arg->markerfilename);
  free_pointer((void **)&local_arg->trigcodes);
+
+ if (local_arg->triggers.buffer_start!=NULL) {
+  clear_triggers(&local_arg->triggers);
+  growing_buf_free(&local_arg->triggers);
+ }
 
  tinfo->methods->init_done=FALSE;
 }

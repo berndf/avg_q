@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1997-1999,2001,2003,2006-2011,2013 Bernd Feige
+ * Copyright (C) 1997-1999,2001,2003,2006-2011,2013,2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -111,6 +111,7 @@ read_neurofile_build_trigbuffer(transform_info_ptr tinfo) {
    int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
    if (code==0) break;
    push_trigger(&local_arg->triggers, trigpoint, code, description);
+   free_pointer((void **)&description);
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  } else {
@@ -381,7 +382,11 @@ read_neurofile_exit(transform_info_ptr tinfo) {
  fclose(local_arg->infile);
  local_arg->infile=NULL;
  free_pointer((void **)&local_arg->trigcodes);
- growing_buf_free(&local_arg->triggers);
+
+ if (local_arg->triggers.buffer_start!=NULL) {
+  clear_triggers(&local_arg->triggers);
+  growing_buf_free(&local_arg->triggers);
+ }
 
  tinfo->methods->init_done=FALSE;
 }

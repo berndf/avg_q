@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2013 Bernd Feige
+ * Copyright (C) 1996-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -1470,9 +1470,10 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
   if (top_tinfo!=NULL) {
    color(FOREGROUND);
    cmov2((Coord)CHAR_WIDTH/(maxx-minx), (Coord)(maxy-CHAR_HEIGHT)/(maxy-miny));
-   for (i=0; top_tinfo->comment[i]!='\0'
-     && ((stringbuffer[i+1]='\0'), strwidth(stringbuffer)<(maxx-minx)*0.5); i++) {
+   for (i=0; top_tinfo->comment[i]!='\0'; i++) {
     stringbuffer[i]=top_tinfo->comment[i];
+    stringbuffer[i+1]='\0';
+    if (strwidth(stringbuffer)>=(maxx-minx)*0.5) break;
    }
    stringbuffer[i]='\0';
    charstr(stringbuffer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2001,2003,2005-2008,2012,2013 Bernd Feige
+ * Copyright (C) 1996-2001,2003,2005-2008,2012-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -390,7 +390,11 @@ write_vitaport_exit(transform_info_ptr tinfo) {
  free_pointer((void **)&local_arg->channelmin);
  free_pointer((void **)&local_arg->channelheaders);
  free_pointer((void **)&local_arg->channelheadersII);
- growing_buf_free(&local_arg->triggers);
+
+ if (local_arg->triggers.buffer_start!=NULL) {
+  clear_triggers(&local_arg->triggers);
+  growing_buf_free(&local_arg->triggers);
+ }
  /*}}}  */
 
  tinfo->methods->init_done=FALSE;

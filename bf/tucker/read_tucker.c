@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001-2004,2006-2008,2010-2013 Bernd Feige
+ * Copyright (C) 1996-1999,2001-2004,2006-2008,2010-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -207,6 +207,7 @@ read_tucker_build_trigbuffer(transform_info_ptr tinfo) {
    int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
    if (code==0) break;
    push_trigger(&local_arg->triggers, trigpoint, code, description);
+   free_pointer((void **)&description);
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  } else {
@@ -224,7 +225,7 @@ read_tucker_build_trigbuffer(transform_info_ptr tinfo) {
       for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
        /* Trigger on the first non-zero point */
        if (last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
-	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, strdup(local_arg->EventCodes[eventno]));
+	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, local_arg->EventCodes[eventno]);
        }
        last_trigvalues[eventno]=pdata[eventno];
       }
@@ -236,7 +237,7 @@ read_tucker_build_trigbuffer(transform_info_ptr tinfo) {
       for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
        /* Trigger on the first non-zero point */
        if (last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
-	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, strdup(local_arg->EventCodes[eventno]));
+	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, local_arg->EventCodes[eventno]);
        }
        last_trigvalues[eventno]=pdata[eventno];
       }
@@ -248,7 +249,7 @@ read_tucker_build_trigbuffer(transform_info_ptr tinfo) {
       for (eventno=0; eventno<local_arg->header.NEvents; eventno++) {
        /* Trigger on the first non-zero point */
        if (last_trigvalues[eventno]==0 && pdata[eventno]!=0) {
-	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, strdup(local_arg->EventCodes[eventno]));
+	push_trigger(&local_arg->triggers, current_triggerpoint, eventno+1, local_arg->EventCodes[eventno]);
        }
        last_trigvalues[eventno]=pdata[eventno];
       }
@@ -522,7 +523,11 @@ read_tucker_exit(transform_info_ptr tinfo) {
 
  free_pointer((void **)&local_arg->trigcodes);
  free_pointer((void **)&local_arg->EventCodes);
- growing_buf_free(&local_arg->triggers);
+
+ if (local_arg->triggers.buffer_start!=NULL) {
+  clear_triggers(&local_arg->triggers);
+  growing_buf_free(&local_arg->triggers);
+ }
  fclose(local_arg->infile);
 
  tinfo->methods->init_done=FALSE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2004,2006,2007,2009-2011,2013 Bernd Feige
+ * Copyright (C) 1996-2004,2006,2007,2009-2011,2013,2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -105,6 +105,7 @@ set_init(transform_info_ptr tinfo) {
    int const code=read_trigger_from_trigfile(triggerfile, tinfo->sfreq, &trigpoint, &description);
    if (code==0) break;
    push_trigger(&local_arg->triggers, trigpoint, code, description);
+   free_pointer((void **)&description);
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  }
@@ -296,8 +297,7 @@ set(transform_info_ptr tinfo) {
     code=atoi(tokenbuf.buffer_start);
    }
    if (growing_buf_get_nexttoken(&buf,&tokenbuf)) {
-    description=(char *)malloc(strlen(tokenbuf.buffer_start)+1);
-    strcpy(description,tokenbuf.buffer_start);
+    description=tokenbuf.buffer_start;
    }
    if (pos<0) pos=0;
    if (pos>=tinfo->nr_of_points) pos=tinfo->nr_of_points-1;
@@ -356,7 +356,10 @@ METHODDEF void
 set_exit(transform_info_ptr tinfo) {
  struct set_storage *local_arg=(struct set_storage *)tinfo->methods->local_storage;
 
- growing_buf_free(&local_arg->triggers);
+ if (local_arg->triggers.buffer_start!=NULL) {
+  clear_triggers(&local_arg->triggers);
+  growing_buf_free(&local_arg->triggers);
+ }
 
  tinfo->methods->init_done=FALSE;
 }

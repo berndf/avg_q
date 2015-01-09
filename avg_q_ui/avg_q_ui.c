@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2013 Bernd Feige
+ * Copyright (C) 1996-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -299,6 +299,7 @@ Notice(gchar *message) {
  }
 
  Notice_window=gtk_dialog_new();
+ gtk_window_set_transient_for(GTK_WINDOW (Notice_window), GTK_WINDOW (Avg_Q_Main_Window));
  gtk_window_set_position (GTK_WINDOW (Notice_window), GTK_WIN_POS_MOUSE);
  gtk_window_set_wmclass (GTK_WINDOW (Notice_window), "Notice", "avg_q");
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK (Notice_window_close), NULL);
@@ -1050,6 +1051,7 @@ MethodInstance_build_dialog(void) {
  old_method_cursorline=CursorLineNumber();
  nr_of_active_elements=0;
  MethodInstance_window=gtk_dialog_new();
+ gtk_window_set_transient_for(GTK_WINDOW (MethodInstance_window), GTK_WINDOW (Avg_Q_Main_Window));
  gtk_window_set_position (GTK_WINDOW (MethodInstance_window), GTK_WIN_POS_MOUSE);
  gtk_window_set_wmclass (GTK_WINDOW (MethodInstance_window), "Method instance", "avg_q");
  g_signal_connect (G_OBJECT (MethodInstance_window), "destroy", G_CALLBACK (method_dialog_close), NULL);

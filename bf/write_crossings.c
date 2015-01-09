@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001-2007,2010,2012,2013 Bernd Feige
+ * Copyright (C) 1996-1999,2001-2007,2010,2012-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -377,7 +377,10 @@ write_crossings_exit(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
 
  if (local_arg->outfile==NULL) {
-  growing_buf_free(&local_arg->triggers);
+  if (local_arg->triggers.buffer_start!=NULL) {
+   clear_triggers(&local_arg->triggers);
+   growing_buf_free(&local_arg->triggers);
+  }
  } else {
  if (local_arg->outfile!=stdout && local_arg->outfile!=stderr) {
   fclose(local_arg->outfile);

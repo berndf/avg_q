@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993-2004,2006,2007,2009,2011-2013 Bernd Feige
+ * Copyright (C) 1993-2004,2006,2007,2009,2011-2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -585,6 +585,8 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
  growing_buf buffer, tokenbuf;
  int code=0;
 
+ /* Initialize *descriptionp to NULL to avoid having an uninitialized value here which might be free'd */
+ if (descriptionp!=NULL) *descriptionp=NULL;
  growing_buf_init(&buffer);
  growing_buf_allocate(&buffer,0);
  growing_buf_init(&tokenbuf);
@@ -637,13 +639,8 @@ read_trigger_from_trigfile(FILE *triggerfile, DATATYPE sfreq, long *trigpoint, c
      /* Avoid invalid lines. We'd need to generate an error here but don't have the tinfo struct. */
      continue;
     }
-    if (descriptionp!=NULL) {
-     if (growing_buf_get_nexttoken(&buffer,&tokenbuf)) {
-      *descriptionp=(char *)malloc(strlen(tokenbuf.buffer_start)+1);
-      strcpy(*descriptionp,tokenbuf.buffer_start);
-     } else {
-      *descriptionp=NULL;
-     }
+    if (descriptionp!=NULL && growing_buf_get_nexttoken(&buffer,&tokenbuf)) {
+     *descriptionp=strdup(tokenbuf.buffer_start);
     }
    } else {
     code=1;
@@ -668,7 +665,7 @@ push_trigger(growing_buf *triggersp, long position, int code, char *description)
  }
  trig.position=position;
  trig.code=code;
- trig.description=description;
+ trig.description=(description==NULL ? NULL : strdup(description));
  growing_buf_append(triggersp, (char *)&trig, sizeof(struct trigger));
 }
 /*}}}  */
@@ -682,7 +679,9 @@ clear_triggers(growing_buf *triggersp) {
   /* Traverse the trigger list to free all descriptions.
    * Respect both end-of-list conventions because clear_triggers may be called in situations where a
    * correct end marker has not yet been written, such as after an ERREXIT while opening a trigger file */
-  for (; intrig<afterlast && intrig->code!=0; intrig++) free_pointer((void *)&intrig->description);
+  for (; intrig<afterlast && intrig->code!=0; intrig++) {
+   free_pointer((void *)&intrig->description);
+  }
   growing_buf_clear(triggersp);
   push_trigger(triggersp, 0L, -1, NULL); /* File position entry */
   push_trigger(triggersp, 0L, 0, NULL); /* End of list */

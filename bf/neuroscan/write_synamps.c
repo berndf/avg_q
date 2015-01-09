@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003,2004,2006-2010,2012 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003,2004,2006-2010,2012,2014 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -635,7 +635,11 @@ write_synamps_exit(transform_info_ptr tinfo) {
 #  endif
    write_struct((char *)&event, sm_EVENT1, local_arg->SCAN);
   }
-  growing_buf_free(&local_arg->triggers);
+
+  if (local_arg->triggers.buffer_start!=NULL) {
+   clear_triggers(&local_arg->triggers);
+   growing_buf_free(&local_arg->triggers);
+  }
 
   /* Write the end event */
   event.StimType=0;	event.KeyBoard=0;

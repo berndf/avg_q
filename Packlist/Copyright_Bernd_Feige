@@ -36,6 +36,7 @@ avg_q_ui/vguidev.c
 avg_q_ui/vguidev.h
 avg_q_ui/vogl_vgui_driver.c
 bf/BrainVision/read_brainvision.c
+bf/BrainVision/write_brainvision.c
 bf/HDF/read_hdf.c
 bf/HDF/write_hdf.c
 bf/Inomed/Inomed_sm.c
