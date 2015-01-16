@@ -42,6 +42,7 @@ LOCAL struct triggercode {
 };
 /* Presently, I've seen only files with INT_16 and IEEE_FLOAT_32 */
 LOCAL char *datatype_choice[]={
+ "UNKNOWN",
  "INT_8",
  "INT_16",
  "INT_32",
@@ -50,6 +51,7 @@ LOCAL char *datatype_choice[]={
  NULL
 };
 LOCAL int datatype_size[]={
+ 0,
  sizeof(int8_t),
  sizeof(int16_t),
  sizeof(int32_t),
@@ -57,7 +59,8 @@ LOCAL int datatype_size[]={
  sizeof(double),
 };
 enum DATATYPE_ENUM {
- DT_INT8=0,
+ DT_UNKNOWN=0,
+ DT_INT8,
  DT_INT16,
  DT_INT32,
  DT_FLOAT32,
@@ -328,7 +331,7 @@ read_brainvision_init(transform_info_ptr tinfo) {
  growing_buf_appendchar(&local_arg->filepath_buf, '\0');
 
  local_arg->infile=NULL;
- local_arg->datatype= -1;
+ local_arg->datatype= DT_UNKNOWN;
  local_arg->multiplexed= TRUE;
  local_arg->markerfilename=NULL;
  local_arg->itemsize=1;
@@ -349,6 +352,10 @@ read_brainvision_init(transform_info_ptr tinfo) {
  growing_buf_allocate(&readbuf, 0);
  /* Read fractional sensitivities correctly: */
  setlocale(LC_NUMERIC, "C");
+ growing_buf_read_line(vhdr, &readbuf);
+ if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Header File Version 1.0")!=0) {
+  ERREXIT1(tinfo->emethods, "read_brainvision_init: %s is not a Brain Vision .vhdr file\n", MSGPARM(args[ARGS_IFILE].arg.s));
+ }
  while (1) {
   growing_buf_read_line(vhdr, &readbuf);
 reevaluate:
@@ -356,8 +363,6 @@ reevaluate:
   //printf(">%s<\n", readbuf.buffer_start);
   if (readbuf.current_length==1 || strncmp(readbuf.buffer_start,";",1)==0) {
    /* Empty line or comment */
-  } else if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Header File Version 1.0")==0) {
-   /* Header line */
   } else if (strcmp(readbuf.buffer_start,"[Common Infos]")==0) {
    while (1) {
     growing_buf_read_line(vhdr, &readbuf);
@@ -410,7 +415,7 @@ reevaluate:
        //printf("Datatype %d, %d bytes\n", local_arg->datatype, datatype_size[local_arg->datatype]);
       }
      }
-     if (local_arg->datatype== -1) {
+     if (local_arg->datatype== DT_UNKNOWN) {
       ERREXIT1(tinfo->emethods, "read_brainvision_init: Unknown data format %s\n", MSGPARM(format));
      }
     }
@@ -479,6 +484,14 @@ reevaluate:
  fclose(vhdr);
  growing_buf_free(&readbuf);
 
+ /* Check whether we have enough information at all */
+ if (local_arg->datatype== DT_UNKNOWN) {
+  ERREXIT(tinfo->emethods, "read_brainvision_init: Unknown data format!\n");
+ }
+ if (local_arg->channelnames_buf.current_length==0) {
+  ERREXIT(tinfo->emethods, "read_brainvision_init: No channel table!\n");
+ }
+
  /*{{{  Parse arguments that can be in seconds*/
  tinfo->sfreq=local_arg->sfreq;
  local_arg->beforetrig=tinfo->beforetrig=gettimeslice(tinfo, args[ARGS_BEFORETRIG].arg.s);
@@ -538,6 +551,8 @@ read_value(FILE *infile,
  DATATYPE dat=0;
  enum ERROR_ENUM err=ERR_NONE;
  switch (local_arg->datatype) {
+  case DT_UNKNOWN:
+   break;
   case DT_INT8: {
    signed char c;
    if (fread(&c, sizeof(c), 1, infile)!=1) err=ERR_READ;
