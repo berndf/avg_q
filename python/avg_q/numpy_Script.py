@@ -59,9 +59,12 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin
    'nr_of_channels': nr_of_channels,
   })
   if self.epochs[0].channelnames:
-   # Note that channelpos must be correctly set as well
    channelnames=self.epochs[0].channelnames
-   channelpos=self.epochs[0].channelpos
+   if self.epochs[0].channelpos:
+    channelpos=self.epochs[0].channelpos
+   else:
+    # If channelpos is not available, make it up
+    channelpos=[(i,0,0) for i in range(len(channelnames))]
    methodline='>set_channelposition -s '+' '.join(["%s %g %g %g" % (channelnames[channel],channelpos[channel][0],channelpos[channel][1],channelpos[channel][2]) for channel in range(len(self.epochs[0].channelnames))])
    avg_q_instance.write(methodline+'\n')
   for methodline in self.branch:

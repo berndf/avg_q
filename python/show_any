@@ -19,6 +19,10 @@ argparser.add_argument('-E', '--epochlen', default=0, dest='epochlen', help='''
 Epoch duration in avg_q points (eg 100, 5.5s, 200ms).
 The default 0 reads full epochs from epoched file formats
 or entire continuous files as a single epoch.''')
+argparser.add_argument('-N', '--notrig', dest='notrig', action='store_true', help='''
+No trigtransfer. Normally triggers are read but some file types have to be read
+completely to build the trigger list, so that display is speedier when suppressing triggers.
+''')
 argparser.add_argument('-a', '--appendopt', default='l', choices=['l','p','c','i'], dest='appendopt', help='(l)ink epochs in memory (default) or append (p)oints, (c)hannels or (i)tems')
 argparser.add_argument('-t', '--tracelevel', type=int, default=0, dest='tracelevel', help='Set avg_q trace level (verbosity)')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true', help='Debug mode, ie dump avg_q scripts to stdout during processing')
@@ -69,7 +73,7 @@ for filename_and_triggerfile in args.files:
   # Show fMRI gradient correction residual files
   a.getcontepoch(infile, 0, '1s', fromepoch=args.fromepoch, epochs=args.epochs)
  else:
-  a.getcontepoch(infile, 0, args.epochlen, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=True)
+  a.getcontepoch(infile, 0, args.epochlen, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
  if addmethods:
   for line in addmethods:
    a.write('>'+line+'\n')

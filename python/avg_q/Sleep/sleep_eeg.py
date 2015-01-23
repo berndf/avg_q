@@ -73,11 +73,20 @@ calc log
   if c.filename is None:
    return
   tfile=c.filename.replace('.cnt','.trg')
-  # trg file exists; leave 0-length files untouched if sl is still None
-  if os.path.exists(tfile) and (os.path.getsize(tfile)>0 or sl is None):
-   return
-  # Create 0-length file
-  if sl is None:
+  if os.path.exists(tfile):
+   # trg file exists; leave 0-length files untouched if sl is still None
+   if sl is None:
+    if os.path.getsize(tfile)>0:
+     print("%s exists and >0 but sl file not found???" % tfile)
+    return
+   sl_mtime=os.path.getmtime(sl.filename)
+   cnt_mtime=os.path.getmtime(c.filename)
+   trg_mtime=os.path.getmtime(tfile)
+   # Keep the existing trg file if it is newer than both sl and cnt files,
+   # otherwise re-generate it
+   if sl_mtime<trg_mtime and cnt_mtime<trg_mtime: return
+  elif sl is None:
+   # Create 0-length file
    with open(tfile,'w') as f:
     pass
    return
