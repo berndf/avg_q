@@ -5,7 +5,7 @@ Average class working together with paradigm.py-derived trial lists.
 In particular, we abstract here the idea of averaging separately around
 several different events within the epochs (eg Stimulus, Response) while
 referring to the same baseline (before the first event) and shifting the
-averages around the second and following events to exactly overlay the 
+averages around the second and following events to exactly overlay the
 first average.
 """
 
@@ -55,7 +55,7 @@ class Average(object):
   postprocess is used to actually save the averages. Note that a '-a' append flag will be necessary in a PUT_EPOCH_METHOD
   since every condition leads to a separate average sub-script with postprocess at the end.
   '''
- 
+
   if '-t' in test_options and not '-u' in test_options:
    calclog='''
 calc -i 2 log10
@@ -93,7 +93,7 @@ Next comes the GrandAverage class, handy for doing grand averages.
 Usage: Init giving a list of the input files, then usually call
 set_outfile() to specify that all averages should be written to that
 asc file, and call single_average(condition,eventindex) repeatedly.
-For eventindex!=event0index (presently we set event0index=0 by default), 
+For eventindex!=event0index (presently we set event0index=0 by default),
 the curves are automatically corrected so that their individual shift
 will coincide with standardized_RT_ms.
 """
@@ -127,7 +127,7 @@ class GrandAverage(object):
  def get_one_average(self,avgfile,eventindex=None):
   '''Get one single average for this self.condstr and eventindex, properly aligned and ready for averaging.
      This allows to process the input files one by one if so desired.
-     Otherwise use get_averages below to read all inputs a given condition and eventindex.
+     Otherwise use get_averages below to read all inputs for a given condition and eventindex.
   '''
   f=avg_q_file(avgfile)
   tuples=self.alltuples[avgfile]

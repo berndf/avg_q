@@ -14,7 +14,7 @@ formats_and_extensions=[
  ('freiburg', ['.co']),
  ('neurofile', ['.eeg']),
  ('Inomed', ['.emg','.trg']),
- ('sound', ['.wav','.au','.snd']),
+ ('sound', ['.wav','.au','.snd','.aiff','.mp3','.ogg']),
  ('Coherence', ['.Eeg']),
  ('Konstanz', ['.sum', '.raw']),
  ('Vitaport', ['.vpd', '.raw']),

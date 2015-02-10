@@ -66,8 +66,10 @@ trim -a 0 0
   import tempfile
   tempepochfile=tempfile.NamedTemporaryFile()
   self.save_state()
-  epochsource=self.Epochsource_list[0]
-  infile=epochsource.infile
+  # Replace the epoch source by our own one
+  infile=self.Epochsource_list[0].infile
+  epochsource=avg_q.Epochsource(infile)
+  self.Epochsource_list[0]=epochsource
   sfreq,points_in_file=self.avg_q_instance.get_description(infile,('sfreq','points_in_file'))
   # Prepare our epoch source for continuous reading
   epochsource.beforetrig=0

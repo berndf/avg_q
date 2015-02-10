@@ -329,7 +329,7 @@ class Script(object):
  savedstate=[] # List of (transform,collect,postprocess) tuples
  def save_state(self):
   import copy
-  self.savedstate.append((copy.deepcopy(self.Epochsource_list),copy.copy(self.transforms),copy.copy(self.collect),copy.copy(self.postprocess_transforms)))
+  self.savedstate.append((copy.copy(self.Epochsource_list),copy.copy(self.transforms),copy.copy(self.collect),copy.copy(self.postprocess_transforms)))
  def restore_state(self):
   self.Epochsource_list,self.transforms,self.collect,self.postprocess_transforms=self.savedstate.pop()
  def __init__(self,avg_q_instance):

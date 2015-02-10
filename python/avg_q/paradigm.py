@@ -1,8 +1,11 @@
-# Copyright (C) 2008-2014 Bernd Feige
+# Copyright (C) 2008-2015 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Paradigm base class to classify an event train into trial types.
-A trial is a sequence of events each characterized by a trigger (time,code,description) tuple.
+A trial is a sequence of events characterized by a trigger (time,code,description) tuple.
+Note that events not included in either stimulus_set or response_set are
+ignored for the classification of trials but are still included in the event
+list of each trial to enable separate analysis of these events.
 """
 
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
@@ -82,10 +85,9 @@ class paradigm(object):
   # Filter the events so that we can do clear decisions
   self.triggers=[]
   for point, code, description in triggers:
-   if len(self.stimulus_set)==0 and len(self.response_set)==0 or code in self.stimulus_set or code in self.response_set:
-    if code in self.onset_correction_ms:
-     point+=self.onset_correction_ms[code]*self.sfreq/1000
-    self.triggers.append((point, code, description))
+   if code in self.onset_correction_ms:
+    point+=self.onset_correction_ms[code]*self.sfreq/1000
+   self.triggers.append((point, code, description))
   self.conditions=self.correct_conditions+self.error_conditions
 
   # These are automatically computed on first access:
@@ -104,6 +106,8 @@ class paradigm(object):
    return self.__dict__[name]
   else:
    raise AttributeError('\'paradigm\' object has no attribute \''+name+'\'');
+ def is_ignored_code(self,code):
+  return not(len(self.stimulus_set)==0 and len(self.response_set)==0 or code in self.stimulus_set or code in self.response_set)
  def parse_trials(self):
   '''Iterator to output single trials together with their classification.
      This can be used from outside to obtain output in the order of trials, rather than sorted by condition.'''
@@ -119,15 +123,22 @@ class paradigm(object):
    trial=[self.triggers[i]]
    (point, code, description)=self.triggers[i]
    if code in self.stimulus_set:
-    def is_valid_continuation(seq,j):
-     return(i+j<len(self.triggers) and self.triggers[i+j][1] in seq and (self.triggers[i+j][0]-point)/self.sfreq*1000.0<=self.max_sequence_length_ms)
     if code in self.stimulus_sequence_codes:
+     i_start=i # Recorded here since i is increased by "ignored" codes
+     def is_valid_continuation(seq,j):
+      return(i+j<len(self.triggers) and self.triggers[i+j][1] in seq and (self.triggers[i+j][0]-point)/self.sfreq*1000.0<=self.max_sequence_length_ms)
      sequencedepth=0
      sequence=self.stimulus_sequence_codes[code]
      while True:
       if type(sequence)==dict:
-       if not is_valid_continuation(sequence,sequencedepth+1):
+       if i+sequencedepth+1<len(self.triggers) and self.is_ignored_code(self.triggers[i+sequencedepth+1][1]):
+        # Ignored code: Add it to the trial
+        trial.append(self.triggers[i+sequencedepth+1])
+        i+=1
+        continue
+       if i+sequencedepth+1>=len(self.triggers) or not is_valid_continuation(sequence,sequencedepth+1):
 	# Bail out, sequence doesn't fit
+        i=i_start
         trial=[self.triggers[i]]
         break
        sequencedepth+=1
@@ -142,6 +153,11 @@ class paradigm(object):
     condition=None
     if i+1<len(self.triggers):
      (rpoint, rcode, rdescription)=self.triggers[i+1]
+     if self.is_ignored_code(rcode):
+      # Ignored code: Add it to the trial
+      trial.append(self.triggers[i+1])
+      i+=1
+      continue
      if rcode in self.response_set:
       response_latency_ms=self.get_RT(trial+[self.triggers[i+1]])
       #print(code, rcode, response_latency_ms)
@@ -247,7 +263,7 @@ class paradigm(object):
   return s
  def write_onsets_mat(self,filename,fMRI_onset_s=0.0,TR_s=1.0):
   '''Write a SPM cell array .mat file containing the names and onsets of all events.
-     fMRI_onset_s is the difference between the time basis of the paradigm and that 
+     fMRI_onset_s is the difference between the time basis of the paradigm and that
      of the fMRI (including dummy scans) in seconds.
      TR_s is a divisor for the output - the default of 1.0 will write onsets in seconds,
      if you set this to the actual TR in seconds, output will be in units of scans.
@@ -262,7 +278,7 @@ class paradigm(object):
    onsets.append([(x[0][0]/self.sfreq-fMRI_onset_s)/TR_s for x in self.trials[condition]])
    durations.append([0.0]*len(self.trials[condition]))
   ons={
-   'names': scipy.array(names,dtype=object), 
+   'names': scipy.array(names,dtype=object),
    'onsets': onsets,
    'durations': durations,
   }
