@@ -2709,7 +2709,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        dev=NEWBORDER; leave=TRUE;
        break;
       case 12:	/* CTRL-L */
-       dev=NEWBORDER; leave=TRUE;
+       dev=NEWDATA; leave=TRUE;
        break;
       case 'X':
        if (swaptinfo!=NULL) {
