@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Bernd Feige
+# Copyright (C) 2013,2015 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 """
@@ -12,6 +12,8 @@ class delphi_table(list):
    self.ncol=int(next(infile))+1
    next(infile)
    self.nrow=int(next(infile))
+   # Files with nrow= -1 were encountered...
+   if self.ncol<=0 or self.nrow<=0: return
 
    for col in range(self.ncol):
     for row in range(self.nrow):
@@ -28,7 +30,7 @@ class delphi_table(list):
 
    for col in range(self.ncol):
     for row in range(self.nrow):
-     outfile.write(("%s\r\n" % self[row][col]).encode('latin1'))
+     outfile.write(("%s\r\n" % str(self[row][col])).encode('latin1'))
     outfile.write(b"\r\n")
 
 if __name__ == '__main__':
