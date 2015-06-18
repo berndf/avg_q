@@ -102,7 +102,12 @@ null_sink
    if sys.version<"3":
     line=self.avg_q.stdout.readline().rstrip('\r\n')
    else:
-    line=self.avg_q.stdout.readline().decode('utf8').rstrip('\r\n')
+    rawline=self.avg_q.stdout.readline()
+    try:
+     line=rawline.decode('utf8')
+    except UnicodeDecodeError:
+     line=rawline.decode('latin1')
+    line=line.rstrip('\r\n')
    if not line or line==self.endstring:
     break
    yield line
@@ -220,6 +225,9 @@ null_sink
   for r in self:
    collect.addline(r)
   collect.closelist()
+  # If there are 0 points in file, it may happen that no values are output at all
+  if len(collect.outtuple)==0:
+   collect.outtuple=[None]*len(getvars)
   return collect.outtuple[0] if len(getvars)==1 else tuple(collect.outtuple)
  def get_filetriggers(self,infile):
   from . import trgfile

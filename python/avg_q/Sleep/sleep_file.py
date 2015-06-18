@@ -8,6 +8,7 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
 from .. import avg_q_file
+from avg_q import channel_list2arg
 import os
 
 rawfile_paths=(
@@ -23,6 +24,11 @@ rawfile_paths=(
  '/AD/slarchiv/A8000_Axxxx/',
  '/AD/slarchiv/A9000_Axxxx/',
 )
+
+# lowercase bookno bad channels database
+bad_channels={
+ 'a8164': set(['M1']),
+}
 
 from .. import idircache
 
@@ -42,6 +48,7 @@ class sleep_file(avg_q_file):
     self.first,self.ext=os.path.splitext(self.filename)
    else:
     raise Exception('Can\'t locate raw file for book number %s' % filename)
+  self.addmethods=None
   if self.ext.lower()=='.co':
    from . import freiburg_setup
    from .. import channelnames2channelpos
@@ -52,12 +59,28 @@ class sleep_file(avg_q_file):
    self.setup=channelnames2channelpos.channelnames2channelpos(freiburg_setup.sleep_channels(self.first,nr_of_channels))
   elif self.ext.lower()=='.rec' or self.ext.lower()=='.edf':
    self.f=avg_q_file(self.filename,fileformat='rec')
+   a=avg_q.avg_q()
+   comment,channelnames=a.get_description(self.f,('comment','channelnames'))
+   del a
+   if comment is not None and 'Somnoscreen' in comment:
+    # Recording reference for Somnoscreen is Cz, makes no sense to analyze the channels like this
+    # M1 is the more common name but there are some recordings with A1 instead
+    channelnames=set(channelnames)
+    p,fname=os.path.split(self.first)
+    fname=fname.lower()
+    if fname in bad_channels:
+     channelnames=channelnames.difference(bad_channels[fname])
+    reference=channelnames.intersection(set(['M1','M2','A1','A2']))
+    self.addmethods='''
+>rereference %(reference)s
+''' % {
+     'reference': channel_list2arg(reference),
+    }
   elif self.ext.lower()=='.eeg':
    self.f=avg_q_file(self.filename,fileformat='neurofile')
   else:
    raise Exception("Unknown sleep file %s" % filename)
   self.fileformat=self.f.fileformat
-  self.addmethods=None
   self.trigfile=None
  def getepoch(self, beforetrig='0', aftertrig='30s', continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
   self.f.addmethods=self.addmethods
@@ -76,7 +99,7 @@ class sleep_file(avg_q_file):
   else:
    useappendices=[]
   retval=''
-  if self.ext.lower()=='.co':
+  if self.fileformat=='freiburg':
    if sleeplabepochs:
     aftertrig=3072 # 512=5s; 3072=512*6 (30s). Can't say `30s' because sampling rate is different
    retval+='''
@@ -99,7 +122,7 @@ class sleep_file(avg_q_file):
  set sfreq 102.4
  set_channelposition -s %s
 ''' % self.setup
-  elif self.ext.lower()=='.rec' or self.ext.lower()=='.edf':
+  elif self.fileformat=='rec':
    retval+='''
 !echo -F stderr Reading EDF file %s...\\n
 ''' % self.filename
@@ -113,7 +136,7 @@ class sleep_file(avg_q_file):
      f.addmethods=self.addmethods
      f.trigfile=self.trigfile
      retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
-  elif self.ext.lower()=='.eeg':
+  elif self.fileformat=='neurofile':
    retval+='''
 !echo -F stderr Reading Nihon Kohden file %s...\\n
 ''' % self.filename

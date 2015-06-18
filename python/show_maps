@@ -10,6 +10,7 @@ argparser.add_argument('-i', '--isolines', dest='isolines', help='Draw iso lines
 argparser.add_argument('-l', '--scale_local', dest='scale_local', action='store_true', help='Scale each map instead of global max(abs)')
 argparser.add_argument('-s', '--save_fig', dest='save_fig', action='store_true', help='Save plots to .png instead of showing them')
 argparser.add_argument('-S', '--size', dest='size', help='Set size of the output in inch (one or two comma-separated values)')
+argparser.add_argument('-v', '--vrange', dest='vrange', type=float, nargs=2, help='Set vertical scale [vmin vmax]')
 args = argparser.parse_args()
 
 import avg_q
@@ -51,10 +52,15 @@ for ascfile in args.ascfiles:
  script.add_Epochsource(epochsource)
  if args.demean_maps:
   script.add_transform("demean_maps")
- if ascfile.endswith('_maps_scaled.asc'):
-  script.plot_maps(vmin=-1,vmax=1,isolines=isolines)
+ globalscale=False
+ if args.vrange:
+  vmin,vmax=args.vrange
+ elif ascfile.endswith('_maps_scaled.asc'):
+  vmin,vmax= -1,1
  else:
-  script.plot_maps(globalscale=not args.scale_local,isolines=isolines)
+  vmin,vmax=None,None
+  globalscale=not args.scale_local
+ script.plot_maps(vmin=vmin,vmax=vmax,globalscale=globalscale,isolines=isolines)
  if args.save_fig:
   plt.savefig(pngfile,format='png',dpi=100,transparent=True)
   plt.close()

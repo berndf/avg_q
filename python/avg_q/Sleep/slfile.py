@@ -67,7 +67,7 @@ import collections
 import os
 class slfile(object):
  # This is the type returned by the reader and of the tuple list elements:
- sltuple=collections.namedtuple('sltuple',('time','stage','checks','arousals','myos','eyemovements'))
+ sltuple=collections.namedtuple('sltuple',('time','stage','checks','arousals','myos','eyemovements', 'apnea_z', 'apnea_za', 'apnea_o', 'apnea_oa', 'apnea_g', 'apnea_ga', 'hypopnea', 'hypopnea_a'))
  remc_tuple=collections.namedtuple('remc_tuple',('remcycle','nremcycle'))
  def __init__(self,filename=None,minutes_per_epoch=None):
   self.Date=None
@@ -115,7 +115,7 @@ class slfile(object):
   return self.rdr()
  def rdr2(self):
   '''Reader for sl2 (old sl) files.'''
-  (index,time,stage,checks,arousals,myos,eyemovements)=(0,-1, 0, 0, 0, 0, 0);
+  (index,time,stage,checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)=(0,-1,0)+(0,)*12;
   while True:
    sl=self.slfile.read(14)
    if len(sl)<14: break
@@ -126,6 +126,7 @@ class slfile(object):
     elif len(sl)==5:
      hh,mm=int(sl[2:3]),int(sl[3:5])
     self.lights_on.append({'hour': hh, 'minute': mm, 'offset': index})
+    stage=0
    elif sl.startswith('LA'):
     sl=sl.rstrip()
     if len(sl)==6:
@@ -154,9 +155,9 @@ class slfile(object):
    if time<0 and stage==2:	# Time starts from first stage 2
     time=0
    index+=1
-   yield self.sltuple(time,stage,checks,arousals,myos,eyemovements)
+   yield self.sltuple(time,stage,checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)
    if time>=0:
-    time+=self.minutes_per_epoch 
+    time+=self.minutes_per_epoch
  def rdr3(self):
   '''Reader for sl3 files.'''
   (index,time,stage)=(0,-1, 0);
@@ -184,7 +185,7 @@ class slfile(object):
    epochfields=fields[0].split('*') # 'Ep',index,time(s)
    fields=fields[1:]
 
-   (checks,arousals,myos,eyemovements)=(0, 0, 0, 0);
+   (checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)=(0,)*12
    for field in fields:
     if field.startswith('LA*'):
      timepart=field[3:]
@@ -202,6 +203,7 @@ class slfile(object):
      elif len(timepart)==3:
       hh,mm=int(timepart[0:1]),int(timepart[1:3])
      self.lights_on.append({'hour': hh, 'minute': mm, 'offset': index})
+     stage=0
     elif field.startswith('Stage*'):
      stagecode=field[6:]
      if stagecode=='V': # No idea what this means, pbly 'has apnea diagnostics'?
@@ -221,6 +223,10 @@ class slfile(object):
     elif field=='LM':
      myos+=1
     elif field=='LMA':
+     # 2015-05-04 NOTE that BT said there is no code 'LMA' any more in SL3 but
+     # the software analyzes the order of 'LM' and 'Arousal' instead.
+     # However sl3 files to the present day include 'LMA' without a separately
+     # scored arousal...
      myos+=1
      arousals+=1
     elif field=='BM':
@@ -231,6 +237,10 @@ class slfile(object):
      else:
       eyemovements=int(field[4:])
     elif field.startswith('ApZA*'): # Central apnea with arousal
+     # Breathing-related variables.
+     # 2015-05-04 NOTE that the arousals in breathing events "with arousal" do not count
+     # separately, since arousals are already scored in a previous pass
+     # Note that the value is not a count but a *duration in seconds* during the current epoch
      apnea_za=int_or_1(field[5:])
     elif field.startswith('ApZ*'): # Central apnea without arousal
      apnea_z=int_or_1(field[4:])
@@ -252,9 +262,9 @@ class slfile(object):
    if time<0 and stage==2:	# Time starts from first stage 2
     time=0
    index+=1
-   yield self.sltuple(time,stage,checks,arousals,myos,eyemovements)
+   yield self.sltuple(time,stage,checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)
    if time>=0:
-    time+=self.minutes_per_epoch 
+    time+=self.minutes_per_epoch
  def close(self):
   if self.slfile:
    self.slfile.close()

@@ -10,6 +10,7 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
 import os
+import math
 
 class sleep_eeg(avg_q.avg_q):
  defaultbands=[
@@ -123,13 +124,13 @@ echo -F stdout End of medbands\\n
    pass
   #print(bands)
   #print(medbands)
-  import copy
-  sorted_medbands=copy.deepcopy(medbands)
+  sorted_medbands=[]
   medians_of_medianfiltered=[]
   quartiles_of_medianfiltered=[]
   diff_threshold=[]
   for i in range(nr_of_bands):
-   sorted_medbands[i].sort()
+   # Remove -inf values, which are caused by disconnected times
+   sorted_medbands.append(sorted([x for x in medbands[i] if not math.isinf(x)]))
    medians_of_medianfiltered.append(sorted_medbands[i][int(len(sorted_medbands[i])/2)])
    quartiles_of_medianfiltered.append(sorted_medbands[i][int(len(sorted_medbands[i])/4)])
    diff_threshold.append(medians_of_medianfiltered[i]-quartiles_of_medianfiltered[i])
@@ -153,7 +154,7 @@ echo -F stdout End of medbands\\n
     # be averaging wake phases at the beginning and end of the night...
     time, stage, checks, arousals, myos, eyemovements=-1, 0, 0, 0, 0, 0
    else:
-    time, stage, checks, arousals, myos, eyemovements=sl.tuples[sl_pos]
+    time, stage, checks, arousals, myos, eyemovements=sl.tuples[sl_pos][:6]
     remcycle, nremcycle=sl.remcycles[sl_pos]
     for i in range(nr_of_bands):
      if abs(bands[i][point]-medbands[i][point])>diff_threshold[i]:
@@ -321,6 +322,8 @@ class cntspectsource(avg_q.Epochsource):
   self.add_branchtransform('''
 # NeuroScan files store the sampling freq as int; we have 1/30s...
 set sfreq 0.03333333333
+# Recover -Inf values transformed to the minimum representable value by write_cnt
+recode -32.768 -32.76799 -Inf -Inf
 ''')
  def locate(self,booknumber):
   from . import bookno
