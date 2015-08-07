@@ -195,6 +195,8 @@ avg_q
 ms), each of which works on the result of the previous.
  Averaging was only the first data reduction method the program featured;
  today, some more are available.
+ Data reduction can also be omitted if the aim is to show, extract or transform
+ the input data and not to produce a single-epoch result.
 \end_layout
 
 \begin_layout Standard
@@ -202,15 +204,15 @@ ms), each of which works on the result of the previous.
 \series bold
 avg_q
 \series default
- is configured by means of a script file containing the name of one method
- per line together with its options and arguments.
+ is configured by means of a script text file containing the name of one
+ method per line together with its options and arguments.
  After configuration, the methods are executed from top to bottom with an
  implicit loop over all epochs yielded by the first method.
  Comments may be placed anywhere after a hash (`#') sign, just as in Unix
  shell scripts.
  Empty lines are ignored.
- Method options must precede any required arguments and start with a hyphen
- (`-').
+ Method options must follow the method name, precede any required arguments
+ and start with a hyphen (`-').
  For your reference, figure 
 \begin_inset CommandInset ref
 LatexCommand ref
@@ -791,8 +793,8 @@ avg_q
  program itself (the `user interface', see below) also allows to select
  one sub-script to execute, so that a script file can also be used as a
  library of operations.
- This is more useful for `standalone' versions of the program with built-in
- script than for the version capable of executing arbitrary scripts.
+ This can also be useful for `standalone' versions of the program with built-in
+ script.
 \end_layout
 
 \begin_layout Standard
@@ -843,10 +845,11 @@ Methods are
  track of several single utilities and versions; and it is easy to add more
  methods anytime, steadily increasing the abilities of the program without
  sacrificing any of the former functionality.
- For example, only input and output methods have to be added for full support
- of other file formats.
- Finally, selected methods can also be incorporated in any fixed program
- (like 
+ For example, only an input and an output method need to be added for full
+ support of another file format.
+ Finally, the `methods' are independent compiled objects and can be linked
+ with and called from other programs without using scripts at all (an example
+ in the distribution is 
 \series bold
 ascaverage
 \series default
@@ -857,7 +860,7 @@ reference "Sec:ascaverage"
 
 \end_inset
 
-) from a library, without the configurable queue.
+).
 \end_layout
 
 \begin_layout Standard
@@ -870,7 +873,8 @@ document-centric
 \begin_inset Quotes erd
 \end_inset
 
- user interface design, which displays a 
+ user interface design in which a multichannel data file is displayed as
+ a 
 \begin_inset Quotes eld
 \end_inset
 
@@ -878,14 +882,22 @@ document
 \begin_inset Quotes erd
 \end_inset
 
- (in our case a multichannel data file) and shows menus to perform processing
- steps on it.
+ and menus are offered to perform processing steps on it.
  
 \series bold
 avg_q
 \series default
- does not follow this standard, therefore users have to familiarize with
- the inherent concepts in order to use the program.
+ does not follow this standard but rather views the script as the 
+\begin_inset Quotes eld
+\end_inset
+
+document
+\begin_inset Quotes erd
+\end_inset
+
+, similar to a text editor.
+ Therefore users have to familiarize with the script concept to use the
+ program.
  To many users, for example, it is not obvious why 
 \series bold
 avg_q
@@ -905,7 +917,7 @@ look back
 Epoch_\SpecialChar \-
 Methods only see whatever data is
  stored in memory to represent the epoch.
- This limits the scope of tasks for which 
+ This appears to limit the scope of tasks for which 
 \series bold
 avg_q
 \series default
@@ -1112,13 +1124,13 @@ tracelevel: Set the global trace level.
 
 \begin_layout Description
 -D: Dump C source code to the standard output that contains a version of
- the script that can be directly compiled with the 
+ the script that can be directly compiled and linked with the 
 \series bold
 avg_q
 \series default
  libraries to produce a `standalone' version.
- This is only useful for the developer in order to provide people with customize
-d, small programs after testing the scripts with the full 
+ This is useful for developers in order to provide people with customized,
+ small programs, usually after implementing the scripts with the full 
 \series bold
 avg_q
 \series default
@@ -1149,7 +1161,7 @@ avg_q
 \begin_layout Standard
 After the main program was used successfully for data analysis for some
  years, it became obvious that using a configurable general-purpose system
- was an `overkill' for many small, conversion-type applications.
+ was an `overkill' for some small, conversion-type applications.
  Even a complicated analysis may call for a fixed monolithic command if
  its execution belongs to the laboratory routine.
  For such purposes, a way was devised to produce compiled 
@@ -1243,8 +1255,8 @@ avg_q
 \series bold
 avg_q
 \series default
-, this includes the construction of processing queues from the available
- methods as well as loading, saving, starting and interrupting such queues.
+, this includes the construction of scripts from the available methods as
+ well as loading, saving, starting and interrupting such scripts.
  The single main reason for implementing a GUI version (named 
 \series bold
 avg_q_ui
@@ -1299,7 +1311,7 @@ posplot
 \series bold
 avg_q
 \series default
-, because it allows direct scrutiny of the data at any processing step.
+ because it allows direct scrutiny of the data at any processing step.
 \begin_inset Newline newline
 \end_inset
 
@@ -1531,12 +1543,12 @@ While a script runs, the name of the method currently executed is shown
 \series bold
 posplot
 \series default
- method opens a third window which makes some 
+ method opens a third window which makes 
 \series bold
 posplot
 \series default
- commands available in its own menu; the rest of the interaction uses keyboard
- and mouse as described in section 
+ operations available in its own menu; the rest of the interaction uses
+ keyboard and mouse as described in section 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "Sec:PosplotKeys"
@@ -1644,8 +1656,8 @@ avg_q_ui
 \series bold
 avg_q_ui
 \series default
- currently runs under the X-Window system (X11R6) on virtually all UNIX
- versions and under Microsoft Windows 95/NT.
+ currently runs under the X-Window system (X11) on virtually all UNIX versions
+ and under Microsoft Windows.
 \end_layout
 
 \begin_layout Section
@@ -1690,12 +1702,12 @@ asc file format
 \end_inset
 
 '.
- There are two versions: an ASCII text version that can be easily read by
- statistical or spreadsheet programs, and a binary version that is faster
- to read and write and should normally be used for intermediate storage.
+ There are two versions: an ASCII text version and a binary version that
+ is faster to read and write and should normally be used for intermediate
+ storage.
  The two versions contain identical information.
- They are automatically recognized when they are read; special options are
- only needed to request that binary format is written instead of the default
+ They are automatically recognized on reading; special options are only
+ needed to request that binary format is written instead of the default
  ASCII.
  The file format has the following capabilities: 
 \end_layout
@@ -1761,8 +1773,29 @@ When data is written using
 \series bold
 writeasc
 \series default
-, most attributes are written to the epoch header, since they usually differ
+, most attributes are written to the epoch header, since they can differ
  across epochs.
+\begin_inset Newline newline
+\end_inset
+
+Note that for producing data files to be imported into spreadsheet or statistica
+l software, 
+\series bold
+write_generic
+\series default
+ with data type 
+\begin_inset Quotes eld
+\end_inset
+
+string
+\begin_inset Quotes erd
+\end_inset
+
+ is better suited than 
+\series bold
+writeasc
+\series default
+ ASCII format.
 \end_layout
 
 \begin_layout Subsection
@@ -1830,16 +1863,18 @@ name "Sec:TriggerFile"
 \end_layout
 
 \begin_layout Standard
-Some Get_\SpecialChar \-
+Many Get_\SpecialChar \-
 Epoch_\SpecialChar \-
-Methods process continuous files from which epochs could
- be read around arbitrary time points.
- A simple ASCII trigger file format is supported by 
+Methods read epochs from continuous files around arbitrary
+ time points.
+ By default such time points or triggers are read from file format specific
+ internal representations if available.
+ In addition, a simple ASCII trigger file format is supported by 
 \series bold
 avg_q
 \series default
- in order to represent lists of such time points or triggers, each of which
- can have an integer number or `trigger code' assigned to it.
+ in order to represent trigger lists externally.
+ Each trigger has an integer number or `trigger code' assigned to it.
  In trigger files
 \begin_inset Index idx
 status collapsed
@@ -1854,6 +1889,7 @@ trigger file format
  line should contain a pair of values of the form `point code' giving the
  point number around which to read and the trigger code assigned to this
  point.
+ The column separators can be either spaces or tabs (tabs preferred).
  Any further columns appearing in the file (`description') are read and
  written transparently, and displayed by posplot, but not used for epoch
  selection.
@@ -1931,14 +1967,14 @@ avg_q
 \series default
  - be it in a method configuration or a trigger file, a number without any
  suffix is treated as a number of sampling points.
- By appending the unit shortcut (without intervening space), 
+ By appending a unit shortcut (without intervening space), 
 \series bold
 avg_q
 \series default
  uses the known sampling frequency value (`sfreq') to compute the corresponding
  number of points.
- Unit shortcuts are `us' (microseconds), `ms' (milliseconds), `s' (seconds),
- `min' (minutes) and `h' (hours).
+ Available unit shortcuts are `us' (microseconds), `ms' (milliseconds),
+ `s' (seconds), `min' (minutes) and `h' (hours).
 \end_layout
 
 \begin_layout Subsection
@@ -4544,17 +4580,17 @@ region
 epochs rejected_\SpecialChar \-
 epochs
  failed_\SpecialChar \-
-assertions condition z_\SpecialChar \-
+assertions condition firstvalue z_\SpecialChar \-
 label z_\SpecialChar \-
-value comment channelname xchannelname
- nr_\SpecialChar \-
+value comment channelname
+ xchannelname nr_\SpecialChar \-
 of_\SpecialChar \-
 triggers
 \begin_inset Newline newline
 \end_inset
 
-comparison is any one of: == != < <= > >= = ! (equal, not equal, less than,
- less or equal, greater, greater or equal, matching, not matching)
+comparison is any one of: == != < <= > >= =~ !~ (equal, not equal, less
+ than, less or equal, greater, greater or equal, matching, not matching)
 \begin_inset Newline newline
 \end_inset
 
@@ -4570,6 +4606,24 @@ value is the value to compare with; comparison follows the type of the variable,
 For example, this method can be used to assert that all processed epochs
  have a certain number of channels or consist of at least a given number
  of averages when creating grand averages.
+\begin_inset Newline newline
+\end_inset
+
+The `firstvalue' assertion accesses the very first value of the 
+\emph on
+data
+\emph default
+, i.e.
+ the first data point and item of the first channel.
+ 
+\series bold
+trim
+\series default
+ and 
+\series bold
+remove_channel
+\series default
+ can be used to make a desired data point the first.
 \begin_inset Newline newline
 \end_inset
 
@@ -12514,7 +12568,7 @@ weight_filename: Instead of simple averaging with equal weight, file names
  one per line.
  No additional asc files may be specified on the command line.
  The operation performed is 
-\begin_inset Formula $\left(\sum_{i}\, x_{i}w_{i}\right)/\left(\sum_{i}\, w_{i}\right)$
+\begin_inset Formula $\left(\sum_{i}\,x_{i}w_{i}\right)/\left(\sum_{i}\,w_{i}\right)$
 \end_inset
 
 , where 
@@ -12551,7 +12605,7 @@ avg_q
 ascaverage
 \series default
  itself (namely, to 
-\begin_inset Formula ${\textstyle \sum_{i}\, w_{i}}$
+\begin_inset Formula ${\textstyle \sum_{i}\,w_{i}}$
 \end_inset
 
  if 

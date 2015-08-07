@@ -33,6 +33,7 @@ LOCAL const char *const variables_choice[]={
  "rejected_epochs",
  "failed_assertions",
  "condition",
+ "firstvalue",
  "z_label",
  "z_value",
  "comment",
@@ -56,6 +57,7 @@ enum variables_choice {
  C_REJECTED_EPOCHS,
  C_FAILED_ASSERTIONS,
  C_CONDITION,
+ C_FIRSTVALUE,
  C_Z_LABEL,
  C_Z_VALUE,
  C_COMMENT,
@@ -221,6 +223,9 @@ assert(transform_info_ptr tinfo) {
    break;
   case C_CONDITION:
    accept=compare_values(tinfo->condition, atoi(args[ARGS_VALUE].arg.s), whichcomp);
+   break;
+  case C_FIRSTVALUE:
+   accept=compare_values(tinfo->tsdata[0], get_value(args[ARGS_VALUE].arg.s,NULL), whichcomp);
    break;
   case C_Z_LABEL:
    accept=compare_strings(tinfo->z_label, args[ARGS_VALUE].arg.s, whichcomp);
