@@ -557,9 +557,12 @@ write_synamps(transform_info_ptr calltinfo) {
  do {
   int channel=0;
   do {
-   DATATYPE hold=array_scan(&myarray);
-   /* Code +-Inf as min/max representable value. Using only NEUROSCAN_SHORTCONV, 0.0 results for +-Inf... */
-   buffer[channel]=isinf(hold) ? (isinf(hold)<0 ? -32768 : 32767) : NEUROSCAN_SHORTCONV(&local_arg->Channels[channel], hold);
+   DATATYPE hold=array_scan(&myarray), hold2;
+   /* Code anything exceeding the representable range, including +-Inf, as min/max representable value. */
+   hold2=NEUROSCAN_SHORTCONV(&local_arg->Channels[channel], hold);
+   if (hold2< -32768) hold2= -32768;
+   else if (hold2> 32767) hold2= 32767;
+   buffer[channel]=(int16_t)hold2;
 # ifndef LITTLE_ENDIAN
    Intel_int16(&buffer[channel]);
 # endif

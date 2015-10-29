@@ -199,7 +199,6 @@ METHODDEF void
 read_generic_init(transform_info_ptr tinfo) {
  struct read_generic_storage *local_arg=(struct read_generic_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- struct stat statbuff;
  char const * const filemode=(local_arg->datatype==DT_STRING ? "r" : "rb");
 
  growing_buf_init(&local_arg->triggers);
@@ -245,17 +244,31 @@ read_generic_init(transform_info_ptr tinfo) {
   local_arg->new_line=TRUE;
  }
 
- /* Note that we can't use stat here as args[ARGS_IFILE].arg.s might be "stdin"... */
- fstat(fileno(local_arg->infile),&statbuff);
- /* Allow size to be less then fileoffset only if we read from a pipe... */
- if (statbuff.st_size<=local_arg->fileoffset && !S_ISFIFO(statbuff.st_mode)) {
-  ERREXIT(tinfo->emethods, "read_generic_init: Input file length <= fileoffset!\n");
- }
  if (datatype_size[local_arg->datatype]==0) {
-  /* We don't know bytes_per_point and how many samples may fit in the input file... */
+  /* For "string", we don't know bytes_per_point and how many samples may fit in the input file... */
   local_arg->bytes_per_point = 0;
   local_arg->points_in_file = 0;
+  if (args[ARGS_CONTINUOUS].is_set && local_arg->points_in_file==0) {
+   /* In this case we need points_in_file to be able to read one epoch
+    * extending to the end, so determine the number of text lines */
+   int inchar;
+   int nlines=0;
+   while (TRUE) {
+    inchar=fgetc(local_arg->infile);
+    if (inchar==EOF) break;
+    if (inchar=='\n') nlines++;
+   }
+   local_arg->points_in_file = nlines-local_arg->fileoffset;
+   fseek(local_arg->infile, 0L, SEEK_SET);
+  }
  } else {
+  struct stat statbuff;
+  /* Note that we can't use stat here as args[ARGS_IFILE].arg.s might be "stdin"... */
+  fstat(fileno(local_arg->infile),&statbuff);
+  /* Allow size to be less then fileoffset only if we read from a pipe... */
+  if (statbuff.st_size<=local_arg->fileoffset && !S_ISFIFO(statbuff.st_mode)) {
+   ERREXIT(tinfo->emethods, "read_generic_init: Input file length <= fileoffset!\n");
+  }
   local_arg->bytes_per_point=(local_arg->nr_of_channels*local_arg->itemsize+(args[ARGS_XCHANNELNAME].is_set ? 1 : 0))*datatype_size[local_arg->datatype]+local_arg->block_gap;
   if (statbuff.st_size==0) {
    local_arg->points_in_file = 0;

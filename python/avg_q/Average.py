@@ -136,7 +136,7 @@ class GrandAverage(object):
    #print position,code,description
    self.avg_q_instance.getepoch(f,fromepoch=position+1,epochs=1)
    n_averages+=1
-   if eventindex!=None and eventindex!=self.event0index:
+   if eventindex is not None and eventindex!=self.event0index:
     shift=get_shift_from_description(description)
     shift_points=int(round((shift-self.standardized_RT_ms)/1000.0*self.sfreq))
     if isinstance(self.session_shift_points,list): self.session_shift_points.append(shift_points)
@@ -155,12 +155,12 @@ class GrandAverage(object):
      The caller has to issue a collect method etc. if the returned
      number of averages is not zero.
   '''
-  self.condstr=condition+' event %d' % eventindex if eventindex!=None else condition
+  self.condstr=condition+' event %d' % eventindex if eventindex is not None else condition
   self.session_shift_points=[] # Updated by get_one_average
   n_averages=0 # Bail out if no averages are available at all
   for avgfile in self.infiles:
    n_averages+=self.get_one_average(avgfile,eventindex)
-  if n_averages>0 and eventindex!=None and eventindex!=self.event0index:
+  if n_averages>0 and eventindex is not None and eventindex!=self.event0index:
    print("%s Mean shift points: %g" % (self.condstr,float(sum(self.session_shift_points))/len(self.session_shift_points)))
   return n_averages
  def set_outfile(self,outfile,append=False):
@@ -198,7 +198,7 @@ set_comment %(condstr)s
 ''' % {
   'test_options': test_options,
   'calclog': calclog,
-  'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex!=None and eventindex!=self.event0index else 0)) if eventindex!=None else self.condstr,
+  'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex is not None and eventindex!=self.event0index else 0)) if eventindex is not None else self.condstr,
   })
   if self.outfile:
    self.avg_q_instance.write('''

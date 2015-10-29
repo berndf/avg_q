@@ -98,7 +98,7 @@ class CoherenceFile(object):
     for m in markercodes:
      if marker.startswith(m):
       code=markercodes[m]
-   if code==None:
+   if code is None:
     code=unknown_marker_code
    if code!=0:
     if self.sfreq:
@@ -176,7 +176,7 @@ class avg_q_Coherencefile(avg_q_file):
   self.filename=filename
   self.nr_of_channels=nr_of_channels
   self.sfreq=sfreq
-  if compressed==None:
+  if compressed is None:
    import os
    eegpath,eegfilename=os.path.split(filename)
    self.compressed=eegfilename<first_uncompressed
@@ -184,7 +184,7 @@ class avg_q_Coherencefile(avg_q_file):
    self.compressed=compressed
   self.fileformat="Coherence"
   self.addmethods=None
-  getepochstart='read_generic -O %d -C %d -s %d ' % (data_offset,self.nr_of_channels,self.sfreq)
+  getepochstart='read_generic -O %d -C %d -s %g ' % (data_offset,self.nr_of_channels,self.sfreq)
   if self.compressed:
    self.getepochmethod=getepochstart+'''%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s int8
 >integrate

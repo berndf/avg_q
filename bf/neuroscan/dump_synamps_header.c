@@ -98,7 +98,7 @@ main(int argc, char **argv) {
 #ifndef LITTLE_ENDIAN
  change_byteorder((char *)&EEG, sm_SETUP);
 #endif
- if (strncmp(&EEG.rev,"Version",7)!=0) {
+ if (strncmp(&EEG.rev[0],"Version",7)!=0) {
   fprintf(stderr, "%s: %s is not a NeuroScan file\n", argv[0], filename);
   continue;
  }

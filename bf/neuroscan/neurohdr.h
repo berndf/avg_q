@@ -465,7 +465,7 @@ extern int neuroscan_accept_translation[];
  * the channel from which the word s or float f was taken. */
 #define NEUROSCAN_CONVSHORT(channelstrucp, s) (((DATATYPE)((s)-(channelstrucp)->baseline))*(channelstrucp)->sensitivity*(channelstrucp)->calib/204.8)
 #define NEUROSCAN_CONVFLOAT(channelstrucp, f) ((f)*(channelstrucp)->calib/(channelstrucp)->n)
-#define NEUROSCAN_SHORTCONV(channelstrucp, d) ((short)rint((d)*204.8/(channelstrucp)->calib/(channelstrucp)->sensitivity)+(channelstrucp)->baseline)
+#define NEUROSCAN_SHORTCONV(channelstrucp, d) (rint((d)*204.8/(channelstrucp)->calib/(channelstrucp)->sensitivity)+(channelstrucp)->baseline)
 #define NEUROSCAN_FLOATCONV(channelstrucp, f) ((f)*(channelstrucp)->n/(channelstrucp)->calib)
 
 extern struct_member sm_SETUP[], sm_ELECTLOC[], sm_NEUROSCAN_EPOCHED_SWEEP_HEAD[], sm_TEEG[], sm_EVENT1[], sm_EVENT2[];

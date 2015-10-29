@@ -210,11 +210,11 @@ class paradigm(object):
   Response_index=None
   for i in range(len(trial)):
    code=trial[i][1]
-   if Stim_index==None and code in self.stimulus_set:
+   if Stim_index is None and code in self.stimulus_set:
     Stim_index=i
-   elif Response_index==None and code in self.response_set:
+   elif Response_index is None and code in self.response_set:
     Response_index=i
-  if Stim_index!=None and Response_index!=None:
+  if Stim_index is not None and Response_index is not None:
    return (trial[Response_index][0]-trial[Stim_index][0])/self.sfreq*1000.0
   else:
    return None

@@ -49,16 +49,16 @@ class sleep_file(avg_q_file):
    else:
     raise Exception('Can\'t locate raw file for book number %s' % filename)
   self.addmethods=None
-  if self.ext.lower()=='.co':
+  self.f=avg_q_file(self.filename)
+  self.fileformat=self.f.fileformat
+  if self.fileformat=='freiburg':
    from . import freiburg_setup
    from .. import channelnames2channelpos
-   self.f=avg_q_file(self.first,fileformat='freiburg')
    a=avg_q.avg_q()
    nr_of_channels=a.get_description(self.f,'nr_of_channels')
    del a
    self.setup=channelnames2channelpos.channelnames2channelpos(freiburg_setup.sleep_channels(self.first,nr_of_channels))
-  elif self.ext.lower()=='.rec' or self.ext.lower()=='.edf':
-   self.f=avg_q_file(self.filename,fileformat='rec')
+  elif self.fileformat=='rec':
    a=avg_q.avg_q()
    comment,channelnames=a.get_description(self.f,('comment','channelnames'))
    del a
@@ -76,11 +76,6 @@ class sleep_file(avg_q_file):
 ''' % {
      'reference': channel_list2arg(reference),
     }
-  elif self.ext.lower()=='.eeg':
-   self.f=avg_q_file(self.filename,fileformat='neurofile')
-  else:
-   raise Exception("Unknown sleep file %s" % filename)
-  self.fileformat=self.f.fileformat
   self.trigfile=None
  def getepoch(self, beforetrig='0', aftertrig='30s', continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
   self.f.addmethods=self.addmethods
@@ -122,31 +117,17 @@ class sleep_file(avg_q_file):
  set sfreq 102.4
  set_channelposition -s %s
 ''' % self.setup
-  elif self.fileformat=='rec':
+  else:
    retval+='''
-!echo -F stderr Reading EDF file %s...\\n
-''' % self.filename
+!echo -F stderr Reading %s file %s...\\n
+''' % (self.fileformat, self.filename)
    retval+=self.f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
    for appendix in useappendices:
     contfile=self.first + appendix + self.ext
     if os.path.exists(contfile):
      # Note that according to BT, skipping the first epoch is automatic in the
      # stager, so the same happens in the second section of data.
-     f=avg_q_file(contfile,fileformat='rec')
-     f.addmethods=self.addmethods
-     f.trigfile=self.trigfile
-     retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
-  elif self.fileformat=='neurofile':
-   retval+='''
-!echo -F stderr Reading Nihon Kohden file %s...\\n
-''' % self.filename
-   retval+=self.f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
-   for appendix in useappendices:
-    contfile=self.first + appendix + self.ext
-    if os.path.exists(contfile):
-     # Note that according to BT, skipping the first epoch is automatic in the
-     # stager, so the same happens in the second section of data.
-     f=avg_q_file(contfile,fileformat='neurofile')
+     f=avg_q_file(contfile,fileformat=self.fileformat)
      f.addmethods=self.addmethods
      f.trigfile=self.trigfile
      retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)

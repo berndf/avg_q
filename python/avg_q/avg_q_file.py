@@ -20,6 +20,7 @@ formats_and_extensions=[
  ('Vitaport', ['.vpd', '.raw']),
  ('Tucker', ['.raw']),
  ('Embla', ['.ebm']),
+ ('Unisens', ['.bin','.csv']),
 ]
 
 class avg_q_file(object):
@@ -79,6 +80,10 @@ read_sound %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftert
    from . import Embla
    emblafile=Embla.avg_q_Emblafile(filename)
    self.getepochmethod=emblafile.getepochmethod
+  elif fileformat=='Unisens':
+   from . import Unisens
+   Unisensfile=Unisens.avg_q_Unisensfile(filename)
+   self.getepochmethod=Unisensfile.getepochmethod
   elif fileformat=='Konstanz':
    self.getepochmethod='''
 read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filename)s
@@ -107,7 +112,7 @@ read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %
    return '''
 dip_simulate 100 %(epochs_arg)s %(beforetrig)s %(aftertrig)s eg_source
 ''' % {
-    'epochs_arg': str(epochs), 
+    'epochs_arg': str(epochs),
     'beforetrig': str(beforetrig),
     'aftertrig': str(aftertrig)
     }
@@ -115,18 +120,18 @@ dip_simulate 100 %(epochs_arg)s %(beforetrig)s %(aftertrig)s eg_source
    return '''
 null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
 ''' % {
-    'epochs_arg': str(epochs), 
+    'epochs_arg': str(epochs),
     'beforetrig': str(beforetrig),
     'aftertrig': str(aftertrig)
     }
   return self.getepochmethod % {
-   'continuous_arg': '-c' if continuous else '', 
-   'fromepoch_arg': '-f %d' % fromepoch if fromepoch!=None else '', 
-   'epochs_arg': '-e %d' % epochs if epochs!=None else '', 
-   'offset_arg': '-o %s' % offset if offset!=None else '', 
-   'triglist_arg': '-t %s' % triglist if triglist!=None else '', 
-   'trigfile_arg': '-R %s' % escape_filename(trigfile) if trigfile!=None else '', 
-   'trigtransfer_arg': '-T' if trigtransfer else '', 
+   'continuous_arg': '-c' if continuous else '',
+   'fromepoch_arg': '-f %d' % fromepoch if fromepoch is not None else '',
+   'epochs_arg': '-e %d' % epochs if epochs is not None else '',
+   'offset_arg': '-o %s' % offset if offset is not None else '',
+   'triglist_arg': '-t %s' % triglist if triglist is not None else '',
+   'trigfile_arg': '-R %s' % escape_filename(trigfile) if trigfile is not None else '',
+   'trigtransfer_arg': '-T' if trigtransfer else '',
    'filename': escape_filename(self.filename),
    'beforetrig': str(beforetrig),
    'aftertrig': str(aftertrig)

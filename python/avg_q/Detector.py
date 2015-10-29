@@ -22,10 +22,10 @@ class Detector(avg_q.Script):
   self.distance_from_breakpoint_points=None
  def detect(self,outtrigfile=None,maxvalue=None):
   '''
-  Returns a trgfile object and also, if outtrigfile is given, writes the
+  Returns a list of trigger tuples and also, if outtrigfile is given, writes the
   data to a new file of that name for convenience.
   Note that the script 'self' should be set up with transform methods including an appropriate
-  "write_crossings channelnames threshold stdout" (formerly called detectionscript).
+  "write_crossings channelnames threshold stdout".
   '''
   self.sfreq=self.avg_q_instance.get_description(self.Epochsource_list[0].infile,'sfreq')
   if self.distance_from_breakpoint_s is not None:

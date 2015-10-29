@@ -12167,7 +12167,20 @@ m switch vertical bar at selected x position (marker) on/off
 \end_layout
 
 \begin_layout Description
-M switch vertical bars at trigger positions on/off
+M switch vertical bars at trigger positions on/off.
+ The bars will be foreground color for trigger codes less or equal than
+ -16 (key press) and cyan otherwise.
+ If 'c' is entered using a `=' argument, this is switched to cycled colors
+ depending on the trigger code (
+\begin_inset Quotes eld
+\end_inset
+
+colored triggers
+\begin_inset Quotes erd
+\end_inset
+
+).
+ An argument of 'u' resets this.
 \end_layout
 
 \begin_layout Description

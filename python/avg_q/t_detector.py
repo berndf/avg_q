@@ -112,14 +112,14 @@ extract_item %(itempart)d
   for IC in ICs:
    found_ICs[IC].sort(key=lambda x: IC_latrange_list[x][1][0])
    for i,index in enumerate(found_ICs[IC]):
-    if index==None: continue
+    if index is None: continue
     redo=True
     while redo:
      redo=False
      IC1,latrange1=IC_latrange_list[index]
      for j in range(i+1,len(found_ICs[IC])):
       index2=found_ICs[IC][j]
-      if index2==None: continue
+      if index2 is None: continue
       IC2,latrange2=IC_latrange_list[index2]
       overlaprange=[max(latrange1[0],latrange2[0]),min(latrange1[1],latrange2[1])]
       if overlaprange[1]>overlaprange[0]:
@@ -139,7 +139,7 @@ extract_item %(itempart)d
   outlist=[]
   for IC in ICs:
    for index in found_ICs[IC]:
-    if index!=None: outlist.append(IC_latrange_list[index])
+    if index is not None: outlist.append(IC_latrange_list[index])
   IC_latrange_list=outlist
 
   z_scores=self.measure_z(infile,available_epochs,IC_latrange_list,raw)

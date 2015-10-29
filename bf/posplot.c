@@ -177,6 +177,7 @@ struct posplot_storage {
  Bool singleitems;
  Bool showcoordsys, shownames, showplots, showdist, showmarker;
  Bool showtriggers;
+ Bool colored_triggers; /* If true, cycle colors depending on trigger code */
  Bool show_info;
  Bool quit_mode;
  enum position_modes position_mode;
@@ -620,6 +621,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->showdist=FALSE;
  local_arg->showmarker=FALSE;
  local_arg->showtriggers=FALSE;
+ local_arg->colored_triggers=FALSE;
  local_arg->show_info=FALSE;
  local_arg->position_mode=POSITION_MODE_XYZ;
  local_arg->replay_file=NULL;
@@ -1305,8 +1307,14 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        if (intrig->position<0 || intrig->position>=tinfoptr->nr_of_points) {
 	TRACEMS(tinfo->emethods, 0, "posplot: Trigger point outside epoch!\n");
        } else {
-	/* Stimuli are shown as CYAN, responses as MAGENTA and keyboard markers FOREGROUND */
-	color(intrig->code>0 ? CYAN : (intrig->code<= -16 ? FOREGROUND : MAGENTA));
+	if (local_arg->colored_triggers) {
+	 int const colorindex=intrig->code%LINECOLORCOUNT;
+	 /* For negative values, '%' is negative in C... Produce a continuous sequence anyway. */
+         color(linecolors[colorindex>=0 ? colorindex : LINECOLORCOUNT+colorindex]);
+	} else {
+	 /* Stimuli are shown as CYAN, responses as MAGENTA and keyboard markers FOREGROUND */
+	 color(intrig->code>0 ? CYAN : (intrig->code<= -16 ? FOREGROUND : MAGENTA));
+	}
 	bgnline();
 	data=tinfoptr->xdata[intrig->position];
 	move2((Coord)data, (Coord)local_arg->ydmin);
@@ -2045,9 +2053,23 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        }
        break;
       case 'M':
-       local_arg->showtriggers=!local_arg->showtriggers;
+       switch(inputbuffer[0]) {
+	case 'c':
+	 local_arg->colored_triggers=TRUE;
+	 break;
+	case 'u':
+	 local_arg->colored_triggers=FALSE;
+	 break;
+	default:
+	 local_arg->showtriggers=!local_arg->showtriggers;
+	 break;
+       }
        if (local_arg->showtriggers) {
-        local_arg->red_message="Showing triggers.";
+	if (local_arg->colored_triggers) {
+         local_arg->red_message="Showing colored triggers.";
+	} else {
+         local_arg->red_message="Showing triggers.";
+	}
        } else {
         local_arg->red_message="Not showing triggers.";
        }
