@@ -64,12 +64,12 @@ def sleep_channels(infile,nr_of_channels):
  infile,ext=os.path.splitext(infile)
  booknumber=os.path.basename(infile).lower()
  eegnr=bookno.database_bookno(booknumber.upper())
- s=sa.select([somno.c.Schema],somno.c.bn==eegnr).execute().fetchall()
+ s=somno.select(somno.c.bn==eegnr).execute().fetchall()
  schema=None
  if len(s)==0:
   print("Oops: Can't find %s in database!" % eegnr)
  else:
-  schema=s[0][0]
+  schema=s[0].Schema
   if debug:
    print("Schema: " + schema)
  # First look for explicit file associations

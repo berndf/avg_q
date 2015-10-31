@@ -53,6 +53,11 @@ read_hdf %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(tr
 read_rec %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='freiburg':
+   if os.path.exists(self.filename):
+    # Remove trailing .co - see documentation of read_freiburg, which needs
+    # only the name without extension to read an SL .co + .coa combination
+    if self.filename.lower().endswith('.co'):
+     self.filename=self.filename[:-3]
    self.getepochmethod='''
 read_freiburg %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(filename)s %(aftertrig)s
 '''
