@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003,2005,2007,2008,2010,2013,2014 Bernd Feige
+ * Copyright (C) 1999-2003,2005,2007,2008,2010,2013,2014,2016 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #include <bf.h>
@@ -10,6 +10,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_get_mfxepoch,
  select_null_source,
  select_read_brainvision,
+ select_read_cfs,
  select_read_freiburg,
  select_read_generic,
  select_read_hdf,

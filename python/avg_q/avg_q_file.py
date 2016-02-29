@@ -21,6 +21,7 @@ formats_and_extensions=[
  ('Tucker', ['.raw']),
  ('Embla', ['.ebm']),
  ('Unisens', ['.bin','.csv']),
+ ('CFS', ['.cfs']),
 ]
 
 class avg_q_file(object):
@@ -97,8 +98,10 @@ read_kn %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(filen
    self.getepochmethod='''
 read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
-  elif fileformat=='dip_simulate':
-   self.getepochmethod=None
+  elif fileformat=='CFS':
+   self.getepochmethod='''
+read_cfs %(fromepoch_arg)s %(epochs_arg)s %(filename)s
+'''
   elif fileformat in ['dip_simulate', 'null_source']:
    # Handled specially
    self.getepochmethod=None

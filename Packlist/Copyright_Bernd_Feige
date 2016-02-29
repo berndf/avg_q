@@ -154,7 +154,6 @@ bf/kohden/neurofile_smd.c
 bf/kohden/read_neurofile.c
 bf/laplacian.cc
 bf/link_order.c
-bf/make_links
 bf/malloc_trace.c
 bf/math/bfmath.h
 bf/math/fp_exception.c
@@ -253,3 +252,9 @@ readymade/asccalc.c
 readymade/distance_correct.c
 readymade/spline_gridder.c
 readymade/swap_xz.c
+bf/cfs/CMakeLists.txt
+bf/cfs/cfs.h
+bf/cfs/cfs_sm.c
+bf/cfs/cfs_smd.c
+bf/cfs/dump_cfs_header.c
+bf/cfs/read_cfs.c

@@ -12,11 +12,47 @@ import avg_q
 import os
 import math
 
+def decode_xpoint(xvalues, token):
+ # This is patterned after decode_xpoint() in avg_q/bf/trafo_std.c
+ if token is None: return None
+ offset=0
+ val=token
+ if isinstance(token,str):
+  o=token.find('+')
+  if o>=0:
+   val=float(token[:o])
+   offset=int(token[(o+1):])
+  else:
+   o=token.find('-')
+   if o>=0:
+    val=float(token[:o])
+    offset= -int(token[(o+1):])
+   else:
+    val=float(token)
+ mini=None
+ for i in range(len(xvalues)):
+  if mini is None or abs(xvalues[i]-val)<abs(xvalues[mini]-val):
+   mini=i
+ if mini+offset<0:
+  return 0
+ else:
+  return mini+offset
+
+def channelname_subset(channelnames,fromHz=None,toHz=None):
+ xvalues=[float(channelname.replace('Hz','')) for channelname in channelnames]
+ fromindex=decode_xpoint(xvalues,fromHz)
+ toindex=decode_xpoint(xvalues,toHz)
+ # Take care to include the last index
+ if toindex is not None:
+  toindex+=1
+ # If any bound is left out, the selection is unbounded to that side
+ return channelnames[fromindex:toindex]
+
 class sleep_eeg(avg_q.avg_q):
  defaultbands=[
   # From, To, Name (all strings)
-  ['0.1', '48', 'Total'],
-  ['0.1', '1', 'Delta1'],
+  ['0+1', '48', 'Total'],
+  ['0+1', '1', 'Delta1'],
   ['1+1', '3.5', 'Delta2'],
   ['3.5+1', '8', 'Theta'],
 
@@ -29,19 +65,10 @@ class sleep_eeg(avg_q.avg_q):
   ['32+1', '48', 'Gamma']
  ]
  rejection_bands=[
-  ['0.1', '48', 'Total'],
+  ['0+1', '48', 'Total'],
   ['32+1', '48', 'Gamma']
  ]
  rejection_median_length=20
- def channelname_subset(self,channelnames,fromHz=None,toHz=None):
-  subset=[]
-  for channelname in channelnames:
-   Hz=channelname.index('Hz')
-   freq=float(channelname[0:Hz])
-   # If any bound is left out, the selection is unbounded to that side
-   if not ((fromHz and freq<fromHz) or (toHz and freq>=toHz)):
-    subset.append(channelname)
-  return subset
  def get_channel_collapse_args(self,infile,bands=defaultbands):
   '''For a continuous spectral analysis using channel names of the form 'xxxHz',
   get a list of collapse arguments for collapsing the given bands'''
@@ -50,11 +77,7 @@ class sleep_eeg(avg_q.avg_q):
   collapse_args=[]
   for band in bands:
    fromHz,toHz,bandname=band
-   toHz=float(toHz)
-   if fromHz.endswith('+1'):
-    fromHz=fromHz[0:-2]
-   fromHz=float(fromHz)
-   subset=self.channelname_subset(channelnames,fromHz,toHz)
+   subset=channelname_subset(channelnames,fromHz,toHz)
    collapse_args.append(",".join(subset)+':'+bandname)
   #print collapse_args
   return collapse_args
@@ -138,7 +161,7 @@ echo -F stdout End of medbands\\n
   print("quartiles_of_medianfiltered=" + str(quartiles_of_medianfiltered))
   del sorted_medbands
 
-  sl_pos=1
+  sl_pos=0
   point=0
   nr_of_points=len(bands[0])
   tuples=[]
@@ -196,12 +219,13 @@ echo -F stdout End of medbands\\n
   script.set_collect('average')
   script.add_postprocess('''
 swap_fc
-trim -x 0+1 48
 '''+('''
 calc exp
 '''+self.get_spect_trim(bands)+'''
 calc log
-''' if bands else '')+'''
+''' if bands else '''
+trim -x 0+1 48
+''')+'''
 query -N nrofaverages
 write_generic -P stdout string
 ''')
@@ -297,7 +321,7 @@ def get_epochfilter_stage_cycle(stagename,cycle=None):
   stagenames=stagename
  else:
   stagenames=[stagename]
- stagelist=[x for x in stagenames2stagelist.get(stagename,[stagename]) for stagename in stagenames]
+ stagelist=[x for s in stagenames for x in stagenames2stagelist.get(s,[s])]
  return(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
   (stage in stagelist) and code>0 and (cycle is None or remcycle==cycle))
 

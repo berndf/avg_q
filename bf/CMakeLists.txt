@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2008,2010,2013 Bernd Feige
+# Copyright (C) 2006-2008,2010,2013,2016 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 PROJECT(bflib)
@@ -86,6 +86,7 @@ SET(subdirs
  Inomed
  TriAn
  ica
+ cfs
 )
 
 if (SOX_FOUND)

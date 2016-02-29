@@ -85,11 +85,6 @@ class sleep_file(avg_q_file):
   # simply assume sleeplab type reading.
   sleeplabepochs=(continuous and beforetrig=='0' and aftertrig=='30s')
   if sleeplabepochs:
-   # Ensure that reading starts with the second 30s epoch
-   if fromepoch:
-    fromepoch+=1
-   else:
-    fromepoch=2
    useappendices=['A', 'B', 'C']
   else:
    useappendices=[]
@@ -114,8 +109,8 @@ class sleep_file(avg_q_file):
      f.trigfile=self.trigfile
      retval+=f.getepoch(beforetrig, aftertrig, continuous, fromepoch, epochs, offset, triglist, trigfile, trigtransfer)
    retval+='''
- set sfreq 102.4
- set_channelposition -s %s
+set sfreq 102.4
+set_channelposition -s %s
 ''' % self.setup
   else:
    retval+='''
