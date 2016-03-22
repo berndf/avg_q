@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2011,2014 Bernd Feige
+# Copyright (C) 2008-2011,2014,2016 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Detector base class.
@@ -26,6 +26,8 @@ class Detector(avg_q.Script):
   data to a new file of that name for convenience.
   Note that the script 'self' should be set up with transform methods including an appropriate
   "write_crossings channelnames threshold stdout".
+  The 'description' element of the tuples is appended with the epoch number and channel name,
+  separated by '\t'.
   '''
   self.sfreq=self.avg_q_instance.get_description(self.Epochsource_list[0].infile,'sfreq')
   if self.distance_from_breakpoint_s is not None:
@@ -40,10 +42,12 @@ class Detector(avg_q.Script):
     or maxvalue is not None and float(description)>maxvalue \
     or self.distance_from_breakpoint_s is not None and any([abs(point-breakpoint)<self.distance_from_breakpoint_points for breakpoint in self.breakpoints]):
     continue
-   if not description and 'Channel' in crossings.preamble:
-    channel=crossings.preamble['Channel']
-    description=' '.join((crossings.preamble['Epoch'],channel)) if 'Epoch' in crossings.preamble else channel
-   outtuples.append((point,code,description))
+   descriptionitems=[] if description is None else [description]
+   if 'Epoch' in crossings.preamble:
+    descriptionitems.append(crossings.preamble['Epoch'])
+   if 'Channel' in crossings.preamble:
+    descriptionitems.append(crossings.preamble['Channel'])
+   outtuples.append((point,code,'\t'.join(descriptionitems)))
   if not self.sfreq and 'Sfreq' in crossings.preamble:
    self.sfreq=float(crossings.preamble['Sfreq'])
   if outtrigfile:
