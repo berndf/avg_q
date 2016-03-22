@@ -41,14 +41,14 @@ IF(CMAKE_SYSTEM_NAME MATCHES Windows)
  IF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
   SET(HDF_LIBPATH
    /home/charly/tmp/Infos/Computer/wingtk3/usr/x86_64-w64-mingw32/sys-root/mingw/lib)
-  SET(CMAKE_C_FLAGS_RELEASE "-march=athlon64 -O4 -ffast-math -mms-bitfields -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(C_FLAGS_ARCHITECTURE "-march=athlon64")
   SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs64/libf2c)
   SET(ICA_LIBPATH "${CMAKE_SOURCE_DIR}/winlibs64")
   SET(SOX_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs64/sox/src)
  ELSE(CMAKE_SYSTEM_VARIANT STREQUAL win64)
   SET(HDF_LIBPATH
    /home/charly/tmp/Infos/Computer/wingtk3/usr/i686-w64-mingw32/sys-root/mingw/lib)
-  SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O4 -ffast-math -mms-bitfields -mthreads -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(C_FLAGS_ARCHITECTURE "-march=i686")
   SET(ICA_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs32/libf2c)
   SET(ICA_LIBPATH "${CMAKE_SOURCE_DIR}/winlibs32")
   SET(SOX_INCLUDES ${CMAKE_SOURCE_DIR}/winlibs32/sox/src)
@@ -76,13 +76,17 @@ ELSE(CMAKE_SYSTEM_NAME MATCHES Windows)
  SET(AVG_Q_DEFINES -DLITTLE_ENDIAN)
  IF(UNAME MATCHES "x86_64")
   SET(INSTALLDIR distrib/avg_q64)
-  SET(CMAKE_C_FLAGS_RELEASE "-march=athlon64 -O4 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(C_FLAGS_ARCHITECTURE "-march=athlon64")
  ELSE(UNAME MATCHES "x86_64")
   SET(INSTALLDIR distrib/avg_q32)
   # -D_FILE_OFFSET_BITS=64 is necessary to have working fstat() on CIFS mounts
-  SET(CMAKE_C_FLAGS_RELEASE "-march=i686 -O4 -D_FILE_OFFSET_BITS=64 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+  SET(C_FLAGS_ARCHITECTURE "-march=i686")
  ENDIF(UNAME MATCHES "x86_64")
 ENDIF(CMAKE_SYSTEM_NAME MATCHES Windows)
+
+# GCC 5 defaults to -std=gnu11, GCC 4 not. This is necessary for loop variable
+# declaration within 'for' loops.
+SET(CMAKE_C_FLAGS_RELEASE "${C_FLAGS_ARCHITECTURE} -std=gnu11 -O4 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
 
 INCLUDE(FindOpenMP)
 IF(OPENMP_FOUND)
