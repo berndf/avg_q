@@ -283,10 +283,10 @@ setup_method(transform_info_ptr tinfo, growing_buf *args) {
 }
 /*}}}  */
 
-/*{{{  setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, FILE *configfile, growing_buf *scriptp) {*/
+/*{{{  setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, FILE *scriptfile, growing_buf *scriptp) {*/
 /*
  * setup_queue is a global function reading text lines from the FILE *
- * configfile and setting up tinfo values
+ * scriptfile and setting up tinfo values
  * as well as the two queues iter_queue and post_queue accordingly.
  * The arrays of transform_method_structs for iter_queue and post_queue are
  * automatically allocated and/or extended. To indicate that there is no
@@ -314,17 +314,17 @@ init_queue_storage(queue_desc *queue) {
  * be initialized and allocated. This is because the buffer memory must remain
  * allocated until the queues exit. It can be freed afterwards by the caller. */
 GLOBAL enum SETUP_QUEUE_RESULT
-setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, FILE *configfile, growing_buf *scriptp) {
+setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, FILE *scriptfile, growing_buf *scriptp) {
  /*{{{  Read the (next script within) config file*/
  Bool linestart=TRUE;
  int c;
  while (1) {
-  c=fgetc(configfile);
+  c=fgetc(scriptfile);
   if (c==0x04) c=EOF; /* Interpret ^D as EOF */
   if (linestart && c=='-') {
    /* '-' at linestart: End of script. Skip the rest of the line. */
    do {
-    c=fgetc(configfile);
+    c=fgetc(scriptfile);
     if (c==0x04) c=EOF; /* Interpret ^D as EOF */
    } while (c!=EOF && c!='\n');
    break;

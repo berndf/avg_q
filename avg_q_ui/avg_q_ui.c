@@ -80,7 +80,7 @@ enum {
 #ifdef STANDALONE
 END_OF_ARGS=0
 #else
-CONFIGFILE=0, END_OF_ARGS
+SCRIPTFILE=0, END_OF_ARGS
 #endif
 } args;
 
@@ -306,7 +306,7 @@ Notice(gchar *message) {
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
  box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
+ gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
  label = gtk_label_new (message);
@@ -1058,7 +1058,7 @@ MethodInstance_build_dialog(void) {
  gtk_window_set_title (GTK_WINDOW (MethodInstance_window), method.method_name);
 
  box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(MethodInstance_window))), box1, FALSE, FALSE, 0);
+ gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(MethodInstance_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
  label = gtk_label_new (method.method_description);
@@ -2245,8 +2245,8 @@ usage(FILE *stream) {
  Bool have_token;
 
 #ifndef STANDALONE
- snprintf(buffer, BUFFER_SIZE, "Usage: %s [options] Configfile [script_argument1 ...]\n"
-  "Multichannel (EEG/MEG) data processing GUI. Reads a script (Config) file to\n"
+ snprintf(buffer, BUFFER_SIZE, "Usage: %s [options] scriptfile [script_argument1 ...]\n"
+  "Multichannel (EEG/MEG) data processing GUI. Reads a script file to\n"
   "setup an iterated and a postprocessing queue. The iterated queue between\n"
   "get_epoch method and collect method is executed for all epochs delivered\n"
   "by the get_epoch method. If the collect method outputs a result, this\n"
@@ -2482,9 +2482,9 @@ main (int argc, char *argv[]) {
  }
 #else
  if (mainargc-optind>=END_OF_ARGS) {
-  strncpy(filename, MAINARG(CONFIGFILE), FilenameLength);
+  strncpy(filename, MAINARG(SCRIPTFILE), FilenameLength);
   set_main_window_title();
-  Avg_q_Load_Script_Now_Tag=g_idle_add(Load_Script_Now, MAINARG(CONFIGFILE));
+  Avg_q_Load_Script_Now_Tag=g_idle_add(Load_Script_Now, MAINARG(SCRIPTFILE));
  } else {
   set_main_window_title();
  }

@@ -232,7 +232,7 @@ Bool setup_method(transform_info_ptr tinfo, growing_buf *args);
 enum SETUP_QUEUE_RESULT {
  QUEUE_AVAILABLE=0, QUEUE_NOT_AVAILABLE, QUEUE_AVAILABLE_EOF, QUEUE_NOT_AVAILABLE_EOF
 };
-enum SETUP_QUEUE_RESULT setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, FILE *configfile, growing_buf *scriptp);
+enum SETUP_QUEUE_RESULT setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, FILE *scriptfile, growing_buf *scriptp);
 Bool setup_queue_from_buffer(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_ptr), queue_desc *iter_queue, queue_desc *post_queue, growing_buf *scriptp);
 void dump_queue(queue_desc *queue, FILE *dumpfile, char *prefix);
 void sprint_argument_value(growing_buf *outbuf, transform_methods_ptr methodp, int argno, Bool with_escapes);

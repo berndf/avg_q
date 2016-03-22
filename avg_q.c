@@ -9,7 +9,7 @@
  * This program obsoletes the single programs mfxaverage and mfxspect.
  *						-- Bernd Feige 28.07.1993
  *
- * avg_q uses setup_queue to read a script (Config) file to setup
+ * avg_q uses setup_queue to read a script file to setup
  * a processing chain consisting of methods mentioned in the
  * method_selects[] function array.
  * This processing queue is then repeatedly called by the average method
@@ -50,7 +50,7 @@ enum {
 #ifdef STANDALONE
 END_OF_ARGS=0
 #else
-CONFIGFILE=0, END_OF_ARGS
+SCRIPTFILE=0, END_OF_ARGS
 #endif
 } args;
 
@@ -71,8 +71,8 @@ LOCAL struct transform_methods_struct method;
 LOCAL void 
 usage(FILE *stream) {
 #ifndef STANDALONE
- fprintf(stream, "Usage: %s [options] Configfile [script_argument1 ...]\n"
-  "Multichannel (EEG/MEG) data processing tool. Reads a script (Config) file to\n"
+ fprintf(stream, "Usage: %s [options] scriptfile [script_argument1 ...]\n"
+  "Multichannel (EEG/MEG) data processing tool. Reads a script file to\n"
   "setup an iterated and a postprocessing queue. The iterated queue between\n"
   "get_epoch method and collect method is executed for all epochs delivered\n"
   "by the get_epoch method. If the collect method outputs a result, this\n"
@@ -215,15 +215,15 @@ int main(int argc, char **argv) {
  {
 #ifndef STANDALONE
  queue_desc iter_queue, post_queue;
- FILE *configfile;
+ FILE *scriptfile;
  growing_buf script;
  growing_buf_init(&script);
  growing_buf_allocate(&script, 0);
- if (strcmp(MAINARG(CONFIGFILE), "stdin")==0) {
-  configfile=stdin;
+ if (strcmp(MAINARG(SCRIPTFILE), "stdin")==0) {
+  scriptfile=stdin;
  } else {
-  if ((configfile=fopen(MAINARG(CONFIGFILE), "r"))==NULL) {
-   fprintf(stderr, "Error: Can't open file %s\n", MAINARG(CONFIGFILE));
+  if ((scriptfile=fopen(MAINARG(SCRIPTFILE), "r"))==NULL) {
+   fprintf(stderr, "Error: Can't open file %s\n", MAINARG(SCRIPTFILE));
    exit(2);
   }
  }
@@ -238,14 +238,14 @@ int main(int argc, char **argv) {
   fprintf(dumpfile, "#define DUMP_SCRIPT_NAME ");
   /* Use the trafo_stc.c utility function to output the file name as a
    * string that is read as the original string by a C parser */
-  fprint_cstring(dumpfile, MAINARG(CONFIGFILE));
+  fprint_cstring(dumpfile, MAINARG(SCRIPTFILE));
   fprintf(dumpfile, "\n\n");
  }
 
  while (TRUE) { /* Possibly execute multiple sub-scripts */
   enum SETUP_QUEUE_RESULT setup_queue_result;
   growing_buf_clear(&script);
-  setup_queue_result=setup_queue(&tinfostruc, method_selects, &iter_queue, &post_queue, configfile, &script);
+  setup_queue_result=setup_queue(&tinfostruc, method_selects, &iter_queue, &post_queue, scriptfile, &script);
   if (setup_queue_result==QUEUE_NOT_AVAILABLE) continue;
   if (setup_queue_result==QUEUE_NOT_AVAILABLE_EOF) break;
   if (only_script>0 && iter_queue.current_input_script!=only_script) {
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
   }
   fprintf(dumpfile, "NULL};\n");
  }
- if (configfile!=stdin) fclose(configfile);
+ if (scriptfile!=stdin) fclose(scriptfile);
  free_queue_storage(&iter_queue);
  free_queue_storage(&post_queue);
  growing_buf_free(&script);
