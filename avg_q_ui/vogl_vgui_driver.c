@@ -142,14 +142,13 @@ Notice_window_close(GtkWidget *mwindow) {
  Notice_window=NULL;
 }
 LOCAL void
-Notice_window_close_button(GtkButton *button, GtkWidget *mwindow) {
+Notice_window_close_button(GtkDialog *dialog, gint response_id, GtkWidget *mwindow) {
  Notice_window_close(mwindow);
 }
 static void
 Notice(gchar *message) {
  GtkWidget *box1;
  GtkWidget *label;
- GtkWidget *button;
 
  if (Notice_window!=NULL) {
   Notice_window_close(Notice_window);
@@ -161,19 +160,15 @@ Notice(gchar *message) {
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
  box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_action_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
+ gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
  gtk_widget_show (box1);
 
  label = gtk_label_new (message);
  gtk_box_pack_start (GTK_BOX(box1), label, FALSE, FALSE, 0);
  gtk_widget_show (label);
 
- button = gtk_button_new_with_label ("Okay");
- g_signal_connect_object (G_OBJECT (button), "clicked", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window), G_CONNECT_AFTER);
- gtk_widget_set_can_default (button, TRUE);
- gtk_box_pack_start (GTK_BOX(box1), button, FALSE, FALSE, 0);
- gtk_widget_grab_default (button);
- gtk_widget_show (button);
+ gtk_dialog_add_button (GTK_DIALOG(Notice_window), "Okay", 1);
+ g_signal_connect_object (GTK_DIALOG(Notice_window), "response", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window), G_CONNECT_AFTER);
 
  gtk_widget_show (Notice_window);
 }

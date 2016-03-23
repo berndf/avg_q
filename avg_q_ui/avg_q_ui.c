@@ -236,6 +236,7 @@ LOCAL void
 delete_to_EOL(void) {
  GtkTextIter nextline_iter=current_iter;
  gtk_text_iter_forward_line(&nextline_iter);
+ gtk_text_iter_backward_char(&nextline_iter);
  gtk_text_buffer_delete(CurrentScriptBuffer, &current_iter, &nextline_iter);
 }
 LOCAL int
@@ -284,14 +285,13 @@ Notice_window_close(GtkWidget *window) {
  Notice_window=NULL;
 }
 LOCAL void
-Notice_window_close_button(GtkButton *button, GtkWidget *window) {
+Notice_window_close_button(GtkDialog *dialog, gint response_id, GtkWidget *window) {
  Notice_window_close(window);
 }
 LOCAL void
 Notice(gchar *message) {
  GtkWidget *box1;
  GtkWidget *label;
- GtkWidget *button;
 
  if (Notice_window!=NULL) {
   gtk_widget_destroy (Notice_window);
@@ -313,12 +313,8 @@ Notice(gchar *message) {
  gtk_box_pack_start (GTK_BOX(box1), label, FALSE, FALSE, 0);
  gtk_widget_show (label);
 
- button = gtk_button_new_with_label ("Okay");
- g_signal_connect_object (G_OBJECT (button), "clicked", G_CALLBACK (Notice_window_close_button), G_OBJECT(Notice_window), G_CONNECT_AFTER);
- gtk_widget_set_can_default (button, TRUE);
- gtk_box_pack_start (GTK_BOX(box1), button, FALSE, FALSE, 0);
- gtk_widget_grab_default (button);
- gtk_widget_show (button);
+ gtk_dialog_add_button (GTK_DIALOG(Notice_window), "Okay", 1);
+ g_signal_connect_object (GTK_DIALOG(Notice_window), "response", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window), G_CONNECT_AFTER);
 
  gtk_widget_show (Notice_window);
 }
@@ -830,8 +826,20 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
  return TRUE;
 }
 LOCAL void
-method_dialog_ok(GtkButton *button, GtkWidget *window) {
+method_dialog_close(GtkWidget *window) {
+ gtk_widget_destroy(GTK_WIDGET(window));
+ MethodInstance_window=NULL;
+ free_methodmem(&instance_tinfo);
+ set_status("Operation canceled.");
+}
+LOCAL void
+method_dialog_ok(GtkDialog *dialog, gint response_id, GtkWidget *window) {
  char *message;
+
+ if (response_id==0) {
+  method_dialog_close(window);
+  return;
+ }
 
  MethodInstance_config_from_dialog();
 
@@ -915,17 +923,6 @@ method_dialog_ok(GtkButton *button, GtkWidget *window) {
   gtk_label_set_text(GTK_LABEL(Dialog_Configuration_Error), message);
   gtk_widget_show(Dialog_Configuration_Error);
  }
-}
-LOCAL void
-method_dialog_close(GtkWidget *window) {
- gtk_widget_destroy(GTK_WIDGET(window));
- MethodInstance_window=NULL;
- free_methodmem(&instance_tinfo);
- set_status("Operation canceled.");
-}
-LOCAL void
-method_dialog_close_button(GtkButton *button, GtkWidget *window) {
- method_dialog_close(window);
 }
 typedef struct {
  GtkWidget **in_dialog_widgets;
@@ -1045,7 +1042,6 @@ method_combo_changed_event(GtkWidget *widget, GtkWidget **in_dialog_widgets) {
 LOCAL void
 MethodInstance_build_dialog(void) {
  GtkWidget *box1, *hbox;
- GtkWidget *button;
  GtkWidget *label;
 
  old_method_cursorline=CursorLineNumber();
@@ -1213,26 +1209,13 @@ MethodInstance_build_dialog(void) {
  gtk_box_pack_start (GTK_BOX(box1), Dialog_Configuration_Error, FALSE, FALSE, 0);
  gtk_widget_hide (Dialog_Configuration_Error);
 
- hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
- gtk_box_pack_start (GTK_BOX(box1), hbox, FALSE, FALSE, 0);
- gtk_widget_show (hbox);
-
  /* An OK button is now always shown - it could be that our convenient
   * start-of-method-name function has kicked in and the user wants to accept
   * that full method name. Therefore, independently of old_method and any
   * modifiable options, we'll have a default OK button. */
- button = gtk_button_new_with_label ("Okay");
- g_signal_connect_object (G_OBJECT (button), "clicked", G_CALLBACK(method_dialog_ok), G_OBJECT (MethodInstance_window), G_CONNECT_AFTER);
- gtk_widget_set_can_default (button, TRUE);
- gtk_box_pack_start (GTK_BOX(hbox), button, FALSE, FALSE, 0);
- gtk_widget_grab_default (button);
- gtk_widget_show (button);
- MethodInstance_Defaultbutton=button;
-
- button = gtk_button_new_with_label ("close");
- g_signal_connect_object (G_OBJECT (button), "clicked", G_CALLBACK(method_dialog_close_button), G_OBJECT (MethodInstance_window), G_CONNECT_AFTER);
- gtk_box_pack_start (GTK_BOX(hbox), button, FALSE, FALSE, 0);
- gtk_widget_show (button);
+ MethodInstance_Defaultbutton=gtk_dialog_add_button (GTK_DIALOG(MethodInstance_window), "Okay", 1);
+ gtk_dialog_add_button (GTK_DIALOG(MethodInstance_window), "Close", 0);
+ g_signal_connect_object (GTK_DIALOG(MethodInstance_window), "response", G_CALLBACK(method_dialog_ok), G_OBJECT (MethodInstance_window), G_CONNECT_AFTER);
 
  gtk_widget_show (MethodInstance_window);
 }
