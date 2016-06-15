@@ -9,12 +9,12 @@ plot.fftfilter<-function(sfreq,boundaries) {
 
  a <- open.avgq("avg_q_vogl")
  cat(script,"\n-\n!echo -F stdout End of script\\n\nnull_sink\n-\n",
-     file=a$fifo,sep = "")
+     file=a$fifo_in,sep = "")
  fftsize<-NULL
  freq.resolution<-NULL
  factors<-NULL
  while (TRUE) {
-  line <- readLines(a$pipe, n = 1, ok = FALSE)
+  line <- readLines(a$fifo_out, n = 1, ok = FALSE)
   if (line == "End of script") break
   #print(line)
   r<-sub('^fftfilter: FFT size ([0-9]+) points, Frequency resolution ([.0-9]+)Hz$','\\1 \\2',line)
