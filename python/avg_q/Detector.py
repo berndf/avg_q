@@ -73,8 +73,8 @@ class Detector(avg_q.Script):
   # Separate triggers by channel
   trigger_dict={}
   for lat,code,description in outtuples:
-   if ' ' in description:
-    condition, channel= description.split(' ')
+   if '\t' in description:
+    condition, channel= description.split('\t')
    else:
     channel=description
    trigger_dict.setdefault(channel,[]).append([lat,code])
