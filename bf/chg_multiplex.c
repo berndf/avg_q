@@ -102,6 +102,9 @@ chg_multiplex(DATATYPE *data, int rows, int columns, int itemsize) {
 /*{{{  multiplexed(transform_info_ptr tinfo)*/
 GLOBAL void
 multiplexed(transform_info_ptr tinfo) {
+ if (tinfo->data_type==FREQ_DATA) {
+  ERREXIT(tinfo->emethods, "multiplexed: FREQ_DATA is not supported!\n");
+ }
  if (!tinfo->multiplexed) {
   if (tinfo->nr_of_points>1 && tinfo->nr_of_channels>1) {
    if (!chg_multiplex(tinfo->tsdata, tinfo->nr_of_points, tinfo->nr_of_channels, tinfo->itemsize)) {
@@ -116,6 +119,9 @@ multiplexed(transform_info_ptr tinfo) {
 /*{{{  nonmultiplexed(transform_info_ptr tinfo)*/
 GLOBAL void
 nonmultiplexed(transform_info_ptr tinfo) {
+ if (tinfo->data_type==FREQ_DATA) {
+  ERREXIT(tinfo->emethods, "nonmultiplexed: FREQ_DATA is not supported!\n");
+ }
  if (tinfo->multiplexed) {
   if (tinfo->nr_of_points>1 && tinfo->nr_of_channels>1) {
    if (!chg_multiplex(tinfo->tsdata, tinfo->nr_of_channels, tinfo->nr_of_points, tinfo->itemsize)) {
