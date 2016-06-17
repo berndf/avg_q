@@ -7,6 +7,7 @@ This provides a derived version of avg_q_file which encapsulates access to sleep
 __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>"
 
 import avg_q
+import avg_q.Channeltypes
 from .. import avg_q_file
 from avg_q import channel_list2arg
 import os
@@ -66,14 +67,16 @@ class sleep_file(avg_q_file):
     # Recording reference for Somnoscreen is Cz, makes no sense to analyze the channels like this
     # M1 is the more common name but there are some recordings with A1 instead
     channelnames=set(channelnames)
+    exclude_channelnames=channelnames.intersection(avg_q.Channeltypes.NonEEGChannels)
     p,fname=os.path.split(self.first)
     fname=fname.lower()
     if fname in bad_channels:
      channelnames=channelnames.difference(bad_channels[fname])
     reference=channelnames.intersection(set(['M1','M2','A1','A2']))
     self.addmethods='''
->rereference %(reference)s
+>rereference -e %(exclude_channelnames)s %(reference)s
 ''' % {
+     'exclude_channelnames': channel_list2arg(exclude_channelnames),
      'reference': channel_list2arg(reference),
     }
   self.trigfile=None

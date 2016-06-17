@@ -360,7 +360,11 @@ recode -32.768 -32.76799 -Inf -Inf
  def set_epochfilter(self,epochfilter):
   tfile=self.filename.replace('.cnt','.trg')
   from .. import trgfile
-  t=trgfile.trgfile(tfile)
+  try:
+   t=trgfile.trgfile(tfile)
+  except FileNotFoundError:
+   self.set_trigpoints([])
+   return
   trigpoints=[]
   for point,code,codes in t:
    point=int(point)
