@@ -67,7 +67,9 @@ class sleep_file(avg_q_file):
     # Recording reference for Somnoscreen is Cz, makes no sense to analyze the channels like this
     # M1 is the more common name but there are some recordings with A1 instead
     channelnames=set(channelnames)
-    exclude_channelnames=channelnames.intersection(avg_q.Channeltypes.NonEEGChannels)
+    # Exclude NonEEGChannels from rereferencing and also channels containing a colon, since they
+    # should keep the indicated reference (eg 'C3:M2')
+    exclude_channelnames=channelnames.intersection(avg_q.Channeltypes.NonEEGChannels).union([x for x in channelnames if ':' in x])
     p,fname=os.path.split(self.first)
     fname=fname.lower()
     if fname in bad_channels:
