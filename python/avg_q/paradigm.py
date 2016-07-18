@@ -79,10 +79,10 @@ class paradigm(object):
  maxRT_ms=None # If set, RTs above this threshold are not considered as responses
  def __init__(self,triggers=[],sfreq=100):
   '''
-  The base class can also be instantated to use the basic triggerstats() function.
+  The base class can also be instantiated to use the basic triggerstats() function.
   '''
   self.sfreq=sfreq
-  # Filter the events so that we can do clear decisions
+  # Transfer the events, with onset correction if requested
   self.triggers=[]
   for point, code, description in triggers:
    if code in self.onset_correction_ms:
@@ -107,6 +107,7 @@ class paradigm(object):
   else:
    raise AttributeError('\'paradigm\' object has no attribute \''+name+'\'');
  def is_ignored_code(self,code):
+  # Note that if both stimulus_set and response_set are empty, we accept any code
   return not(len(self.stimulus_set)==0 and len(self.response_set)==0 or code in self.stimulus_set or code in self.response_set)
  def parse_trials(self):
   '''Iterator to output single trials together with their classification.
@@ -151,31 +152,34 @@ class paradigm(object):
        #print("Sequence %s->%d" % (str(trial),code))
        break
     condition=None
-    if i+1<len(self.triggers):
-     (rpoint, rcode, rdescription)=self.triggers[i+1]
-     if self.is_ignored_code(rcode):
-      # Ignored code: Add it to the trial
-      trial.append(self.triggers[i+1])
-      i+=1
-      continue
-     if rcode in self.response_set:
-      response_latency_ms=self.get_RT(trial+[self.triggers[i+1]])
-      #print(code, rcode, response_latency_ms)
-      # Classify RTs > maxRT_ms or <minRT as non-response,
-      # counting the number of occurrances of these conditions as diagnostic
-      if self.minRT_ms and response_latency_ms<self.minRT_ms:
-       self.minRT_count+=1
-       condition=self.classify_nonresponsetrial(point,code)
-      elif self.maxRT_ms and response_latency_ms>self.maxRT_ms:
-       self.maxRT_count+=1
-       condition=self.classify_nonresponsetrial(point,code)
-      else:
-       condition=self.classify_responsetrial(point,code,rcode,response_latency_ms)
+    # Now look for response codes, scooping up inbetween ignored codes
+    while True:
+     if i+1<len(self.triggers):
+      (rpoint, rcode, rdescription)=self.triggers[i+1]
+      if self.is_ignored_code(rcode):
+       # Ignored code: Add it to the trial
        trial.append(self.triggers[i+1])
+       i+=1
+       continue
+      if rcode in self.response_set:
+       response_latency_ms=self.get_RT(trial+[self.triggers[i+1]])
+       #print(code, rcode, response_latency_ms)
+       # Classify RTs > maxRT_ms or <minRT as non-response,
+       # counting the number of occurrances of these conditions as diagnostic
+       if self.minRT_ms and response_latency_ms<self.minRT_ms:
+        self.minRT_count+=1
+        condition=self.classify_nonresponsetrial(point,code)
+       elif self.maxRT_ms and response_latency_ms>self.maxRT_ms:
+        self.maxRT_count+=1
+        condition=self.classify_nonresponsetrial(point,code)
+       else:
+        condition=self.classify_responsetrial(point,code,rcode,response_latency_ms)
+        trial.append(self.triggers[i+1])
+      else:
+       condition=self.classify_nonresponsetrial(point,code)
+      break
      else:
       condition=self.classify_nonresponsetrial(point,code)
-    else:
-     condition=self.classify_nonresponsetrial(point,code)
     if condition:
      stimulus=self.stimcode2stimulus[code] if self.stimuli else unset_stimulus_name
      self.stimulus_count[stimulus]+=1
