@@ -131,6 +131,7 @@ class paradigm(object):
      sequencedepth=0
      sequence=self.stimulus_sequence_codes[code]
      while True:
+      # The end of a sequence is not a dict. Are we within the sequence?
       if type(sequence)==dict:
        if i+sequencedepth+1<len(self.triggers) and self.is_ignored_code(self.triggers[i+sequencedepth+1][1]):
         # Ignored code: Add it to the trial
@@ -153,33 +154,32 @@ class paradigm(object):
        break
     condition=None
     # Now look for response codes, scooping up inbetween ignored codes
-    while True:
-     if i+1<len(self.triggers):
-      (rpoint, rcode, rdescription)=self.triggers[i+1]
-      if self.is_ignored_code(rcode):
-       # Ignored code: Add it to the trial
-       trial.append(self.triggers[i+1])
-       i+=1
-       continue
-      if rcode in self.response_set:
-       response_latency_ms=self.get_RT(trial+[self.triggers[i+1]])
-       #print(code, rcode, response_latency_ms)
-       # Classify RTs > maxRT_ms or <minRT as non-response,
-       # counting the number of occurrances of these conditions as diagnostic
-       if self.minRT_ms and response_latency_ms<self.minRT_ms:
-        self.minRT_count+=1
-        condition=self.classify_nonresponsetrial(point,code)
-       elif self.maxRT_ms and response_latency_ms>self.maxRT_ms:
-        self.maxRT_count+=1
-        condition=self.classify_nonresponsetrial(point,code)
-       else:
-        condition=self.classify_responsetrial(point,code,rcode,response_latency_ms)
-        trial.append(self.triggers[i+1])
-      else:
+    while i+1<len(self.triggers):
+     (rpoint, rcode, rdescription)=self.triggers[i+1]
+     if self.is_ignored_code(rcode):
+      # Ignored code: Add it to the trial
+      trial.append(self.triggers[i+1])
+      i+=1
+      continue
+     if rcode in self.response_set:
+      response_latency_ms=self.get_RT(trial+[self.triggers[i+1]])
+      #print(code, rcode, response_latency_ms)
+      # Classify RTs > maxRT_ms or <minRT as non-response,
+      # counting the number of occurrences of these conditions as diagnostic
+      if self.minRT_ms and response_latency_ms<self.minRT_ms:
+       self.minRT_count+=1
        condition=self.classify_nonresponsetrial(point,code)
-      break
+      elif self.maxRT_ms and response_latency_ms>self.maxRT_ms:
+       self.maxRT_count+=1
+       condition=self.classify_nonresponsetrial(point,code)
+      else:
+       condition=self.classify_responsetrial(point,code,rcode,response_latency_ms)
+       trial.append(self.triggers[i+1])
      else:
       condition=self.classify_nonresponsetrial(point,code)
+     break
+    if not condition:
+     condition=self.classify_nonresponsetrial(point,code)
     if condition:
      stimulus=self.stimcode2stimulus[code] if self.stimuli else unset_stimulus_name
      self.stimulus_count[stimulus]+=1
