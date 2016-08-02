@@ -231,14 +231,6 @@ read_generic_init(transform_info_ptr tinfo) {
   if (args[ARGS_TRIGFILE].is_set || args[ARGS_TRIGLIST].is_set) {
    ERREXIT(tinfo->emethods, "read_generic_init: Using triggers directly with the `string' datatype is not possible.\n");
   }
-  /* Skip (local_arg->fileoffset) lines */
-  while (local_arg->fileoffset!=0) {
-   while (TRUE) {
-    int const inchar=fgetc(local_arg->infile);
-    if (inchar==EOF || inchar=='\n') break;
-   }
-   local_arg->fileoffset--;
-  }
   growing_buf_init(&local_arg->stringbuf);
   growing_buf_allocate(&local_arg->stringbuf, 0);
   local_arg->new_line=TRUE;
@@ -260,6 +252,14 @@ read_generic_init(transform_info_ptr tinfo) {
    }
    local_arg->points_in_file = nlines-local_arg->fileoffset;
    fseek(local_arg->infile, 0L, SEEK_SET);
+  }
+  /* Skip (local_arg->fileoffset) lines */
+  while (local_arg->fileoffset!=0) {
+   while (TRUE) {
+    int const inchar=fgetc(local_arg->infile);
+    if (inchar==EOF || inchar=='\n') break;
+   }
+   local_arg->fileoffset--;
   }
  } else {
   struct stat statbuff;
