@@ -138,7 +138,7 @@ class trgfile(object):
  def writetuples(self,tuples,outfile):
   outfile.write(str(self.preamble))
   for tup in tuples:
-   outfile.write("\t".join([str(x) for x in tup]))
+   outfile.write("\t".join([str(x) for x in tup if x is not None]))
    outfile.write("\n")
 
 # Beware: There are nasty roundoff problems if you pass a point value to avg_q

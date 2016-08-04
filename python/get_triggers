@@ -15,6 +15,7 @@ argparser.add_argument('-a', '--abstime', dest='abstime', action='store_true', h
 argparser.add_argument('-A', '--starttime', dest='starttime', action=get_timestamp, help='Output absolute time using this start timestamp')
 args = argparser.parse_args()
 
+import sys
 import os
 import avg_q
 import avg_q.trgfile
@@ -54,15 +55,9 @@ for filename in args.files:
  if args.starttime:
   trg.start_datetime=args.starttime
  triggers=trg.gettuples_abstime() if args.abstime else trg.gettuples()
- sfreq=float(trg.preamble.get('Sfreq',100.0))
- for point, code, description in triggers:
-  if args.abstime:
-   pos=str(point)
-  else:
-   pos="%gs" % (point/sfreq)
-  if description:
-   print("%s\t%d\t%s" % (pos, code, description))
-  else:
-   print("%s\t%d" % (pos, code))
+ if not args.abstime:
+  sfreq=float(trg.preamble.get('Sfreq',100.0))
+  triggers=[("%gs" % (trigger[0]/sfreq),)+trigger[1:] for trigger in triggers]
+ trg.writetuples(triggers,sys.stdout)
  trg.close()
 a.close()
