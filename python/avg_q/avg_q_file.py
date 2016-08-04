@@ -102,6 +102,17 @@ read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %
    self.getepochmethod='''
 read_cfs %(fromepoch_arg)s %(epochs_arg)s %(filename)s
 '''
+  elif fileformat=='generic':
+   # Handled specially because read_generic reads headerless data
+   # and meta info must be given as options.
+   self.getepochmethod=None
+   # read_generic_options and read_generic_data_type can/must be set
+   # accordingly before calling getepoch().
+   # read_generic_options can contain any non-standard options of read_generic,
+   # e.g. '-s 200 -x xchannelname -O 1' but *not* options from the standard
+   # set such as -c, -f, -e, -t, -T etc. which are handled by getepoch.
+   self.read_generic_options=''
+   self.read_generic_data_type='string'
   elif fileformat in ['dip_simulate', 'null_source']:
    # Handled specially
    self.getepochmethod=None
@@ -131,6 +142,14 @@ null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
     'epochs_arg': str(epochs),
     'beforetrig': str(beforetrig),
     'aftertrig': str(aftertrig)
+    }
+  elif self.fileformat=='generic':
+   self.getepochmethod='''
+read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
+''' % {
+    'read_generic_options': str(self.read_generic_options),
+    'std_args': '%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s',
+    'read_generic_data_type': str(self.read_generic_data_type),
     }
   return self.getepochmethod % {
    'continuous_arg': '-c' if continuous else '',
