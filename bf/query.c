@@ -277,20 +277,20 @@ query(transform_info_ptr tinfo) {
   case C_TRIGGERS:
    if (tinfoptr->triggers.buffer_start!=NULL) {
     struct trigger *intrig=(struct trigger *)tinfoptr->triggers.buffer_start;
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "File position: %ld%s", intrig->position, local_arg->delimiter); myflush(tinfo, buffer);
+    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "# File position: %ld%s", intrig->position, local_arg->delimiter); myflush(tinfo, buffer);
     intrig++;
     while (intrig->code!=0) {
      if (intrig->description==NULL) {
       if (tinfoptr->xdata==NULL) {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld %d%s", intrig->position, intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
+       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld\t%d%s", intrig->position, intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
       } else {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=%g %d%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
+       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=%g\t%d%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
       }
      } else {
       if (tinfoptr->xdata==NULL) {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld %d %s%s", intrig->position, intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
+       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld\t%d\t%s%s", intrig->position, intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
       } else {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=%g %d %s%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
+       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=%g\t%d\t%s%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
       }
      }
      inbuf=buffer;

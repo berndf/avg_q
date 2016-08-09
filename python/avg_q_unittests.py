@@ -18,21 +18,21 @@ query -N triggers stdout
 null_sink
 -
 '''
- expected_output='''triggers=File position: 0
-triggers=50 5
-150 1
-triggers=File position: 200
-triggers=50 5
-150 1
-triggers=File position: 400
-triggers=50 5
-150 1
-triggers=File position: 600
-triggers=50 5
-150 1
-triggers=File position: 800
-triggers=50 5
-150 1'''
+ expected_output='''triggers=# File position: 0
+triggers=50\t5
+150\t1
+triggers=# File position: 200
+triggers=50\t5
+150\t1
+triggers=# File position: 400
+triggers=50\t5
+150\t1
+triggers=# File position: 600
+triggers=50\t5
+150\t1
+triggers=# File position: 800
+triggers=50\t5
+150\t1'''
 
 # Read CNT file - Trigger lists
 class avg_q_test_case2(avg_q_test_case):
