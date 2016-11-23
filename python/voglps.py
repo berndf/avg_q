@@ -54,7 +54,7 @@ class voglps(object):
     self._text(text)
    elif line.endswith(" c"):
     r,g,b,o=line.split()
-    self._color(float(r),float(g),float(b))
+    self._color(int(float(r)),int(float(g)),int(float(b)))
  def close(self):
   self._stroke()
   self.infile.close()

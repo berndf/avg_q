@@ -265,7 +265,7 @@ class paradigm(object):
     else:
      s+="\n"
   return s
- def write_onsets_mat(self,filename,fMRI_onset_s=0.0,TR_s=1.0):
+ def write_onsets_mat(self,filename,fMRI_onset_s=0.0,TR_s=1.0,duration_s=0.0):
   '''Write a SPM cell array .mat file containing the names and onsets of all events.
      fMRI_onset_s is the difference between the time basis of the paradigm and that
      of the fMRI (including dummy scans) in seconds.
@@ -280,7 +280,7 @@ class paradigm(object):
   for condition in self.conditions:
    names.append(condition)
    onsets.append([(x[0][0]/self.sfreq-fMRI_onset_s)/TR_s for x in self.trials[condition]])
-   durations.append([0.0]*len(self.trials[condition]))
+   durations.append([duration_s/TR_s]*len(self.trials[condition]))
   ons={
    'names': scipy.array(names,dtype=object),
    'onsets': onsets,

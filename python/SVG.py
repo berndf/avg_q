@@ -6,7 +6,7 @@ The following code is a lightweight wrapper around SVG files. The metaphor
 is to construct a scene, add objects to it, and then write it to a file
 to display it.
 
-This program uses ImageMagick to display the SVG files. ImageMagick also 
+This program uses ImageMagick to display the SVG files. ImageMagick also
 does a remarkable job of converting SVG files into other formats.
 
 http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/325823
@@ -14,7 +14,7 @@ http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/325823
 
 import os
 display_prog = 'display' # Command to execute to display images.
-      
+
 class Scene:
     def __init__(self,name="svg",height=400,width=400):
         self.name = name
@@ -30,7 +30,7 @@ class Scene:
                "<svg height=\"%d\" width=\"%d\" >\n" % (self.height,self.width),
                " <g style=\"fill-opacity:1.0; stroke:black;\n",
                "  stroke-width:1;\">\n"]
-        for item in self.items: var += item.strarray()            
+        for item in self.items: var += item.strarray()
         var += [" </g>\n</svg>\n"]
         return var
 
@@ -46,8 +46,8 @@ class Scene:
 
     def display(self,prog=display_prog):
         os.system("%s %s" % (prog,self.svgname))
-        return        
-        
+        return
+
 
 class Line:
     def __init__(self,start,end):
@@ -112,8 +112,8 @@ class Text:
 		"   style=\"fill:%s;stroke:none\">\n" % colorstr(self.color),
                 "   %s\n" % self.text,
                 "  </text>\n"]
-        
-    
+
+
 def colorstr(rgb): return "#%02x%02x%02x" % (rgb[0],rgb[1],rgb[2])
 
 def test():
@@ -133,4 +133,5 @@ def test():
     scene.display()
     return
 
-if __name__ == '__main__': test()
+if __name__ == '__main__':
+ test()

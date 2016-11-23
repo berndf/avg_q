@@ -13,7 +13,7 @@ class PresLog(object):
   self.logfile=logfile
   self.log=open(self.logfile,"r")
   fileheader=next(self.log).rstrip('\r\n')
-  if not(fileheader.startswith('Scenario -')):
+  if not fileheader.startswith('Scenario -'):
    raise Exception("PresLog: File doesn't start with 'Scenario'")
   self.scenario=fileheader[11:]
   #print("Scenario: %s" % self.scenario)
@@ -39,7 +39,7 @@ class PresLog(object):
  def __iter__(self):
   for line in self.log:
    fields=line.rstrip('\r\n').split('\t')
-   if len(fields)<=1: 
+   if len(fields)<=1:
     # Only at the start skip empty line(s)
     if self.atstart: continue
     else: break

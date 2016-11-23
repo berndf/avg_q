@@ -147,19 +147,17 @@ echo -F stdout End of medbands\\n
    pass
   #print(bands)
   #print(medbands)
-  sorted_medbands=[]
   medians_of_medianfiltered=[]
   quartiles_of_medianfiltered=[]
   diff_threshold=[]
   for i in range(nr_of_bands):
    # Remove -inf values, which are caused by disconnected times
-   sorted_medbands.append(sorted([x for x in medbands[i] if not math.isinf(x)]))
-   medians_of_medianfiltered.append(sorted_medbands[i][int(len(sorted_medbands[i])/2)])
-   quartiles_of_medianfiltered.append(sorted_medbands[i][int(len(sorted_medbands[i])/4)])
+   sorted_medbands=sorted([x for x in medbands[i] if not math.isinf(x)])
+   medians_of_medianfiltered.append(sorted_medbands[int(len(sorted_medbands)/2)])
+   quartiles_of_medianfiltered.append(sorted_medbands[int(len(sorted_medbands)/4)])
    diff_threshold.append(medians_of_medianfiltered[i]-quartiles_of_medianfiltered[i])
   print("medians_of_medianfiltered=" + str(medians_of_medianfiltered))
   print("quartiles_of_medianfiltered=" + str(quartiles_of_medianfiltered))
-  del sorted_medbands
 
   sl_pos=0
   point=0

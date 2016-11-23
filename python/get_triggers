@@ -33,12 +33,16 @@ for filename in args.files:
   print("Oops, %s doesn't exist - skipping..." % filename)
   continue
  base,ext=os.path.splitext(filename)
- if filetype is None and ext in ['.trg','.crs','.tri','.log','.mkk']:
+ if filetype is None and ext in ['.trg','.crs','.tri','.log','.xpe','.mkk']:
   # Assume trigger file
   if ext=='.log':
    # Assume Presentation log file
    import avg_q.Presentation
    trg=avg_q.Presentation.PresLogfile(filename)
+  elif ext=='.xpe':
+   # Assume Expyriment log file
+   import avg_q.Expyriment
+   trg=avg_q.Expyriment.ExpyrimentLogfile(filename)
   elif ext=='.mkk':
    # BT marker file
    import avg_q.Sleep.delphi_table

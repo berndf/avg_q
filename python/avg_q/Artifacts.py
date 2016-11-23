@@ -23,11 +23,12 @@ class collect_crossings(object):
   self.positive_flank=None
   self.start_point=None
   self.end_point=None
- def finish_crossings(self):
+ def finish_crossings(self,detection_type):
   '''If positive_flank was seen, close segment ending at end_point'''
   if self.positive_flank is not None:
    self.artifacts.append((self.positive_flank+self.start_point,self.end_point))
    self.positive_flank=None
+  #print("Detection type=%s %d" % (detection_type,len(self.artifacts)))
  def add_crossings(self,crossings,start_point,end_point):
   self.start_point=start_point
   self.end_point=end_point
@@ -39,8 +40,7 @@ class collect_crossings(object):
     # Something was added to the preamble list, i.e. a new detection block has started
     detection_type=crossings.preamble.strings[-1][2:] # Crossings or Extrema
     preamble_strings_len=len(crossings.preamble.strings)
-    #print("Detection type=%s %d" % (detection_type,len(self.artifacts)))
-    self.finish_crossings()
+    self.finish_crossings(detection_type)
    if detection_type=='Crossings':
     # This means start,end of 'blocking', zero-line detection
     if code==1:
@@ -54,7 +54,7 @@ class collect_crossings(object):
      self.positive_flank=None
    else:
     self.artifacts.append(point+self.start_point)
-  self.finish_crossings()
+  self.finish_crossings(detection_type)
  def get_tuples(self):
   atuples=[]
   for artifact in self.artifacts:
