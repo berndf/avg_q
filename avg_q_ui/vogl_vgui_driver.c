@@ -446,7 +446,6 @@ VGUI_init(void) {
  Keyboard_Buffer_init();
 
  VGUI.window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
- gtk_window_set_wmclass (GTK_WINDOW (VGUI.window), "posplot", "avg_q");
  gtk_window_set_title (GTK_WINDOW (VGUI.window), "posplot");
  if (VGUI.width==0) {
   /* This means that we're executed for the first time */
@@ -1055,10 +1054,8 @@ VGUI_init(void) {
  */
 static void
 update_canvas(void) {
- cairo_t * const cr=gdk_cairo_create (gtk_widget_get_window(VGUI.canvas));
- cairo_set_source_surface (cr, VGUI.surface, 0, 0);
- cairo_paint (cr);
- cairo_destroy(cr);
+ /* Schedule a redraw for the whole area */
+ gtk_widget_queue_draw_area(GTK_WIDGET(VGUI.canvas),0,0,vdevice.sizeSx, vdevice.sizeSy);
 }
 
 static int 

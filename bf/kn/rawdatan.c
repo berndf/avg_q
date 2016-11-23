@@ -762,7 +762,7 @@ static void DoCompression(short int *newarray, short int *charray)
 /*--------------------------------------------------------------------*/
 {
     short int i, currentpos, diff, maxdiff, nsubsid=0, subsidcnt=0, subsidwords;
-    short int *subsidarray, *dataarray, nbit, leftbit, mask, wd, rem;
+    short int *subsidarray, *dataarray, nbit, leftbit, mask, rem;
     int lword=0, lval;
 
     nbit = newarray[1];
@@ -795,7 +795,7 @@ static void DoCompression(short int *newarray, short int *charray)
             }
         else    /* here to put next n-bit word into place*/
             {
-            wd = (short)(((int)subsidcnt*nbit)/16);
+            //wd = (short)(((int)subsidcnt*nbit)/16);
             rem = (short)(((int)subsidcnt*nbit)%16);
             lval = diff & mask;          /* next value to store*/
             lval <<= (leftbit-rem);      /* shift word left*/
@@ -823,7 +823,7 @@ static int UndoCompression(short int *newarray, short int *charray)
 /*--------------------------------------------------------------------*/
 {
     short int *dataarray, *subsidarray, nbit, nsubsid=0, subsidcnt=0;
-    short int i, s, rightbit, mask, maxdiff, currentpos, wd, rem;
+    short int i, s, rightbit, mask, maxdiff, currentpos, rem;
     int lword, lval;
     maxdiff = TwoPowerN(newarray[1]);       /* 2**n*/
     mask = maxdiff-1;                       /* n-1 bits set*/
@@ -846,7 +846,7 @@ static int UndoCompression(short int *newarray, short int *charray)
         subsidcnt = subsidarray[nsubsid];
         for(s=0; s<subsidcnt; s++)          /* unpack subsid array*/
             {
-            wd = (short)(((int)s*nbit)/16);
+            //wd = (short)(((int)s*nbit)/16);
             rem = (short)(((int)s*nbit)%16);
             lword = (int)(dataarray[currentpos]) << 16;
             lword += (unsigned short)dataarray[currentpos+1];

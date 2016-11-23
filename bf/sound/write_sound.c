@@ -90,15 +90,36 @@ avg_q_sox_output_message_handler(
  TRACEMS(sox_emethods,level-1,msgbuf);
 }
 
+EXPORT void
+sox_list_formats(external_methods_ptr emethods) {
+ sox_format_tab_t const *formattab=sox_get_format_fns();
+ snprintf(msgbuf, MESSAGE_BUFLEN, "DESCRIPTION\tEXTENSIONS\n");
+ TRACEMS(emethods, -1, msgbuf);
+ for (; formattab->fn!=NULL; formattab++) {
+  sox_format_handler_t const *formathandler= (*formattab->fn)();
+  char const * const * innames=formathandler->names;
+  int len;
+  snprintf(msgbuf, MESSAGE_BUFLEN, "%s\t%s", formathandler->description,*innames);
+  while (*++innames!=NULL) {
+   len=strlen(msgbuf);
+   snprintf(msgbuf+len, MESSAGE_BUFLEN-len, ",%s", *innames);
+  }
+  len=strlen(msgbuf);
+  snprintf(msgbuf+len, MESSAGE_BUFLEN-len, "\n");
+  TRACEMS(emethods, -1, msgbuf);
+ }
+}
+
 /*{{{  write_sound_init(transform_info_ptr tinfo) {*/
 METHODDEF void
 write_sound_init(transform_info_ptr tinfo) {
  struct write_sound_storage *local_arg=(struct write_sound_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- char const *ofile=args[ARGS_OFILE].arg.s;
+ char const *ofile=args[ARGS_OFILE].arg.s, *use_ofile="default", *filetype;
  sox_signalinfo_t signal;
  sox_encodinginfo_t encodingstruct, *encoding=NULL;
  sox_globals_t *sox_globalsp;
+ sox_format_handler_t const *handler;
 
  /* This is needed by the error handler: */
  myname=tinfo->methods->method_name;
@@ -116,15 +137,17 @@ write_sound_init(transform_info_ptr tinfo) {
  sox_globalsp=sox_get_globals();
  sox_globalsp->output_message_handler=&avg_q_sox_output_message_handler;
 
+ handler=sox_write_handler(ofile,NULL,&filetype);
+ if (handler!=NULL) {
+  use_ofile=ofile;
+ } else {
+  filetype=lsx_find_file_extension(ofile);
+  handler=sox_write_handler(NULL,filetype,NULL);
+ }
+
  if (args[ARGS_HELP].is_set) {
   unsigned const *val;
-  sox_format_handler_t const *handler=sox_write_handler(ofile,NULL,NULL);
-  /*
-  sox_format_tab_t const *formattab=sox_get_format_fns();
-  for (; formattab->name!=NULL; formattab++) {
-   printf("%s\n", formattab->name);
-  }
-  */
+  sox_list_formats(tinfo->emethods);
   if (handler==NULL) {
    ERREXIT(tinfo->emethods, "write_sound: No such format.\n");
   }
@@ -157,8 +180,8 @@ write_sound_init(transform_info_ptr tinfo) {
   encodingstruct.bits_per_sample=(args[ARGS_BITS].is_set ? bits_sizes[args[ARGS_BITS].arg.i] : 16);
   encoding=&encodingstruct;
  }
- if ((local_arg->outformat=sox_open_write(ofile, &signal, encoding, NULL, NULL, NULL))==NULL) {
-  ERREXIT1(tinfo->emethods, "write_sound_init: Can't open output file '%s'\n", MSGPARM(ofile));
+ if ((local_arg->outformat=sox_open_write(use_ofile, &signal, encoding, filetype, NULL, NULL))==NULL) {
+  ERREXIT1(tinfo->emethods, "write_sound_init: Can't open output file '%s'\n", MSGPARM(use_ofile));
  }
 
  //local_arg->outformat.comment=tinfo->comment;

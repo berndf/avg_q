@@ -252,7 +252,7 @@ again:
 #endif
    for (markertable_entry=markertable_names; markertable_entry->markertable_name!=NULL && strcmp(label, markertable_entry->markertable_name)!=0; markertable_entry++);
    if (event_list==EVENTLIST_NONE) {
-    printf("Field of length %ld Bytes, Label: >%s<\n", length, label);
+    printf("Field of length %d Bytes, Label: >%s<\n", length, label);
     if (markertable_entry->markertable_name!=NULL || 
         strcmp(label, VP_GLBMRKTABLE_NAME)==0) {
      uint32_t pointno;
@@ -262,7 +262,7 @@ again:
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&pointno);
 #endif
-      if (pointno>=0) printf(" %ldms\n", pointno);
+      if (pointno>=0) printf(" %dms\n", pointno);
      }
      continue;
     } else if (strcmp(label, VP_CHANNELTABLE_NAME)==0) {
@@ -280,7 +280,7 @@ again:
 #ifdef LITTLE_ENDIAN
        Intel_int32((uint32_t *)&unknown);
 #endif
-       printf(" %ld", unknown);
+       printf(" %d", unknown);
       }
       printf("\n");
      }
@@ -295,7 +295,7 @@ again:
 #ifdef LITTLE_ENDIAN
      Intel_int32((uint32_t *)&pointno);
 #endif
-     if (pointno>=0) printf("%ldms %d\n", pointno, pointno%2==0 ? TRIGCODE_FOR_STARTMARKER : TRIGCODE_FOR_ENDMARKER);
+     if (pointno>=0) printf("%dms %d\n", pointno, pointno%2==0 ? TRIGCODE_FOR_STARTMARKER : TRIGCODE_FOR_ENDMARKER);
     }
     continue;
    }

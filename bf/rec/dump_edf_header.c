@@ -139,7 +139,7 @@ main(int argc, char **argv) {
  for (channel=0; channel<nr_of_channels; channel++) {
   One_REC_channel_header header;
 
-  printf("\nChannel number %d (Offset within record: %d):\n", channel+1, total_samples_per_record*sizeof(int16_t));
+  printf("\nChannel number %d (Offset within record: %ld):\n", channel+1, total_samples_per_record*sizeof(int16_t));
   strncpy(header.label, channelheader.label[channel], 16);
   strncpy(header.transducer, channelheader.transducer[channel], 80);
   strncpy(header.dimension, channelheader.dimension[channel], 8);
@@ -157,7 +157,7 @@ main(int argc, char **argv) {
   if (samples_per_record>max_samples_per_record) max_samples_per_record=samples_per_record;
  }
  printf("\nMax samples per record: %d\n", max_samples_per_record);
- printf("Total samples per record: %d -> Size of 1 record %d bytes.\n", total_samples_per_record, total_samples_per_record*sizeof(int16_t));
+ printf("Total samples per record: %d -> Size of 1 record %ld bytes.\n", total_samples_per_record, total_samples_per_record*sizeof(int16_t));
  printf("Position after header is %ld, bytes_in_header field was %ld\n", ftell(infile), bytes_in_header);
 
  stat(filename,&statbuff);

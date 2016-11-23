@@ -35,7 +35,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
 };
 
 struct add_zerochannel_storage {
- char *channelname;
+ char const *channelname;
  double probepos[3];
 };
 /*}}}  */

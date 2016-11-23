@@ -4067,8 +4067,15 @@ sound
 \end_inset
 
  Get-epoch method to read data from any of the sound formats supported by
- the SOX (SOund eXchange) package (Maintainer: Lance Norskog <thinman@netcom.com>
-, freely available from various FTP servers).
+ the 
+\begin_inset CommandInset href
+LatexCommand href
+name "SOX (SOund eXchange)"
+target "http://sox.sourceforge.net/"
+
+\end_inset
+
+ package.
  This library is interfaced on a very high level, so that all capabilities
  and most of the behavior of 
 \series bold
@@ -4106,20 +4113,21 @@ write_sound
 \series bold
 read_sound
 \series default
- can record directly from an audio device (extension .ussdsp or .sunau).
+ can record directly from an audio device (extension .alsa or .pulseaudio
+ depending upon available sound devices and drivers).
 \begin_inset Newline newline
 \end_inset
 
-An epochlength of 0 points causes 
+Although triggers are not available inside sound files, they can be provided
+ using a trigger file, resulting in the same triggered reading abilities
+ as for the other epoch sources.
+ If aftertrig is 0 in continuous mode, 
 \series bold
 read_sound
 \series default
- to try to read the whole file as one epoch.
- As the SOX library provides no means to determine the number of samples
- beforehand, this automatic determination of the epoch length involves reading
- up to the end of file and then seeking back to the start for the actual
- read.
- Therefore, this feature cannot be applied on non-seekable input, e.g.
+ will try to read the whole file as one epoch.
+ Triggered reads and this feature cannot be applied on non-seekable input,
+ e.g.
  when recording.
 \begin_inset Separator latexpar
 \end_inset
@@ -4129,7 +4137,7 @@ read_sound
 
 \begin_deeper
 \begin_layout Description
-Arguments: Inputfile epochlength
+Arguments: Inputfile beforetrig aftertrig
 \end_layout
 
 \begin_layout Description
@@ -4144,6 +4152,50 @@ Options:
 \begin_layout Description
 -H: Help.
  Query the SOX library for supported formats and exit.
+\end_layout
+
+\begin_layout Description
+-c: Continuous: Read the file in adjacent chunks of the given size disregarding
+ triggers 
+\end_layout
+
+\begin_layout Description
+-T: Transfer a list of triggers within the read epoch 
+\end_layout
+
+\begin_layout Description
+-R
+\begin_inset space ~
+\end_inset
+
+trigger_file: Read trigger points and codes from file trigger_file in the
+ format described in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+, page 
+\begin_inset CommandInset ref
+LatexCommand pageref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Description
+-t
+\begin_inset space ~
+\end_inset
+
+trigger_list: Restrict epochs to those marked with a condition code contained
+ in the trigger_list.
+ The list consists of comma-separated integer values, for example: 5,2,3.
+ This is only useful in conjunction with the -R option.
 \end_layout
 
 \begin_layout Description
@@ -12096,10 +12148,9 @@ avg_q
  trace handling system.
  The output file type is determined from the file extension.
  For example, `a.wav' will write a Windows RIFF file, `a.voc' a Creative Labs
- VOC file, `a.ussdsp' will write directly to the USS sound system audio output
- /dev/dsp (on Linux), `a.sunau' will write directly to the Sun Microsystems
- compatible /dev/audio interface.
- The latter two will not actually create Outfile.
+ VOC file, `a.alsa' and `a.pulseaudio' will write directly to the corresponding
+ output devices.
+ Writing to output devices will not actually create Outfile.
  Of course, not all output formats (and especially not all sound processing
  software) will be able to handle more than 2 or 4 channels, so that it
  will often be advisable to use the 
@@ -12150,7 +12201,8 @@ Options:
 \begin_deeper
 \begin_layout Description
 -H: Help.
- Query the SOX library for supported formats and exit.
+ Query the SOX library for supported formats as well as format options for
+ the Outfile file format and exit.
 \end_layout
 
 \begin_layout Description

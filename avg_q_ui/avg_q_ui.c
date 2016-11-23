@@ -301,7 +301,6 @@ Notice(gchar *message) {
  Notice_window=gtk_dialog_new();
  gtk_window_set_transient_for(GTK_WINDOW (Notice_window), GTK_WINDOW (Avg_Q_Main_Window));
  gtk_window_set_position (GTK_WINDOW (Notice_window), GTK_WIN_POS_MOUSE);
- gtk_window_set_wmclass (GTK_WINDOW (Notice_window), "Notice", "avg_q");
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK (Notice_window_close), NULL);
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
@@ -362,7 +361,6 @@ trace_message(const external_methods_ptr emeth, const int lvl, const char *msgte
 
    window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
    gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_MOUSE);
-   gtk_window_set_wmclass (GTK_WINDOW (window), "TracePanel", "avg_q");
    gtk_window_set_title (GTK_WINDOW (window), "Trace messages");
    gtk_window_set_default_size (GTK_WINDOW(window), TRACEFRAME_SIZE_X, TRACEFRAME_SIZE_Y);
 
@@ -1049,7 +1047,6 @@ MethodInstance_build_dialog(void) {
  MethodInstance_window=gtk_dialog_new();
  gtk_window_set_transient_for(GTK_WINDOW (MethodInstance_window), GTK_WINDOW (Avg_Q_Main_Window));
  gtk_window_set_position (GTK_WINDOW (MethodInstance_window), GTK_WIN_POS_MOUSE);
- gtk_window_set_wmclass (GTK_WINDOW (MethodInstance_window), "Method instance", "avg_q");
  g_signal_connect (G_OBJECT (MethodInstance_window), "destroy", G_CALLBACK (method_dialog_close), NULL);
  gtk_window_set_title (GTK_WINDOW (MethodInstance_window), method.method_name);
 
@@ -2006,7 +2003,6 @@ create_main_window (void) {
 #if 0
  gtk_widget_modify_font(GTK_WIDGET(Avg_Q_Main_Window),pango_font_description_from_string(DEFAULT_FONT));
 #endif
- gtk_window_set_wmclass (GTK_WINDOW (Avg_Q_Main_Window), "MainWindow", "avg_q");
  gtk_window_set_default_size (GTK_WINDOW(Avg_Q_Main_Window), FRAME_SIZE_X, FRAME_SIZE_Y);
  g_signal_connect (G_OBJECT (Avg_Q_Main_Window), "destroy", G_CALLBACK (Quit_avg_q), NULL);
  g_signal_connect (G_OBJECT (Avg_Q_Main_Window), "delete_event", G_CALLBACK (Quit_avg_q), NULL);
