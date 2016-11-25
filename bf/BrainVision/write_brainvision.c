@@ -302,11 +302,38 @@ write_brainvision(transform_info_ptr tinfo) {
   while (intrig->code!=0) {
    /* Positions in BrainVision apparently start at 1 */
    long const pointno=local_arg->total_points+intrig->position+1;
-   if (intrig->description==NULL) {
-    if (intrig->code==256 || intrig->code==257) {
-     fprintf(local_arg->vmrkfile, "Mk%ld=%s,%ld,1,0\n",
+   char *fulldesc=NULL, *usedesc=NULL;
+   if (intrig->description!=NULL) {
+    /* Decide what to do with the textual description */
+    if (strncmp(intrig->description,"Stimulus,S",10)==0 || strncmp(intrig->description,"Response,R",10)==0) {
+     /* Use as "stimulus type,description" as is */
+     fulldesc=intrig->description;
+    } else {
+     /* Replace commas by blanks to maintain a syntactically correct marker line */
+     for (char *indesc=intrig->description; *indesc!='\0'; indesc++) {
+      if (*indesc==',') *indesc=' ';
+     }
+     usedesc=intrig->description;
+    }
+   }
+   if (fulldesc!=NULL) {
+    /* Use fulldesc as "stimulus type,description" as is */
+    fprintf(local_arg->vmrkfile, "Mk%ld=%s,%ld,1,0\n", 
+     local_arg->current_trigger, 
+     fulldesc, 
+     pointno);
+   } else if (intrig->code==256 || intrig->code==257) {
+    fprintf(local_arg->vmrkfile, "Mk%ld=%s,%ld,1,0\n",
+     local_arg->current_trigger,
+     intrig->code==256 ? "New Segment," : "DC Correction,",
+     pointno);
+   } else {
+    if (usedesc!=NULL) {
+     fprintf(local_arg->vmrkfile, "Mk%ld=%s%3d %s,%ld,1,0\n",
       local_arg->current_trigger,
-      intrig->code==256 ? "New Segment," : "DC Correction,",
+      intrig->code>0 ? "Stimulus,S" : "Response,R",
+      abs(intrig->code),
+      usedesc,
       pointno);
     } else {
      fprintf(local_arg->vmrkfile, "Mk%ld=%s%3d,%ld,1,0\n",
@@ -315,11 +342,6 @@ write_brainvision(transform_info_ptr tinfo) {
       abs(intrig->code),
       pointno);
     }
-   } else {
-    fprintf(local_arg->vmrkfile, "Mk%ld=%s,%ld,1,0\n", 
-     local_arg->current_trigger, 
-     intrig->description, 
-     pointno);
    }
    local_arg->current_trigger++;
    intrig++;
