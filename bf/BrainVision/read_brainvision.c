@@ -395,7 +395,7 @@ reevaluate:
      local_arg->nr_of_channels=atoi(readbuf.buffer_start+17);
      //printf("nr_of_channels=%d\n", local_arg->nr_of_channels);
     } else if (strncmp(readbuf.buffer_start,"SamplingInterval=",17)==0) {
-     local_arg->sfreq=1.0e6/atoi(readbuf.buffer_start+17);
+     local_arg->sfreq=1.0e6/atof(readbuf.buffer_start+17);
      //printf("sfreq=%g\n", local_arg->sfreq);
     }
    }
