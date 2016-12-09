@@ -170,7 +170,9 @@ write_generic -x stdout float32
    for thisplot in range(0,nplots):
     # cf. http://www.scipy.org/Cookbook/Matplotlib/Gridding_irregularly_spaced_data
     zi=mlab.griddata(xpos,ypos,z[thisplot],xi,yi,interp=interpolation)
-    plt.subplot(nrows,ncols,thisplot+1)
+    # Don't mess with arranging plots on a page if we only have a single plot...
+    if nplots>1:
+     plt.subplot(nrows,ncols,thisplot+1)
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
     gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=vmin,vmax=vmax),shading='flat',edgecolors='face',antialiaseds=False)
