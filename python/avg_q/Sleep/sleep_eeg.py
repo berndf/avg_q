@@ -347,6 +347,8 @@ set sfreq 0.03333333333
 # Recover -Inf values transformed to the minimum representable value by write_cnt
 recode -32.768 -32.76799 -Inf -Inf
 ''')
+  # Set the default trigger file name here so that it can be overridden
+  self.trgfilename=self.filename.replace('.cnt','.trg')
  def locate(self,booknumber):
   from . import bookno
   global cntfilecache
@@ -356,10 +358,9 @@ recode -32.768 -32.76799 -Inf -Inf
   file_bookno=bookno.file_bookno(booknumber)
   self.filename=cntfilecache.find(cntspectfile_paths,file_bookno)
  def set_epochfilter(self,epochfilter):
-  tfile=self.filename.replace('.cnt','.trg')
   from .. import trgfile
   try:
-   t=trgfile.trgfile(tfile)
+   t=trgfile.trgfile(self.trgfilename)
   except FileNotFoundError:
    self.set_trigpoints([])
    return
