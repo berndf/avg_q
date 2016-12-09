@@ -39,8 +39,8 @@ typedef int32_t msgparm_t;
 /* Well, the BORLAND C doesn't understand #if DATATYPE==float, and GNU C
  * doesn't understand #if sizeof(DATATYPE)==sizeof(float), so we define an
  * additional variable here to be able to test it... Choice: */
-#define FLOAT_DATATYPE
-#undef DOUBLE_DATATYPE
+#undef FLOAT_DATATYPE
+#define DOUBLE_DATATYPE
 
 #ifdef FLOAT_DATATYPE
 #define DATATYPE float
