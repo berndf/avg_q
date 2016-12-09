@@ -63,7 +63,7 @@ class sleep_file(avg_q_file):
    a=avg_q.avg_q()
    comment,channelnames=a.get_description(self.f,('comment','channelnames'))
    del a
-   if comment is not None and 'Somnoscreen' in comment:
+   if comment is not None and ('Somnoscreen' in comment or 'Somnodcreen' in comment):
     # Recording reference for Somnoscreen is Cz, makes no sense to analyze the channels like this
     # M1 is the more common name but there are some recordings with A1 instead
     channelnames=set(channelnames)
@@ -76,6 +76,8 @@ class sleep_file(avg_q_file):
      channelnames=channelnames.difference(bad_channels[fname])
     reference=channelnames.intersection(set(['M1','M2','A1','A2']))
     self.addmethods='''
+>add_zerochannel Cz 0 0 0
+>set_channelposition =grid
 >rereference -e %(exclude_channelnames)s %(reference)s
 ''' % {
      'exclude_channelnames': channel_list2arg(exclude_channelnames),
