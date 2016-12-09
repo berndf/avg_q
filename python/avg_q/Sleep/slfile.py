@@ -307,7 +307,16 @@ class slfile(object):
  def create_remcycles(self):
   self.remcycles=[]
   self.n_remcycles,self.n_nremcycles,in_REM= -1,0,False
+  len(self.tuples) # Ensure that the sl file was read
+  if len(self.lights_on)>0:
+   last_lights_on_offset=self.lights_on[-1]['offset']
+  else:
+   last_lights_on_offset=None
   for pos in range(len(self.tuples)):
+   # After lights on, switch back to REM cycle -1, NREM cycle 0
+   if last_lights_on_offset is not None and pos>=last_lights_on_offset:
+    self.remcycles.append(self.remc_tuple(-1,0))
+    continue
    time,stage=self.tuples[pos][0:2]
    if in_REM:
     if stage!=5:
