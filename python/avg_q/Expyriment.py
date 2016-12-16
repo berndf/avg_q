@@ -59,7 +59,14 @@ class ExpyrimentLogfile(trgfile.trgfile):
     description="StartStop"
    else:
     description=' '.join([data['Type'],data['Event'],data['Value']])
-    code=1
+    firstnondigit=0
+    while firstnondigit<len(data['Value']):
+     if not data['Value'][firstnondigit].isdigit(): break
+     firstnondigit+=1
+    if firstnondigit>0:
+     code=int(data['Value'][:firstnondigit])
+    else:
+     code=1
    yield (point, code, description)
  def close(self):
   if self.EL:
