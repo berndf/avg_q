@@ -84,16 +84,17 @@ ELSE(CMAKE_SYSTEM_NAME MATCHES Windows)
  ENDIF(UNAME MATCHES "x86_64")
 ENDIF(CMAKE_SYSTEM_NAME MATCHES Windows)
 
-# GCC 5 defaults to -std=gnu11, GCC 4 not. This is necessary for loop variable
-# declaration within 'for' loops.
-SET(CMAKE_C_FLAGS_RELEASE "${C_FLAGS_ARCHITECTURE} -std=gnu11 -O4 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+SET(C_FLAGS_COMMON "${C_FLAGS_ARCHITECTURE} -O4 -fomit-frame-pointer -ffast-math -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
 
 INCLUDE(FindOpenMP)
 IF(OPENMP_FOUND)
- SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OpenMP_C_FLAGS}")
+ SET(C_FLAGS_COMMON "${C_FLAGS_COMMON} ${OpenMP_C_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
-SET(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+# GCC 5 defaults to -std=gnu11, GCC 4 not. This is necessary for loop variable
+# declaration within 'for' loops. The option only makes sense for C, not C++...
+SET(CMAKE_C_FLAGS_RELEASE "-std=gnu11 ${C_FLAGS_COMMON}")
+SET(CMAKE_CXX_FLAGS_RELEASE ${C_FLAGS_COMMON})
 
 # Permissons to be set on installed files
 SET(EXECUTABLE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

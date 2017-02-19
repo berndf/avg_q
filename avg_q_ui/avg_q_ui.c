@@ -142,7 +142,7 @@ LOCAL gint Avg_q_Load_Script_Now_Tag=0;
 LOCAL gint Avg_q_Load_Subscript_Tag=0;
 #endif
 G_LOCK_DEFINE_STATIC (running);
-LOCAL Bool running=FALSE, interactive=FALSE, dumponly=FALSE, single_step=FALSE;
+LOCAL Bool running=FALSE, iconified=FALSE, interactive=FALSE, dumponly=FALSE, single_step=FALSE;
 G_LOCK_DEFINE_STATIC (stop_request);
 LOCAL Bool stop_request=FALSE;
 LOCAL FILE *dumpfile;
@@ -2387,7 +2387,7 @@ main (int argc, char *argv[]) {
     dumpfile=stdout;
     break;
    case 'i':
-    gtk_window_iconify(GTK_WINDOW(Avg_Q_Main_Window));
+    iconified=TRUE;
     break;
    case 'I':
     interactive=TRUE;
@@ -2427,9 +2427,6 @@ main (int argc, char *argv[]) {
 #endif
  }
  /*}}}  */
- if (interactive)  {
-  gtk_window_deiconify(GTK_WINDOW(Avg_Q_Main_Window));
- }
 
  iter_queue.start=post_queue.start=NULL;	/* Tell setup_queue that no memory is allocated yet */
 #ifdef STANDALONE
@@ -2466,6 +2463,9 @@ main (int argc, char *argv[]) {
   Avg_q_Load_Script_Now_Tag=g_idle_add(Load_Script_Now, MAINARG(SCRIPTFILE));
  } else {
   set_main_window_title();
+ }
+ if (iconified & !interactive) {
+  gtk_window_iconify(GTK_WINDOW(Avg_Q_Main_Window));
  }
 #endif
 
