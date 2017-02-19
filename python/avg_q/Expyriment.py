@@ -18,6 +18,8 @@ class ExpyrimentLog(object):
   #print("dateline: %s" % dateline)
   if dateline.startswith('#date: '):
    import datetime
+   import locale
+   locale.setlocale(locale.LC_ALL, '')
    self.timestamp=datetime.datetime.strptime(dateline[7:],"%a %b %d %Y %H:%M:%S")
    #print(self.timestamp)
   else:

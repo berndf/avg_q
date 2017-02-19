@@ -48,6 +48,9 @@ AUXchannels=set([
  'Pulse',
  'Snoring',
  'Lage',
+ 'Licht',
+ 'Akku',
  'Beweg.',
+ 'AUX',
 ])
 NonEEGChannels=set.union(BipolarEOGchannels,ECGchannels,EMGchannels,AUXchannels)
