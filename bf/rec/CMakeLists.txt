@@ -7,4 +7,5 @@ SET(bf_sources
 
 SET(programs
  dump_edf_header
+ join_edf
 )
