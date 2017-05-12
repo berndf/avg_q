@@ -18,7 +18,7 @@ class Detector(avg_q.Script):
   self.detection_start=None
   self.detection_length=None
   self.sfreq=None
-  self.breakpoints=None
+  self.breakpoints_in_s=None
   self.distance_from_breakpoint_points=None
  def detect(self,outtrigfile=None,maxvalue=None):
   '''
@@ -29,18 +29,22 @@ class Detector(avg_q.Script):
   The 'description' element of the tuples is appended with the epoch number and channel name,
   separated by '\t'.
   '''
-  self.sfreq=self.avg_q_instance.get_description(self.Epochsource_list[0].infile,'sfreq')
+  # Getting breakpoints can be expensive, so it can be disabled by setting self.distance_from_breakpoint_s to None
+  # Note that we convert into time units because we may have resampling going on before detection
   if self.distance_from_breakpoint_s is not None:
-   # Getting breakpoints can be expensive, so it can be disabled by setting self.distance_from_breakpoint_s to None
-   self.breakpoints=self.avg_q_instance.get_breakpoints(self.Epochsource_list[0].infile)
-   self.distance_from_breakpoint_points=self.distance_from_breakpoint_s*self.sfreq
+   sfreq=self.avg_q_instance.get_description(self.Epochsource_list[0].infile,'sfreq')
+   self.breakpoints_in_s=[point/sfreq for point in self.avg_q_instance.get_breakpoints(self.Epochsource_list[0].infile)]
 
   crossings=trgfile.trgfile(self.runrdr())
   outtuples=[]
   for point,code,description in crossings:
+   if not self.sfreq: 
+    if not 'Sfreq' in crossings.preamble:
+     raise Exception('Detector: Sfreq not in trigger preamble, cannot continue!')
+    self.sfreq=float(crossings.preamble['Sfreq'])
    if self.detection_start is not None and (point<self.detection_start or point>=self.detection_start+self.detection_length) \
     or maxvalue is not None and float(description)>maxvalue \
-    or self.distance_from_breakpoint_s is not None and any([abs(point-breakpoint)<self.distance_from_breakpoint_points for breakpoint in self.breakpoints]):
+    or self.distance_from_breakpoint_s is not None and any([abs(point/self.sfreq-breakpoint_in_s)<self.distance_from_breakpoint_s for breakpoint_in_s in self.breakpoints_in_s]):
     continue
    descriptionitems=[] if description is None else [description]
    if 'Epoch' in crossings.preamble:
@@ -48,8 +52,6 @@ class Detector(avg_q.Script):
    if 'Channel' in crossings.preamble:
     descriptionitems.append(crossings.preamble['Channel'])
    outtuples.append((point,code,'\t'.join(descriptionitems)))
-  if not self.sfreq and 'Sfreq' in crossings.preamble:
-   self.sfreq=float(crossings.preamble['Sfreq'])
   if outtrigfile:
    t=trgfile.trgfile()
    if self.sfreq: t.preamble['Sfreq']=str(self.sfreq)
