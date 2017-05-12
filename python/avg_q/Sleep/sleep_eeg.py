@@ -153,9 +153,15 @@ echo -F stdout End of medbands\\n
   for i in range(nr_of_bands):
    # Remove -inf values, which are caused by disconnected times
    sorted_medbands=sorted([x for x in medbands[i] if not math.isinf(x)])
-   medians_of_medianfiltered.append(sorted_medbands[int(len(sorted_medbands)/2)])
-   quartiles_of_medianfiltered.append(sorted_medbands[int(len(sorted_medbands)/4)])
-   diff_threshold.append(medians_of_medianfiltered[i]-quartiles_of_medianfiltered[i])
+   # If this is empty, avoid producing an error and set diff_threshold to zero
+   if sorted_medbands:
+    medians_of_medianfiltered.append(sorted_medbands[int(len(sorted_medbands)/2)])
+    quartiles_of_medianfiltered.append(sorted_medbands[int(len(sorted_medbands)/4)])
+    diff_threshold.append(medians_of_medianfiltered[i]-quartiles_of_medianfiltered[i])
+   else:
+    medians_of_medianfiltered.append(None)
+    quartiles_of_medianfiltered.append(None)
+    diff_threshold.append(0)
   print("medians_of_medianfiltered=" + str(medians_of_medianfiltered))
   print("quartiles_of_medianfiltered=" + str(quartiles_of_medianfiltered))
 
@@ -214,6 +220,8 @@ echo -F stdout End of medbands\\n
   if len(c.trigpoints)==0: return
   script=avg_q.Script(self)
   script.add_Epochsource(c)
+  # Drop epochs with Inf bandwidth (e.g. incoming EEG zeroed out)
+  script.add_transform('reject_bandwidth Inf')
   script.set_collect('average')
   script.add_postprocess('''
 swap_fc
