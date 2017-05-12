@@ -122,6 +122,7 @@ null_sink
   if self.avg_q:
    self.avg_q.stdin.close()
    self.avg_q.stdout.close()
+   self.avg_q.wait() # Avoid that the subprocess still uses resources
    self.avg_q=None
  # Helper functions accepting avg_q style time designations ('12s', '330ms', 533) and returning a float in the target unit
  def time_to_any(self,time,lambdas):
