@@ -1213,7 +1213,7 @@ static int VGUI_char(char c)
  return (1);
 };
 
-static int VGUI_string(char *s)
+static int VGUI_string(const char *s)
 {
  //printf("VGUI_string %s %d %g (vdevice.sizeSy=%d, vdevice.cpVy=%d, vdevice.hheight=%g)\n", s, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy - vdevice.hheight, vdevice.sizeSy, vdevice.cpVy, vdevice.hheight);
 

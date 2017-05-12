@@ -208,7 +208,7 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&millisec);
 #endif
-      if (millisec<0) {
+      if (millisec==UINT32_MAX) {
        /* Usually, there are 100 tags reserved and the unused at the end
 	* filled with -1 */
        break;

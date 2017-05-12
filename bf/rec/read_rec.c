@@ -129,7 +129,7 @@ is_annotation(struct read_rec_storage *local_arg, int channel) {
 /* This returns the trigger code, 0 for no more annotations */
 LOCAL int
 parse_annotation(char **in_annotationp, char *end_annotation, DATATYPE sfreq, long *trigpointp, long *durationp, growing_buf *descriptionp) {
- char *inin_annotation;
+ char *inin_annotation= &in_annotationp;
  if (*in_annotationp>end_annotation || **in_annotationp=='\0') return 0;
  if (**in_annotationp=='+'  || **in_annotationp=='-') {
   /* Start of a new offset/duration block 

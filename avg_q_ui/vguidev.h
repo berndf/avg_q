@@ -20,7 +20,7 @@ typedef struct {
  int (*Vmapcolor)(int c, int r, int g, int b);		/* Set color indicies */
  int (*Vsetls)(int s);		/* Set linestyle */
  int (*Vsetlw)(int w);		/* Set linewidth */
- int (*Vstring)(char *s);		/* Draw a hardware string */
+ int (*Vstring)(const char *s);		/* Draw a hardware string */
  int (*Vswapb)(void);		/* Swap front and back buffers */
  int (*Vsync)(void);		/* Sync display */
 } MyDevEntry;

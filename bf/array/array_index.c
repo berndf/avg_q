@@ -63,10 +63,10 @@ array_quantile(array *a, DATATYPE q) {
  unsigned long *indx;
  DATATYPE d;
 
- if (i1<0 || i2>=n) {
-  if (i1<0 && i2>=0) i1=i2;
+ if (n==0 || i2>=n) {
+  if (n==0) i1=i2;
   if (i2>=n && i1<n) i2=i1;
-  if (i1<0 || i2>=n) return 0.0;
+  if (n==0 || i2>=n) return 0.0;
  }
  if ((indx=(unsigned long *)malloc(n*sizeof(unsigned long)))==NULL) return 0.0;
  array_index(a, indx);

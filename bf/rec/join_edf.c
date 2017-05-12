@@ -96,7 +96,7 @@ main(int argc, char **argv) {
    }
    memset(recordbuf, '\0', record_size);
    nr_of_records=atoi(filename);
-   printf("Empty: %d records of %ld bytes.\n", nr_of_records, record_size);
+   printf("Empty: %ld records of %ld bytes.\n", nr_of_records, record_size);
    for (record=0; record<nr_of_records; record++) {
     if (1!=(int)fwrite(recordbuf, record_size, 1, outfile)) {
      ERREXIT(tinfo->emethods, "join_edf: Error writing record\n");
@@ -163,7 +163,7 @@ main(int argc, char **argv) {
    }
    total_records=0L;
   }
-  printf("%s: %d records of %ld bytes.\n", filename, nr_of_records, record_size);
+  printf("%s: %ld records of %ld bytes.\n", filename, nr_of_records, record_size);
 
   for (record=0; record<nr_of_records; record++) {
    if (1!=(int)fread(recordbuf, record_size, 1, infile)) {

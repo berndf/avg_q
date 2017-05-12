@@ -262,7 +262,7 @@ again:
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&pointno);
 #endif
-      if (pointno>=0) printf(" %dms\n", pointno);
+      if (pointno!=UINT32_MAX) printf(" %dms\n", pointno);
      }
      continue;
     } else if (strcmp(label, VP_CHANNELTABLE_NAME)==0) {
@@ -295,7 +295,7 @@ again:
 #ifdef LITTLE_ENDIAN
      Intel_int32((uint32_t *)&pointno);
 #endif
-     if (pointno>=0) printf("%dms %d\n", pointno, pointno%2==0 ? TRIGCODE_FOR_STARTMARKER : TRIGCODE_FOR_ENDMARKER);
+     if (pointno!=UINT32_MAX) printf("%dms %d\n", pointno, pointno%2==0 ? TRIGCODE_FOR_STARTMARKER : TRIGCODE_FOR_ENDMARKER);
     }
     continue;
    }

@@ -176,8 +176,8 @@ main(int argc, char **argv) {
 #endif
  if (vitaport_filetype==VITAPORT2_FILE) {
   long const tablepos=ftell(infile)+sum_dlen;
-  long tagno, n_events;
-  uint32_t length, trigpoint;
+  long tagno, n_events, trigpoint;
+  uint32_t length, utrigpoint;
   struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
 
   /* Count the events in evtfile. */
@@ -238,17 +238,18 @@ main(int argc, char **argv) {
     * actually be milliseconds as we need it IF THE POINT POSITIONS ARE GIVEN
     * IN TIME UNITS (s or ms) IN THE EVENT FILE */
    if (read_trigger_from_trigfile(evtfile, (DATATYPE)1000, &trigpoint, NULL)==0) break;
+    utrigpoint=(uint32_t)trigpoint;
 #ifdef LITTLE_ENDIAN
-   Intel_int32((uint32_t *)&trigpoint);
+   Intel_int32((uint32_t *)&utrigpoint);
 #endif
-   fwrite(&trigpoint, sizeof(trigpoint), 1, infile);
+   fwrite(&utrigpoint, sizeof(utrigpoint), 1, infile);
   }
   for (; tagno<n_events; tagno++) {
-   trigpoint= -1;
+   utrigpoint= -1;
 #ifdef LITTLE_ENDIAN
-   Intel_int32((uint32_t *)&trigpoint);
+   Intel_int32((uint32_t *)&utrigpoint);
 #endif
-   fwrite(&trigpoint, sizeof(trigpoint), 1, infile);
+   fwrite(&utrigpoint, sizeof(utrigpoint), 1, infile);
   }
 
   fwrite(VP_GLBMRKTABLE_NAME, 1, VP_TABLEVAR_LENGTH, infile);
