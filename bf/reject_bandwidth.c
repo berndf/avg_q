@@ -187,9 +187,9 @@ reject_bandwidth(transform_info_ptr tinfo) {
    if (item<minitem) minitem=item;
   } while (myarray.message==ARRAY_CONTINUE);
   if (args[ARGS_MAXONLY].is_set) {
-   should_be_rejected=maxitem>local_arg->bandwidths[channel];
+   should_be_rejected=maxitem>=local_arg->bandwidths[channel];
   } else {
-   should_be_rejected=maxitem-minitem>local_arg->bandwidths[channel];
+   should_be_rejected=maxitem-minitem>=local_arg->bandwidths[channel];
   }
   if (should_be_rejected) {
    if (args[ARGS_REMOVE_CHANNELS].is_set) {

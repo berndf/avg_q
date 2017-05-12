@@ -4984,14 +4984,19 @@ bandwidth
 
 \end_inset
 
- Rejection method to reject epochs in which any channel exceeds a given
- bandwidth (max-min value).
+ Rejection method to reject epochs in which any channel equals or exceeds
+ a given bandwidth (max-min value).
  This is most often needed to exclude raw data epochs with large-amplitude
  artifacts from further processing.
  However, the choice can also be inverted using the option -I, thus selectively
  choosing epochs with high bandwidth.
  Using the option -m, it is also possible to use the absolute maximum as
  the criterion rather than the bandwidth.
+\begin_inset Newline newline
+\end_inset
+
+The bandwidth can be Inf, in which cases epochs are rejected containing
+ +Inf or -Inf.
 \begin_inset Newline newline
 \end_inset
 
@@ -5073,8 +5078,8 @@ Options:
 \begin_deeper
 \begin_layout Description
 -m: Maximum only.
- Reject where the maximum of a channel exceeds a threshold, rather than
- the difference between maximum and minimum.
+ Reject where the maximum of a channel equals or exceeds a threshold, rather
+ than the difference between maximum and minimum.
 \end_layout
 
 \begin_layout Description
