@@ -58,7 +58,10 @@ for filename_and_triggerfile in args.files:
    continue
   print("Opening file: %s type %s" % (filename,filetype))
   infile=avg_q.avg_q_file(filename,filetype)
- if not trgfile:
+ if trgfile:
+  if infile.fileformat=='asc':
+   addmethods=['set triggers_from_trigfile '+trgfile]
+ else:
   if infile.fileformat=='Inomed':
    trgfile=filename+'.tri'
   elif infile.fileformat=='Coherence':
