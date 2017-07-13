@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2008-2012 Bernd Feige
+# Copyright (C) 2008-2012,2017 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import sys
@@ -29,16 +29,17 @@ class cairovogl(voglps.voglps):
 # These are the postscript coordinates
 WIDTH, HEIGHT  = 2700/voglps.scale_factor, 2000/voglps.scale_factor
 
-for psfile in sys.argv[1:]:
- svgfile=psfile.replace(".ps",".svg")
- print(svgfile)
- surface = cairo.SVGSurface(svgfile, WIDTH, HEIGHT)
- #v=voglps.voglps(psfile)
- v=cairovogl(psfile,surface,WIDTH,HEIGHT)
- #ctx.scale (WIDTH/1.0, HEIGHT/1.0)
- v.parse()
- #ctx.rel_line_to(1000,1000)
- #ctx.line_to(0,1000)
- #ctx.set_source_rgb(0,1,0)
- #ctx.stroke()
- surface.finish()
+if __name__ == '__main__':
+ for psfile in sys.argv[1:]:
+  svgfile=psfile.replace(".ps",".svg")
+  print(svgfile)
+  surface = cairo.SVGSurface(svgfile, WIDTH, HEIGHT)
+  #v=voglps.voglps(psfile)
+  v=cairovogl(psfile,surface,WIDTH,HEIGHT)
+  #ctx.scale (WIDTH/1.0, HEIGHT/1.0)
+  v.parse()
+  #ctx.rel_line_to(1000,1000)
+  #ctx.line_to(0,1000)
+  #ctx.set_source_rgb(0,1,0)
+  #ctx.stroke()
+  surface.finish()

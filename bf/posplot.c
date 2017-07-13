@@ -528,6 +528,8 @@ LOCAL struct trigger *find_trigger_before(struct trigger *starttrig, int right, 
 LOCAL void
 clear_event_queue(void) {
  short val;
+ /* Protect from error if we quit with uninitialized vdevice */
+ if (!vdevice.initialised) return;
  while (qtest()) {
   qread(&val);
  }

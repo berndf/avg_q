@@ -6978,6 +6978,12 @@ channelnames: Act only on the given subset of channels.
 \end_layout
 
 \begin_layout Description
+-q: Quit: Do not actually perform the filtering, but possibly output diagnostics.
+ The epoch is rejected.
+ This is intended to be used in combination with -V.
+\end_layout
+
+\begin_layout Description
 -x where x is a floating-point number between 0 and 1: May occur at the
  start of any block.
  If specified, the frequency range between zerostart and zeroend of this

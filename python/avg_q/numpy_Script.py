@@ -48,27 +48,29 @@ class numpy_Epochsource(avg_q.Epochsource):
   raise Exception('numpy_Epochsource: set_trigpoints not implemented')
  def send(self,avg_q_instance):
   if len(self.epochs)==0: return
-  nr_of_points,nr_of_channels=self.epochs[0].data.shape
-  avg_q_instance.write('''
-read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e %(epochs)d stdin 0 %(aftertrig)d float32
+  for epoch in self.epochs:
+   nr_of_points,nr_of_channels=epoch.data.shape
+   avg_q_instance.write('''
+read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 stdin 0 %(aftertrig)d float32
 ''' % {
-   'readx': '-x xdata' if self.epochs[0].xdata is not None else '',
-   'sfreq': self.epochs[0].sfreq if self.epochs[0].sfreq else 100.0,
-   'epochs': len(self.epochs),
-   'aftertrig': nr_of_points,
-   'nr_of_channels': nr_of_channels,
-  })
-  if self.epochs[0].channelnames:
-   channelnames=self.epochs[0].channelnames
-   if self.epochs[0].channelpos:
-    channelpos=self.epochs[0].channelpos
-   else:
-    # If channelpos is not available, make it up
-    channelpos=[(i,0,0) for i in range(len(channelnames))]
-   methodline='>set_channelposition -s '+' '.join(["%s %g %g %g" % (channelnames[channel],channelpos[channel][0],channelpos[channel][1],channelpos[channel][2]) for channel in range(len(self.epochs[0].channelnames))])
-   avg_q_instance.write(methodline+'\n')
-  for methodline in self.branch:
-   avg_q_instance.write(methodline+'\n')
+    'readx': '-x xdata' if epoch.xdata is not None else '',
+    'sfreq': epoch.sfreq if epoch.sfreq else 100.0,
+    'aftertrig': nr_of_points,
+    'nr_of_channels': nr_of_channels,
+   })
+   if epoch.channelnames:
+    channelnames=epoch.channelnames
+    if epoch.channelpos:
+     channelpos=epoch.channelpos
+    else:
+     # If channelpos is not available, make it up
+     channelpos=[(i,0,0) for i in range(len(channelnames))]
+    methodline='>set_channelposition -s '+' '.join(["%s %g %g %g" % (channelnames[channel],channelpos[channel][0],channelpos[channel][1],channelpos[channel][2]) for channel in range(len(epoch.channelnames))])
+    avg_q_instance.write(methodline+'\n')
+   if epoch.comment:
+    avg_q_instance.write('>set_comment %s\n' % epoch.comment)
+   for methodline in self.branch:
+    avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):
   # This is actually used to send the data.
   if len(self.epochs)==0: return
@@ -175,7 +177,7 @@ write_generic -x stdout float32
      plt.subplot(nrows,ncols,thisplot+1)
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
-    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=vmin,vmax=vmax),shading='flat',edgecolors='face',antialiaseds=False)
+    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=vmin,vmax=vmax),cmap='jet',shading='flat',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(g,ncontours)
     #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
     if isolines:
@@ -220,7 +222,7 @@ write_generic -x stdout float32
 
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
-    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax),shading='flat',edgecolors='face',antialiaseds=False)
+    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax),cmap='jet',shading='flat',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(z1,ncontours)
     gplot.axes.set_axis_off()
     #print z1.shape

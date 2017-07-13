@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2008-2012 Bernd Feige
+# Copyright (C) 2008-2012,2017 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import sys
@@ -37,11 +37,12 @@ class voglSVG(voglps.voglps):
 # These are the postscript coordinates
 WIDTH, HEIGHT  = 2700/voglps.scale_factor, 2000/voglps.scale_factor
 
-for psfile in sys.argv[1:]:
- svgfile=psfile.replace(".ps",".svg")
- print(svgfile)
- scene = SVG.Scene(svgfile.replace(".svg",""), HEIGHT, WIDTH)
- #v=voglps.voglps(psfile)
- v=voglSVG(psfile,scene,WIDTH,HEIGHT)
- v.parse()
- scene.write_svg(svgfile)
+if __name__ == '__main__':
+ for psfile in sys.argv[1:]:
+  svgfile=psfile.replace(".ps",".svg")
+  print(svgfile)
+  scene = SVG.Scene(svgfile.replace(".svg",""), HEIGHT, WIDTH)
+  #v=voglps.voglps(psfile)
+  v=voglSVG(psfile,scene,WIDTH,HEIGHT)
+  v.parse()
+  scene.write_svg(svgfile)

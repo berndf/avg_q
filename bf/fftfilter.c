@@ -24,6 +24,7 @@
 
 enum ARGS_ENUM {
  ARGS_VERBOSE=0,
+ ARGS_QUIT,
  ARGS_BYNAME,
  ARGS_ITEMPART, 
  ARGS_BLOCKS, 
@@ -31,6 +32,7 @@ enum ARGS_ENUM {
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Verbose output of filtering diagnostics", "V", FALSE, NULL},
+ {T_ARGS_TAKES_NOTHING, "Quit after possible output of diagnostics, reject the epoch", "q", FALSE, NULL},
  {T_ARGS_TAKES_STRING_WORD, "channelnames: Restrict to these channel names", "n", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_LONG, "nr_of_item: work only on this item # (>=0)", "i", 0, NULL},
  {T_ARGS_TAKES_SENTENCE, "blocks", "", ARGDESC_UNUSED, (const char *const *)"0.6 0.7 1 1"}
@@ -181,6 +183,10 @@ fftfilter(transform_info_ptr tinfo) {
    TRACEMS(tinfo->emethods, -1, stringbuffer);
    if (inblocks->last_block) break;
   }
+ }
+ if (args[ARGS_QUIT].is_set) {
+  /* Don't actually perform the filter, reject the epoch */
+  return NULL;
  }
  
   tinfo_array(tinfoptr, &myarray);

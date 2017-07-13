@@ -255,7 +255,7 @@ readasc_open_file(transform_info_ptr tinfo) {
     Intel_int((unsigned int *)&length_of_string_section);
    }
 
-   fseek(ascfileptr, (long)(length_of_string_section+3*nr_of_channels*sizeof(double)+ (nr_of_channels*itemsize+1)*nr_of_points*sizeof(DATATYPE)+sizeof(int)), 1);
+   fseek(ascfileptr, (long)(length_of_string_section+3*nr_of_channels*sizeof(double)+ (nr_of_channels*itemsize+1)*nr_of_points*(local_arg->otherdatatype ? sizeof(C_OTHERDATATYPE) : sizeof(DATATYPE))+sizeof(int)), 1);
    /*}}}  */
   } else {
    /*{{{  Skip ascii  data set*/
