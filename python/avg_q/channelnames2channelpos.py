@@ -5,12 +5,13 @@ Utility function to make a set_channelposition compatible string
 from a vector of channel names
 """
 import math
-from .avg_q import escape_channelname
 def channelnames2channelpos(channelnames):
  nr_of_channels=len(channelnames)
  ncols=int(round(math.sqrt(nr_of_channels)))
  setup=''
  for channel in range(nr_of_channels):
   div,mod=divmod(channel,ncols)
-  setup+=" %s %g %g %g" % (escape_channelname(channelnames[channel]), mod, -div, 0)
+  # Note that we don't use escape_channelname for channelnames because
+  # set_channelposition doesn't treat '-' specially as channel list arguments do.
+  setup+=" %s %g %g %g" % (channelnames[channel].replace(' ','\\ '), mod, -div, 0)
  return setup

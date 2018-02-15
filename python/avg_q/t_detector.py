@@ -1,24 +1,13 @@
-# Copyright (C) 2010,2011,2013 Bernd Feige
+# Copyright (C) 2010,2011,2013,2018 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 from . import Epochsource
 from . import Detector
 from . import avg_q_file
 from .avg_q import escape_channelname
 
-def get_no_avgs(a,infile,fromepoch):
- a.getepoch(infile,fromepoch=fromepoch,epochs=1)
- a.write('''
-query nrofaverages
-null_sink
--
-''')
- out=[x for x in a.runrdr()]
- no_avgs=int(out[0])
- return no_avgs
-
 class T_avgs(Detector.Detector):
  '''
-uses the Detector module to evaluate crossings of z-scores, calculated from the t-averages
+ uses the Detector module to evaluate crossings of z-scores, calculated from the t-averages
  '''
  # The item to detect on
  itempart=1
@@ -62,15 +51,15 @@ trim -a -x %(trim)s
 write_generic stdout string
 null_sink
 -
- '''%{'IC': escape_channelname(IC), 'process': process, 'trim':trim})
+ ''' % {'IC': escape_channelname(IC), 'process': process, 'trim':trim})
    results=[float(x) for x in self.avg_q_instance.runrdr()]
    values.append(results)
   return values
 
  def measure_z(self,infile,available_epochs,IC_latrange_list,raw=False):
   '''
-  for latency intervals of the ICs in each condition, extract the t-values of all the conditions,e.g.{1: {'39': ['5.14966', '5.26555'
-  and calculate z-scores
+  for latency intervals of the ICs in each condition, extract the t-values of all the conditions,e.g.
+  {1: {'39': ['5.14966', '5.26555']}} and calculate z-scores
   '''
 
   return self.measure_ranges(infile,available_epochs,IC_latrange_list,'''
@@ -106,7 +95,7 @@ extract_item %(itempart)d
   found_ICs={}
   for index, (IC,latrange) in enumerate(IC_latrange_list):
    found_ICs.setdefault(IC,[]).append(index)
-  ICs=found_ICs.keys()
+  ICs=list(found_ICs.keys())
   ICs.sort(key=lambda x: int(x))
 
   for IC in ICs:
@@ -139,7 +128,8 @@ extract_item %(itempart)d
   outlist=[]
   for IC in ICs:
    for index in found_ICs[IC]:
-    if index is not None: outlist.append(IC_latrange_list[index])
+    if index is not None:
+     outlist.append(IC_latrange_list[index])
   IC_latrange_list=outlist
 
   z_scores=self.measure_z(infile,available_epochs,IC_latrange_list,raw)

@@ -26,14 +26,16 @@ formats_and_extensions=[
 
 class avg_q_file(object):
  def __init__(self,filename=None,fileformat=None):
-  if not fileformat:
+  if filename and not fileformat:
    filename,fileformat=self.guessformat(filename)
   self.filename=filename
   self.fileformat=fileformat
   self.addmethods=None
   self.getepochmethod=None
   self.trigfile=None
-  if fileformat=='BrainVision':
+  if fileformat is None:
+   self.getepochmethod=None
+  elif fileformat=='BrainVision':
    self.getepochmethod='''
 read_brainvision %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''

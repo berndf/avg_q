@@ -105,6 +105,9 @@ class trgfile(object):
    else:
     (point, code)=tup[0:2];
     description='\t'.join(tup[2:])
+   # Alternative EOF marker, for streams
+   if code=='0':
+    break
    # Process values written by write_crossings -x (Lat[ms]=xxx)
    if point.find('=')>=0:
     (eqbefore,eqafter)=point.rsplit('=',2)

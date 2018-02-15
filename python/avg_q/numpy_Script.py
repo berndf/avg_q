@@ -23,6 +23,7 @@ class numpy_epoch(object):
   self.nr_of_points=0
   self.nr_of_channels=0
   self.itemsize=0
+  self.trigpoints=None
   self.xdata=None
   if data is None:
    self.data=None
@@ -44,19 +45,23 @@ class numpy_Epochsource(avg_q.Epochsource):
  def __init__(self, epochs=None):
   self.epochs=epochs
   self.branch=[]
+  self.infile=avg_q.avg_q_file()
+  # Only used to transfer trigpoints to avg_q.Epochsource
+  self.trigpoints=None
  def set_trigpoints(self,trigpoints):
-  raise Exception('numpy_Epochsource: set_trigpoints not implemented')
+  raise Exception('numpy_Epochsource: set_trigpoints not implemented, trigpoints are a property of numpy_epoch')
  def send(self,avg_q_instance):
   if len(self.epochs)==0: return
   for epoch in self.epochs:
    nr_of_points,nr_of_channels=epoch.data.shape
    avg_q_instance.write('''
-read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 stdin 0 %(aftertrig)d float32
+read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin 0 %(aftertrig)d float32
 ''' % {
     'readx': '-x xdata' if epoch.xdata is not None else '',
     'sfreq': epoch.sfreq if epoch.sfreq else 100.0,
     'aftertrig': nr_of_points,
     'nr_of_channels': nr_of_channels,
+    'trigtransfer_arg': '-T -R stdin' if epoch.trigpoints is not None else '',
    })
    if epoch.channelnames:
     channelnames=epoch.channelnames
@@ -72,9 +77,12 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 stdin 0 %(afte
    for methodline in self.branch:
     avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):
-  # This is actually used to send the data.
+  # Actually send the data.
   if len(self.epochs)==0: return
   for epoch in self.epochs:
+   if epoch.trigpoints is not None:
+    self.trigpoints=epoch.trigpoints
+    avg_q.Epochsource.send_trigpoints(self,avg_q_instance)
    # It's a bit unfortunate that array.array does support tofile() with pipes but numpy.array doesn't...
    # So we have to take the route via a string buffer just as with reading
    thisdata=numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data

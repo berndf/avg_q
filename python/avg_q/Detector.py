@@ -10,6 +10,18 @@ import avg_q
 from . import trgfile
 import os
 
+def get_trigger_dict(tuples):
+ '''Separate triggers by channel.
+ '''
+ trigger_dict={}
+ for lat,code,description in tuples:
+  if '\t' in description:
+   condition, channel= description.split('\t')
+  else:
+   channel=description
+  trigger_dict.setdefault(channel,[]).append((lat,code))
+ return trigger_dict
+
 class Detector(avg_q.Script):
  distance_from_breakpoint_s=0.5 # Events within that distance are discarded
  def __init__(self,avg_q_instance):
@@ -71,15 +83,8 @@ class Detector(avg_q.Script):
   are joined.
   '''
   expected_code=1 if direction>0 else -1
-
-  # Separate triggers by channel
-  trigger_dict={}
-  for lat,code,description in outtuples:
-   if '\t' in description:
-    condition, channel= description.split('\t')
-   else:
-    channel=description
-   trigger_dict.setdefault(channel,[]).append([lat,code])
+  
+  trigger_dict=get_trigger_dict(outtuples)
 
   channel_latrange_list=[]
   for channel, crossings in trigger_dict.items():

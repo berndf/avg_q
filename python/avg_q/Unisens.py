@@ -13,14 +13,12 @@ import datetime
 import xml.etree.ElementTree as ET
 from . import channelnames2channelpos
 
-def get_channels(entry):
- item=1
+def get_channels(member):
  channels=[]
- while item<len(entry):
-  if entry[item].tag.endswith('channel'):
-   name=entry[item].items()[0][1]
+ for item in member:
+  if item.tag.endswith('channel'):
+   name=item.items()[0][1]
    channels.append('val' if name=="" else name)
-  item+=1
  return channels
 
 class UnisensFile(object):
@@ -32,30 +30,29 @@ class UnisensFile(object):
 
   tree = ET.parse(os.path.join(topdir,'unisens.xml'))
   root = tree.getroot()
-  self.timestampStart=datetime.datetime.strptime(root.get('timestampStart'),"%Y-%m-%dT%H:%M:%S.%f")
+  timestampStart=root.get('timestampStart')
+  self.timestampStart=datetime.datetime.strptime(timestampStart,'%Y-%m-%dT%H:%M:%S.%f' if '.' in timestampStart else '%Y-%m-%dT%H:%M:%S')
   self.measurementId=root.get('measurementId')
   self.comment=root.get('comment')
   self.members=[]
   for member in root:
    # Attribute "id" is actually a file name with extension
-   idfile=member.get('id')
-   if idfile:
-    id,ext=os.path.splitext(idfile)
-    infile=os.path.join(topdir,idfile)
+   filename=member.get('id')
+   if filename:
+    ID,ext=os.path.splitext(filename)
+    filename=os.path.join(topdir,filename)
    else:
-    id,ext=None,None
+    ID,ext=None,None
    getepochmethod=None
-   if member.tag.endswith('valuesEntry'):
-    # CSV time stamps are in ticks of the clock as given in the sampleRate attribute (ie 500Hz)
-    sampleRate=float(member.get('sampleRate'))
-    channels=get_channels(member)
-   elif member.tag.endswith('signalEntry'):
+   if member.tag.endswith('valuesEntry') or member.tag.endswith('signalEntry'):
+    # For valuesEntry, CSV time stamps are in ticks of the clock as given in the sampleRate attribute (ie 500Hz)
     sampleRate=float(member.get('sampleRate'))
     baseline=float(member.get('baseline',0))
     lsbValue=float(member.get('lsbValue',1))
     dataType=member.get('dataType',1)
     channels=get_channels(member)
     nr_of_channels=len(channels)
+    valuesEntry=member.tag.endswith('valuesEntry')
     read_generic_format=None
     if ext=='.csv':
      read_generic_format='string'
@@ -67,7 +64,10 @@ class UnisensFile(object):
      read_generic_format='float32'
     elif dataType=='double':
      read_generic_format='float64'
-    getepochstart='read_generic -C %d -s %g ' % (nr_of_channels,sampleRate)
+    if valuesEntry:
+     getepochstart='read_generic -x TIME[s] -C %d -s %g ' % (nr_of_channels,sampleRate)
+    else:
+     getepochstart='read_generic -C %d -s %g ' % (nr_of_channels,sampleRate)
     getepochmethod=getepochstart+'%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s '+read_generic_format+'''
 >set_channelposition -s %(channelpositions)s
 >add %(negbaseline)g
@@ -79,9 +79,15 @@ class UnisensFile(object):
      'lsbValue': lsbValue,
      'comment': ' '.join([self.timestampStart.strftime("%Y-%m-%d %H:%M:%S"),self.measurementId,self.comment]),
     }
+    if valuesEntry:
+     getepochmethod+='''
+>change_axes 0 %(invsfreq)g * 0 1 *
+''' % {
+     'invsfreq': 1.0/sampleRate,
+    }
    elif member.tag.endswith('eventEntry'):
     sampleRate=float(member.get('sampleRate'))
-   self.members.append((idfile,getepochmethod))
+   self.members.append((filename,getepochmethod))
 
 from . import avg_q_file
 class avg_q_Unisensfile(avg_q_file):
@@ -92,6 +98,5 @@ class avg_q_Unisensfile(avg_q_file):
   self.getepochmethod=None
   self.trigfile=None
   self.UnisensFile=UnisensFile(filename)
-  p,fname=os.path.split(filename)
-  methods=[x[1] for x in self.UnisensFile.members if x[0]==fname]
+  methods=[x[1] for x in self.UnisensFile.members if x[0]==filename]
   self.getepochmethod=methods[0] if len(methods)>0 else None
