@@ -9738,6 +9738,11 @@ Hz.
 \begin_inset Newline newline
 \end_inset
 
+If xdata is available, a sliding average is applied to it, even if median
+ or quantile operations were selected for the data.
+\begin_inset Newline newline
+\end_inset
+
 Note that the 
 \series bold
 trim
@@ -9772,6 +9777,18 @@ Options:
 \begin_deeper
 \begin_layout Description
 -M: Use sliding median instead of average.
+\end_layout
+
+\begin_layout Description
+-q
+\begin_inset space ~
+\end_inset
+
+quantile: Use sliding quantile (in %) instead of average, 
+\begin_inset Formula $0.0\leq\textbf{quantile}\leq100.0$
+\end_inset
+
+.
 \end_layout
 
 \end_deeper
@@ -10419,10 +10436,21 @@ Options:
 
 \begin_deeper
 \begin_layout Description
--{a,s,q10,M,q90,h,l}: Collapse ranges by averaging (-a), summation (-s),
- by calculating the 10% quantile (-q10), median (-M) or 90% quantile (-q90)
- across each range, or by choosing the highest (-h) or the lowest (-l) value
- within each range.
+-{a,s,M,h,l}: Collapse ranges by averaging (-a), summation (-s), by calculating
+ the median (-M) across each range, or by choosing the highest (-h) or the
+ lowest (-l) value within each range.
+\end_layout
+
+\begin_layout Description
+-q
+\begin_inset space ~
+\end_inset
+
+quantile: Collapse ranges to their given quantile (in %), 
+\begin_inset Formula $0.0<\textbf{quantile}<100.0$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Description

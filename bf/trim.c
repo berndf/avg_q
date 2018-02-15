@@ -24,24 +24,24 @@
 enum collapse_choices {
  COLLAPSE_BY_AVERAGING,
  COLLAPSE_BY_SUMMATION,
- COLLAPSE_BY_Q10,
  COLLAPSE_BY_MEDIAN,
- COLLAPSE_BY_Q90,
  COLLAPSE_BY_HIGHEST,
  COLLAPSE_BY_LOWEST,
 };
 LOCAL const char *const collapse_choice[]={
- "-a", "-s", "-q10", "-M", "-q90", "-h", "-l", NULL
+ "-a", "-s", "-M", "-h", "-l", NULL
 };
 enum ARGS_ENUM {
  ARGS_COLLAPSE=0, 
+ ARGS_COLLAPSE_Q, 
  ARGS_USE_CHANNEL,
  ARGS_USE_XVALUES,
  ARGS_RANGES, 
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
- {T_ARGS_TAKES_SELECTION, "Collapse ranges by averaging, summation, q10, median, q90, highest or lowest value", " ", 0, collapse_choice},
+ {T_ARGS_TAKES_SELECTION, "Collapse ranges by averaging, summation, median, highest or lowest value", " ", 0, collapse_choice},
+ {T_ARGS_TAKES_DOUBLE, "Collapse ranges by this quantile (in %)", "q", 90.0, NULL},
  {T_ARGS_TAKES_STRING_WORD, "channelname: Use value regions of this channel instead of point or x value regions", "n", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_NOTHING, "xstart and xend are used to specify ranges instead of offset and length", "x", FALSE, NULL},
  {T_ARGS_TAKES_SENTENCE, "Ranges: offset1 length1 [offset2 length2 ...]", "", ARGDESC_UNUSED, NULL}
@@ -67,6 +67,9 @@ trim_init(transform_info_ptr tinfo) {
  if (args[ARGS_USE_XVALUES].is_set && args[ARGS_USE_CHANNEL].is_set) {
   ERREXIT(tinfo->emethods, "trim: -n and -x flags are exclusive.\n");
  }
+ if (args[ARGS_COLLAPSE_Q].is_set && (args[ARGS_COLLAPSE_Q].arg.d<=0.0 || args[ARGS_COLLAPSE_Q].arg.d>=100.0)) {
+  ERREXIT(tinfo->emethods, "trim: -q quantile must be between 0 and 100%%.\n");
+ }
 
  growing_buf_init(&local_arg->rangearg);
  growing_buf_takethis(&local_arg->rangearg, args[ARGS_RANGES].arg.s);
@@ -86,6 +89,8 @@ trim(transform_info_ptr tinfo) {
  long nr_of_input_ranges,nr_of_ranges;
  long output_points;
  long rangeno, current_output_point=0;
+ const Bool collapse=args[ARGS_COLLAPSE].is_set || args[ARGS_COLLAPSE_Q].is_set;
+ const DATATYPE collapse_quantile=(args[ARGS_COLLAPSE].is_set&&args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_MEDIAN ? 0.5 : (args[ARGS_COLLAPSE_Q].is_set ? args[ARGS_COLLAPSE_Q].arg.d/100.0 : 0.0));
  array myarray, newarray;
  DATATYPE *oldtsdata;
  DATATYPE *new_xdata=NULL;
@@ -135,7 +140,7 @@ trim(transform_info_ptr tinfo) {
      } else {
       if (thisrange.offset!= -1) {
        growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
-       output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
+       output_points+=(collapse ? 1 : thisrange.length);
        thisrange.offset= -1;
       }
      }
@@ -143,7 +148,7 @@ trim(transform_info_ptr tinfo) {
     } while (indata.message==ARRAY_CONTINUE);
     if (thisrange.offset!= -1) {
      growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
-     output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
+     output_points+=(collapse ? 1 : thisrange.length);
     }
    } else {
     ERREXIT1(tinfo->emethods, "set xdata_from_channel: Unknown channel name >%s<\n", MSGPARM(args[ARGS_USE_CHANNEL].arg.s));
@@ -166,7 +171,7 @@ trim(transform_info_ptr tinfo) {
     ERREXIT1(tinfo->emethods, "trim: length is %d but must be >0.\n", MSGPARM(thisrange.length));
    }
    growing_buf_append(&ranges, (char *)&thisrange, sizeof(struct range));
-   output_points+=(args[ARGS_COLLAPSE].is_set ? 1 : thisrange.length);
+   output_points+=(collapse ? 1 : thisrange.length);
   }
   growing_buf_get_nexttoken(&local_arg->rangearg,&tokenbuf);
  }
@@ -200,7 +205,7 @@ trim(transform_info_ptr tinfo) {
   struct trigger trig= *(struct trigger *)tinfo->triggers.buffer_start;
   growing_buf_allocate(&triggers, 0);
   /* Record the file position... */
-  if (args[ARGS_COLLAPSE].is_set) {
+  if (collapse) {
    /* Make triggers in subsequent append() work as expected at least with
     * continuous reading */
    trig.position=local_arg->current_epoch*nr_of_ranges;
@@ -229,9 +234,10 @@ trim(transform_info_ptr tinfo) {
    DATATYPE sum=0.0;
    long reached_length=new_startpoint;
    myarray.current_element= old_startpoint;
-   if (args[ARGS_COLLAPSE].is_set) {
+   if (collapse) {
     newarray.current_element=current_output_point;
     newarray.message=ARRAY_CONTINUE;	/* Otherwise the loop below may finish promptly... */
+    if (args[ARGS_COLLAPSE].is_set)
     switch (args[ARGS_COLLAPSE].arg.i) {
      case COLLAPSE_BY_HIGHEST:
       sum= -FLT_MAX;
@@ -245,27 +251,13 @@ trim(transform_info_ptr tinfo) {
    } else {
     newarray.current_element=current_output_point+new_startpoint;
    }
-   if (args[ARGS_COLLAPSE].is_set && (
-     args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_Q10 ||
-     args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_MEDIAN ||
-     args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_Q90
-     )) {
+   if (collapse && collapse_quantile>0.0) {
     array helparray=myarray;
     helparray.ringstart=ARRAY_ELEMENT(&myarray);
     helparray.current_element=helparray.current_vector=0;
     helparray.nr_of_vectors=1;
     helparray.nr_of_elements=rangep->length;
-    switch (args[ARGS_COLLAPSE].arg.i) {
-     case COLLAPSE_BY_Q10:
-      sum=array_quantile(&helparray,0.1);
-      break;
-     case COLLAPSE_BY_MEDIAN:
-      sum=array_median(&helparray);
-      break;
-     case COLLAPSE_BY_Q90:
-      sum=array_quantile(&helparray,0.9);
-      break;
-    }
+    sum=array_quantile(&helparray,collapse_quantile);
     myarray.message=ARRAY_CONTINUE;
    } else
    do {
@@ -291,8 +283,8 @@ trim(transform_info_ptr tinfo) {
     }
     reached_length++;
    } while (newarray.message==ARRAY_CONTINUE && myarray.message==ARRAY_CONTINUE);
-   if (args[ARGS_COLLAPSE].is_set) {
-    if (args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_AVERAGING && item<tinfo->itemsize-tinfo->leaveright) sum/=reached_length;
+   if (collapse) {
+    if (args[ARGS_COLLAPSE].is_set && args[ARGS_COLLAPSE].arg.i==COLLAPSE_BY_AVERAGING && item<tinfo->itemsize-tinfo->leaveright) sum/=reached_length;
     array_write(&newarray, sum);
    }
    if (newarray.message==ARRAY_CONTINUE) {
@@ -313,7 +305,7 @@ trim(transform_info_ptr tinfo) {
   DATATYPE sum=0.0;
   long reached_length=new_startpoint;
   long point, newpoint;
-  if (args[ARGS_COLLAPSE].is_set) {
+  if (collapse) {
    newpoint=current_output_point;
   } else {
    newpoint=current_output_point+new_startpoint;
@@ -321,7 +313,7 @@ trim(transform_info_ptr tinfo) {
   for (point=old_startpoint;
     point<tinfo->nr_of_points && reached_length<rangep->length;
     point++) {
-   if (args[ARGS_COLLAPSE].is_set) {
+   if (collapse) {
     sum+=tinfo->xdata[point];
    } else {
     new_xdata[newpoint]=tinfo->xdata[point];
@@ -329,7 +321,7 @@ trim(transform_info_ptr tinfo) {
    }
    reached_length++;
   }
-  if (args[ARGS_COLLAPSE].is_set) {
+  if (collapse) {
    /* Summation of x axis values does not appear to make sense, so we always average: */
    new_xdata[newpoint]=sum/reached_length;
   }
@@ -344,7 +336,7 @@ trim(transform_info_ptr tinfo) {
    while (intrig->code!=0) {
     if (intrig->position>=old_startpoint && intrig->position<old_startpoint+rangep->length) {
      struct trigger trig= *intrig;
-     if (args[ARGS_COLLAPSE].is_set) {
+     if (collapse) {
       trig.position=current_output_point;
      } else {
       trig.position=intrig->position-old_startpoint+current_output_point;
@@ -354,7 +346,7 @@ trim(transform_info_ptr tinfo) {
     intrig++;
    }
   }
-  current_output_point+=(args[ARGS_COLLAPSE].is_set ? 1 : rangep->length);
+  current_output_point+=(collapse ? 1 : rangep->length);
  }
 
  if (new_xdata!=NULL) {

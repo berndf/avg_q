@@ -34,12 +34,14 @@
 
 enum ARGS_ENUM {
  ARGS_MEDIAN=0, 
+ ARGS_QUANTILE, 
  ARGS_SSIZE, 
  ARGS_SSTEP, 
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Use sliding Median instead of average", "M", FALSE, NULL},
+ {T_ARGS_TAKES_DOUBLE, "Use sliding quantile (in %) instead of average", "q", 90.0, NULL},
  {T_ARGS_TAKES_STRING_WORD, "sliding_size", "", ARGDESC_UNUSED, (const char *const *)"10ms"},
  {T_ARGS_TAKES_STRING_WORD, "sliding_step", "", ARGDESC_UNUSED, (const char *const *)"2.5ms"}
 };
@@ -60,10 +62,10 @@ typedef struct sliding_data_struct {
  int inpoints;
 
  int allocated_outpoints;
+ DATATYPE quantile;
  /*}}}  */
 
  DATATYPE sfreq; /* To see whether sfreq changed */
- unsigned long *indx;
 } sliding_data;
 
 LOCAL void
@@ -118,20 +120,10 @@ single_sliding_average(sliding_data *sdata) {
   }
  }
 }
-#define MEDIAN(a) \
-  (i1=((a)->nr_of_elements-1)/2, i2=(a)->nr_of_elements/2,\
-  array_index(a, sdata->indx),\
-  (a)->current_element=sdata->indx[i1],\
-  d1=READ_ELEMENT(a),\
-  (a)->current_element=sdata->indx[i2],\
-  d2=READ_ELEMENT(a),\
-  (d1+d2)/2.0)
 LOCAL void
-single_sliding_median(sliding_data *sdata) {
+single_sliding_quantile(sliding_data *sdata) {
  int spoint;
- unsigned long i1, i2;
  array a;
- DATATYPE d1, d2;
 
  a.current_vector=0;
  a.nr_of_vectors=a.element_skip=sdata->fromskip;
@@ -143,7 +135,7 @@ single_sliding_median(sliding_data *sdata) {
   a.start=sdata->fromstart+new_left_point*sdata->fromskip;
   a.nr_of_elements=new_right_point-new_left_point+1;
   array_setreadwrite(&a);
-  sdata->tostart[spoint*sdata->toskip]=MEDIAN(&a);
+  sdata->tostart[spoint*sdata->toskip]=array_quantile(&a,sdata->quantile);
  }
 }
 
@@ -153,7 +145,6 @@ init_sdata(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
 
  sdata->sfreq=tinfo->sfreq;
- free_pointer((void **)&sdata->indx);
 
  sdata->ssize=gettimeslice(tinfo, args[ARGS_SSIZE].arg.s);
  sdata->sstep=gettimefloat(tinfo, args[ARGS_SSTEP].arg.s);
@@ -170,10 +161,17 @@ init_sdata(transform_info_ptr tinfo) {
  if (sdata->ssize==1 && sdata->sstep==1.0) {
   TRACEMS(tinfo->emethods, 0, "sliding_average: ssize==sstep==1, bypassing!\n");
  } else {
-  if (args[ARGS_MEDIAN].is_set) {
-   sdata->single_sliding_function=single_sliding_median;
-   if ((sdata->indx=(unsigned long *)malloc(sdata->ssize*sizeof(unsigned long)))==NULL) {
-    ERREXIT(tinfo->emethods, "sliding_average_init: Error allocating memory\n");
+  if (args[ARGS_MEDIAN].is_set && args[ARGS_QUANTILE].is_set) {
+   ERREXIT(tinfo->emethods, "sliding_average_init: -M and -q cannot be set at the same time.\n");
+  } else if (args[ARGS_MEDIAN].is_set || args[ARGS_QUANTILE].is_set) {
+   sdata->single_sliding_function=single_sliding_quantile;
+   if (args[ARGS_MEDIAN].is_set) {
+    sdata->quantile=0.5;
+   } else {
+    sdata->quantile=args[ARGS_QUANTILE].arg.d/100.0;
+   }
+   if (sdata->quantile<0.0 || sdata->quantile>1.0) {
+    ERREXIT(tinfo->emethods, "sliding_average_init: -q quantile must be between 0 and 100%%.\n");
    }
   } else {
    sdata->single_sliding_function=single_sliding_average;
@@ -188,9 +186,6 @@ init_sdata(transform_info_ptr tinfo) {
 /*{{{  sliding_average_init(transform_info_ptr tinfo) {*/
 METHODDEF void
 sliding_average_init(transform_info_ptr tinfo) {
- sliding_data *sdata=(sliding_data *)tinfo->methods->local_storage;
-
- sdata->indx=NULL;
  init_sdata(tinfo);
 
  tinfo->methods->init_done=TRUE;
@@ -246,11 +241,11 @@ sliding_average(transform_info_ptr tinfo) {
  }
  /*}}}  */
  if (tinfo->xdata!=NULL) {
-  /*{{{  Perform the sliding average on xdata as well*/
+  /*{{{  Perform the sliding average function on xdata*/
   sdata->fromstart=tinfo->xdata;
   sdata->tostart  = slide_xdata;
   sdata->fromskip = sdata->toskip=1;
-  (*sdata->single_sliding_function)(sdata);
+  single_sliding_average(sdata);
   /*}}}  */
   strcpy((char *)(slide_xdata+sdata->allocated_outpoints),tinfo->xchannelname);
   free(tinfo->xdata);
@@ -278,10 +273,6 @@ sliding_average(transform_info_ptr tinfo) {
 /*{{{  sliding_average_exit(transform_info_ptr tinfo) {*/
 METHODDEF void
 sliding_average_exit(transform_info_ptr tinfo) {
- sliding_data *sdata=(sliding_data *)tinfo->methods->local_storage;
-
- free_pointer((void **)&sdata->indx);
-
  tinfo->methods->init_done=FALSE;
 }
 /*}}}  */

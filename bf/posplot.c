@@ -1683,6 +1683,8 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
     DISPLAY_INFOLINE;
     snprintf(stringbuffer, STRBUFLEN, "condition=%d", top_tinfo->condition);
     DISPLAY_INFOLINE;
+    snprintf(stringbuffer, STRBUFLEN, "file_start_point=%d", top_tinfo->file_start_point);
+    DISPLAY_INFOLINE;
 #undef DISPLAY_INFOLINE
     if (local_arg->lastsel_entry!=NULL && tinfo_to_use->triggers.buffer_start!=NULL && ((struct trigger *)tinfo_to_use->triggers.buffer_start)[1].code!=0) {
      /* Find if we're on a trigger */
