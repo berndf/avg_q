@@ -1,7 +1,7 @@
 REM Associate show_any with (most of) the known file types.
 
-REM ftype avg_q.File=C:\Python36\python.exe Q:\PPT-A-EKP-Labor\avg_q32\python\show_any %1 %*
-ftype avg_q.File=C:\Python36\pythonw.exe C:\avg_q64\python\show_any %1 %*
+REM ftype avg_q.File="C:\Python36\python.exe" "Q:\PPT-A-EKP-Labor\avg_q32\python\show_any" "%%1" %%*
+ftype avg_q.File="C:\Python36\pythonw.exe" "C:\avg_q64\python\show_any" "%%1" %%*
 assoc .avg=avg_q.File
 assoc .eeg=avg_q.File
 assoc .cnt=avg_q.File
