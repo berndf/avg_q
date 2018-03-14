@@ -28,8 +28,6 @@
 #include "neurohdr.h"
 /*}}}  */
 
-LOCAL char *read_synamps_version="$Header: /home/charly/.cvsroot/avg_q/bf/neuroscan/read_synamps.c,v 2.50 2007/05/21 12:48:04 charly Exp $";
-
 /*{{{  Local defs and args*/
 enum ARGS_ENUM {
  ARGS_NOREJECTED=0, 

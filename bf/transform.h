@@ -217,7 +217,7 @@ typedef struct queue_desc_struct {
 extern void trafo_std_defaults(transform_info_ptr tinfo);
 extern void clear_external_methods(const external_methods_ptr emeth);
 extern void set_external_methods(const external_methods_ptr emeth, 
-  void (*error_exitp)(const external_methods_ptr emeth, const char *msgtext),
+  void (*error_exitp)(const external_methods_ptr emeth, const char *msgtext) __attribute__ ((__noreturn__)),
   void (*trace_messagep)(const external_methods_ptr emeth, const int lvl, const char *msgtext),
   void (*execution_callbackp)(const transform_info_ptr tinfo, const execution_callback_place where));
 

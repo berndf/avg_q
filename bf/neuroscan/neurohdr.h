@@ -500,4 +500,4 @@ extern struct_member_description smd_SETUP[], smd_ELECTLOC[], smd_NEUROSCAN_EPOC
 }
 #endif
 #define _NEUROHEAD_H_INCLUDED
-#endif _NEUROHEAD_H_INCLUDED
+#endif

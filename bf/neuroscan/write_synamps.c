@@ -28,8 +28,6 @@
 #include "neurohdr.h"
 /*}}}  */
 
-LOCAL char *write_synamps_version="$Header: /home/charly/.cvsroot/avg_q/bf/neuroscan/write_synamps.c,v 2.40 2007/05/21 12:48:05 charly Exp $";
-
 LOCAL char const *const output_format_choice[]={
  "-E", "-c", "-A", NULL
 };

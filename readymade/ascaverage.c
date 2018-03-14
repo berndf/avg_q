@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
    strcpy(nextfname, argv[optind++]);
    weight=1;	/* This can be changed by the -W option, after the file is read */
   } else {
-   fscanf(weightfile, "%s %f", nextfname, &weight);
+   fscanf(weightfile, "%s %lf", nextfname, &weight);
    if (feof(weightfile) || weight==0.0) break;
    nroffiles++;
    /* Output Nr_of_averages property will be sum_weights only if each of
