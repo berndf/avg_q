@@ -10,6 +10,7 @@ extern "C" {
 #include <math.h>
 /* extern int thatmain(void); */
 
+#ifdef WITH_POSPLOT
 #ifdef SGI
 #include "gl.h"
 #include "device.h"
@@ -21,6 +22,7 @@ typedef float Float32;
 #include "vogl.h"
 #include "vodevice.h"
 #endif            
+#endif
 }
 
 #ifndef Bool

@@ -23,7 +23,9 @@ public:
  Point adjacent_normal(Triangle* tr);
  int adjacent_direction(Triangles* tr);
  float adjacent_angle(Triangles* tr);
+#ifdef WITH_POSPLOT
  void display(int colour);
+#endif
  void print();
 private:
 };

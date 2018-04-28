@@ -9,7 +9,7 @@ SET(ALL_SOURCES
  average.c reject_flor.c reject_bandwidth.c fftfilter.c
  histogram.c differentiate.c sliding_average.c demean_maps.c
  tinfo_array.c integrate.c swap_fc.c swap_xz.c subtract.c
- linreg.c posplot.c setup_queue.c remove_channel.c
+ linreg.c setup_queue.c remove_channel.c
  detrend.c baseline_divide.c malloc_trace.c set_values.c
  baseline_subtract.c collapse_channels.c set_channelposition.c
  calc.c show_memuse.c null_sink.c extract_item.c trim.c expand_channel_list.c
@@ -72,7 +72,6 @@ SET(subdirs
  biomag
  asc
  generic
- HDF
  mfx
  kn
  neuroscan
@@ -89,12 +88,26 @@ SET(subdirs
  cfs
 )
 
+set(METHOD_LIST_DEFINES "")
 if (SOX_FOUND)
  LIST(APPEND subdirs sound)
- SET_SOURCE_FILES_PROPERTIES(method_list.c PROPERTIES 
-  COMPILE_FLAGS "-DAVG_Q_WITH_SOUND"
- )
+ STRING(APPEND METHOD_LIST_DEFINES " -DAVG_Q_WITH_SOUND")
 endif (SOX_FOUND)
+
+if (HDF_FOUND)
+ LIST(APPEND subdirs HDF)
+ STRING(APPEND METHOD_LIST_DEFINES " -DAVG_Q_WITH_HDF")
+endif (HDF_FOUND)
+
+if (WITH_POSPLOT)
+ LIST(APPEND ALL_SOURCES posplot.c)
+ # This is passed globally because it is also used in TriAn display modules
+ ADD_DEFINITIONS(-DWITH_POSPLOT)
+endif (WITH_POSPLOT)
+
+SET_SOURCE_FILES_PROPERTIES(method_list.c PROPERTIES 
+ COMPILE_FLAGS "${METHOD_LIST_DEFINES}"
+)
 
 FOREACH(subdir ${subdirs})
  # "." is binary_dir; Tells cmake to generate libbf here, not in subdirs

@@ -102,18 +102,36 @@ SET(CMAKE_CXX_FLAGS_RELEASE ${C_FLAGS_COMMON})
 SET(EXECUTABLE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 SET(FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-# vvvvvvvvvvvvvvv Library definitions vvvvvvvvvvvvvvv
+
+# vvvvvvvvvvvvvvv Library definitions and feature configuration. Look here when porting! vvvvvvvvvvvvvvv
 
 SET(MFX_LIBS mfx)
 
-SET(DUMMY_VGUI dummy_vogl_vgui)
-SET(VGUI_LIB vogl_vgui)
-
 INCLUDE(FindPkgConfig)
 pkg_check_modules(SOX sox)
+
+# For now, set this to FALSE manually if you don't have HDF4 libraries
+# installed...
+SET(HDF_FOUND TRUE)
+
+# Set these to FALSE manually if you don't want posplot or the GTK GUI avg_q_ui to be built.
+# This can be commendable to get a version of avg_q running with minimal
+# dependencies.
+SET(WITH_POSPLOT TRUE)
+SET(WITH_AVG_Q_UI TRUE)
+
 if (NOT SOX_FOUND)
  MESSAGE("SOX library not found - compiling without read_sound/write_sound")
 endif (NOT SOX_FOUND)
+if (NOT HDF_FOUND)
+ MESSAGE("HDF library not found - compiling without read_hdf/write_hdf")
+endif (NOT HDF_FOUND)
+if (NOT WITH_POSPLOT)
+ MESSAGE("Compiling without the posplot method.")
+endif (NOT WITH_POSPLOT)
+if (NOT WITH_AVG_Q_UI)
+ MESSAGE("Not creating the avg_q_ui GUI.")
+endif (NOT WITH_AVG_Q_UI)
 
 SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
 #SET(CMAKE_C_FLAGS_DEBUG -g -DMALLOC_TRACE)
@@ -124,18 +142,34 @@ SET(AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/bf ${CMAKE_SOURCE_DIR}/bf/array
  ${CMAKE_SOURCE_DIR}/bf/stat
  ${CMAKE_SOURCE_DIR}/bf/math ${CMAKE_SOURCE_DIR}/bf/optimize
  ${CMAKE_SOURCE_DIR}/bf/array ${CMAKE_SOURCE_DIR}/bf/biomag
- ${CMAKE_SOURCE_DIR}/vogl/src
- ${HDF_INCLUDES}
  ${ICA_INCLUDES}
- ${SOX_INCLUDES}
 )
 
 # Arranges that shared libs are found in the same dir as the binary
 SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG -g)
-SET(BF_LIBPATH_DYNAMIC ${HDF_LIBPATH} ${ICA_LIBPATH})
-SET(BF_LIBS bf ${MFX_LIBS} ${SOX_LIBRARIES} ${VOGL_LIBS} ${DUMMY_VGUI} ${HDF_LIBS} ${ICA_LIBS} m)
-SET(BF_LIBS_VGUI bf ${MFX_LIBS} ${SOX_LIBRARIES} ${VOGL_LIBS} ${VGUI_LIB} ${HDF_LIBS} ${ICA_LIBS} m)
+SET(BF_LIBPATH_DYNAMIC ${ICA_LIBPATH})
+SET(BF_LIBS bf ${MFX_LIBS} ${ICA_LIBS} m)
+
+if (SOX_FOUND)
+ LIST(APPEND AVG_Q_INCLUDES ${SOX_INCLUDES})
+ LIST(APPEND BF_LIBS ${SOX_LIBRARIES})
+endif (SOX_FOUND)
+
+if (HDF_FOUND)
+ LIST(APPEND AVG_Q_INCLUDES ${HDF_LIBS})
+ LIST(APPEND BF_LIBPATH_DYNAMIC ${HDF_LIBPATH})
+ LIST(APPEND BF_LIBS ${HDF_LIBS})
+endif (HDF_FOUND)
+
+if (WITH_POSPLOT)
+ LIST(APPEND AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/vogl/src)
+ SET(BF_LIBS_VGUI ${BF_LIBS} ${VOGL_LIBS} vogl_vgui)
+ ADD_LIBRARY(dummy_vogl_vgui STATIC avg_q_ui/dummy_vogl_vgui_driver.c)
+ LIST(APPEND BF_LIBS ${VOGL_LIBS} dummy_vogl_vgui)
+else (WITH_POSPLOT)
+ SET(BF_LIBS_VGUI ${BF_LIBS})
+endif (WITH_POSPLOT)
 
 ADD_DEFINITIONS(${AVG_Q_DEFINES})
 INCLUDE_DIRECTORIES(${AVG_Q_INCLUDES})
@@ -147,21 +181,31 @@ ADD_SUBDIRECTORY(vogl)
 ADD_SUBDIRECTORY(mfx)
 ADD_SUBDIRECTORY(bf)
 ADD_SUBDIRECTORY(readymade)
-ADD_SUBDIRECTORY(avg_q_ui)
 
 ADD_SUBDIRECTORY(Documentation)
 
 ADD_EXECUTABLE(avg_q_vogl avg_q.c)
 TARGET_LINK_LIBRARIES(avg_q_vogl ${BF_LIBS})
 
-ADD_EXECUTABLE(do_posplot_vogl do_posplot.c)
-TARGET_LINK_LIBRARIES(do_posplot_vogl ${BF_LIBS})
+IF (WITH_POSPLOT)
+ LIST(APPEND PROGRAMS do_posplot_vogl)
+ ADD_EXECUTABLE(do_posplot_vogl do_posplot.c)
+ TARGET_LINK_LIBRARIES(do_posplot_vogl ${BF_LIBS})
+endif (WITH_POSPLOT)
 
-ADD_EXECUTABLE(extspec extspec.c)
-TARGET_LINK_LIBRARIES(extspec ${BF_LIBS})
+IF (WITH_AVG_Q_UI)
+ADD_SUBDIRECTORY(avg_q_ui)
+endif (WITH_AVG_Q_UI)
+
+SET(PROGRAMS extspec)
+
+FOREACH(program ${PROGRAMS})
+ ADD_EXECUTABLE(${program} ${program}.c)
+ TARGET_LINK_LIBRARIES(${program} ${BF_LIBS})
+ENDFOREACH(program)
 
 INSTALL(
- TARGETS avg_q_vogl do_posplot_vogl extspec
+ TARGETS avg_q_vogl ${PROGRAMS}
  DESTINATION ${INSTALLDIR}
  PERMISSIONS ${EXECUTABLE_PERMISSIONS}
 )

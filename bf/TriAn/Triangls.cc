@@ -119,6 +119,7 @@ float Triangles::adjacent_angle(Triangles* ntr) {
  float pn=ntr->normal()*n;
  return acos(pn);
 }
+#ifdef WITH_POSPLOT
 void Triangles::display(int colour) {
  Triangles* intriangle=(Triangles*)first();
  while (intriangle!=(Triangles*)Empty) {
@@ -126,6 +127,7 @@ void Triangles::display(int colour) {
   intriangle=(Triangles*)intriangle->next();
  }
 }
+#endif
 void Triangles::print() {
  Triangles* intriangle=(Triangles*)first();
  while (intriangle!=(Triangles*)Empty) {

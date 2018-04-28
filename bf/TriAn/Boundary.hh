@@ -38,7 +38,9 @@ public:
  Boundary* nearest(Point* p, Boundary* notthis);
  void write_to_file(FILE* outfile);
  void print();
+#ifdef WITH_POSPLOT
  void display(int colour);
+#endif
  Point* point();
 private:
  Point* _point;

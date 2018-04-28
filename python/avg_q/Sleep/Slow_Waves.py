@@ -10,6 +10,8 @@ import avg_q.trgfile
 class Delta_slope(avg_q.Detector.Detector):
  '''Delta slope measure, cf. Esser:2007
  '''
+ # This is 0.5-2.0Hz as in Esser:2007 but can be configured from outside
+ bandpass='0 0 0.4Hz 0.5Hz 2.0Hz 2.1Hz 1 1'
  def __init__(self,avg_q_instance):
   avg_q.Detector.Detector.__init__(self,avg_q_instance)
  def set_Epochsource(self,epochsource):
@@ -19,19 +21,22 @@ class Delta_slope(avg_q.Detector.Detector):
   self.indir,name=os.path.split(self.base)
   self.values=None
  def get_Delta_slope(self):
+  '''The contents of the script at execution must ensure that the data contains only a single channel!
+  '''
   # Save and restore the current list of transforms, since we measure by (temporally)
   # appending to this list
   storetransforms=copy.copy(self.transforms)
   self.add_transform('''
-# Bandpass 0.5-2.0Hz
 detrend -0
-fftfilter 0 0 0.4Hz 0.5Hz 2.0Hz 2.1Hz 1 1
+fftfilter %(bandpass)s
 write_crossings -E ALL 0 stdout
 # Terminate the first crossings list:
 echo -F stdout EOF\\n
 differentiate
 write_crossings -E ALL 0 stdout
-''')
+''' % {
+   'bandpass': self.bandpass,
+  })
   rdr=self.runrdr()
   trg=avg_q.trgfile.trgfile(rdr)
   crs=trg.gettuples()

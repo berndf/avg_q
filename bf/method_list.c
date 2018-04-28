@@ -13,7 +13,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_read_cfs,
  select_read_freiburg,
  select_read_generic,
+#ifdef AVG_Q_WITH_HDF
  select_read_hdf,
+#endif
  select_read_inomed,
  select_read_labview,
  select_read_kn,
@@ -58,7 +60,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_link_order,
  select_normalize_channelbox,
  select_orthogonalize,
-#ifndef __BORLANDC__
+#ifdef WITH_POSPLOT
  select_posplot,
 #endif
  select_project,
@@ -97,7 +99,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_write_brainvision,
  select_write_freiburg,
  select_write_generic,
+#ifdef AVG_Q_WITH_HDF
  select_write_hdf,
+#endif
  select_write_kn,
  select_write_mfx,
  select_write_rec,

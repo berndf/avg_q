@@ -19,8 +19,14 @@ class ExpyrimentLog(object):
   if dateline.startswith('#date: '):
    import datetime
    import locale
-   locale.setlocale(locale.LC_ALL, '')
-   self.timestamp=datetime.datetime.strptime(dateline[7:],"%a %b %d %Y %H:%M:%S")
+   try:
+    # Try with en_US locale
+    locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')
+    self.timestamp=datetime.datetime.strptime(dateline[7:],"%a %b %d %Y %H:%M:%S")
+   except:
+    # Try the current locale
+    locale.setlocale(locale.LC_ALL, '')
+    self.timestamp=datetime.datetime.strptime(dateline[7:],"%a %b %d %Y %H:%M:%S")
    #print(self.timestamp)
   else:
    raise Exception("ExpyrimentLog: Date line doesn't start with '#date: '")

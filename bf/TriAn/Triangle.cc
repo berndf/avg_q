@@ -137,6 +137,7 @@ void Triangle::print() {
  p1->print();
  printf("\n");
 }
+#ifdef WITH_POSPLOT
 void Triangle::display(int const colour) {
  color(colour);
  bgnline();
@@ -146,3 +147,4 @@ void Triangle::display(int const colour) {
  draw(p1->x, p1->y, p1->z);
  endline();
 }
+#endif

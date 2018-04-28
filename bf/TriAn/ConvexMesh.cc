@@ -87,6 +87,7 @@ ConvexMesh::ConvexMesh(TPoints *ttp) {
  }
  Revise();
 }
+#ifdef WITH_POSPLOT
 void ConvexMesh::display() {
  tr->display(GREEN);
  boundary->display(CYAN);
@@ -94,6 +95,7 @@ void ConvexMesh::display() {
  color(YELLOW);
  charstr("o");
 }
+#endif
 void ConvexMesh::fit_sphere() {
  OPT_DTYPE sphere_startparameters[4];
  OPT_DTYPE sphere_parameters[4], residual;	/* 3x center, 1x radius */
@@ -212,6 +214,7 @@ void ConvexMesh::Revise() {
   in_triangles=first_tr;
   mended_at_least_one=FALSE;
 #ifdef DEBUG_REVISE
+#ifdef WITH_POSPLOT
   int dev; 
   short val;
   if (do_display) {
@@ -222,6 +225,7 @@ void ConvexMesh::Revise() {
    dev=qread(&val);
    if (dev==KEYBD && val=='q') do_display=FALSE;
   }
+#endif
 #endif
   while (in_triangles!=(Triangles*)Empty) {
    Triangle tr1= *in_triangles;
@@ -261,6 +265,7 @@ void ConvexMesh::Revise() {
         && ntr1.max_angle(FALSE)+ntr2.max_angle(FALSE)<tr1angle+tr2angle) {
      mended_at_least_one=TRUE;
 #ifdef DEBUG_REVISE
+#ifdef WITH_POSPLOT
      /* Show the two triangles to change: */
      if (do_display) {
       ((Triangle *)in_triangles)->display(RED);
@@ -269,6 +274,7 @@ void ConvexMesh::Revise() {
       dev=qread(&val);
       if (dev==KEYBD && val=='q') do_display=FALSE;
      }
+#endif
 #endif
      in_triangles->p1=ntr1.p1; in_triangles->p2=ntr1.p2; in_triangles->p3=ntr1.p3;
      adjacent_tr->p1=ntr2.p1; adjacent_tr->p2=ntr2.p2; adjacent_tr->p3=ntr2.p3;

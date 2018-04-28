@@ -185,6 +185,7 @@ Point* Boundary::point() {
 void Boundary::print() {
  _point->print();
 }
+#ifdef WITH_POSPLOT
 void Boundary::display(int colour) {
  color(colour);
  Boundary* inboundary=(Boundary*)first();
@@ -199,6 +200,7 @@ void Boundary::display(int colour) {
  draw(inboundary->point()->x, inboundary->point()->y, inboundary->point()->z);
  endline();
 }
+#endif
 void Boundary::write_to_file(FILE *outfile) {
  Boundary* inpoint=(Boundary*)first();
  fprintf(outfile, "%d\n", nr_of_members());

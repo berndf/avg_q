@@ -21,7 +21,9 @@ public:
  float plane_distance(Point* p, float* dn);
  float plane_distance(Point* p);
  void print();
+#ifdef WITH_POSPLOT
  void display(int const colour);
+#endif
  Point* p1;
  Point* p2;
  Point* p3;

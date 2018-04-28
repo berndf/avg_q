@@ -14,7 +14,9 @@ public:
  ConvexMesh();
  ConvexMesh(TPoints *ttp);
  virtual ~ConvexMesh();
+#ifdef WITH_POSPLOT
  void display();
+#endif
  void print();
 
  TPoints *tp;

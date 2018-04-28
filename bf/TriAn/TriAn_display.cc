@@ -33,5 +33,7 @@ TriAn_init(transform_info_ptr tinfo) {
 
 void 
 TriAn_display(transform_info_ptr tinfo) {
+#ifdef WITH_POSPLOT
  cm->display();
+#endif
 }
