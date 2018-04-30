@@ -185,7 +185,9 @@ INCLUDE_DIRECTORIES(${AVG_Q_INCLUDES})
 LINK_DIRECTORIES(${BF_LIBPATH_DYNAMIC})
 
 # Imported libs:
+IF (WITH_POSPLOT)
 ADD_SUBDIRECTORY(vogl)
+endif (WITH_POSPLOT)
 
 ADD_SUBDIRECTORY(mfx)
 ADD_SUBDIRECTORY(bf)
@@ -193,28 +195,29 @@ ADD_SUBDIRECTORY(readymade)
 
 ADD_SUBDIRECTORY(Documentation)
 
-ADD_EXECUTABLE(avg_q_vogl avg_q.c)
-TARGET_LINK_LIBRARIES(avg_q_vogl ${BF_LIBS})
-
-IF (WITH_POSPLOT)
- LIST(APPEND PROGRAMS do_posplot_vogl)
- ADD_EXECUTABLE(do_posplot_vogl do_posplot.c)
- TARGET_LINK_LIBRARIES(do_posplot_vogl ${BF_LIBS})
-endif (WITH_POSPLOT)
-
 IF (WITH_AVG_Q_UI)
 ADD_SUBDIRECTORY(avg_q_ui)
 endif (WITH_AVG_Q_UI)
 
-SET(PROGRAMS extspec)
+SET(PROGRAMS avg_q_vogl extspec)
+
+IF (WITH_POSPLOT)
+ LIST(APPEND PROGRAMS do_posplot_vogl)
+endif (WITH_POSPLOT)
 
 FOREACH(program ${PROGRAMS})
- ADD_EXECUTABLE(${program} ${program}.c)
+ IF (program STREQUAL avg_q_vogl)
+  ADD_EXECUTABLE(${program} avg_q.c)
+ ELSEIF (program STREQUAL do_posplot_vogl)
+  ADD_EXECUTABLE(${program} do_posplot.c)
+ ELSE (program STREQUAL avg_q_vogl)
+  ADD_EXECUTABLE(${program} ${program}.c)
+ ENDIF (program STREQUAL avg_q_vogl)
  TARGET_LINK_LIBRARIES(${program} ${BF_LIBS})
 ENDFOREACH(program)
 
 INSTALL(
- TARGETS avg_q_vogl ${PROGRAMS}
+ TARGETS ${PROGRAMS}
  DESTINATION ${INSTALLDIR}
  PERMISSIONS ${EXECUTABLE_PERMISSIONS}
 )
