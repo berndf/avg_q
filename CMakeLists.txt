@@ -36,6 +36,7 @@ IF(CMAKE_SYSTEM_NAME MATCHES Windows)
  SET(HDF_LIBS mfhdf hdf xdr jpeg z ws2_32) # Without ws2_32, "undefined reference to `_htonl@4'" results
  #SET(HDF_DEFINES -D_DLL) # Use the multithreaded DLLs
  SET(HDF_DEFINES -U_MT) # Disable multithreading for static linking
+ SET(LAPACK_FOUND TRUE) # On Windows, set this to FALSE manually if lapack libraries are not available
  SET(ICA_LIBS lapack blas f2c)
  SET(AVG_Q_DEFINES -DLITTLE_ENDIAN ${HDF_DEFINES})
  IF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
@@ -120,6 +121,9 @@ SET(HDF_FOUND TRUE)
 SET(WITH_POSPLOT TRUE)
 SET(WITH_AVG_Q_UI TRUE)
 
+if (NOT LAPACK_FOUND)
+ MESSAGE("LAPACK libraries not found - compiling without icadecomp")
+endif (NOT LAPACK_FOUND)
 if (NOT SOX_FOUND)
  MESSAGE("SOX library not found - compiling without read_sound/write_sound")
 endif (NOT SOX_FOUND)
@@ -142,14 +146,19 @@ SET(AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/bf ${CMAKE_SOURCE_DIR}/bf/array
  ${CMAKE_SOURCE_DIR}/bf/stat
  ${CMAKE_SOURCE_DIR}/bf/math ${CMAKE_SOURCE_DIR}/bf/optimize
  ${CMAKE_SOURCE_DIR}/bf/array ${CMAKE_SOURCE_DIR}/bf/biomag
- ${ICA_INCLUDES}
 )
 
 # Arranges that shared libs are found in the same dir as the binary
 SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG -g)
-SET(BF_LIBPATH_DYNAMIC ${ICA_LIBPATH})
-SET(BF_LIBS bf ${MFX_LIBS} ${ICA_LIBS} m)
+SET(BF_LIBPATH_DYNAMIC)
+SET(BF_LIBS bf ${MFX_LIBS} m)
+
+if (LAPACK_FOUND)
+ LIST(APPEND AVG_Q_INCLUDES ${ICA_INCLUDES})
+ LIST(APPEND BF_LIBPATH_DYNAMIC ${ICA_LIBPATH})
+ LIST(APPEND BF_LIBS ${ICA_LIBS})
+endif (LAPACK_FOUND)
 
 if (SOX_FOUND)
  LIST(APPEND AVG_Q_INCLUDES ${SOX_INCLUDES})

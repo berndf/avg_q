@@ -19,6 +19,25 @@ All of the actual method definitions reside in the subdirectory bf/.
 The command line driver program is on top level (avg_q.c); the user interface driver program
 in the avg_q_ui/ subdirectory.
 
+
+Stripped-down build to ease porting
+-----------------------------------
+
+The top-level CMakeLists.txt contains flags to exclude any parts requiring external dependencies
+(cf. section "External libraries" below) thus easing initial compilation:
+
+- LAPACK_FOUND. This is automatically set on Unix but not on Windows. If FALSE, the icadecomp method
+will not be built.
+
+- SOX_FOUND. This is automatically set. If FALSE, the read_sound and write_sound methods are not built.
+
+- HDF_FOUND. If FALSE, the read_hdf and write_hdf methods are not built.
+
+- WITH_POSPLOT. If FALSE, the posplot method will not be built.
+
+- WITH_AVG_Q_UI. If FALSE, avg_q_ui will not be built.
+
+
 Including or excluding methods
 ------------------------------
 
@@ -31,13 +50,19 @@ Each method module defines a single globally visible function select_{methodname
 If you have any problems with a particular method or its dependencies, you can easily comment out the
 corresponding entry in bf/method_list.c and bf/CMakeLists.txt to proceed without that method.
 
-Steps needed to add your own methods:
- Add the source file itself below bf/
- Add the select_{methodname} declaration to bf/bf.h 
- Add the select_{methodname} function pointer to the list in bf/method_list.c
- Add the source file to bf/CMakeLists.txt (either ALL_SOURCES or, if you created
+Steps needed to add a method:
+
+- Add the source file itself below bf/
+
+- Add the select_{methodname} declaration to bf/bf.h 
+
+- Add the select_{methodname} function pointer to the list in bf/method_list.c
+
+- Add the source file to bf/CMakeLists.txt (either ALL_SOURCES or, if you created
  an extra subdirectory, the subdirs list) so that cmake knows what to build.
+
 Finished!
+
 
 Internal support modules
 ------------------------
@@ -78,12 +103,14 @@ Most Linux distributions contain packages for these libraries. To compile avg_q 
 it may be necessary to install the development packages of these libraries in addition to
 their runtime versions.
 
+
 Third-party libraries with modifications, included in the current source tree
 -----------------------------------------------------------------------------
 
 - For plotting (needed by posplot): vogl/ http://www.autochthonous.org/eric/index.html
 
 - For Independent Component Analysis (icadecomp): bf/ica/ica.[ch] http://www.cnl.salk.edu/~enghoff/
+
 
 Windows installation
 --------------------
@@ -95,6 +122,5 @@ its dependencies jpeg-6b, szip-2.1 and zlib-1.2.3. Similarly, I cross-compiled G
 For sox (http://sox.sourceforge.net/), few files needed modification to build
 using mingw32; these are included in winlibs/sox. The rest of the official distribution
 needs to be unpacked under that directory as well, and configured using the
-'winlibs/sox/doit' script. avg_q no longer bundles (an old version of) sox
-since newer sox supports using it as a (possibly shared) library.
+'winlibs/sox/doit' script.
 

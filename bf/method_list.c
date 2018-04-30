@@ -52,7 +52,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_extract_item,
  select_fftfilter,
  select_fftspect,
+#ifdef AVG_Q_WITH_LAPACK
  select_icadecomp,
+#endif
  select_import_point,
  select_integrate,
  select_invert,
