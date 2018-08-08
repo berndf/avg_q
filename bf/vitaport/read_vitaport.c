@@ -107,8 +107,6 @@ actual_fieldlength(char *thisentry, char *nextentry) {
 }
 /*}}}  */
 
-/*{{{  Single point interface - Not very useful with this format */
-
 /*{{{  read_vitaport_get_filestrings: Allocate and set strings and probepos array*/
 LOCAL void
 read_vitaport_get_filestrings(transform_info_ptr tinfo) {
@@ -129,8 +127,6 @@ read_vitaport_get_filestrings(transform_info_ptr tinfo) {
  }
  create_channelgrid(tinfo);
 }
-/*}}}  */
-
 /*}}}  */
 
 /*{{{  read_vitaport_nexttrigger(transform_info_ptr tinfo, long *trigpoint) {*/

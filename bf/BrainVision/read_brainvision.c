@@ -125,8 +125,6 @@ struct read_brainvision_storage {
 };
 /*}}}  */
 
-/*{{{  Single point interface - Not very useful with this format */
-
 /*{{{  read_brainvision_get_filestrings: Allocate and set strings and probepos array*/
 LOCAL void
 read_brainvision_get_filestrings(transform_info_ptr tinfo) {
@@ -141,6 +139,7 @@ read_brainvision_get_filestrings(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "read_brainvision: Error allocating channelnames\n");
  }
  memcpy(innamebuf, local_arg->channelnames_buf.buffer_start, local_arg->channelnames_buf.current_length);
+
  ntokens=growing_buf_count_tokens(&local_arg->channelnames_buf);
  //printf("Have found %d channel names!\n", ntokens);
  if (ntokens!=tinfo->nr_of_channels) {
@@ -165,8 +164,6 @@ read_brainvision_get_filestrings(transform_info_ptr tinfo) {
   create_channelgrid(tinfo);
  }
 }
-/*}}}  */
-
 /*}}}  */
 
 /*{{{  Maintaining the triggers list*/
@@ -337,8 +334,8 @@ read_brainvision_init(transform_info_ptr tinfo) {
  local_arg->itemsize=1;
  growing_buf_init(&local_arg->triggers);
  growing_buf_init(&local_arg->channelnames_buf);
- local_arg->channelnames_buf.delimiters="";
  growing_buf_allocate(&local_arg->channelnames_buf, 0);
+ local_arg->channelnames_buf.delimiters="";
  growing_buf_init(&local_arg->resolutions_buf);
  growing_buf_allocate(&local_arg->resolutions_buf, 0);
  growing_buf_init(&local_arg->coordinates_buf);
