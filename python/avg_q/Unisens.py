@@ -1,5 +1,5 @@
 # vim: set fileencoding=utf-8 :
-# Copyright (C) 2015 Bernd Feige
+# Copyright (C) 2018 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 The "Unisens" data format, FZI Karlsruhe http://www.unisens.org/
@@ -37,16 +37,22 @@ class UnisensFile(object):
   self.members=[]
   for member in root:
    # Attribute "id" is actually a file name with extension
-   filename=member.get('id')
-   if filename:
+   id_value=member.get('id')
+   if id_value:
+    # Fix in case id_value contains a path
+    p,filename=os.path.split(id_value)
     ID,ext=os.path.splitext(filename)
     filename=os.path.join(topdir,filename)
    else:
-    ID,ext=None,None
+    filename,ID,ext=None,None,None
    getepochmethod=None
    if member.tag.endswith('valuesEntry') or member.tag.endswith('signalEntry'):
     # For valuesEntry, CSV time stamps are in ticks of the clock as given in the sampleRate attribute (ie 500Hz)
-    sampleRate=float(member.get('sampleRate'))
+    if member.get('sampleRate')=='':
+     # Just avoid a conversion error here
+     sampleRate=None
+    else:
+     sampleRate=float(member.get('sampleRate'))
     baseline=float(member.get('baseline',0))
     lsbValue=float(member.get('lsbValue',1))
     dataType=member.get('dataType',1)
