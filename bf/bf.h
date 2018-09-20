@@ -251,6 +251,7 @@ int find_channel_number(transform_info_ptr tinfo, char const *channel_name);
 double get_value(char const *number, char **EndPointer);
 long gettimeslice(transform_info_ptr tinfo, char const *number);
 double gettimefloat(transform_info_ptr tinfo, char const *number);
+double getfreqfloat(transform_info_ptr tinfo, char const *number);
 long find_pointnearx(transform_info_ptr tinfo, DATATYPE x);
 long decode_xpoint(transform_info_ptr tinfo, char *token);
 void create_xaxis(transform_info_ptr tinfo, char const *unitname);

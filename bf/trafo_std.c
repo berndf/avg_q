@@ -180,8 +180,6 @@ LOCAL struct {
  * to the number string; if number ends with "s" or "ms", the sampling
  * rate given in tinfo is used to calculate it, otherwise the number
  * itself is returned (as double precision value).
- * In addition, to support those functions operating in the frequency domain,
- * values ending in 'Hz' are converted to a fraction of half the sfreq.
  */
 GLOBAL long
 gettimeslice(transform_info_ptr tinfo, char const *number) {
@@ -191,14 +189,18 @@ GLOBAL double
 gettimefloat(transform_info_ptr tinfo, char const *number) {
  char *EndPointer;
  double value;
- int i;
 
  value=get_value(number, &EndPointer);
  if (EndPointer[0]!='\0') {
   if (strcmp(EndPointer,"Hz")==0) {
    /* A value given in Hertz is converted to a fraction of half the sfreq: */
-   value/=tinfo->sfreq/2;
+   if (tinfo->xchannelname!=NULL && strcmp(tinfo->xchannelname,"Freq[Hz]")==0 &&
+       tinfo->xdata!=NULL && tinfo->nr_of_points>=2) {
+    double const freq_step=(tinfo->xdata[tinfo->nr_of_points-1]-tinfo->xdata[0])/(tinfo->nr_of_points-1);
+    value/=freq_step;
+   }
   } else {
+   int i;
    for (i=0; i<NR_OF_TIME_UNITS; i++) {
     if (strcmp(EndPointer,time_units_and_names[i].name)==0) {
      value*=tinfo->sfreq*time_units_and_names[i].unit;
@@ -208,6 +210,29 @@ gettimefloat(transform_info_ptr tinfo, char const *number) {
    if (i==NR_OF_TIME_UNITS) {
     ERREXIT1(tinfo->emethods, "gettimefloat: Invalid float value: %s\n", MSGPARM(number));
    }
+  }
+ }
+ return value;
+}
+/*}}}  */
+
+/*{{{  getfreqfloat(transform_info_ptr tinfo, char *number)*/
+/* getfreqfloat supports arguments in the frequency domain given as fraction of
+ * half the sfreq. Numbers with 'Hz' appended are converted correspondingly.
+ * This is used by fftfilter.
+ */
+GLOBAL double
+getfreqfloat(transform_info_ptr tinfo, char const *number) {
+ char *EndPointer;
+ double value;
+
+ value=get_value(number, &EndPointer);
+ if (EndPointer[0]!='\0') {
+  if (strcmp(EndPointer,"Hz")==0) {
+   /* A value given in Hertz is converted to a fraction of half the sfreq: */
+   value/=tinfo->sfreq/2;
+  } else {
+   ERREXIT1(tinfo->emethods, "getfreqfloat: Invalid float value: %s\n", MSGPARM(number));
   }
  }
  return value;

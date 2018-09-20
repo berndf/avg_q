@@ -101,10 +101,10 @@ init_fftfilter_storage(transform_info_ptr tinfo) {
   } else {
    inblocks->factor=0.0;	/* Complete suppression */
   }
-  inblocks->start=gettimefloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
-  inblocks->nullstart=gettimefloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
-  inblocks->nullend=gettimefloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
-  inblocks->end=gettimefloat(tinfo, tokenbuf.buffer_start); havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->start=getfreqfloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->nullstart=getfreqfloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->nullend=getfreqfloat(tinfo, tokenbuf.buffer_start); growing_buf_get_nexttoken(&buf,&tokenbuf);
+  inblocks->end=getfreqfloat(tinfo, tokenbuf.buffer_start); havearg=growing_buf_get_nexttoken(&buf,&tokenbuf);
   if (inblocks->start>inblocks->nullstart || inblocks->nullstart>inblocks->nullend || inblocks->nullend>inblocks->end) {
    ERREXIT1(tinfo->emethods, "fftfilter_init: Block %d is not ascending.\n", MSGPARM(block+1));
   }
