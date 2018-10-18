@@ -1,5 +1,5 @@
-#LyX 2.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 508
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
 \begin_document
 \begin_header
 \save_transient_properties true
@@ -36,6 +36,8 @@
 \font_osf false
 \font_sf_scale 100 100
 \font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures false
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -75,6 +77,7 @@
 \suppress_date false
 \justification true
 \use_refstyle 0
+\use_minted 0
 \index Index
 \shortcut idx
 \color #008000
@@ -87,7 +90,10 @@
 \tocdepth 3
 \paragraph_separation skip
 \defskip medskip
-\quotes_language english
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
 \papercolumns 1
 \papersides 2
 \paperpagestyle fancy
@@ -3880,6 +3886,7 @@ REC=EDF (sleep) data format
 \begin_inset CommandInset citation
 LatexCommand cite
 key "Kemp:92"
+literal "true"
 
 \end_inset
 
@@ -3899,6 +3906,7 @@ EDF=REC (sleep) data format
 LatexCommand href
 name "European Data Format"
 target "http://www.edfplus.info/"
+literal "false"
 
 \end_inset
 
@@ -3925,6 +3933,7 @@ read_rec
 LatexCommand href
 name "BDF"
 target "http://www.biosemi.com/faq/file_format.htm"
+literal "false"
 
 \end_inset
 
@@ -3933,6 +3942,7 @@ target "http://www.biosemi.com/faq/file_format.htm"
 \begin_inset CommandInset citation
 LatexCommand citep
 key "Kemp:2003"
+literal "true"
 
 \end_inset
 
@@ -4072,6 +4082,7 @@ sound
 LatexCommand href
 name "SOX (SOund eXchange)"
 target "http://sox.sourceforge.net/"
+literal "false"
 
 \end_inset
 
@@ -5656,6 +5667,7 @@ y
 \begin_inset CommandInset citation
 LatexCommand citealt
 key "Rosenberg:89"
+literal "true"
 
 \end_inset
 
@@ -7476,6 +7488,7 @@ laplacian
 \begin_inset CommandInset citation
 LatexCommand cite
 key "Le:94"
+literal "true"
 
 \end_inset
 
@@ -12053,6 +12066,7 @@ EDF=REC (sleep) data format
 \begin_inset CommandInset citation
 LatexCommand cite
 key "Kemp:92"
+literal "true"
 
 \end_inset
 
@@ -12062,11 +12076,10 @@ key "Kemp:92"
 read_rec
 \series default
 ).
- Note that each epoch is written as one block (record) of the output file;
- if it is necessary to use a given block size on output after processing
- with a different epoch length, the file should be written to a temporary
- file and then re-read with an epoch size corresponding to the block size
- needed.
+ The output is divided into blocks (records) of predefined length (samples_per_r
+ecord).
+ By default, this is equal to the length of the first input epoch but can
+ be set as desired using -s.
  There is not yet an option to write different channels with different sampling
  rate, offset and sensitivity, as the format would support.
  Data is written as shorts.
@@ -12106,6 +12119,14 @@ Options:
 \end_inset
 
 bits: Pretend this number of digitization bits (default: 16)
+\end_layout
+
+\begin_layout Description
+-s
+\begin_inset space ~
+\end_inset
+
+samples_per_record: Output block size (default: epoch length)
 \end_layout
 
 \begin_layout Description
@@ -12178,7 +12199,7 @@ read_sound
 \begin_inset Newline newline
 \end_inset
 
- 
+
 \series bold
 avg_q
 \series default
@@ -13613,6 +13634,8 @@ options "neuropsychopharmacol"
 \begin_inset CommandInset index_print
 LatexCommand printindex
 type "idx"
+name "Index"
+literal "true"
 
 \end_inset
 

@@ -37,6 +37,7 @@ enum ARGS_ENUM {
  ARGS_CLOSE,
  ARGS_BITS,
  ARGS_RESOLUTION,
+ ARGS_SAMPLES_PER_RECORD,
  ARGS_PATIENT,
  ARGS_RECORDING,
  ARGS_DATA_FORMAT_VERSION,
@@ -49,6 +50,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Close the file after writing each epoch (and open it again next time)", "c", FALSE, NULL},
  {T_ARGS_TAKES_LONG, "bits: Pretend this number of digitization bits (default: 16)", "b", 16, NULL},
  {T_ARGS_TAKES_DOUBLE, "resolution: Digitize in steps this large (default: 1.0)", "r", 1, NULL},
+ {T_ARGS_TAKES_STRING_WORD, "samples_per_record: Output block size (default: epoch length)", "s", ARGDESC_UNUSED, (const char *const *)"1s"},
  {T_ARGS_TAKES_STRING_WORD, "patient: Set the `patient' field value", "P", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_STRING_WORD, "recording: Set the `recording' field value", "R", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_STRING_WORD, "reServed: Set the `data_format_version' field value", "S", ARGDESC_UNUSED, NULL},
@@ -63,8 +65,10 @@ struct write_rec_storage {
  REC_file_header fheader;
 
  long nr_of_records;
+ long samples_per_record;
  FILE *outfptr;
  short *outbuf;
+ long current_sample;
  long digmin;
  long digmax;
  double resolution;
@@ -167,7 +171,7 @@ write_rec_open_file(transform_info_ptr tinfo) {
   copy_nstring(fileheader.data_format_version, (args[ARGS_DATA_FORMAT_VERSION].is_set ? args[ARGS_DATA_FORMAT_VERSION].arg.s : "write_rec file"), sizeof(fileheader.data_format_version));
   local_arg->nr_of_records=0;
   copy_nstring(fileheader.nr_of_records, "-1", sizeof(fileheader.nr_of_records));
-  snprintf(numbuf, NUMBUF_LENGTH, "%g", ((double)tinfo->nr_of_points)/tinfo->sfreq);
+  snprintf(numbuf, NUMBUF_LENGTH, "%g", ((double)local_arg->samples_per_record)/tinfo->sfreq);
   copy_nstring(fileheader.duration_s, numbuf, sizeof(fileheader.duration_s));
   snprintf(numbuf, NUMBUF_LENGTH, "%d", tinfo->nr_of_channels);
   copy_nstring(fileheader.nr_of_channels, numbuf, sizeof(fileheader.nr_of_channels));
@@ -204,7 +208,7 @@ write_rec_open_file(transform_info_ptr tinfo) {
    copy_nstring(channelheader.digmin[channel], numbuf, sizeof(channelheader.digmin[channel]));
    snprintf(numbuf, NUMBUF_LENGTH, "%ld", local_arg->digmax);
    copy_nstring(channelheader.digmax[channel], numbuf, sizeof(channelheader.digmax[channel]));
-   snprintf(numbuf, NUMBUF_LENGTH, "%d", tinfo->nr_of_points);
+   snprintf(numbuf, NUMBUF_LENGTH, "%ld", local_arg->samples_per_record);
    copy_nstring(channelheader.samples_per_record[channel], numbuf, sizeof(channelheader.samples_per_record[channel]));
   }
   setlocale(LC_NUMERIC, ""); /* Reset locale to environment */
@@ -248,7 +252,9 @@ write_rec_init(transform_info_ptr tinfo) {
  int bits=(args[ARGS_BITS].is_set ? args[ARGS_BITS].arg.i : DEFAULT_BITS);
  local_arg->resolution=(args[ARGS_RESOLUTION].is_set ? args[ARGS_RESOLUTION].arg.d : 1.0);
 
- if ((local_arg->outbuf=(short *)malloc(tinfo->nr_of_channels*tinfo->nr_of_points*sizeof(short)))==NULL) {
+ local_arg->samples_per_record=args[ARGS_SAMPLES_PER_RECORD].is_set ? gettimeslice(tinfo, args[ARGS_SAMPLES_PER_RECORD].arg.s) : (tinfo->data_type==FREQ_DATA ? tinfo->nroffreq : tinfo->nr_of_points);
+ local_arg->current_sample=0L;
+ if ((local_arg->outbuf=(short *)malloc(tinfo->nr_of_channels*local_arg->samples_per_record*sizeof(short)))==NULL) {
   ERREXIT(tinfo->emethods, "write_rec_init: Error allocating buffer memory.\n");
  }
  if (bits<1) {
@@ -273,7 +279,7 @@ write_rec(transform_info_ptr tinfo) {
  struct write_rec_storage *local_arg=(struct write_rec_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  FILE *outfptr=local_arg->outfptr;
- short *inbuf=local_arg->outbuf;
+ short *inbuf;
  array myarray;
 
  if (tinfo->itemsize!=1) {
@@ -283,12 +289,14 @@ write_rec(transform_info_ptr tinfo) {
   write_rec_open_file(tinfo);
   outfptr=local_arg->outfptr;
  }
- if (tinfo->data_type==FREQ_DATA) tinfo->nr_of_points=tinfo->nroffreq;
  /*{{{  Write epoch*/
  tinfo_array(tinfo, &myarray);
- /* Within the epochs, writing is non-interlaced, ie points fastest */
+ /* We read the data point by point, i.e. channels fastest */
+ array_transpose(&myarray);
+ /* Within the record, writing is non-interlaced, ie points fastest */
  do {
   do {
+   inbuf=local_arg->outbuf+local_arg->samples_per_record*myarray.current_element+local_arg->current_sample;
    *inbuf= (short int)rint(array_scan(&myarray)/local_arg->resolution);
    if (!local_arg->overflow_has_occurred && (*inbuf<local_arg->digmin || *inbuf>local_arg->digmax)) {
     TRACEMS(tinfo->emethods, 0, "write_rec: Some output values exceed digitization bits!\n");
@@ -297,16 +305,18 @@ write_rec(transform_info_ptr tinfo) {
 #ifndef LITTLE_ENDIAN
    Intel_int16(inbuf);
 #endif
-   inbuf++;
   } while (myarray.message==ARRAY_CONTINUE);
+  if (++local_arg->current_sample>=local_arg->samples_per_record) {
+   if ((int)fwrite(local_arg->outbuf, sizeof(short), tinfo->nr_of_channels*local_arg->samples_per_record, outfptr)!=tinfo->nr_of_channels*local_arg->samples_per_record) {
+    ERREXIT(tinfo->emethods, "write_rec: Write error on data file.\n");
+   }
+   /* If nr_of_records was -1 (can only happen while appending),
+    * leave it that way */
+   if (local_arg->nr_of_records>=0) local_arg->nr_of_records++;
+   local_arg->current_sample=0L;
+  }
  } while (myarray.message!=ARRAY_ENDOFSCAN);
- if ((int)fwrite(local_arg->outbuf, sizeof(short), tinfo->nr_of_channels*tinfo->nr_of_points, outfptr)!=tinfo->nr_of_channels*tinfo->nr_of_points) {
-  ERREXIT(tinfo->emethods, "write_rec: Write error on data file.\n");
- }
  /*}}}  */
- /* If nr_of_records was -1 (can only happen while appending),
-  * leave it that way */
- if (local_arg->nr_of_records>=0) local_arg->nr_of_records++;
  if (args[ARGS_CLOSE].is_set) write_rec_close_file(tinfo);
  return tinfo->tsdata;	/* Simply to return something `useful' */
 }
