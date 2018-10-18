@@ -232,8 +232,8 @@ null_sink
   return collect.outtuple[0] if len(getvars)==1 else tuple(collect.outtuple)
  def get_filetriggers(self,infile):
   from . import trgfile
-  if infile.fileformat=='asc':
-   # 'asc' is epoched only; make 'filetriggers' mean epoch numbers (starting at 0), conditions and comments
+  if infile.epoched:
+   # Epoched files: make 'filetriggers' mean epoch numbers (starting at 0), conditions and comments
    self.getepoch(infile)
    self.write('''
 query condition stdout
@@ -305,8 +305,8 @@ class Epochsource(object):
    # Allow a single point to be specified
    self.trigpoints=[trigpoints]
  def send(self,avg_q_instance):
-  if self.infile.fileformat=='asc' and self.trigpoints is not None:
-   # Allow 'trigger' lists to be used for 'asc' files just as in
+  if self.infile.epoched and self.trigpoints is not None:
+   # Allow 'trigger' lists to be used for epoched files just as in
    # avg_q.get_filetriggers, namely with (epoch number-1) as position value
    for trigpoint in self.trigpoints:
     epoch=(trigpoint[0] if isinstance(trigpoint,tuple) else trigpoint)+1
@@ -317,7 +317,7 @@ class Epochsource(object):
    avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):
   # For asc files we already treated the trigpoints in send()
-  if self.infile.fileformat!='asc' and self.trigpoints is not None:
+  if not self.infile.epoched and self.trigpoints is not None:
    if len(self.trigpoints)>0 and isinstance(self.trigpoints[0],tuple):
     from . import trgfile
     t=trgfile.trgfile()

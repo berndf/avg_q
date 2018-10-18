@@ -51,6 +51,7 @@ class sleep_file(avg_q_file):
   self.addmethods=None
   self.f=avg_q_file(self.filename)
   self.fileformat=self.f.fileformat
+  self.epoched=False
   if self.fileformat=='freiburg':
    from . import freiburg_setup
    from .. import channelnames2channelpos

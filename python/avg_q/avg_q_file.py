@@ -30,6 +30,7 @@ class avg_q_file(object):
    filename,fileformat=self.guessformat(filename)
   self.filename=filename
   self.fileformat=fileformat
+  self.epoched=False
   self.addmethods=None
   self.getepochmethod=None
   self.trigfile=None
@@ -43,10 +44,14 @@ read_brainvision %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_ar
    self.getepochmethod='''
 read_synamps %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
+   name,ext=os.path.splitext(filename)
+   if ext.lower() in ['.avg','.eeg']:
+    self.epoched=True
   elif fileformat=='asc':
    self.getepochmethod='''
 readasc %(fromepoch_arg)s %(epochs_arg)s %(filename)s
 '''
+   self.epoched=True
   elif fileformat=='hdf':
    self.getepochmethod='''
 read_hdf %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s

@@ -58,6 +58,8 @@ class avg_q_Emblafile(avg_q_file):
   self.chan=EmblaChannel(filename)
   self.filename=filename
   self.fileformat="Embla"
+  self.epoched=False
+  self.addmethods=None
   self.getepochmethod='''
 read_generic -s %(sfreq)g -C 1 -O %(data_offset)d %(avg_q_file_args)s int16
 >set_channelposition -s %(Channelname)s 0 0 0
@@ -71,3 +73,4 @@ read_generic -s %(sfreq)g -C 1 -O %(data_offset)d %(avg_q_file_args)s int16
    'comment': '%s %s' % (self.chan.Subject,self.chan.time.strftime('%m/%d/%Y,%H:%M:%S')),
    'avg_q_file_args':'%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s'
    }
+  self.trigfile=None

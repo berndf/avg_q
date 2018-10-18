@@ -183,6 +183,7 @@ class avg_q_Coherencefile(avg_q_file):
   else:
    self.compressed=compressed
   self.fileformat="Coherence"
+  self.epoched=False
   self.addmethods=None
   getepochstart='read_generic -O %d -C %d -s %g ' % (data_offset,self.nr_of_channels,self.sfreq)
   if self.compressed:
@@ -192,4 +193,5 @@ class avg_q_Coherencefile(avg_q_file):
   else:
    self.getepochmethod=getepochstart+'''%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s int16
 '''
+  self.trigfile=None
 
