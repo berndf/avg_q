@@ -324,6 +324,8 @@ Notice(gchar *message) {
 #define ERRORMESSAGE_SIZE 1024
 LOCAL char errormessage[ERRORMESSAGE_SIZE];
 LOCAL void
+error_exit(const external_methods_ptr emeth, const char *msgtext) __attribute__ ((__noreturn__));
+LOCAL void
 error_exit(const external_methods_ptr emeth, const char *msgtext) {
  char * newlinepos;
  if (strstr(msgtext, "by user")!=NULL) {

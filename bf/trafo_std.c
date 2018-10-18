@@ -29,6 +29,8 @@
 /*{{{}}}*/
 /*{{{  error_exit(const external_methods_ptr emeth, const char *msgtext)*/
 LOCAL void
+error_exit(const external_methods_ptr emeth, const char *msgtext) __attribute__ ((__noreturn__));
+LOCAL void
 error_exit(const external_methods_ptr emeth, const char *msgtext) {
  fprintf(stderr, "ERROR - ");
  fprintf(stderr, msgtext, emeth->message_parm[0], emeth->message_parm[1],
