@@ -37,3 +37,7 @@ For parsing, voglps.py is used, and for output, voglps2svg uses SVG.py ((c)
 Rick Muller http://code.activestate.com/recipes/325823/), while
 voglps2svg.cairo uses the python cairo bindings (http://cairographics.org/pycairo/).
 voglps2svg is recommended because of the better editable text representation.
+
+Sleep-related scripts:
+
+plot_sl: Plot hypnograms given a "book number" as argument
