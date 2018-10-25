@@ -158,19 +158,18 @@ write_generic -x stdout float32
    epoch.data=data[:,1:]
    self.epochs.append(epoch)
   self.restore_state()
- def plot_maps(self, vmin=None, vmax=None, globalscale=False, isolines=[0]):
+ def plot_maps(self, ncols=None, vmin=None, vmax=None, globalscale=False, isolines=[0]):
   '''globalscale arranges for vmin,vmax to actually be -1,+1 after global max(abs) scaling.'''
   import matplotlib.mlab as mlab
   import matplotlib.pyplot as plt
 
-  def mapplot(xpos,ypos,z,nsteps=50):
+  def mapplot(nrows,ncols,xpos,ypos,z,nsteps=50):
    #ncontours=15
    xmin,xmax=xpos.min(),xpos.max()
    ymin,ymax=ypos.min(),ypos.max()
    xi=numpy.linspace(xmin,xmax,nsteps)
    yi=numpy.linspace(ymin,ymax,nsteps)
    nplots=z.shape[0]
-   nrows,ncols=nrows_ncols_from_nplots(nplots)
    # Default 'nn' interpolation of griddata requires package mpl_toolkits.natgrid, currently py2 only
    try:
     import mpl_toolkits.natgrid
@@ -209,17 +208,23 @@ write_generic -x stdout float32
     epoch.data=epoch.data/scale
     vmin= -1
     vmax=  1
-   mapplot(numpy.array([xyz[0] for xyz in epoch.channelpos]),numpy.array([xyz[1] for xyz in epoch.channelpos]),epoch.data)
+   nplots=epoch.data.shape[0]
+   if ncols is not None:
+    nrows=nplots/ncols
+    if not nrows.is_integer():
+     nrows=numpy.ceil(nrows)
+    nrows=int(nrows)
+   else:
+    nrows,ncols=nrows_ncols_from_nplots(nplots)
+   mapplot(nrows,ncols,numpy.array([xyz[0] for xyz in epoch.channelpos]),numpy.array([xyz[1] for xyz in epoch.channelpos]),epoch.data)
   self.restore_state()
- def plot_traces(self, vmin=None, vmax=None, xlim=None, ylim=None, x_is_latency=False):
+ def plot_traces(self, ncols=None, vmin=None, vmax=None, xlim=None, ylim=None, x_is_latency=False):
   '''This creates one 2d plot for each channel, like for time-freq data (freq=x, time=epoch).
   If x_is_latency=True, each matrix is transposed so x and y swapped.'''
   import matplotlib.pyplot as plt
 
-  def traceplot(z,xlim=None,ylim=None,transpose=False):
+  def traceplot(nrows,ncols,z,xlim=None,ylim=None,transpose=False):
    #ncontours=15
-   nplots=len(z)
-   nrows,ncols=nrows_ncols_from_nplots(nplots)
    thisplot=0
    for z1 in z:
     z1=numpy.array(z1)
@@ -263,5 +268,13 @@ write_generic -x stdout float32
        z[channel][point].append(channels[channel])
     point+=1
 
-  traceplot(z,xlim=xlim,ylim=ylim,transpose=x_is_latency)
+  nplots=len(z)
+  if ncols is not None:
+   nrows=nplots/ncols
+   if not nrows.is_integer():
+    nrows=numpy.ceil(nrows)
+   nrows=int(nrows)
+  else:
+   nrows,ncols=nrows_ncols_from_nplots(nplots)
+  traceplot(nrows,ncols,z,xlim=xlim,ylim=ylim,transpose=x_is_latency)
   self.restore_state()

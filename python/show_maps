@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-# Copyright (C) 2010-2014 Bernd Feige
+# Copyright (C) 2010-2018 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import argparse
 argparser = argparse.ArgumentParser(description='Show asc file as color maps')
 argparser.add_argument('ascfiles', nargs='+', help='asc files to plot')
+argparser.add_argument('-r', '--resample', dest='resample', help='Resample to this step width (points/time spec) before plotting')
+argparser.add_argument('-x', '--xrange', dest='xrange', nargs=2, help='Trim epoch to this x range before plotting')
 argparser.add_argument('-d', '--demean_maps', dest='demean_maps', action='store_true', help='Demean (common average rereference) maps before plotting')
+argparser.add_argument('-n', '--ncols', dest='ncols', type=int, help='Plot this many maps per row')
 argparser.add_argument('-i', '--isolines', dest='isolines', help='Draw iso lines at these values (comma separated; default: 0, Don\'t plot: None)')
 argparser.add_argument('-l', '--scale_local', dest='scale_local', action='store_true', help='Scale each map instead of global max(abs)')
 argparser.add_argument('-s', '--save_fig', dest='save_fig', action='store_true', help='Save plots to .png instead of showing them')
@@ -50,6 +53,10 @@ for ascfile in args.ascfiles:
  epochsource=avg_q.Epochsource(f)
  script=avg_q.numpy_Script.numpy_Script(a)
  script.add_Epochsource(epochsource)
+ if args.resample:
+  script.add_transform("sliding_average %(resample)s %(resample)s" % {'resample': args.resample})
+ if args.xrange:
+  script.add_transform("trim -x %(from)s %(to)s" % {'from': args.xrange[0], 'to': args.xrange[1]})
  if args.demean_maps:
   script.add_transform("demean_maps")
  globalscale=False
@@ -60,7 +67,7 @@ for ascfile in args.ascfiles:
  else:
   vmin,vmax=None,None
   globalscale=not args.scale_local
- script.plot_maps(vmin=vmin,vmax=vmax,globalscale=globalscale,isolines=isolines)
+ script.plot_maps(ncols=args.ncols,vmin=vmin,vmax=vmax,globalscale=globalscale,isolines=isolines)
  if args.save_fig:
   plt.savefig(pngfile,format='png',dpi=100,transparent=True)
   plt.close()

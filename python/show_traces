@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# Copyright (C) 2014 Bernd Feige
+# Copyright (C) 2014-2018 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import argparse
 argparser = argparse.ArgumentParser(description='Show asc file as color maps')
 argparser.add_argument('ascfiles', nargs='+', help='asc files to plot')
 argparser.add_argument('-a', '--axis', dest='axis', action='store_true', help='Show axis')
+argparser.add_argument('-n', '--ncols', dest='ncols', type=int, help='Plot this many maps per row')
 argparser.add_argument('-l', '--scale_local', dest='scale_local', action='store_true', help='Scale each trace instead of global scaling')
 argparser.add_argument('-s', '--save_fig', dest='save_fig', action='store_true', help='Save plots to .png instead of showing them')
 argparser.add_argument('-S', '--size', dest='size', help='Set size of the output in inch (one or two comma-separated values)')
@@ -45,7 +46,7 @@ for ascfile in args.ascfiles:
  script.add_Epochsource(epochsource)
  if args.scale_local:
   script.add_transform('scale_by invpointmaxabs')
- script.plot_traces(x_is_latency=args.x_is_latency)
+ script.plot_traces(ncols=args.ncols,x_is_latency=args.x_is_latency)
  if args.axis:
   axes = plt.gca() # Get Current Axis
   axes.set_axis_on()
