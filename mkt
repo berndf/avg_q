@@ -1,1 +1,1 @@
-ctags --totals `find . -type f \( -name '*.[ch]' -o -name '*.cpp' -o -name '*.cc' -o -name '*.hh' \) -print`
+find . -type f \( -name '*.[ch]' -o -name '*.cpp' -o -name '*.cc' -o -name '*.hh' \) -print0 | xargs -0 ctags --totals

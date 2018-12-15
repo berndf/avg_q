@@ -1,8 +1,46 @@
-# Copyright (C) 2012,2013 Bernd Feige
+# Copyright (C) 2012-2014,2016-2018 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Utility module defining global default channel sets
 """
+
+import collections
+# This is for finding EEG channels given a generic name such as 'C3'
+# Note that the order is significant: The first occurrance is preferred
+# in case of multiple matches.
+equivalent_channels=collections.OrderedDict({
+ 'EEG C3': 'C3',
+ 'EEG C4': 'C4',
+ 'EEG Fz': 'Fz',
+ 'EEG Cz': 'Cz',
+ 'EEG Pz': 'Pz',
+ 'EEG Oz': 'Oz',
+ 'EEG_C3': 'C3',
+ 'EEG_C4': 'C4',
+ # Two ESVO files and two tDCS files...
+ 'EEGC3': 'C3',
+ 'EEGC4': 'C4',
+ 'EEGFz': 'Fz',
+ 'EEGCz': 'Cz',
+ 'EEGPz': 'Pz',
+ 'EEGOz': 'Oz',
+ 'C3A2': 'C3',
+ 'C4A1': 'C4',
+ 'O1A2': 'O1',
+ 'O2A1': 'O2',
+ 'EEG C3-A2': 'C3',
+ 'EEG C4-A1': 'C4',
+ 'EEG Fz-A1A2': 'Fz',
+ 'EEG Cz-A1A2': 'Cz',
+ 'EEG Pz-A1A2': 'Pz',
+ 'EEG C3-A1+A2': 'C3',
+ 'EEG C4-A1+A2': 'C4',
+ 'C3*': 'C3',
+ 'C4*': 'C4',
+ # Pneumologie...
+ 'EEG1': 'C3',
+ 'EEG2': 'C4',
+})
 
 # Unipolar EOG channels may qualify as EEG
 BipolarEOGchannels=set([

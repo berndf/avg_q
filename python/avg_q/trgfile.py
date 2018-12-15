@@ -34,8 +34,8 @@ class trgfile(object):
   self.tuples=None
   self.description_codes=None
   if isinstance(source,str):
-   self.filename=self.trgfile
-   self.trgfile=open(source,mode='r')
+   self.filename=source
+   self.trgfile=open(self.filename,mode='r')
   else:
    self.filename=None
    if source:
@@ -57,12 +57,11 @@ class trgfile(object):
   if self.trgfile:
    self.trgfile.close()
    self.trgfile=None
- def getline(self):
+ def line_iter(self):
   if self.trgfile:
-   line=next(self.trgfile)
-  else:
-   line=next(self.reader)
-  return line
+   yield from self.trgfile
+  elif self.reader:
+   yield from self.reader
  def __iter__(self):
   return self.rdr()
  def translate(self,tuple):
@@ -76,18 +75,11 @@ class trgfile(object):
    self.unknown_descriptions[description]=code
   return (point,code,description)
  def rdr(self):
-  while 1:
-   line=self.getline()
+  for line in self.line_iter():
    if isinstance(line,tuple):
     yield self.translate(line)
     continue
-   # EOF:
-   if not isinstance(line,str):
-    break
    line=line.rstrip('\r\n')
-   # EOF:
-   if line=='EOF':
-    break
    if line=='':
     continue
    if line[0]=='#':
@@ -98,12 +90,12 @@ class trgfile(object):
     # Try again with any whitespace sep
     tup=line.split()
    if len(tup)<2:
-    continue;
+    continue
    elif len(tup)==2:
-    (point, code)=tup;
-    description=None;
+    (point, code)=tup
+    description=None
    else:
-    (point, code)=tup[0:2];
+    (point, code)=tup[0:2]
     description='\t'.join(tup[2:])
    # Alternative EOF marker, for streams
    if code=='0':

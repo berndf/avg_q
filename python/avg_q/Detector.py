@@ -50,8 +50,8 @@ class Detector(avg_q.Script):
   crossings=trgfile.trgfile(self.runrdr())
   outtuples=[]
   for point,code,description in crossings:
-   if not self.sfreq: 
-    if not 'Sfreq' in crossings.preamble:
+   if not self.sfreq:
+    if 'Sfreq' not in crossings.preamble:
      raise Exception('Detector: Sfreq not in trigger preamble, cannot continue!')
     self.sfreq=float(crossings.preamble['Sfreq'])
    if self.detection_start is not None and (point<self.detection_start or point>=self.detection_start+self.detection_length) \

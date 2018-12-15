@@ -579,17 +579,21 @@ set_channelposition_exit(transform_info_ptr tinfo) {
 /*{{{  select_set_channelposition(transform_info_ptr tinfo) {*/
 GLOBAL void
 select_set_channelposition(transform_info_ptr tinfo) {
+ growing_buf description;
  tinfo->methods->transform_init= &set_channelposition_init;
  tinfo->methods->transform= &set_channelposition;
  tinfo->methods->transform_exit= &set_channelposition_exit;
  tinfo->methods->method_type=TRANSFORM_METHOD;
  tinfo->methods->method_name="set_channelposition";
- tinfo->methods->method_description=
+ growing_buf_init(&description);
+ growing_buf_takethis(&description,
   "Transform method to set the position for a number of channels.\n"
-  "Currently known builtin sets:\n"
-  "grid, "
-  "PSG, "
-  "EEG";
+  "Currently known builtin sets:\n");
+ for (char **in_builtin_sets=builtin_sets; *in_builtin_sets!=NULL; in_builtin_sets++) {
+  growing_buf_appendstring(&description, *in_builtin_sets);
+  growing_buf_appendstring(&description, *(in_builtin_sets+1)==NULL ? "\n" : ", ");
+ }
+ tinfo->methods->method_description=description.buffer_start;
  tinfo->methods->local_storage_size=sizeof(set_channelposition_selection);
  tinfo->methods->nr_of_arguments=NR_OF_ARGUMENTS;
  tinfo->methods->argument_descriptors=argument_descriptors;
