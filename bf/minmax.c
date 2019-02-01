@@ -21,14 +21,16 @@
 /*}}}  */
 
 enum ARGS_ENUM {
- ARGS_COLLAPSECHANNELS=0, 
- ARGS_COLLAPSEPOINTS, 
+ ARGS_COLLAPSE_CHANNELS=0, 
+ ARGS_COLLAPSE_POINTS, 
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Collapse over all channels", "c", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Collapse over all points", "p", FALSE, NULL}
 };
+
+static char const * const collapsed_channelname="m_collapsed";
 
 struct minmax_local_struct {
  struct transform_info_struct tinfo;
@@ -71,8 +73,8 @@ minmax(transform_info_ptr tinfo) {
   deepcopy_tinfo(&localp->tinfo, tinfo);
 
   localp->tinfo.itemsize=2*tinfo->itemsize;
-  if (args[ARGS_COLLAPSECHANNELS].is_set) localp->tinfo.nr_of_channels=1;
-  if (args[ARGS_COLLAPSEPOINTS].is_set) localp->tinfo.nr_of_points=1;
+  if (args[ARGS_COLLAPSE_CHANNELS].is_set) localp->tinfo.nr_of_channels=1;
+  if (args[ARGS_COLLAPSE_POINTS].is_set) localp->tinfo.nr_of_points=1;
   localp->tinfo.length_of_output_region=localp->tinfo.itemsize*localp->tinfo.nr_of_channels*localp->tinfo.nr_of_points;
   if ((minmax_data=(DATATYPE *)malloc(localp->tinfo.length_of_output_region*sizeof(DATATYPE)))==NULL) {
    ERREXIT(tinfo->emethods, "minmax: Error allocating epoch memory\n");
@@ -82,8 +84,8 @@ minmax(transform_info_ptr tinfo) {
   localp->tinfo.multiplexed=FALSE;
   /*}}}  */
  }
- vector_skip=(args[ARGS_COLLAPSECHANNELS].is_set ? 0 : localp->tinfo.nr_of_points*localp->tinfo.itemsize);
- element_skip=(args[ARGS_COLLAPSEPOINTS].is_set ? 0 : localp->tinfo.itemsize);
+ vector_skip=(args[ARGS_COLLAPSE_CHANNELS].is_set ? 0 : localp->tinfo.nr_of_points*localp->tinfo.itemsize);
+ element_skip=(args[ARGS_COLLAPSE_POINTS].is_set ? 0 : localp->tinfo.itemsize);
 
  /*{{{  minmax the data*/
  tinfo_array(tinfo, &tsdata);
@@ -121,15 +123,22 @@ METHODDEF void
 minmax_exit(transform_info_ptr tinfo) {
  struct minmax_local_struct *localp=(struct minmax_local_struct *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- int collapsed=args[ARGS_COLLAPSECHANNELS].is_set;
 
  /*{{{  Transfer data from localp->tinfo*/
  localp->tinfo.nrofaverages=tinfo->nrofaverages;
  memcpy(tinfo, &localp->tinfo, sizeof(struct transform_info_struct));
  /*}}}  */
 
- if (collapsed) {
-  tinfo->channelnames[0]="m_collapsed";
+ if (args[ARGS_COLLAPSE_CHANNELS].is_set) {
+  if (tinfo->channelnames!=NULL) {
+   free_pointer((void **)&tinfo->channelnames[0]);
+   free_pointer((void **)&tinfo->channelnames);
+  }
+  if ((tinfo->channelnames=(char **)malloc(sizeof(char *)))==NULL
+    ||(tinfo->channelnames[0]=(char *)malloc(strlen(collapsed_channelname)+1))==NULL) {
+   ERREXIT(tinfo->emethods, "minmax_exit: Error allocating channelname memory\n");
+  }
+  strcpy(tinfo->channelnames[0], collapsed_channelname);
  }
 
  tinfo->methods->init_done=FALSE;

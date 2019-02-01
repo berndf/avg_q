@@ -234,6 +234,10 @@ histogram_exit(transform_info_ptr tinfo) {
  }
  /*}}}  */
  if (args[ARGS_COLLAPSE_CHANNELS].is_set) {
+  if (tinfo->channelnames!=NULL) {
+   free_pointer((void **)&tinfo->channelnames[0]);
+   free_pointer((void **)&tinfo->channelnames);
+  }
   if ((tinfo->channelnames=(char **)malloc(sizeof(char *)))==NULL
     ||(tinfo->channelnames[0]=(char *)malloc(strlen(collapsed_channelname)+1))==NULL) {
    ERREXIT(tinfo->emethods, "histogram_exit: Error allocating channelname memory\n");
