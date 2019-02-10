@@ -83,6 +83,7 @@ class Artifact_Segmentation(avg_q.Script):
     are detected as single points.'''
  ArtifactDetectionThreshold=4.0 # Detect phasic artifacts exceeding this threshold
  JumpDetectionThreshold=20.0 # Detect jumps (after differentiate) by this threshold
+ blockingThreshold=0.003 # Detect blocking when subsequent points differ by less than this
  min_blocking_points=3 # Do not add single or 3 repeated points as blocking
  def __init__(self,avg_q_instance,infile,start_point,end_point):
   self.infile=infile
@@ -104,31 +105,39 @@ class Artifact_Segmentation(avg_q.Script):
 %(remove_channels)s
 %(preprocess)s
 push
+# Compute abs point-to-point difference
 differentiate
 calc abs
 push
+# Compute channel-wise temporal median
 trim -M 0 0
 writeasc -b -c %(tempscalefile)s
 pop
+# Divide each channel by its median
 subtract -d -P -c %(tempscalefile)s
 push
+# Get highest value across channels for jumps
 collapse_channels -h
 write_crossings -E collapsed %(JumpDetectionThreshold)g stdout
 pop
+# Get lowest value across channels for blocking
 collapse_channels -l
-recode 0 0 1 1  0 Inf 0 0
+recode 0 %(blockingThreshold)g 1 1  0 Inf 0 0
 write_crossings collapsed 0.5 stdout
 pop
+# Now we're back at the preprocessed data; Filter for artifacts, also divided by tempscale
 fftfilter 0 0 30Hz 35Hz
 subtract -d -P -c %(tempscalefile)s
 calc abs
 collapse_channels -h
 write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
 ''' % {
- 'remove_channels': 'remove_channel -n ?' + channel_list2arg(remove_channels) if remove_channels else '',
+   'remove_channels': 'remove_channel -n ?' + channel_list2arg(remove_channels) if remove_channels else '',
    'preprocess': preprocess,
    'tempscalefile': tempscalefile.name,
+   'blockingThreshold': self.blockingThreshold,
    'JumpDetectionThreshold': self.JumpDetectionThreshold,
+   'blockingThreshold': self.blockingThreshold,
    'ArtifactDetectionThreshold': self.ArtifactDetectionThreshold})
   crossings=trgfile.trgfile(script.runrdr())
   self.collected=collect_crossings(self.min_blocking_points)

@@ -37,6 +37,10 @@ equivalent_channels=collections.OrderedDict({
  'EEG C4-A1+A2': 'C4',
  'C3*': 'C3',
  'C4*': 'C4',
+ 'M1': 'A1',
+ 'M2': 'A2',
+ 'FP1': 'Fp1',
+ 'FP2': 'Fp2',
  # Pneumologie...
  'EEG1': 'C3',
  'EEG2': 'C4',
@@ -61,9 +65,14 @@ ECGchannels=set([
  'Ekg',
  'EKG',
  'ECG',
+ 'ECG 2',
 ])
 EMGchannels=set([
  'EMG',
+ 'EMG1',
+ 'EMG2',
+ 'EMG3',
+ 'EMG4',
  'EMG_L',
  'EMG_R',
  'BEMG1',
@@ -72,6 +81,8 @@ EMGchannels=set([
  'EMG EMGTible',
  'EMG EMGTibri',
  'EMGchin',
+ 'PLMr',
+ 'PLMl',
 ])
 AUXchannels=set([
  'EDA',
@@ -79,10 +90,13 @@ AUXchannels=set([
  'GSR_MR_100_EDA',
  'EVT',
  'Airflow',
+ 'Flow Th',
  'Thorax',
  'Abdomen',
  'Plethysmogram',
+ 'Pleth',
  'SpO2',
+ 'SPO2',
  'Pulse',
  'Snoring',
  'Lage',
@@ -90,5 +104,6 @@ AUXchannels=set([
  'Akku',
  'Beweg.',
  'AUX',
+ 'Summe Effort',
 ])
 NonEEGChannels=set.union(BipolarEOGchannels,ECGchannels,EMGchannels,AUXchannels)

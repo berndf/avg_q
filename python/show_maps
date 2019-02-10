@@ -6,6 +6,7 @@ import argparse
 argparser = argparse.ArgumentParser(description='Show asc file as color maps')
 argparser.add_argument('ascfiles', nargs='+', help='asc files to plot')
 argparser.add_argument('-r', '--resample', dest='resample', help='Resample to this step width (points/time spec) before plotting')
+argparser.add_argument('-R', '--remove_channel', dest='remove_channel', help='Remove these channels before plotting')
 argparser.add_argument('-x', '--xrange', dest='xrange', nargs=2, help='Trim epoch to this x range before plotting')
 argparser.add_argument('-d', '--demean_maps', dest='demean_maps', action='store_true', help='Demean (common average rereference) maps before plotting')
 argparser.add_argument('-n', '--ncols', dest='ncols', type=int, help='Plot this many maps per row')
@@ -53,6 +54,8 @@ for ascfile in args.ascfiles:
  epochsource=avg_q.Epochsource(f)
  script=avg_q.numpy_Script.numpy_Script(a)
  script.add_Epochsource(epochsource)
+ if args.remove_channel:
+  script.add_transform("remove_channel -n %(arg)s" % {'arg': args.remove_channel})
  if args.resample:
   script.add_transform("sliding_average %(resample)s %(resample)s" % {'resample': args.resample})
  if args.xrange:

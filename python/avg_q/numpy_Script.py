@@ -160,7 +160,7 @@ write_generic -x stdout float32
   self.restore_state()
  def plot_maps(self, ncols=None, vmin=None, vmax=None, globalscale=False, isolines=[0]):
   '''globalscale arranges for vmin,vmax to actually be -1,+1 after global max(abs) scaling.'''
-  import matplotlib.mlab as mlab
+  import scipy.interpolate
   import matplotlib.pyplot as plt
 
   def mapplot(nrows,ncols,xpos,ypos,z,nsteps=50):
@@ -170,15 +170,9 @@ write_generic -x stdout float32
    xi=numpy.linspace(xmin,xmax,nsteps)
    yi=numpy.linspace(ymin,ymax,nsteps)
    nplots=z.shape[0]
-   # Default 'nn' interpolation of griddata requires package mpl_toolkits.natgrid, currently py2 only
-   try:
-    import mpl_toolkits.natgrid
-    interpolation = 'nn'
-   except ImportError:
-    interpolation = 'linear'
    for thisplot in range(0,nplots):
-    # cf. http://www.scipy.org/Cookbook/Matplotlib/Gridding_irregularly_spaced_data
-    zi=mlab.griddata(xpos,ypos,z[thisplot],xi,yi,interp=interpolation)
+    # cf. https://scipy-cookbook.readthedocs.io/items/Matplotlib_Gridding_irregularly_spaced_data.html
+    zi=scipy.interpolate.griddata((xpos,ypos),z[thisplot],(xi[None,:], yi[:,None]),method='cubic')
     # Don't mess with arranging plots on a page if we only have a single plot...
     if nplots>1:
      plt.subplot(nrows,ncols,thisplot+1)

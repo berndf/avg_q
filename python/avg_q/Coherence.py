@@ -142,7 +142,7 @@ class CoherenceFile(object):
    push_event(pos,marker)
   return events
  def close(self):
-  if self.filehandle:
+  if 'filehandle' in self.__dict__ and self.filehandle:
    self.filehandle.close()
    self.filehandle=None
 
