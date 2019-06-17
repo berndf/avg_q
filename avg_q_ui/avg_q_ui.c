@@ -8,7 +8,7 @@
  * Author:	Bernd Feige
  * Created:	7.03.1999
  * Updated:
- * Copyright:	(c) 1999, Bernd Feige
+ * Copyright:	(c) 1999-2019, Bernd Feige
  */
 
 /*{{{ Includes*/
@@ -235,8 +235,8 @@ getFirstLine(void) {
 LOCAL void
 delete_to_EOL(void) {
  GtkTextIter nextline_iter=current_iter;
- gtk_text_iter_forward_line(&nextline_iter);
- gtk_text_iter_backward_char(&nextline_iter);
+ /* Only backward_char if there was a next line to move to */
+ if (gtk_text_iter_forward_line(&nextline_iter)) gtk_text_iter_backward_char(&nextline_iter);
  gtk_text_buffer_delete(CurrentScriptBuffer, &current_iter, &nextline_iter);
 }
 LOCAL int
