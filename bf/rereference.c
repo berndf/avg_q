@@ -43,20 +43,9 @@ struct rereference_args_struct {
 METHODDEF void
 rereference_init(transform_info_ptr tinfo) {
  struct rereference_args_struct *rereference_args=(struct rereference_args_struct *)tinfo->methods->local_storage;
- transform_argument *args=tinfo->methods->arguments;
 
- rereference_args->refchannel_numbers=expand_channel_list(tinfo, args[ARGS_REFCHANS].arg.s);
- if (rereference_args->refchannel_numbers==NULL) {
-  ERREXIT(tinfo->emethods, "rereference_init: No reference channel was selected.\n");
- }
- if (args[ARGS_EXCLUDECHANS].is_set) {
-  rereference_args->excludechannel_numbers=expand_channel_list(tinfo, args[ARGS_EXCLUDECHANS].arg.s);
-  if (rereference_args->excludechannel_numbers==NULL) {
-   TRACEMS(tinfo->emethods, 0, "rereference_init: No exclude channels were actually selected!\n");
-  }
- } else {
-  rereference_args->excludechannel_numbers=NULL;
- }
+ rereference_args->refchannel_numbers=NULL;
+ rereference_args->excludechannel_numbers=NULL;
 
  tinfo->methods->init_done=TRUE;
 }
@@ -70,6 +59,22 @@ rereference(transform_info_ptr tinfo) {
  int itempart;
  transform_info_ptr const tinfoptr=tinfo;
  array indata;
+
+ /* Re-do the channel lists for each epoch since the channel names could change between epochs */
+ free_pointer((void **)&rereference_args->refchannel_numbers);
+ free_pointer((void **)&rereference_args->excludechannel_numbers);
+ rereference_args->refchannel_numbers=expand_channel_list(tinfo, args[ARGS_REFCHANS].arg.s);
+ if (rereference_args->refchannel_numbers==NULL) {
+  ERREXIT(tinfo->emethods, "rereference_init: No reference channel was selected.\n");
+ }
+ if (args[ARGS_EXCLUDECHANS].is_set) {
+  rereference_args->excludechannel_numbers=expand_channel_list(tinfo, args[ARGS_EXCLUDECHANS].arg.s);
+  if (rereference_args->excludechannel_numbers==NULL) {
+   TRACEMS(tinfo->emethods, 0, "rereference_init: No exclude channels were actually selected!\n");
+  }
+ } else {
+  rereference_args->excludechannel_numbers=NULL;
+ }
 
   tinfo_array(tinfoptr, &indata);
   array_transpose(&indata);	/* Vector=map */
