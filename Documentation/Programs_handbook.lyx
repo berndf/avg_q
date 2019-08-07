@@ -327,13 +327,11 @@ It must be noted that the script syntax is not intended as a general programming
  It only serves the purpose of configuration.
  There is no equivalent to variables as in programming languages, conditional
  execution or explicit looping.
- Therefore, it is not possible to implement any thinkable analysis within
- an 
+ Therefore, it is not possible to implement every analysis within an 
 \series bold
 avg_q
 \series default
- script, without generating intermediate data files and without the help
- of external programs.
+ script without intermediate data files and external programs.
 \end_layout
 
 \begin_layout Standard
@@ -2191,6 +2189,28 @@ Freq[Hz]
  and the values constructed using nroffreq and basefreq properties of the
  epoch.
  `set xdata' can be used to specify the unit explicitly.
+\end_layout
+
+\begin_layout Subsubsection
+Handling of changing metadata across epochs
+\end_layout
+
+\begin_layout Standard
+Unlike most other EEG/MEG software, 
+\series bold
+avg_q
+\series default
+ can process epochs with varying lengths, numbers and names of channels
+ as well as sampling frequencies.
+ The necessity for this results from the broad scope of inputs allowed;
+ when used to process raw data, these parameters will often remain constant
+ across epochs, but when processing different sources they can vary.
+ An 
+\series bold
+avg_q
+\series default
+ script can then unify the epochs by appropriate resampling or channel selection
+/ordering, all considering the varying input properties.
 \end_layout
 
 \begin_layout Section
