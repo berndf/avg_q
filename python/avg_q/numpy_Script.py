@@ -34,7 +34,10 @@ class numpy_epoch(object):
    if type(data) is numpy.array:
     self.data=data
    else:
-    self.data=numpy.array(data,'float32')
+    self.data=numpy.array(data,dtype='float32')
+   if len(self.data.shape)==1:
+    # If given a vector, make it a 1-channel array
+    self.data=self.data.reshape((self.data.shape[0],1))
    self.nr_of_points,self.nr_of_channels=self.data.shape
    self.sfreq=1
  def __str__(self):

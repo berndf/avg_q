@@ -57,11 +57,17 @@ class trgfile(object):
   if self.trgfile:
    self.trgfile.close()
    self.trgfile=None
- def line_iter(self):
-  if self.trgfile:
-   yield from self.trgfile
-  elif self.reader:
-   yield from self.reader
+ def getline(self):
+  # Note that 'yield from' was tried here but consumes the input stream and
+  # doesn't allow us to continue reading another stream of tuples after EOF
+  try:
+   if self.trgfile:
+    line=next(self.trgfile)
+   else:
+    line='EOF' if self.reader is None else next(self.reader)
+  except StopIteration:
+   line='EOF'
+  return line
  def __iter__(self):
   return self.rdr()
  def translate(self,tuple):
@@ -75,11 +81,18 @@ class trgfile(object):
    self.unknown_descriptions[description]=code
   return (point,code,description)
  def rdr(self):
-  for line in self.line_iter():
+  while True:
+   line=self.getline()
    if isinstance(line,tuple):
     yield self.translate(line)
     continue
+   # EOF:
+   if not isinstance(line,str):
+    break
    line=line.rstrip('\r\n')
+   # EOF:
+   if line=='EOF':
+    break
    if line=='':
     continue
    if line[0]=='#':
