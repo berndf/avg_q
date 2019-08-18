@@ -5,16 +5,10 @@
 /*{{{}}}*/
 /*{{{  Description*/
 /*
- * avg_q(ueue).c user interface for transform methods -
- * This program obsoletes the single programs mfxaverage and mfxspect.
- *						-- Bernd Feige 28.07.1993
+ * avg_q(ueue).c batch user interface.
  *
- * avg_q uses setup_queue to read a script file to setup
- * a processing chain consisting of methods mentioned in the
- * method_selects[] function array.
- * This processing queue is then repeatedly called by the average method
- * and the averaged output postprocessed as determined by the program flags,
- * before it is written to an asc(ii) file.
+ * avg_q reads an input file containing any number of input scripts which
+ * are successively configured using setup_queue and then executed.
  */
 /*}}}  */
 
