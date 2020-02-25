@@ -15,10 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "transform.h"
-#include "bf.h"
-#include "rawlimit.h"
-#include "rawdatan.h"
+#include "kn.h"
 /*}}}  */
 
 /* Size of trialb.parray: */
@@ -63,9 +60,6 @@ struct write_kn_storage {
 extern struct external_methods_struct *kn_emethods;	/* Used by rawdatan.c */
 
 /*{{{  decompose_trigger(short **trigger_form, int trigger) {*/
-/* Defined by read_kn: */
-extern void parse_trigform(transform_info_ptr tinfo, struct Rtrial *trialb, short **trigger_form, char const *trigform);
-
 LOCAL void
 decompose_trigger(short **trigger_form, int trigger) {
  int i;

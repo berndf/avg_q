@@ -16,10 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "transform.h"
-#include "bf.h"
-#include "rawlimit.h"
-#include "rawdatan.h"
+#include "kn.h"
 /*}}}  */
 
 enum ARGS_ENUM {
