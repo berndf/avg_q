@@ -10,7 +10,6 @@ from . import trgfile
 from . import BrainVision
 from . import Channeltypes
 import os
-import math
 import glob
 
 from .avg_q import channel_list2arg
@@ -36,7 +35,7 @@ class fMRI_Correct(object):
   self.refine_length=2.4 # 12 points
   self.template_points=None
   self.refine_points=None
-  self.min_scan_duration_s=5*60; # 5 minutes: For the automatic detection of scans
+  self.min_scan_duration_s=5*60 # 5 minutes: For the automatic detection of scans
   self.checkmode=False
   self.threshold=None
   self.haveTemplate=False
@@ -46,6 +45,7 @@ class fMRI_Correct(object):
   self.correctedfile_sfreq=100.0
   self.margin_in_seconds=2.0 # How many seconds to transfer before the first and after the last EPI
   self.avgEPI_Amplitude_Reject_fraction=None # A way to pass this parameter to avgEPI()
+  self.avgEPI_max_rejection_fraction=None # A way to pass this parameter to avgEPI()
  def get_remove_channels(self):
   '''Helper function to get the necessary remove_channel command'''
   return 'remove_channel -n ?' + channel_list2arg(self.remove_channels) if self.remove_channels else ''
@@ -74,7 +74,7 @@ add negpointmean
 calc abs
 collapse_channels
 ''' % {
-  'remove_channels': self.get_remove_channels()
+   'remove_channels': self.get_remove_channels()
   }
   if self.upsample==1:
    self.upsampleit=''
@@ -86,9 +86,9 @@ collapse_channels
 sliding_average 1 %(sampling_step)g
 fftfilter %(filter_start)g %(filter_zerostart)g 1 1
 ''' % {
-   'sampling_step': sampling_step,
-   'filter_start': filter_start,
-   'filter_zerostart': filter_zerostart,
+    'sampling_step': sampling_step,
+    'filter_start': filter_start,
+    'filter_zerostart': filter_zerostart,
    }
   self.overviewfilename=self.base + '_overview.asc'
   self.templatefilename=self.base + '_template.asc'
@@ -179,7 +179,7 @@ null_sink
 scale_by invpointsquarenorm
 scale_by nr_of_points
 writeasc -b %(templatefilename)s
-''' % { 'templatefilename': self.templatefilename }
+''' % {'templatefilename': self.templatefilename}
    script=avg_q.Script(self.avg_q_instance)
    epochsource=avg_q.Epochsource(self.infile,self.template_points/2,self.template_points/2)
    epochsource.set_trigpoints(trigpoint)
@@ -244,9 +244,9 @@ assert -S nr_of_triggers == 0
 null_sink
 -
 ''' % {
-   'refractory_time': self.TR,
-   'threshold': self.threshold,
-   'posplot': 'set_comment Finding first EPI peak...\nposplot' if self.checkmode else ''
+    'refractory_time': self.TR,
+    'threshold': self.threshold,
+    'posplot': 'set_comment Finding first EPI peak...\nposplot' if self.checkmode else ''
    }
    script.add_Epochsource(epochsource)
    script.add_transform(self.collapseit)
@@ -258,7 +258,7 @@ null_sink
     continue
    trigpoint=int(start_s*self.sfreq)+trgpoints[0][0]
    self.getTemplate(trigpoint)
-   
+
    # Read the whole fMRI run in steps of TR
    # Empirical correction for idempotency
    correct_correct=None
@@ -272,11 +272,11 @@ write_crossings %%s collapsed %(convolvethreshold)g triggers
 %(posplot)s
 query triggers_for_trigfile stdout
 ''' % {
-    'templatefilename': self.templatefilename,
-    'trimstart': self.upsample*(self.template_points/2)+trimcorrection,
-    'trimlength': self.upsample*self.refine_points,
-    'convolvethreshold': self.convolvethreshold,
-    'posplot': 'set_comment Detecting EPI...\nposplot' if self.checkmode else ''
+     'templatefilename': self.templatefilename,
+     'trimstart': self.upsample*(self.template_points/2)+trimcorrection,
+     'trimlength': self.upsample*self.refine_points,
+     'convolvethreshold': self.convolvethreshold,
+     'posplot': 'set_comment Detecting EPI...\nposplot' if self.checkmode else ''
     }
     before=int((self.template_points+self.refine_points)/2)
     script=avg_q.Script(self.avg_q_instance)
@@ -319,7 +319,7 @@ write_crossings -E collapsed 0.75 triggers
 %(posplot)s
 query triggers_for_trigfile stdout
 ''' % {
-   'posplot': 'set_comment Detecting end of scan...\nposplot' if self.checkmode else ''
+    'posplot': 'set_comment Detecting end of scan...\nposplot' if self.checkmode else ''
    }
    read_TS_before_trigpoint=2
    read_TS_after_trigpoint=1
@@ -371,11 +371,11 @@ write_synamps -c %(append_arg)s %(correctedfile)s.cnt %(sensitivity)g
 sliding_average %(sliding_size)sms %(sliding_step)sms
 write_hdf -c %(append_arg)s %(correctedfile)s.hdf
   ''' % {
-  'sliding_size': 2000.0/self.correctedfile_sfreq,
-  'sliding_step': 1000.0/self.correctedfile_sfreq,
-  'append_arg': '-a' if self.append else '',
-  'correctedfile': self.correctedfile,
-  'sensitivity': 10,
+   'sliding_size': 2000.0/self.correctedfile_sfreq,
+   'sliding_step': 1000.0/self.correctedfile_sfreq,
+   'append_arg': '-a' if self.append else '',
+   'correctedfile': self.correctedfile,
+   'sensitivity': 10,
   }
 
   script=avg_q.Script(self.avg_q_instance)
@@ -402,6 +402,8 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
    # Pass parameters to avgEPI()
    if self.avgEPI_Amplitude_Reject_fraction:
     myEPI.avgEPI_Amplitude_Reject_fraction=self.avgEPI_Amplitude_Reject_fraction
+   if self.avgEPI_max_rejection_fraction:
+    myEPI.avgEPI_max_rejection_fraction=self.avgEPI_max_rejection_fraction
    myEPI.remove_channels=self.remove_channels
    myEPI.checkmode=self.checkmode
    myEPI.avgEPI(crsfile,runindex)
@@ -414,7 +416,7 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
      readpoint=EPI[0]
     else:
      readpoint,trimcorrection=trgfile.HighresTrigger(EPI)
-     # Note that this trimming is applied to avgEPIfile, therefore shifts in 
+     # Note that this trimming is applied to avgEPIfile, therefore shifts in
      # the opposite direction from the averaging code above
      correction_for_resampling=myEPI.upsample/2
      trimcorrection=myEPI.upsample-trimcorrection-correction_for_resampling
@@ -455,8 +457,8 @@ posplot
 subtract %(avgEPIfile)s
 %(lefttrim)s
 ''' % {
-    'avgEPIfile': myEPI.tmpEPIfile if myEPI.upsample!=1 else myEPI.avgEPIfile,
-    'lefttrim': lefttrim
+     'avgEPIfile': myEPI.tmpEPIfile if myEPI.upsample!=1 else myEPI.avgEPIfile,
+     'lefttrim': lefttrim
     })
     self.avg_q_instance.run()
     self.append=True
@@ -475,7 +477,8 @@ subtract %(avgEPIfile)s
    vmrk=BrainVision.vmrkfile(self.base + '.vmrk')
    vmrktuples=vmrk.gettuples()
    vmrk.close()
-   point_in_s=lambda p: "%gs" % ((p-outfile_startpoint)/self.sfreq)
+   def point_in_s(p):
+    return "%gs" % ((p-outfile_startpoint)/self.sfreq)
    trgtuples=[]
    trgtuples.append((point_in_s(EPI_startpoint),256,"EPI Start"))
    for point,code,description in vmrktuples:
@@ -522,13 +525,13 @@ class avgEPI(object):
    self.upsampleit='''
 >sliding_average 1 %(sampling_step)g
 ''' % {
-  'sampling_step': sampling_step,
+    'sampling_step': sampling_step,
    }
    self.filterit='''
 >fftfilter %(filter_start)g %(filter_zerostart)g 1 1
 ''' % {
-  'filter_start': filter_start,
-  'filter_zerostart': filter_zerostart,
+    'filter_start': filter_start,
+    'filter_zerostart': filter_zerostart,
    }
  def set_crsfile(self,crsfile):
   trgfile_crs=trgfile.trgfile(crsfile)
@@ -583,8 +586,8 @@ class avgEPI(object):
    trimit='''
 >trim %(trimstart)f %(trimlength)f
 ''' % {
-   'trimstart': trimcorrection,
-   'trimlength': (self.beforetrig_points+self.aftertrig_points+2)*self.upsample,
+    'trimstart': trimcorrection,
+    'trimlength': (self.beforetrig_points+self.aftertrig_points+2)*self.upsample,
    }
    # We need 2 points to each side as 'trim space', once for averaging, second before subtraction
    beforetrig,aftertrig=self.beforetrig_points+2,self.aftertrig_points+2
@@ -593,8 +596,8 @@ class avgEPI(object):
 %(upsampleit)s
 %(trimit)s
 ''' % {
-  'upsampleit': self.upsampleit,
-  'trimit': trimit,
+   'upsampleit': self.upsampleit,
+   'trimit': trimit,
   }
   epochsource=avg_q.Epochsource(self.infile,beforetrig,aftertrig)
   epochsource.set_trigpoints(EPI[0])
@@ -627,7 +630,7 @@ calc abs
 trim -h 0 0
 writeasc -b %(singleEPIfile)s_Amplitude.asc
 ''' % {
-   'singleEPIfile': singleEPIfile,
+    'singleEPIfile': singleEPIfile,
    })
    script.run()
    '''
@@ -650,11 +653,11 @@ collapse_channels -h !?%(remove_channels)s:collapsed
 reject_bandwidth -m %(avgEPI_Amplitude_Reject_fraction)g
 pop
 ''' % {
-   'singleEPIfile': singleEPIfile,
-   'nr_of_EPIs': len(self.EPIs),
-   'residualsfile': residualsfile,
-   'remove_channels': channel_list2arg(self.remove_channels),
-   'avgEPI_Amplitude_Reject_fraction': self.avgEPI_Amplitude_Reject_fraction,
+    'singleEPIfile': singleEPIfile,
+    'nr_of_EPIs': len(self.EPIs),
+    'residualsfile': residualsfile,
+    'remove_channels': channel_list2arg(self.remove_channels),
+    'avgEPI_Amplitude_Reject_fraction': self.avgEPI_Amplitude_Reject_fraction,
    }
    script=avg_q.Script(self.avg_q_instance)
    for EPI in self.EPIs:
@@ -678,7 +681,7 @@ writeasc -b %(avgEPIfile)s
 query accepted_epochs stdout
 query rejected_epochs stdout
 ''' % {
-    'avgEPIfile': self.avgEPIfile,
+     'avgEPIfile': self.avgEPIfile,
     })
    lines=script.runrdr()
    accepted_epochs=int(next(lines))
@@ -721,9 +724,9 @@ writeasc -b %(tmpEPIfile)s.asc
 null_sink
 -
 ''' % {
-  'avgEPIfile': self.avgEPIfile,
-  'trimstart': trimcorrection,
-  'trimlength': (self.beforetrig_points+self.aftertrig_points)*self.upsample,
-  'upsample': self.upsample,
-  'tmpEPIfile': self.tmpEPIfile,
+   'avgEPIfile': self.avgEPIfile,
+   'trimstart': trimcorrection,
+   'trimlength': (self.beforetrig_points+self.aftertrig_points)*self.upsample,
+   'upsample': self.upsample,
+   'tmpEPIfile': self.tmpEPIfile,
   })
