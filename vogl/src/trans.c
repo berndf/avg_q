@@ -69,7 +69,7 @@ void
 rot(float r, char axis)
 {
 	Token		*tok;
-	register float	costheta, sintheta, tmp;
+	float	costheta, sintheta, tmp;
 
 	if (!vdevice.initialised)
 		verror("rot: vogl not initialised");

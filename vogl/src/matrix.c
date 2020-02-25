@@ -11,7 +11,7 @@ static	Mstack	*msfree = (Mstack *)NULL;
  *
  */
 void
-copyvector(register float *a, register float *b)
+copyvector(float *a, float *b)
 {
 	a[0] = b[0];
 	a[1] = b[1];
@@ -26,10 +26,10 @@ copyvector(register float *a, register float *b)
  *
  */
 void
-copymatrix(register float (*a)[4], register float (*b)[4])
+copymatrix(float (*a)[4], float (*b)[4])
 {
-	register int	i;
-	register float	*pa, *pb;
+	int	i;
+	float	*pa, *pb;
 
 	pa = (float *)a;
 	pb = (float *)b;
@@ -43,9 +43,9 @@ copymatrix(register float (*a)[4], register float (*b)[4])
  *	copy the transpose of the 4 x 4 matrix b to the 4 x 4 matrix a.
  */
 void
-copytranspose(register float (*a)[4], register float (*b)[4])
+copytranspose(float (*a)[4], float (*b)[4])
 {
-	register int	i, j;
+	int	i, j;
 
 	for(i = 0; i < 4; i++)
 		for(j = 0; j < 4; j++)
@@ -137,8 +137,8 @@ popmatrix(void)
 void
 loadmatrix(float (*mat)[4])
 {
-	register int	i;
-	register float	*cm, *mp;
+	int	i;
+	float	*cm, *mp;
 	Token		*p;
 
 	if (!vdevice.initialised)
@@ -171,7 +171,7 @@ loadmatrix(float (*mat)[4])
  *
  */
 void
-mult4x4(register float (*a)[4], register float (*b)[4], register float (*c)[4])
+mult4x4(float (*a)[4], float (*b)[4], float (*c)[4])
 {
 	a[0][0] = b[0][0] * c[0][0] + b[0][1] * c[1][0] + b[0][2] * c[2][0] + b[0][3] * c[3][0];
 	a[0][1] = b[0][0] * c[0][1] + b[0][1] * c[1][1] + b[0][2] * c[2][1] + b[0][3] * c[3][1];
@@ -232,7 +232,7 @@ multmatrix(float (*mat)[4])
 void
 identmatrix(float (*a)[4])
 {
-	register float	*p;
+	float	*p;
 
 	for (p = (float *)a; p != (float *)a + 16; p++)
 		*p = 0;
@@ -247,7 +247,7 @@ identmatrix(float (*a)[4])
  * 
  */
 void
-multvector(register float *v, register float *a, register float (*b)[4])
+multvector(float *v, float *a, float (*b)[4])
 {
 	v[0] = a[0] * b[0][0] + a[1] * b[1][0] + a[2] * b[2][0] + a[3] * b[3][0];
 	v[1] = a[0] * b[0][1] + a[1] * b[1][1] + a[2] * b[2][1] + a[3] * b[3][1];

@@ -13,7 +13,7 @@ static float wc[2][6];
  *
  */
 void
-clip(register float *p0, register float *p1)
+clip(float *p0, float *p1)
 {
 	float	t, t1, t2, dx, dy, dz, dw;
 	int	vx, vy, c1, c2, i;
@@ -98,10 +98,10 @@ MakeEdgeCoords(int i, float *p)
  *
  */
 void
-quickclip(register float *p0, register float *p1)
+quickclip(float *p0, float *p1)
 {
-	register float	t, t1;
-	register int	vx, vy, i;
+	float	t, t1;
+	int	vx, vy, i;
 
 	t1 = 1.0;
 

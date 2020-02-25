@@ -9,7 +9,7 @@
 void
 premulttensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4])
 {
-	register	int	i, j, k;
+	int	i, j, k;
 	float		x1, x2, x3, x4;
 
 	for (i = 0; i < 4; i++)
@@ -37,7 +37,7 @@ premulttensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4])
 void
 multtensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4])
 {
-	register	int	i, j, k;
+	int	i, j, k;
 	float		x1, x2, x3, x4;
 
 	for (i = 0; i < 4; i++)
@@ -62,7 +62,7 @@ multtensor(float (*c)[4][4], float (*a)[4], float (*b)[4][4])
 void
 copytensor(float (*b)[4][4], float (*a)[4][4])
 {
-	register	int	i, j, k;
+	int	i, j, k;
 	
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 4; j++)
@@ -76,7 +76,7 @@ copytensor(float (*b)[4][4], float (*a)[4][4])
 void
 copytensortrans(float (*b)[4][4], float (*a)[4][4])
 {
-	register	int	i, j, k;
+	int	i, j, k;
 
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 4; j++)

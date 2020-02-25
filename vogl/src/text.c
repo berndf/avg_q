@@ -46,7 +46,7 @@ font(short int id)
  *
  */
 void
-charstr(char *str)
+charstr(const char *str)
 {
 	int	cx, cy;
 	char	c;
@@ -92,7 +92,7 @@ charstr(char *str)
 		    right_s < vdevice.maxVx) {
 			(*vdevice.dev.Vstring)(str);
 		} else {
-			while (c = *str++) {
+			while ((c = *str++)) {
 				if (vdevice.cpVx > vdevice.minVx &&
 				    vdevice.cpVx < vdevice.maxVx - (int)vdevice.hwidth) {
 					(*vdevice.dev.Vchar)(c);

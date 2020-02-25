@@ -23,8 +23,8 @@ static int	ip1[MAXVERTS], ip2[MAXVERTS];
  */
 static	int	clockwise = 1;
 
-static void	polyoutline(int n, int *ipx, int *ipy), polyclip(register int n), shclip(float *Pnt, int side), shclose(int side);
-static int	checkbacki(void), intersect(int side, register float *Ip, register float *Pnt), visible(int side);
+static void	polyoutline(int n, int *ipx, int *ipy), polyclip(int n), shclip(float *Pnt, int side), shclose(int side);
+static int	checkbacki(void), intersect(int side, float *Ip, float *Pnt), visible(int side);
 
 /*
  * concave
@@ -101,7 +101,7 @@ polymode(long int mode)
 static void
 dopoly(int n)
 {
-	int	i, sync;
+	int	i, tmpsync;
 	char	buf[100];
 
 	if (n > MAXVERTS) {
@@ -109,7 +109,7 @@ dopoly(int n)
 		verror(buf);
 	}
 
-	if ((sync = vdevice.sync)!=0)
+	if ((tmpsync = vdevice.sync)!=0)
 		vdevice.sync = 0;
 
 	if (!vdevice.clipoff) {
@@ -139,7 +139,7 @@ dopoly(int n)
 		polyoutline(nout, ip1, ip2);
 	}
 
-	if (sync) {
+	if (tmpsync) {
 		vdevice.sync = 1;
 		(*vdevice.dev.Vsync)();
 	}
@@ -949,7 +949,7 @@ checkbacki(void)
  * Communications of the ACM Jan 1974, Vol 17 No. 1.
  */
 static void
-polyclip(register int n)
+polyclip(int n)
 {
 	int	i;
 
@@ -999,9 +999,9 @@ shclose(int side)
 }
 
 static int
-intersect(int side, register float *Ip, register float *Pnt)
+intersect(int side, float *Ip, float *Pnt)
 {
-	register	float	wc1, wc2, a;
+	float	wc1, wc2, a;
 
 	switch (side) {
 	case 0:		/* x - left */

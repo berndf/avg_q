@@ -181,7 +181,7 @@ DXY_init(void)
 	plotlstx = -1;
 	plotlsty = -1;
 
-	fprintf(fp, plotcmds[P_RESET]);
+	fprintf(fp, "%s", plotcmds[P_RESET]);
 
 	return(1);
 }
@@ -289,11 +289,11 @@ PLOT_char(char c)
 	if (plotlstx != vdevice.cpVx || plotlsty != vdevice.cpVy)
 		fprintf(fp, plotcmds[P_MOVE], vdevice.cpVx, vdevice.cpVy);
 
-	fprintf(fp, plotcmds[P_BEGTXT]);
+	fprintf(fp, "%s", plotcmds[P_BEGTXT]);
 
 	fprintf(fp, "%c", c);
 
-	fprintf(fp, plotcmds[P_ENDTXT]);
+	fprintf(fp, "%s", plotcmds[P_ENDTXT]);
 
 	plotlstx = plotlsty = -1111111;
 	return(0);
@@ -305,16 +305,16 @@ PLOT_char(char c)
  *	output a string.
  */
 static int
-PLOT_string(char *s)
+PLOT_string(const char *s)
 {
 	if (plotlstx != vdevice.cpVx || plotlsty != vdevice.cpVy)
 		fprintf(fp, plotcmds[P_MOVE], vdevice.cpVx, vdevice.cpVy);
 
-	fprintf(fp, plotcmds[P_BEGTXT]);
+	fprintf(fp, "%s", plotcmds[P_BEGTXT]);
 
 	fputs(s, fp);
 
-	fprintf(fp, plotcmds[P_ENDTXT]);
+	fprintf(fp, "%s", plotcmds[P_ENDTXT]);
 
 	plotlstx = plotlsty = -1111111;
 	return(0);

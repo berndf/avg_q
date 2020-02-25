@@ -370,7 +370,7 @@ PS_char(char c)
  *	output a string one char at a time.
  */
 static int
-PS_string(char *s)
+PS_string(const char *s)
 {
 	char	c;
 

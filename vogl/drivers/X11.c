@@ -68,7 +68,7 @@ static int X11_color(int ind);
 static int X11_mapcolor(int i, int r, int g, int b);
 static int X11_font(char *fontfile);
 static int X11_char(char c);
-static int X11_string(char s[]);
+static int X11_string(const char *s);
 static int X11_fill(int n, int x[], int y[]);
 static int X11_backbuf(void);
 static int X11_swapbuf(void);
@@ -923,7 +923,7 @@ X11_char(char c)
  *	Display a string at the current drawing position.
  */
 static int
-X11_string(char s[])
+X11_string(const char *s)
 {
 	XDrawString(display, theDrawable, theGC, vdevice.cpVx, (int)(vdevice.sizeSy - vdevice.cpVy), s, strlen(s));
 	if (vdevice.sync)

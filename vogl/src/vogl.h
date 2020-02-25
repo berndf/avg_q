@@ -241,7 +241,7 @@ typedef struct dev {
 		(*Vmapcolor)(int, int, int, int),		/* Set color indicies */
 		(*Vsetls)(int),		/* Set linestyle */
 		(*Vsetlw)(int),		/* Set linewidth */
-		(*Vstring)(char *),		/* Draw a hardware string */
+		(*Vstring)(const char *),		/* Draw a hardware string */
 		(*Vswapb)(void),		/* Swap front and back buffers */
 		(*Vbegin)(void),		/* Begin recording drawing events */
 		(*Vsync)(void);		/* Sync display */
@@ -391,7 +391,7 @@ extern long	getplanes(void);
 
 extern void	vinit(char *device);
 extern void	voutput(char const *path);
-extern void	verror(char *str);
+extern void	verror(char *str) __attribute__ ((noreturn));
 extern void	vnewdev(char *device);
 extern char	*vgetdev(char *buf);
 
@@ -408,13 +408,13 @@ extern void	CalcW2Vcoeffs(void);
 /*
  * general matrix and vector routines
  */
-extern void	mult4x4(register float (*a)[4], register float (*b)[4], register float (*c)[4]);
-extern void	copymatrix(register float (*a)[4], register float (*b)[4]);
+extern void	mult4x4(float (*a)[4], float (*b)[4], float (*c)[4]);
+extern void	copymatrix(float (*a)[4], float (*b)[4]);
 extern void	identmatrix(float (*a)[4]);
-extern void	copytranspose(register float (*a)[4], register float (*b)[4]);
+extern void	copytranspose(float (*a)[4], float (*b)[4]);
 
-extern void	multvector(register float *v, register float *a, register float (*b)[4]);
-extern void	copyvector(register float *a, register float *b);
+extern void	multvector(float *v, float *a, float (*b)[4]);
+extern void	copyvector(float *a, float *b);
 extern void	premultvector(float *v, float *a, float (*b)[4]);
 
 /*
@@ -563,7 +563,7 @@ extern void transformtensor(float (*S)[4][4], float (*m)[4]);
  * text routines
  */
 extern void	font(short int id);
-extern void	charstr(char *str);
+extern void	charstr(const char *str);
 extern void	cmov(float x, float y, float z);
 extern void	cmov2(float x, float y);
 extern void	cmovi(Icoord x, Icoord y, Icoord z);
@@ -632,8 +632,8 @@ extern char * vallocate(unsigned int size);
 extern void getprefposandsize(int *x, int *y, int *xs, int *ys);
 
 extern void drcurve(int n, float (*r)[4]);
-extern void quickclip(register float *p0, register float *p1);
-extern void clip(register float *p0, register float *p1);
+extern void quickclip(float *p0, float *p1);
+extern void clip(float *p0, float *p1);
 extern void polyobj(int n, Token *dp, int fill);
 extern FILE *_voutfile(void);
 extern void linewidth(short int w);

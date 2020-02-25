@@ -413,7 +413,7 @@ grx_char(int c)
 };
 
 static int
-grx_string(char *s)
+grx_string(const char *s)
 {
 	int	len = strlen(s);
 	GrDrawString(s, len, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy - vdevice.hheight, &grx.to);

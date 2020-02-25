@@ -15,7 +15,7 @@ static Matrix	et, eu,
 			
 
 static float		addemup(float (*m)[4]);
-static void		makeprec(void), iterate(register float (*R)[4][4], int n), extract(register float (*b)[4], register float (*a)[4][4], register int k), replace(float (*a)[4][4], float (*b)[4], int k);
+static void		makeprec(void), iterate(float (*R)[4][4], int n), extract(float (*b)[4], float (*a)[4][4], int k), replace(float (*a)[4][4], float (*b)[4], int k);
 
 /*
  * defbasis
@@ -288,7 +288,7 @@ void
 transformtensor(float (*S)[4][4], float (*m)[4])
 {
 	Matrix	tmp, tmp2;
-	register	int	i;
+	int	i;
 
 	for (i = 0; i < 4; i++) {
 		extract(tmp, S, i);
@@ -354,9 +354,9 @@ drpatch(float (*R)[4][4], int thisntcurves, int thisnucurves, int thisntsegs, in
  *	Iterates the forward difference tensor R
  */
 static	void
-iterate(register float (*R)[4][4], int n)
+iterate(float (*R)[4][4], int n)
 {
-	register int	it;
+	int	it;
 
 /*
  * Anyone for an unwound loop or two???
@@ -439,7 +439,7 @@ iterate(register float (*R)[4][4], int n)
  * Extract the k'th column of the tensor a into the matrix b.
  */
 static	void
-extract(register float (*b)[4], register float (*a)[4][4], register int k)
+extract(float (*b)[4], float (*a)[4][4], int k)
 {
 	b[0][0] = a[0][0][k];
 	b[0][1] = a[1][0][k];

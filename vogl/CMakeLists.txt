@@ -1,4 +1,5 @@
 PROJECT(vogl)
+cmake_minimum_required(VERSION 3.8)
 
 SET(voglsources
 arcs.c attr.c buffer.c clip.c curves.c draw.c drivers.c
@@ -14,7 +15,7 @@ queue.c lines.c
 # -DSUN		../drivers/sun.o	(Sunview that is)
 # -DX11		../drivers/X11.o
 # -DNeXT		../drivers/NeXT.o	(NeXTStep)
-IF(WIN32)
+IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  # Can't find strings.h on mingw:
 SET_SOURCE_FILES_PROPERTIES("src/text.c"
  PROPERTIES COMPILE_FLAGS "-DSYS5"
@@ -25,14 +26,14 @@ SET(driversources
 SET(driverflags
  "-DPOSTSCRIPT -DVGUI"
 )
-ELSE(WIN32)
+ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
 SET(driversources
  ps hpdxy tek X11
 )
 SET(driverflags
  "-DPOSTSCRIPT -DHPGL -DTEK -DX11 -DVGUI"
 )
-ENDIF(WIN32)
+ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
 SET(ALL_SOURCES
 )
 FOREACH(src ${voglsources})

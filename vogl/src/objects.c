@@ -192,7 +192,7 @@ callobj(long int ob)
 	Tensor		S;
 	int		sync, i, j;
 	float		cx, cy, cz, *m;
-	register Token	*t, *et, *pt;
+	Token	*t, *et, *pt;
 
 	if (!vdevice.initialised)
 		verror("callobj: vogl not initialised");

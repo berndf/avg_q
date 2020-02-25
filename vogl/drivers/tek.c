@@ -374,7 +374,7 @@ TEK_char(char c)
  *	outputs a string
  */
 static int
-TEK_string(char *s)
+TEK_string(const char *s)
 {
 	if (tlstx != vdevice.cpVx || tlsty != vdevice.cpVy) {	/* move to start */
 		fputc(GS, fp);
