@@ -66,22 +66,22 @@ class ExpyrimentLogfile(trgfile.trgfile):
     code=128
     description="StartStop"
    else:
-    description=' '.join([data['Type'],data['Event'],data['Value']])
-    firstnondigit=0
-    while firstnondigit<len(data['Value']):
-     if not data['Value'][firstnondigit].isdigit(): break
-     firstnondigit+=1
-    if firstnondigit>0:
-     code=int(data['Value'][:firstnondigit])
-    else:
-     code=1
+    description=' '.join([data[fieldname] for fieldname in ['Type','Event','Value'] if fieldname in data])
+    code=1
+    if 'Value' in data:
+     firstnondigit=0
+     while firstnondigit<len(data['Value']):
+      if not data['Value'][firstnondigit].isdigit(): break
+      firstnondigit+=1
+     if firstnondigit>0:
+      code=int(data['Value'][:firstnondigit])
    yield (point, code, description)
  def close(self):
   if self.EL:
    self.EL.close()
    self.EL=None
  def gettuples_abstime(self):
-  tuples=self.gettuples()
+  self.gettuples()
   self.start_datetime=self.EL.timestamp
   return trgfile.trgfile.gettuples_abstime(self)
 
