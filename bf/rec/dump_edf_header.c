@@ -162,7 +162,13 @@ main(int argc, char **argv) {
 
  stat(filename,&statbuff);
  fstat(fileno(infile),&statbuff);
- printf("File size is %ld, expected for %ld records is %ld\n", statbuff.st_size, nr_of_records, nr_of_records*total_samples_per_record*sizeof(int16_t)+bytes_in_header);
+ const long expected=nr_of_records*total_samples_per_record*sizeof(int16_t)+bytes_in_header;
+ printf("%ld records, file size is %ld", nr_of_records, statbuff.st_size);
+ if (statbuff.st_size==expected) {
+  printf(" as expected.");
+ } else {
+  printf(", expected %ld!\n", expected);
+ }
  free((void *)channelheader.label);
  /*}}}  */
 
