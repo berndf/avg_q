@@ -141,7 +141,7 @@ dip_simulate 100 %(epochs_arg)s %(beforetrig)s %(aftertrig)s eg_source
     'epochs_arg': str(epochs),
     'beforetrig': str(beforetrig),
     'aftertrig': str(aftertrig)
-    }
+   }
   elif self.fileformat=='null_source':
    return '''
 null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
@@ -149,7 +149,7 @@ null_source 100 %(epochs_arg)s 32 %(beforetrig)s %(aftertrig)s
     'epochs_arg': str(epochs),
     'beforetrig': str(beforetrig),
     'aftertrig': str(aftertrig)
-    }
+   }
   elif self.fileformat=='generic':
    self.getepochmethod='''
 read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
@@ -157,7 +157,7 @@ read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
     'read_generic_options': str(self.read_generic_options),
     'std_args': '%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s',
     'read_generic_data_type': str(self.read_generic_data_type),
-    }
+   }
   return self.getepochmethod % {
    'continuous_arg': '-c' if continuous else '',
    'fromepoch_arg': '-f %d' % fromepoch if fromepoch is not None else '',
@@ -169,7 +169,7 @@ read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
    'filename': escape_filename(self.filename),
    'beforetrig': str(beforetrig),
    'aftertrig': str(aftertrig)
-   } + (self.addmethods if self.addmethods else '')
+  } + (self.addmethods if self.addmethods else '')
  def guessformat(self,filename):
   name,ext=os.path.splitext(filename)
   def findformat(ext):

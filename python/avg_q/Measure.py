@@ -36,7 +36,7 @@ extract_item 0
 push
 remove_channel -k %(channel)s
 """ % {
- 'channel': escape_channelname(channel),
+    'channel': escape_channelname(channel),
    })
    for lat_range in lat_ranges:
     self.add_transform("""
@@ -58,12 +58,12 @@ echo -F stdout %(lower)g %(upper)g\\t
 write_generic stdout string
 pop
 """ % {
-    'average_or_sum': '-s' if self.sum_range else '-a',
-    'output_comment': 'query -t comment stdout' if self.output_comment else '',
-    'output_averages': 'query -t nrofaverages stdout' if self.output_averages else '',
-    'lower': lat_range[0],
-    'upper': lat_range[1],
-    'calc_neg': 'calc -i 1 neg' if len(lat_range)==3 and lat_range[2]== -1 else '',
+     'average_or_sum': '-s' if self.sum_range else '-a',
+     'output_comment': 'query -t comment stdout' if self.output_comment else '',
+     'output_averages': 'query -t nrofaverages stdout' if self.output_averages else '',
+     'lower': lat_range[0],
+     'upper': lat_range[1],
+     'calc_neg': 'calc -i 1 neg' if len(lat_range)==3 and lat_range[2]== -1 else '',
     })
    self.add_transform('pop')
   rdr=self.runrdr()

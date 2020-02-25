@@ -125,7 +125,7 @@ sliding_average -M %(median_length)d 1
 write_generic stdout string
 echo -F stdout End of medbands\\n
 ''' % {
-  'median_length': self.rejection_median_length,
+   'median_length': self.rejection_median_length,
   })
   rdr=script.runrdr()
   nr_of_bands=len(self.rejection_bands)
@@ -185,7 +185,7 @@ echo -F stdout End of medbands\\n
     remcycle, nremcycle=sl.remcycles[sl_pos]
     for i in range(nr_of_bands):
      if abs(bands[i][point]-medbands[i][point])>diff_threshold[i]:
-      checkmark+= 1<<i+3
+      checkmark+= 1 << i+3
       checkmarks[i]+=1
     sl_pos+=1
 
@@ -263,7 +263,7 @@ def get_epochfilter_stage_cycle(stagename,cycle=None):
   stagenames=[stagename]
  stagelist=[x for s in stagenames for x in stagenames2stagelist.get(s,[s])]
  return(lambda point,code,stage,remcycle,nremcycle,arousals,myos,eyemovements,checks,checkmark_Total,checkmark_Gamma:
-  (stage in stagelist) and code>0 and (cycle is None or remcycle==cycle))
+        (stage in stagelist) and code>0 and (cycle is None or remcycle==cycle))
 
 cntfilecache=None
 

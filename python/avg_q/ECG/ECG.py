@@ -79,20 +79,21 @@ write_crossings -E -R 0.5s ECG 1 stdout
    script.add_transform('''
 scale_by -n ?%(protect_channels)s 0
 ''' % {
-   'protect_channels': channel_list2arg(self.protect_channels),
+    'protect_channels': channel_list2arg(self.protect_channels),
    })
   script.add_transform('''
 baseline_subtract
 reject_bandwidth %(reject_bandwidth)f
 ''' % {
-  'reject_bandwidth': self.ECG_reject_bandwidth,
+   'reject_bandwidth': self.ECG_reject_bandwidth,
   })
   script.set_collect('average')
   script.add_postprocess('''
 query nrofaverages stdout
 writeasc -b %(avgECGfile)s
 ''' % {
-  'avgECGfile': self.avgECGfile})
+   'avgECGfile': self.avgECGfile
+  })
   rdr=script.runrdr()
   nrofaverages=0
   for line in rdr:

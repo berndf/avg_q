@@ -182,7 +182,7 @@ class slfile(object):
     continue
    if not sl.lower().startswith('ep*'): continue
    fields=sl.split('#')
-   epochfields=fields[0].split('*') # 'Ep',index,time(s)
+   #epochfields=fields[0].split('*') # 'Ep',index,time(s)
    fields=fields[1:]
 
    (checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)=(0,)*12

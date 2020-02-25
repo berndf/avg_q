@@ -8,7 +8,6 @@ __author__ = "Dr. Bernd Feige <Bernd.Feige@gmx.net>, Tanja Schmitt <schmitt.tanj
 
 import avg_q
 from . import trgfile
-import os
 
 def get_trigger_dict(tuples):
  '''Separate triggers by channel.
@@ -83,7 +82,7 @@ class Detector(avg_q.Script):
   are joined.
   '''
   expected_code=1 if direction>0 else -1
-  
+
   trigger_dict=get_trigger_dict(outtuples)
 
   channel_latrange_list=[]

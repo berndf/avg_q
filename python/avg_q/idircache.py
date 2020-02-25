@@ -39,7 +39,7 @@ class idircache(object):
    if type(pathlist)==str:
     pathlist=[pathlist]
    for p in pathlist:
-    if not p in self.dircache:
+    if p not in self.dircache:
      self.populate(p)
     result=self.dircache[p].get(name)
     if result:

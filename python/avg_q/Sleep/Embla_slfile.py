@@ -39,7 +39,7 @@ class slfile(parent_slfile.slfile):
  def __iter__(self):
   return self.rdr()
  def rdr(self):
-  (index,time,stage)=(0,-1, 0);
+  (index,time,stage)=(0,-1, 0)
   for fullname,walltime,stagename,duration in self.staging:
    stage=stages[stagename]
    (checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)=(0,)*12

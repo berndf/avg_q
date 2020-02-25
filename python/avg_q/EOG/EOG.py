@@ -4,7 +4,6 @@ import avg_q
 import avg_q.Detector
 import avg_q.Channeltypes
 import os
-import copy
 
 default_sessionaverage_EOGfile='avgEOG.asc'
 default_sessionaverage_HEOGfile='avgHEOG.asc'
@@ -52,7 +51,7 @@ write_crossings -E VEOG %(VEOG_minamp)f stdout
 #write_crossings -E VEOG %(VEOG_minamp)f triggers
 #posplot
 ''' % {
-  'VEOG_minamp': self.VEOG_minamp,
+   'VEOG_minamp': self.VEOG_minamp,
   })
   self.VEOGtriggers=self.detect(outtrigfile, maxvalue=self.VEOG_maxamp)
   self.restore_state()
@@ -75,7 +74,7 @@ write_crossings ALL %(HEOG_minamp)f stdout
 #write_crossings ALL %(HEOG_minamp)f triggers
 #posplot
 ''' % {
-  'HEOG_minamp': self.HEOG_minamp,
+   'HEOG_minamp': self.HEOG_minamp,
   })
   self.HEOGtriggers=self.detect(outtrigfile)
   self.restore_state()
@@ -94,7 +93,7 @@ write_crossings ALL %(HEOG_minamp)f stdout
    script.add_transform('''
 scale_by -n ?%(protect_channels)s 0
 ''' % {
-   'protect_channels': channel_list2arg(self.protect_channels),
+    'protect_channels': channel_list2arg(self.protect_channels),
    })
   if self.preprocess:
    script.add_transform(self.preprocess)
@@ -108,15 +107,16 @@ calc abs
 reject_bandwidth -m %(max_VEOG_amp_outside_window)f
 pop
 ''' % {
-  'get_VEOG_script': self.get_VEOG_script,
-  'max_VEOG_amp_outside_window': self.VEOG_minamp
+   'get_VEOG_script': self.get_VEOG_script,
+   'max_VEOG_amp_outside_window': self.VEOG_minamp
   })
   script.set_collect('average')
   script.add_postprocess('''
 query nrofaverages stdout
 writeasc -b %(avgEOGfile)s
 ''' % {
-  'avgEOGfile': self.avgEOGfile})
+   'avgEOGfile': self.avgEOGfile
+  })
   rdr=script.runrdr()
   nrofaverages=0
   for line in rdr:
@@ -141,7 +141,7 @@ writeasc -b %(avgEOGfile)s
     script.add_transform('''
 scale_by -n ?%(protect_channels)s 0
 ''' % {
-    'protect_channels': channel_list2arg(self.protect_channels),
+     'protect_channels': channel_list2arg(self.protect_channels),
     })
    if self.preprocess:
     script.add_transform(self.preprocess)
@@ -153,7 +153,8 @@ trim -a 0 0
 query nrofaverages stdout
 writeasc -a -b %(avgHEOGfile)s
 ''' % {
-   'avgHEOGfile': self.avgHEOGfile})
+    'avgHEOGfile': self.avgHEOGfile
+   })
    rdr=script.runrdr()
    for line in rdr:
     nrofaverages+=int(line)
@@ -224,8 +225,8 @@ write_generic stdout string
 null_sink
 -
 ''' % {
-  'avgEOGfile': avgEOGfile,
-  'get_VEOG_script': self.get_VEOG_script,
+   'avgEOGfile': avgEOGfile,
+   'get_VEOG_script': self.get_VEOG_script,
   })
   rdr=self.avg_q_instance.runrdr()
   meanval=float(next(rdr))
@@ -240,9 +241,9 @@ writeasc -b %(mapfile)s
 null_sink
 -
 ''' % {
-  'avgEOGfile': avgEOGfile,
-  'factor': 1.0/meanval,
-  'mapfile': self.mapfile,
+   'avgEOGfile': avgEOGfile,
+   'factor': 1.0/meanval,
+   'mapfile': self.mapfile,
   })
   self.avg_q_instance.run()
  def Gratton(self,avgEOGfile=None):
@@ -264,9 +265,9 @@ writeasc -b %(EOGcomponentfile)s
 null_sink
 -
 ''' % {
-  'get_VEOG_script': self.get_VEOG_script,
-  'mapfile': self.mapfile,
-  'EOGcomponentfile': EOGcomponentfile,
+   'get_VEOG_script': self.get_VEOG_script,
+   'mapfile': self.mapfile,
+   'EOGcomponentfile': EOGcomponentfile,
   })
   self.avg_q_instance.getcontepoch(self.Epochsource_list[0].infile, 0, '1s',trigtransfer=True)
   self.avg_q_instance.write('''
@@ -275,8 +276,8 @@ write_hdf -c %(correctedfile)s
 null_sink
 -
 ''' % {
-  'EOGcomponentfile': EOGcomponentfile,
-  'correctedfile': self.correctedfile,
+   'EOGcomponentfile': EOGcomponentfile,
+   'correctedfile': self.correctedfile,
   })
   self.avg_q_instance.run()
   os.unlink(EOGcomponentfile)

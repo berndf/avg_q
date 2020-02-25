@@ -13,9 +13,6 @@ from .avg_q import escape_channelname
 from .avg_q import channel_list2arg
 import subprocess
 
-import sys
-import os
-
 class regressors(object):
  def __init__(self,avg_q_instance,hdffile,paradigm=None,offset_ms=None):
   '''paradigm, if given, is a avg_q.paradigm instance.
@@ -26,8 +23,8 @@ class regressors(object):
 
   epifile=hdffile.replace('_corr','').replace('.hdf','.crs')
   epi_t=trgfile.trgfile(epifile)
-  epi_triggers=epi_t.gettuples()
-  epi_sfreq=float(epi_t.preamble['Sfreq'])
+  #epi_triggers=epi_t.gettuples()
+  #epi_sfreq=float(epi_t.preamble['Sfreq'])
   self.TR=float(epi_t.preamble['TR'])/1000.0 # in seconds
   #self.nscans=len(epi_triggers)
   self.nscans=None
@@ -127,16 +124,16 @@ write_generic %(write_generic_flags)s stdout string
 null_sink
 -
 ''' % {
-  'nchannels': len(self.regressors),
-  'sfreq': 1.0/self.TR,
-  'nscans': len(self.regressors[0]),
-  'channelpositions': channelnames2channelpos.channelnames2channelpos(self.regressor_names),
-  'x_offset': self.offset_s,
-  'freqstart': freqstart,
-  'freqend': freqend,
-  'reorder_orthogonalizeorder': '' if ordernames is None else 'remove_channel -k %s' % channel_list2arg(ordernames),
-  'reorder_originalorder':      '' if ordernames is None else 'remove_channel -k %s' % channel_list2arg(self.regressor_names),
-  'write_generic_flags': '-x -N' if with_column_names else '',
+   'nchannels': len(self.regressors),
+   'sfreq': 1.0/self.TR,
+   'nscans': len(self.regressors[0]),
+   'channelpositions': channelnames2channelpos.channelnames2channelpos(self.regressor_names),
+   'x_offset': self.offset_s,
+   'freqstart': freqstart,
+   'freqend': freqend,
+   'reorder_orthogonalizeorder': '' if ordernames is None else 'remove_channel -k %s' % channel_list2arg(ordernames),
+   'reorder_originalorder':      '' if ordernames is None else 'remove_channel -k %s' % channel_list2arg(self.regressor_names),
+   'write_generic_flags': '-x -N' if with_column_names else '',
   })
 
   for i in range(len(self.regressors[0])):

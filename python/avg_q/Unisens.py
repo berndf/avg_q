@@ -89,8 +89,8 @@ class UnisensFile(object):
      getepochmethod+='''
 >change_axes 0 %(invsfreq)g * 0 1 *
 ''' % {
-     'invsfreq': 1.0/sampleRate,
-    }
+      'invsfreq': 1.0/sampleRate,
+     }
    elif member.tag.endswith('eventEntry'):
     sampleRate=float(member.get('sampleRate'))
    self.members.append((filename,getepochmethod))

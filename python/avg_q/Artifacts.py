@@ -92,7 +92,7 @@ class Artifact_Segmentation(avg_q.Script):
   self.collected=None
   avg_q.Script.__init__(self,avg_q_instance)
  def collect_artifacts(self,remove_channels=None,preprocess=''):
-  '''Analyze the given section of the continuous file for artifacts. 
+  '''Analyze the given section of the continuous file for artifacts.
      remove_channels is a list of channel names to exclude for detection.'''
   epochsource=avg_q.Epochsource(self.infile,0,self.end_point-self.start_point)
   epochsource.set_trigpoints(self.start_point)
@@ -135,7 +135,6 @@ write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout
    'remove_channels': 'remove_channel -n ?' + channel_list2arg(remove_channels) if remove_channels else '',
    'preprocess': preprocess,
    'tempscalefile': tempscalefile.name,
-   'blockingThreshold': self.blockingThreshold,
    'JumpDetectionThreshold': self.JumpDetectionThreshold,
    'blockingThreshold': self.blockingThreshold,
    'ArtifactDetectionThreshold': self.ArtifactDetectionThreshold})

@@ -3,49 +3,49 @@
 
 # Entry is [schemas,booknos,channelnames] where each is a list of strings
 setups=[
-# 7 Channels= `DAISY'
+ # 7 Channels= `DAISY'
  [['DAISY'], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG"]],
-# 8 Channels= `RK-GOOFY'
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG"]],
+ # 8 Channels= `RK-GOOFY'
  [['RK-GOOFY', 'RKGOOFY'], [],
- ["vEOG", "hEOG", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr"]],
-# 10 Channels
+  ["vEOG", "hEOG", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr"]],
+ # 10 Channels
  [['DAGOBERT'], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", "EMG", "EKG"]],
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", "EMG", "EKG"]],
  [['BALU'], ['n3434'], # n3434=DAISY
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG", 
-# Nasal airflow, thoracal and abdominal strain gauges:
- "Airflow", "ATMt", "ATMa"]],
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG",
+  # Nasal airflow, thoracal and abdominal strain gauges:
+   "Airflow", "ATMt", "ATMa"]],
  [['PLDAISY'], [],
- ["vEOG", "hEOGl", "hEOGr", "UNK1", "UNK2", "UNK3", "C3", "C4", "EMG", "EKG"]],
+  ["vEOG", "hEOGl", "hEOGr", "UNK1", "UNK2", "UNK3", "C3", "C4", "EMG", "EKG"]],
  [['GOOFY'], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr", "ATM"]],
-# 11 Channels= `DAGOBERT+ALLES' or RKDagobert?
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr", "ATM"]],
+ # 11 Channels= `DAGOBERT+ALLES' or RKDagobert?
  [['DAGOBERT','DAG.+ALLES'], [],
- ["vEOG", "hEOG", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr",
-# Nasal airflow, thoracal and abdominal strain gauges:
- "Airflow", "ATMt", "ATMa"]],
-# 12 Channels
+  ["vEOG", "hEOG", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr",
+  # Nasal airflow, thoracal and abdominal strain gauges:
+   "Airflow", "ATMt", "ATMa"]],
+ # 12 Channels
  [['DAGOBERT','DAG.+ALLES'], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG", "POLY1", "POLY2", "K25",
- "K26", "ATM"]],
-# 12 Channels= `DAG.+ATM+B'
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG", "POLY1", "POLY2", "K25",
+   "K26", "ATM"]],
+ # 12 Channels= `DAG.+ATM+B'
  [[], ['n3039'],
- ["vEOG", "hEOG", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr",
-# Nasal airflow, thoracal and abdominal strain gauges:
- "Airflow", "ATMt", "ATMa", "ATM"]],
-# 14 Channels= `ALADIN'
+  ["vEOG", "hEOG", "C3", "C4", "EMG", "EKG", "BEMGl", "BEMGr",
+  # Nasal airflow, thoracal and abdominal strain gauges:
+   "Airflow", "ATMt", "ATMa", "ATM"]],
+ # 14 Channels= `ALADIN'
  [[], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", 
-  "POLY1", "POLY2", "K25", "K26", "EMG", "EKG"]],
-# 15 Channels= `DAG.+ATM+B'
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz",
+   "POLY1", "POLY2", "K25", "K26", "EMG", "EKG"]],
+ # 15 Channels= `DAG.+ATM+B'
  [[], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", "EMG", "EKG",
-  "POLY1", "POLY2", "K25", "K26", "ATM"]],
-# 17 Channnels= `DAGOBERT+DAISY'
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", "EMG", "EKG",
+   "POLY1", "POLY2", "K25", "K26", "ATM"]],
+ # 17 Channnels= `DAGOBERT+DAISY'
  [[], [],
- ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", "EMG", "EKG",
-  "vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG"]],
+  ["vEOG", "hEOGl", "hEOGr", "C3", "C4", "Fz", "Cz", "Pz", "EMG", "EKG",
+   "vEOG", "hEOGl", "hEOGr", "C3", "C4", "EMG", "EKG"]],
 ]
 
 somno=None

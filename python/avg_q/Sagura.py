@@ -80,9 +80,9 @@ class Marker(object):
 class Markers(object):
  def __init__(self,filename):
   mrkf=open(filename,"rb")
-  self.MarkerFormat=readint32(mrkf)&0xff
-  self.MarkerStream=readStreamString(mrkf) if self.MarkerFormat>6 else None;
-  self.TracesFormat=readint32(mrkf) if self.MarkerFormat>3 else None;
+  self.MarkerFormat=readint32(mrkf) & 0xff
+  self.MarkerStream=readStreamString(mrkf) if self.MarkerFormat>6 else None
+  self.TracesFormat=readint32(mrkf) if self.MarkerFormat>3 else None
   self._baseSampleRate=readdouble(mrkf)
   self.markers=[]
   while True:

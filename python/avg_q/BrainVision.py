@@ -26,6 +26,9 @@ class vmrkfile(trgfile.trgfile):
    if not isinstance(line,str):
     break
    line=line.rstrip('\r\n')
+   # EOF:
+   if line=='EOF':
+    break
    if len(line)==0 or line[0]==';':
     pass
    elif line[0]=='[':

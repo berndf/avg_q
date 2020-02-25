@@ -7,7 +7,7 @@ zeros, as used in file names, or with 4-digit number as used in the database.
 '''
 
 import re
-L_number_regex=re.compile('^L(\d+)$',flags=re.IGNORECASE)
+L_number_regex=re.compile('^L(\\d+)$',flags=re.IGNORECASE)
 
 def file_bookno(bookno):
  if isinstance(bookno,str):

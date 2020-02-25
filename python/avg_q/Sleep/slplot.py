@@ -37,11 +37,26 @@ Y_to_lw={
 arousal_tick_length=0.2
 EMplot_unitlength=0.05
 
-def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False):
+def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False,trim=True):
+ '''
+ lightsonoff: Show lights on and off times by vertical lines
+ arousalplot: Show arousals
+ EMplot: Show eye movements
+ abstime: Show clock time instead of time since sleep onset
+ trim: Remove Wake times at beginning and end
+ '''
  axes = plt.gca() # Get Current Axis
+ # Force the lazy mechanism to actually populate the file
+ sl.create_tuples()
  #print(sl.tuples)
  if not abstime:
-  X=np.array([x.time for x in sl.tuples])
+  if len(sl.lights_out)>0:
+   # Use first lights_out as zero time, as I don't think anybody wants time since
+   # sleep onset which is in x.time
+   offset=sl.lights_out[0]['offset']
+   X=(np.linspace(1,len(sl.tuples),num=len(sl.tuples))-1-offset)*sl.minutes_per_epoch
+  else:
+   X=np.array([x.time for x in sl.tuples])
   axes.xaxis.set_label_text('Time[min]')
  else:
   X=np.array(sl.abstime)
@@ -51,8 +66,18 @@ def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False):
  # Default font size is 12; Scale with that
  linewidthOne=plt.matplotlib.rcParams['font.size']/12
  Y=np.array([stage_to_Y[x.stage] for x in sl.tuples])
- xmin=X.min()
- xmax=X.max()
+ if trim:
+  nowake=np.where(Y!=5)[0]
+  xmin=X[nowake[0]]
+  xmax=X[nowake[-1]]
+  # In any case plot between first lights out and last lights on
+  if len(sl.lights_out)>0:
+   xmin=min(xmin,X[sl.lights_out[0]['offset']])
+  if len(sl.lights_on)>0:
+   xmax=max(xmax,X[sl.lights_on[0]['offset']])
+ else:
+  xmin=X.min()
+  xmax=X.max()
  ymin=min(stage_to_Y.values())-1-(1 if EMplot else 0)
  arousalplot_Y=max(stage_to_Y.values())+1
  EMplot_Y= 0
@@ -77,7 +102,7 @@ def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False):
   axes.vlines(X[EM>0],EMplot_Y-EMplot_unitlength,EMplot_Y+EMplot_unitlength*(EM[EM>0]-1),color=Y_to_color[stage_to_Y[5]],linewidth=linewidthOne,linestyle='solid')
  if False:
   # A simple single-line plot
-  axes.plot(X,Y, color = 'blue', linewidth=1, linestyle='solid')
+  axes.plot(X,Y, color='blue', linewidth=1, linestyle='solid')
  else:
   # Plot each stage with separate horizontal lines
   # Note that we go through some lengths so that the vertical grey lines
@@ -88,9 +113,9 @@ def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False):
    ind=np.where(Y==y)[0]
    # Find indexes where stage Y changes from y (at Y[ind]) to a different stage (Y[ind+1])
    jumps=np.where(np.diff(ind)>1)[0]
-   startind=ind[np.concatenate( ([0],jumps+1) )]
+   startind=ind[np.concatenate(([0],jumps+1))]
    # endind is already the first index of the next stage
-   endind=ind[np.concatenate( (jumps,[len(ind)-1]) )]+1
+   endind=ind[np.concatenate((jumps,[len(ind)-1]))]+1
    if endind[-1]==len(X): endind[-1]-=1
    startend[y]=[startind,endind]
 

@@ -12,32 +12,32 @@ import subprocess
 __all__ = ['avg_q', 'Epochsource', 'Script']
 
 valuetype={
-'sfreq': float,
-'z_value': float,
+ 'sfreq': float,
+ 'z_value': float,
 
-'nr_of_points': int,
-'nr_of_channels': int,
-'itemsize': int,
-'leaveright': int,
-'length_of_output_region': int,
-'beforetrig': int,
-'aftertrig': int,
-'points_in_file': int,
-'nroffreq': int,
-'nrofaverages': int,
-'accepted_epochs': int,
-'rejected_epochs': int,
-'failed_assertions': int,
-'condition': int,
+ 'nr_of_points': int,
+ 'nr_of_channels': int,
+ 'itemsize': int,
+ 'leaveright': int,
+ 'length_of_output_region': int,
+ 'beforetrig': int,
+ 'aftertrig': int,
+ 'points_in_file': int,
+ 'nroffreq': int,
+ 'nrofaverages': int,
+ 'accepted_epochs': int,
+ 'rejected_epochs': int,
+ 'failed_assertions': int,
+ 'condition': int,
 
-'z_label': str,
-'comment': str,
-'datetime': str,
-'xchannelname': str,
-'CWD': str,
+ 'z_label': str,
+ 'comment': str,
+ 'datetime': str,
+ 'xchannelname': str,
+ 'CWD': str,
 
-'channelnames':list,
-'xdata':list,
+ 'channelnames':list,
+ 'xdata':list,
 }
 #channelpositions
 #triggers
@@ -157,7 +157,6 @@ null_sink
   '''Iterator of (startsegment,endsegment) avoiding breakpoints by margin_points.
      'breakpoint' elements can be (start,end) tuples as well, in which case the whole segment between
      start and end (and added margin) is excluded'''
-  laststart=None
   # List of (start,end) tuples *sorted by start*
   br=sorted([(element[0]-margin_points,element[1]+margin_points) if isinstance(element,tuple) else (element-margin_points,element+margin_points) for element in breakpoints],key=lambda x: x[0])
   #print(start_point,end_point,br)
@@ -425,7 +424,7 @@ query -N sfreq stdout
 query -N nr_of_points stdout
 null_sink
 -
-''' % {'sfreq' : sfreq})
+''' % {'sfreq': sfreq})
 
  a.run()
 

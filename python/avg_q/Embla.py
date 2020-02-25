@@ -72,5 +72,5 @@ read_generic -s %(sfreq)g -C 1 -O %(data_offset)d %(avg_q_file_args)s int16
    'scale': (self.chan.Cal*1e6 if self.chan.Physdim=='V' else self.chan.Cal),
    'comment': '%s %s' % (self.chan.Subject,self.chan.time.strftime('%m/%d/%Y,%H:%M:%S')),
    'avg_q_file_args':'%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s'
-   }
+  }
   self.trigfile=None

@@ -105,7 +105,7 @@ class paradigm(object):
    self.get_trials()
    return self.__dict__[name]
   else:
-   raise AttributeError('\'paradigm\' object has no attribute \''+name+'\'');
+   raise AttributeError('\'paradigm\' object has no attribute \''+name+'\'')
  def is_ignored_code(self,code):
   # Note that if both stimulus_set and response_set are empty, we accept any code
   return not(len(self.stimulus_set)==0 and len(self.response_set)==0 or code in self.stimulus_set or code in self.response_set)
@@ -139,7 +139,7 @@ class paradigm(object):
         i+=1
         continue
        if i+sequencedepth+1>=len(self.triggers) or not is_valid_continuation(sequence,sequencedepth+1):
-	# Bail out, sequence doesn't fit
+        # Bail out, sequence doesn't fit
         i=i_start
         trial=[self.triggers[i]]
         break

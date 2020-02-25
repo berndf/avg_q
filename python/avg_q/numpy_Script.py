@@ -41,8 +41,8 @@ class numpy_epoch(object):
    self.nr_of_points,self.nr_of_channels=self.data.shape
    self.sfreq=1
  def __str__(self):
-  return(((self.comment+': ') if self.comment else "")+
-  "%d x %d sfreq %g" % (self.nr_of_points,self.nr_of_channels,self.sfreq))
+  return(((self.comment+': ') if self.comment else "")
+         +"%d x %d sfreq %g" % (self.nr_of_points,self.nr_of_channels,self.sfreq))
 
 class numpy_Epochsource(avg_q.Epochsource):
  def __init__(self, epochs=None):

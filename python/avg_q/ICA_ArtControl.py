@@ -37,7 +37,7 @@ query nr_of_points stdout
 null_sink
 -
 ''' % {
-  'base': self.base,
+   'base': self.base,
   })
   rdr=self.avg_q_instance.runrdr()
   self.nr_of_components=int(next(rdr))
@@ -71,10 +71,10 @@ write_generic -N -P stdout string
 null_sink
 -
 ''' % {
-  'fromepoch': fromepoch,
-  'remove_channels': self.get_remove_channels(),
-  'artifactfile': artifactfile,
-  'base': self.base,
+   'fromepoch': fromepoch,
+   'remove_channels': self.get_remove_channels(),
+   'artifactfile': artifactfile,
+   'base': self.base,
   })
   components=[]
   for line in self.avg_q_instance.runrdr():
@@ -123,9 +123,9 @@ null_sink
 readasc -f %(fromepoch)d -e 1 %(artifactfile)s
 %(remove_channels)s
 ''' % {
-  'fromepoch': fromepoch,
-  'remove_channels': self.get_remove_channels(),
-  'artifactfile': artifactfile,
+   'fromepoch': fromepoch,
+   'remove_channels': self.get_remove_channels(),
+   'artifactfile': artifactfile,
   }
   trim=self.get_trim_selecting_strong_maps(getepochscript,relative_strength_cutoff)
   self.avg_q_instance.write(getepochscript)
@@ -140,8 +140,8 @@ write_generic -N -P stdout string
 null_sink
 -
 ''' % {
-  'trim': trim,
-  'base': self.base,
+   'trim': trim,
+   'base': self.base,
   })
   components=[]
   for line in self.avg_q_instance.runrdr():
@@ -187,10 +187,10 @@ writeasc -b %(mapstmp)s
 null_sink
 -
 ''' % {
-  'base': self.base,
-  'trim': self.get_trim_from_components(components),
-  'weightstmp': weightstmp,
-  'mapstmp': mapstmp,
+   'base': self.base,
+   'trim': self.get_trim_from_components(components),
+   'weightstmp': weightstmp,
+   'mapstmp': mapstmp,
   })
   self.tmpfiles.extend([weightstmp, mapstmp])
   return '''
@@ -198,9 +198,9 @@ null_sink
 project -C -n -p 0 %(weightstmp)s 0
 project -C -n -p 0 -m %(mapstmp)s 0
 ''' % {
-  'remove_channels': self.get_remove_channels(),
-  'weightstmp': weightstmp,
-  'mapstmp': mapstmp,
+   'remove_channels': self.get_remove_channels(),
+   'weightstmp': weightstmp,
+   'mapstmp': mapstmp,
   }
  def get_extract_script(self,components=None):
   '''Only the first step of backprojection, return the traces.'''
@@ -214,17 +214,17 @@ writeasc -b %(weightstmp)s
 null_sink
 -
 ''' % {
-  'base': self.base,
-  'weightstmp': weightstmp,
-  'trim': self.get_trim_from_components(components),
+   'base': self.base,
+   'weightstmp': weightstmp,
+   'trim': self.get_trim_from_components(components),
   })
   self.tmpfiles.append(weightstmp)
   return '''
 %(remove_channels)s
 project -C -n -p 0 %(weightstmp)s 0
 ''' % {
-  'remove_channels': self.get_remove_channels(),
-  'weightstmp': weightstmp,
+   'remove_channels': self.get_remove_channels(),
+   'weightstmp': weightstmp,
   }
  def get_reconstruct_script(self,components=None):
   '''Only the second step of backprojection, start with traces.'''
@@ -238,17 +238,17 @@ writeasc -b %(mapstmp)s
 null_sink
 -
 ''' % {
-  'base': self.base,
-  'mapstmp': mapstmp,
-  'trim': self.get_trim_from_components(components),
+   'base': self.base,
+   'mapstmp': mapstmp,
+   'trim': self.get_trim_from_components(components),
   })
   self.tmpfiles.append(mapstmp)
   return '''
 %(remove_channels)s
 project -C -n -p 0 -m %(mapstmp)s 0
 ''' % {
-  'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
-  'mapstmp': mapstmp,
+   'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
+   'mapstmp': mapstmp,
   }
  def get_weighted_extractor_script(self,components=None):
   '''Special application: Linear superposition of weights, like reconstruct but with weights instead of maps'''
@@ -262,16 +262,16 @@ writeasc -b %(weightstmp)s
 null_sink
 -
 ''' % {
-  'base': self.base,
-  'weightstmp': weightstmp,
-  'trim': self.get_trim_from_components(components),
+   'base': self.base,
+   'weightstmp': weightstmp,
+   'trim': self.get_trim_from_components(components),
   })
   self.tmpfiles.append(weightstmp)
   return '''
 %(remove_channels)s
 project -C -n -p 0 -m %(weightstmp)s 0
 ''' % {
-  'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
-  'weightstmp': weightstmp,
+   'remove_channels': self.get_remove_channels_from_components(self.ArtComponents),
+   'weightstmp': weightstmp,
   }
 

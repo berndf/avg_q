@@ -46,7 +46,7 @@ class Average(object):
   else:
    return self.event0index.get(condition, 0)
 
- def average_trials(self,beforetrig='0.2s',aftertrig='1s',preprocess='baseline_subtract',pre_average='',postprocess='posplot',test_options='-t'):
+ def average_trials(self,beforetrig='0.2s',aftertrig='1s',preprocess='baseline_subtract',pre_average='',postprocess='posplot',average_options='-t'):
   '''
   beforetrig and aftertrig define the length of the final epoch. This is used as-is for the first event_index, while the
   averages around other events are read as needed to be finally shifted on top of the first average.
@@ -56,7 +56,7 @@ class Average(object):
   since every condition leads to a separate average sub-script with postprocess at the end.
   '''
 
-  if '-t' in test_options and not '-u' in test_options:
+  if '-t' in average_options and '-u' not in average_options:
    calclog='''
 calc -i 2 log10
 calc -i 2 neg
@@ -74,7 +74,7 @@ calc -i 2 neg
     shiftwidth_points=script.add_Paradigm_Epochsource(self.infile,self.paradigm_instance,condition,event0index,eventindex,beforetrig,aftertrig,preprocess)
     # Now average the epochs
     script.add_transform(pre_average)
-    script.set_collect('average %s' % test_options)
+    script.set_collect('average %s' % average_options)
     script.add_postprocess('''
 %(calclog)s
 set_comment Condition %(condition)s event %(eventindex)d shift %(shiftwidth)gms
@@ -117,7 +117,7 @@ class GrandAverage(object):
   self.session_shift_points=None
   for avgfile in infiles:
    if not os.path.exists(avgfile):
-    print("Oops, %s doesn't exist!" % avgfile)
+    print("GrandAverage: %s doesn't exist, omitting this file!" % avgfile)
     continue
    f=avg_q_file(avgfile)
    if not self.sfreq:
@@ -145,9 +145,9 @@ class GrandAverage(object):
 >set beforetrig %(beforetrig_points)d
 >set xdata 1
 ''' % {
-    'shift_points': shift_points,
-    'epochlength_points': self.epochlength_points,
-    'beforetrig_points': self.beforetrig_points,
+     'shift_points': shift_points,
+     'epochlength_points': self.epochlength_points,
+     'beforetrig_points': self.beforetrig_points,
     })
   return n_averages
  def get_averages(self,condition,eventindex=None):
@@ -180,9 +180,9 @@ posplot
 -
 ''')
   self.avg_q_instance.run()
- def single_average(self,condition,eventindex=None,test_options='-t'):
+ def single_average(self,condition,eventindex=None,average_options='-W -t'):
   if self.get_averages(condition,eventindex)==0: return
-  if '-t' in test_options and not '-u' in test_options:
+  if '-t' in average_options and '-u' not in average_options:
    calclog='''
 calc -i 2 log10
 calc -i 2 neg
@@ -191,22 +191,22 @@ calc -i 2 neg
    calclog=''
   self.avg_q_instance.write('''
 extract_item 0
-average -W %(test_options)s
+average %(average_options)s
 Post:
 %(calclog)s
 set_comment %(condstr)s
 ''' % {
-  'test_options': test_options,
-  'calclog': calclog,
-  'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex is not None and eventindex!=self.event0index else 0)) if eventindex is not None else self.condstr,
+   'average_options': average_options,
+   'calclog': calclog,
+   'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex is not None and eventindex!=self.event0index else 0)) if eventindex is not None else self.condstr,
   })
   if self.outfile:
    self.avg_q_instance.write('''
 writeasc %(append)s -b %(outfile)s
 -
 ''' % {
-   'append': '-a' if self.append else '',
-   'outfile': self.outfile,
+    'append': '-a' if self.append else '',
+    'outfile': self.outfile,
    })
    self.avg_q_instance.run()
    self.append=True
