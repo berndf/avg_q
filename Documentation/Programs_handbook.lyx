@@ -10715,6 +10715,10 @@ Options:
 \end_layout
 
 \begin_layout Description
+-c: Close the output file after each epoch (and open it again next time).
+\end_layout
+
+\begin_layout Description
 -e: Epoch mode - Restart detector for each new epoch.
  This is recommended whenever consecutive input epochs do not form continuous
  time series.

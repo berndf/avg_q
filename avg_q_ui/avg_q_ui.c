@@ -147,7 +147,7 @@ G_LOCK_DEFINE_STATIC (stop_request);
 LOCAL Bool stop_request=FALSE;
 LOCAL FILE *dumpfile;
 #define FilenameLength 300
-LOCAL char filename[FilenameLength]="avg_q_ui.script";
+LOCAL char filename[FilenameLength+1]="avg_q_ui.script";
 LOCAL GtkWidget *Run_Entry, *Stop_Entry, *Kill_Entry, *Dump_Entry;
 #ifndef STANDALONE
 LOCAL GtkWidget *Run_Subscript_Entry;
@@ -179,7 +179,7 @@ static Bool key_press_for_mainwindow(GtkWidget *widget, GdkEventKey *event);
 /*{{{ Setting title and status*/
 LOCAL void
 set_main_window_title(void) {
- static gchar buffer[FilenameLength+30];
+ static gchar buffer[FilenameLength+31];
  snprintf(buffer, FilenameLength+30, "avg_q user interface: Script %s", filename);
  gtk_window_set_title (GTK_WINDOW (Avg_Q_Main_Window), buffer);
 }

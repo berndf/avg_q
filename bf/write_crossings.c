@@ -32,6 +32,7 @@
 
 enum ARGS_ENUM {
  ARGS_EXTREMA=0, 
+ ARGS_CLOSE,
  ARGS_EPOCHMODE, 
  ARGS_REPORT_XVALUE, 
  ARGS_ITEMPART, 
@@ -44,6 +45,7 @@ enum ARGS_ENUM {
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Write extrema rather than threshold crossings", "E", FALSE, NULL},
+ {T_ARGS_TAKES_NOTHING, "Close the output file after each epoch (and open it again next time)", "c", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Epoch mode - Restart detector for each new epoch", "e", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Report x axis values rather than point numbers", "x", FALSE, NULL},
  {T_ARGS_TAKES_LONG, "nr_of_item: work only on this item # (>=0)", "i", 0, NULL},
@@ -72,6 +74,53 @@ struct write_crossings_storage {
  growing_buf triggers;
 };
 /*}}}  */
+
+LOCAL void open_file(transform_info_ptr tinfo) {
+ struct write_crossings_storage *local_arg=(struct write_crossings_storage *)tinfo->methods->local_storage;
+ transform_argument *args=tinfo->methods->arguments;
+ if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) {
+  local_arg->outfile=stdout;
+ } else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) {
+  local_arg->outfile=stderr;
+ } else if (strcmp(args[ARGS_OFILE].arg.s, "triggers")==0) {
+  /* If the `file name' argument is "triggers", we collect the markers in 
+   * memory. outfile==NULL is taken as indication for this condition. */
+  local_arg->outfile=NULL;
+ } else
+ if ((local_arg->outfile=fopen(args[ARGS_OFILE].arg.s, "w"))==NULL) {
+  ERREXIT1(tinfo->emethods, "write_crossings_init: Can't open file >%s<\n", MSGPARM(args[ARGS_OFILE].arg.s));
+ }
+ if (local_arg->outfile!=NULL) {
+  /* For info, output the sampling frequency as comment */
+  fprintf(local_arg->outfile, "# %s\n# Sfreq=%f\n# Epochlength=%d\n# Threshold=%g\n", (args[ARGS_EXTREMA].is_set ? "Extrema" : "Crossings"), (float)tinfo->sfreq, tinfo->nr_of_points, args[ARGS_THRESHOLD].arg.d);
+  if (args[ARGS_ITEMPART].is_set) {
+   fprintf(local_arg->outfile, "# Itempart=%ld\n", args[ARGS_ITEMPART].arg.i);
+  }
+  if (args[ARGS_REFRACTORY_PERIOD].is_set) {
+   fprintf(local_arg->outfile, "# Refractory period=%s\n", args[ARGS_REFRACTORY_PERIOD].arg.s);
+  }
+  if (args[ARGS_POINTOFFSET].is_set) {
+   fprintf(local_arg->outfile, "# Point offset=%ld\n", local_arg->pointoffset);
+  }
+ }
+}
+
+LOCAL void close_file(transform_info_ptr tinfo) {
+ struct write_crossings_storage *local_arg=(struct write_crossings_storage *)tinfo->methods->local_storage;
+
+ if (local_arg->outfile==NULL) {
+  if (local_arg->triggers.buffer_start!=NULL) {
+   clear_triggers(&local_arg->triggers);
+   growing_buf_free(&local_arg->triggers);
+  }
+ } else {
+  if (local_arg->outfile!=stdout && local_arg->outfile!=stderr) {
+   fclose(local_arg->outfile);
+  } else {
+   fflush(local_arg->outfile);
+  }
+ }
+}
 
 /*{{{  write_crossings_init(transform_info_ptr tinfo) {*/
 METHODDEF void
@@ -113,31 +162,7 @@ write_crossings_init(transform_info_ptr tinfo) {
  local_arg->channels_in_list=0;
  while (local_arg->channel_list[local_arg->channels_in_list]!=0) local_arg->channels_in_list++;
 
- if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) {
-  local_arg->outfile=stdout;
- } else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) {
-  local_arg->outfile=stderr;
- } else if (strcmp(args[ARGS_OFILE].arg.s, "triggers")==0) {
-  /* If the `file name' argument is "triggers", we collect the markers in 
-   * memory. outfile==NULL is taken as indication for this condition. */
-  local_arg->outfile=NULL;
- } else
- if ((local_arg->outfile=fopen(args[ARGS_OFILE].arg.s, "w"))==NULL) {
-  ERREXIT1(tinfo->emethods, "write_crossings_init: Can't open file >%s<\n", MSGPARM(args[ARGS_OFILE].arg.s));
- }
- if (local_arg->outfile!=NULL) {
-  /* For info, output the sampling frequency as comment */
-  fprintf(local_arg->outfile, "# %s\n# Sfreq=%f\n# Epochlength=%d\n# Threshold=%g\n", (args[ARGS_EXTREMA].is_set ? "Extrema" : "Crossings"), (float)tinfo->sfreq, tinfo->nr_of_points, args[ARGS_THRESHOLD].arg.d);
-  if (args[ARGS_ITEMPART].is_set) {
-   fprintf(local_arg->outfile, "# Itempart=%ld\n", args[ARGS_ITEMPART].arg.i);
-  }
-  if (args[ARGS_REFRACTORY_PERIOD].is_set) {
-   fprintf(local_arg->outfile, "# Refractory period=%s\n", args[ARGS_REFRACTORY_PERIOD].arg.s);
-  }
-  if (args[ARGS_POINTOFFSET].is_set) {
-   fprintf(local_arg->outfile, "# Point offset=%ld\n", local_arg->pointoffset);
-  }
- }
+ if (!args[ARGS_CLOSE].is_set) open_file(tinfo);
 
  local_arg->past_points=local_arg->pointoffset;
  local_arg->remaining_refractory_points=0;
@@ -168,6 +193,7 @@ write_crossings(transform_info_ptr tinfo) {
  long point=0;
  array tsdata;
 
+ if (args[ARGS_CLOSE].is_set) open_file(tinfo);
  if (args[ARGS_EPOCHMODE].is_set) {
   /* Reset detector */
   local_arg->past_points=local_arg->pointoffset;
@@ -366,6 +392,8 @@ write_crossings(transform_info_ptr tinfo) {
  local_arg->epochs_seen++;
  local_arg->past_points=point;
 
+ if (args[ARGS_CLOSE].is_set) close_file(tinfo);
+
  return tinfo->tsdata;
 }
 /*}}}  */
@@ -376,18 +404,8 @@ write_crossings_exit(transform_info_ptr tinfo) {
  struct write_crossings_storage *local_arg=(struct write_crossings_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
 
- if (local_arg->outfile==NULL) {
-  if (local_arg->triggers.buffer_start!=NULL) {
-   clear_triggers(&local_arg->triggers);
-   growing_buf_free(&local_arg->triggers);
-  }
- } else {
- if (local_arg->outfile!=stdout && local_arg->outfile!=stderr) {
-  fclose(local_arg->outfile);
- } else {
-  fflush(local_arg->outfile);
- }
- }
+ if (!args[ARGS_CLOSE].is_set) close_file(tinfo);
+
  if (args[ARGS_EXTREMA].is_set) {
   array_free(&local_arg->last_three_points);
  } else {
