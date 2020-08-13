@@ -51,8 +51,13 @@ def escape_filename(path):
 def escape_channelname(channelname):
  '''Helper function to perform whatever escaping is necessary to send a channel name to avg_q within a script.'''
  return channelname.replace(' ','\\ ').replace('-','\\-')
+def unescape_channelname(channelname):
+ '''Helper function to undo the escaping'''
+ return channelname.replace('\\-','-').replace('\\ ',' ')
 def channel_list2arg(channel_list):
  return ','.join([escape_channelname(x) for x in channel_list])
+def channel_arg2list(channel_arg):
+ return [unescape_channelname(x) for x in channel_arg.split(',')]
 
 outtuple=[]
 collectvalue=None

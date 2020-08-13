@@ -11,9 +11,11 @@ __all__=[
  'avg_q_file',
  'escape_filename',
  'escape_channelname',
+ 'unescape_channelname',
  'channel_list2arg',
+ 'channel_arg2list',
 ]
 # Allow the avg_q object to be addressed by avg_q.avg_q() instead of
 # by avg_q.avg_q.avg_q() ;-)
-from .avg_q import avg_q,Script,Epochsource,escape_filename,escape_channelname,channel_list2arg
+from .avg_q import avg_q,Script,Epochsource,escape_filename,escape_channelname,unescape_channelname,channel_list2arg,channel_arg2list
 from .avg_q_file import avg_q_file

@@ -6,6 +6,7 @@ Create a staging plot (Polysomnogram PSG) using matplotlib.
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker
+import matplotlib.dates
 import numpy as np
 
 stage_to_Y={
@@ -61,7 +62,9 @@ def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False,trim=T
  else:
   X=np.array(sl.abstime)
   axes.xaxis.set_label_text('Time')
-  plt.xticks(rotation='vertical')
+  # Just use HH:MM format, not the date/time default which also needs vertical rotation...
+  axes.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%H:%M'))
+  #plt.xticks(rotation='vertical')
   plt.subplots_adjust(bottom=.2) # Allow more space for the vertical labels
  # Default font size is 12; Scale with that
  linewidthOne=plt.matplotlib.rcParams['font.size']/12

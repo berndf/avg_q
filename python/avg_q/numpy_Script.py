@@ -181,7 +181,7 @@ write_generic -x stdout float32
      plt.subplot(nrows,ncols,thisplot+1)
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
-    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=vmin,vmax=vmax),cmap='jet',shading='flat',edgecolors='face',antialiaseds=False)
+    gplot=plt.pcolormesh(xi,yi,zi,norm=plt.Normalize(vmin=vmin,vmax=vmax),cmap='jet',shading='nearest',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(g,ncontours)
     #plt.scatter(xpos,ypos,marker='o',c='black',s=5) # Draw sample points
     if isolines:
@@ -232,7 +232,7 @@ write_generic -x stdout float32
 
     # pcolormesh is described to be much faster than pcolor
     # Note that the default for edgecolors appears to be 'None' resulting in transparent lines between faces...
-    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax),cmap='jet',shading='flat',edgecolors='face',antialiaseds=False)
+    gplot=plt.pcolormesh(x,y,z1,norm=plt.Normalize(vmin=vmin,vmax=vmax),cmap='jet',shading='nearest',edgecolors='face',antialiaseds=False)
     #gplot=plt.contourf(z1,ncontours)
     gplot.axes.set_axis_off()
     #print z1.shape

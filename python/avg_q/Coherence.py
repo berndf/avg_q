@@ -1,8 +1,8 @@
 # vim: set fileencoding=utf-8 :
-# Copyright (C) 2008-2010,2012,2013 Bernd Feige
+# Copyright (C) 2008-2010,2012,2013,2020 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
-Utilities for the "Coherence" file format.
+Utilities for the DeltaMed "Coherence" file format.
 """
 
 from . import trgfile
@@ -47,11 +47,11 @@ def readstring(filehandle,start=b""):
  zeroindex=start.find(b"\0")
  if zeroindex>=0:
   return start[:zeroindex].decode('latin1')
- string=start.decode('latin1')
+ mystring=start.decode('latin1')
  if sys.version<"3":
-  string=string.encode('utf-8')
+  mystring=mystring.encode('utf-8')
  # Garbage detection
- if any([char not in accepted_characters for char in string]):
+ if any([char not in accepted_characters for char in mystring]):
   return None
  while True:
   char=filehandle.read(1).decode('latin1')
@@ -59,10 +59,10 @@ def readstring(filehandle,start=b""):
   if sys.version<"3":
    char=char.encode('utf-8')
   # Garbage detection
-  if char not in accepted_characters or len(string)>=max_stringlength:
+  if char not in accepted_characters or len(mystring)>=max_stringlength:
    return None
-  string+=char
- return string
+  mystring+=char
+ return mystring
 
 data_offset=5359
 bytespermarker=268

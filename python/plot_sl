@@ -45,8 +45,8 @@ for slfile_and_triggerfile in args.files:
    if sl.remcycles[pos].nremcycle>sl.remcycles[pos-1].nremcycle:
     nremstarts.append(sl.abstime[pos] if args.abstime else sl.tuples[pos].time)
   ymin,ymax=axes.get_ylim()
-  axes.vlines(remstarts,ymin,ymax, color = 'red', linewidth=0.5, linestyle='solid')
-  axes.vlines(nremstarts,ymin,ymax, color = 'blue', linewidth=0.5, linestyle='solid')
+  axes.vlines(remstarts,ymin,ymax, color='red', linewidth=0.5, linestyle='solid')
+  axes.vlines(nremstarts,ymin,ymax, color='blue', linewidth=0.5, linestyle='solid')
  if trgfile:
   import avg_q.trgfile
   with avg_q.trgfile.trgfile(trgfile) as trg:
@@ -59,7 +59,7 @@ for slfile_and_triggerfile in args.files:
     time_offset= [x.time for x in sl.tuples].index(0)*sl.minutes_per_epoch
     events=[x[0]/sfreq/60-time_offset for x in tup] # Time in min
    ymin,ymax=axes.get_ylim()
-   axes.vlines(events,ymin,ymax, color = 'black', linewidth=0.5, linestyle='solid')
+   axes.vlines(events,ymin,ymax, color='black', linewidth=0.5, linestyle='solid')
  if args.save_fig:
   plt.savefig(pdffile,format='pdf')
   plt.close()

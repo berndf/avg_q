@@ -142,7 +142,7 @@ null_sink
    start_s1=start_s if start_s is not None else 0
    end_s1=end_s if end_s is not None else overview_points*self.TR/1000.0
    if end_s1-start_s1<self.min_scan_duration_s:
-    print("Overview: Not using short 'scan' %g-%g!" % (start_s1,end_s1))
+    print("Overview: Not using short 'scan' %gs-%gs!" % (start_s1,end_s1))
    else:
     fromto.append((start_s,end_s))
    start_s=None
@@ -244,7 +244,8 @@ assert -S nr_of_triggers == 0
 null_sink
 -
 ''' % {
-    'refractory_time': self.TR,
+    # Refractory time is chosen 0.5ms less than TR to allow the flank of the next peak to be seen
+    'refractory_time': self.TR-0.5,
     'threshold': self.threshold,
     'posplot': 'set_comment Finding first EPI peak...\nposplot' if self.checkmode else ''
    }
@@ -666,10 +667,6 @@ pop
     script.add_transform('''
 set beforetrig 0
 set xdata 1
-append -l
-Post:
-posplot
--
 ''')
     script.set_collect('append -l')
     script.add_postprocess('posplot')

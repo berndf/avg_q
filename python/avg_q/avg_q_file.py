@@ -169,7 +169,7 @@ read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
    'filename': escape_filename(self.filename),
    'beforetrig': str(beforetrig),
    'aftertrig': str(aftertrig)
-  } + (self.addmethods if self.addmethods else '')
+  } + ((self.addmethods+'\n') if self.addmethods else '')
  def guessformat(self,filename):
   name,ext=os.path.splitext(filename)
   def findformat(ext):

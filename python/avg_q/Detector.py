@@ -97,7 +97,7 @@ class Detector(avg_q.Script):
      else:
       debounce=False
      last_start=lat
-    elif last_start:
+    elif last_start is not None:
      if not min_length or lat-last_start>=min_length:
       if debounce:
        # Extend the last range instead of creating a new one
