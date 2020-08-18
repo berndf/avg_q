@@ -4073,6 +4073,141 @@ offset: The zero point `beforetrig' is shifted by offset
 \end_deeper
 \end_deeper
 \begin_layout Description
+read_sigma:
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+read
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+_
+\end_layout
+
+\end_inset
+
+sigma
+\end_layout
+
+\end_inset
+
+ Get-epoch method to read data in the binary 
+\begin_inset Quotes eld
+\end_inset
+
+Sigma PLpro
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Index idx
+status collapsed
+
+\begin_layout Plain Layout
+Sigma=Sigma PLpro data format
+\end_layout
+
+\end_inset
+
+ data format.
+ Triggers can be supplied using a trigger file.
+ Triggers within the file are currently not recognized.
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Arguments: Inputfile beforetrig aftertrig
+\end_layout
+
+\begin_layout Description
+Options:
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+-c: Continuous: Read the file in adjacent chunks of the given size disregarding
+ triggers 
+\end_layout
+
+\begin_layout Description
+-T: Transfer a list of triggers within the read epoch 
+\end_layout
+
+\begin_layout Description
+-R
+\begin_inset space ~
+\end_inset
+
+trigger_file: Read trigger points and codes from file trigger_file in the
+ format described in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+, page 
+\begin_inset CommandInset ref
+LatexCommand pageref
+reference "Sec:TriggerFile"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Description
+-t
+\begin_inset space ~
+\end_inset
+
+trigger_list: Restrict epochs to those marked with a condition code contained
+ in the trigger_list.
+ The list consists of comma-separated integer values, for example: 5,2,3.
+ This is only useful in conjunction with the -R option.
+\end_layout
+
+\begin_layout Description
+-f
+\begin_inset space ~
+\end_inset
+
+fromepoch: Specify start epoch beginning with 1
+\end_layout
+
+\begin_layout Description
+-e
+\begin_inset space ~
+\end_inset
+
+epochs: Specify maximum number of epochs to get
+\end_layout
+
+\begin_layout Description
+-o
+\begin_inset space ~
+\end_inset
+
+offset: The zero point `beforetrig' is shifted by offset
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Description
 read_sound:
 \begin_inset Index idx
 status collapsed

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2011,2013,2014,2016 Bernd Feige
+ * Copyright (C) 1996-2011,2013,2014,2016,2018,2020 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #ifndef BF_H
@@ -211,6 +211,7 @@ void select_pop(transform_info_ptr tinfo);
 void select_link_order(transform_info_ptr tinfo);
 void select_orthogonalize(transform_info_ptr tinfo);
 void select_read_cfs(transform_info_ptr tinfo);
+void select_read_sigma(transform_info_ptr tinfo);
 enum add_channels_types {
  ADD_CHANNELS=0, ADD_POINTS, ADD_ITEMS, ADD_LINKEPOCHS
 };

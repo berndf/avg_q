@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003,2005,2007,2008,2010,2013,2014,2016 Bernd Feige
+ * Copyright (C) 1999-2003,2005,2007,2008,2010,2013,2014,2016,2018,2020 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #include <bf.h>
@@ -21,6 +21,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_read_kn,
  select_read_neurofile,
  select_read_rec,
+ select_read_sigma,
 #ifdef AVG_Q_WITH_SOUND
  select_read_sound,
 #endif

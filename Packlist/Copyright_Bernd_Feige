@@ -258,3 +258,9 @@ bf/cfs/cfs_sm.c
 bf/cfs/cfs_smd.c
 bf/cfs/dump_cfs_header.c
 bf/cfs/read_cfs.c
+bf/sigma/CMakeLists.txt
+bf/sigma/dump_sigma_header.c
+bf/sigma/read_sigma.c
+bf/sigma/sigma_header.h
+bf/sigma/sigma_sm.c
+bf/sigma/sigma_smd.c

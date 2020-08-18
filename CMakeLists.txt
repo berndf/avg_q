@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2014 Bernd Feige
+# Copyright (C) 2006-2014,2016,2018-2020 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 PROJECT(avg_q)
@@ -137,7 +137,7 @@ if (NOT WITH_AVG_Q_UI)
  MESSAGE("Not creating the avg_q_ui GUI.")
 endif (NOT WITH_AVG_Q_UI)
 
-SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
+SET(CMAKE_C_FLAGS_DEBUG "-g -fsanitize=address -Wall")
 #SET(CMAKE_C_FLAGS_DEBUG -g -DMALLOC_TRACE)
 
 SET(AVG_Q_DEFINES ${AVG_Q_DEFINES} -DTRACE -DFP_EXCEPTION -DFOR_AVG_Q)
@@ -150,7 +150,7 @@ SET(AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/bf ${CMAKE_SOURCE_DIR}/bf/array
 
 # Arranges that shared libs are found in the same dir as the binary
 SET(CMAKE_INSTALL_RPATH "$ORIGIN")
-SET(CMAKE_EXE_LINKER_FLAGS_DEBUG -g)
+SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-g -lasan")
 SET(BF_LIBPATH_DYNAMIC)
 SET(BF_LIBS bf ${MFX_LIBS} m)
 

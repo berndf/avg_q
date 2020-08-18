@@ -1,4 +1,4 @@
-// Copyright (C) 1996-1998 Bernd Feige
+// Copyright (C) 1996-1998,2018 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 #ifndef _Triangles_HH
