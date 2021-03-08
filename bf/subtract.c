@@ -59,7 +59,7 @@ enum ARGS_ENUM {
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
- {T_ARGS_TAKES_NOTHING, "Close and reopen the file for each epoch", "c", FALSE, NULL},
+ {T_ARGS_TAKES_NOTHING, "Close and reopen the file for each epoch (with -e)", "c", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Read every epoch in subtract_file in turn", "e", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Recycle channels of subtract_file if it has less channels than epoch", "C", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Recycle points of subtract_file if it has less points than epoch", "P", FALSE, NULL},
@@ -113,6 +113,9 @@ subtract_init(transform_info_ptr tinfo) {
  growing_buf_init(&local_arg->side_argbuf);
  growing_buf_allocate(&local_arg->side_argbuf, 0);
  if (args[ARGS_CLOSE].is_set) {
+  if (!args[ARGS_EVERY].is_set) {
+   ERREXIT(tinfo->emethods, "subtract_init: -c does nothing without -e, please add -e!\n");
+  }
   growing_buf_appendstring(&local_arg->side_argbuf, "-c ");
  }
  if (args[ARGS_FROMEPOCH].is_set) {

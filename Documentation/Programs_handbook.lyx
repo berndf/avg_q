@@ -10169,6 +10169,24 @@ fromepoch: Start with epoch number fromepoch (
 \end_layout
 
 \begin_layout Description
+-c: Close and reopen the file for each epoch.
+ Since without 
+\series bold
+-e
+\series default
+ only a single epoch is ever read from subtract_file, this would have no
+ effect without 
+\series bold
+-e
+\series default
+ and therefore must be used with 
+\series bold
+-e
+\series default
+.
+\end_layout
+
+\begin_layout Description
 -e: Advance the subtract_file epoch for each input epoch processed
 \end_layout
 
