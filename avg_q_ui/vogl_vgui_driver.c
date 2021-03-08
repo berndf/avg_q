@@ -1025,10 +1025,12 @@ VGUI_init(void) {
  gtk_widget_show (VGUI.canvas);
  gtk_widget_grab_focus(VGUI.canvas);
 
+#ifdef WIN32
  /* Under Windows, if the script window starts iconified, the new window
   * of the application will start iconified as well. "deiconify" doesn't work,
   * "present" deiconifies but places behind other windows. */
  gtk_window_set_keep_above (GTK_WINDOW(VGUI.window), TRUE);
+#endif
  gtk_widget_show (VGUI.window);
 
  VGUI.lastbutton=0;
