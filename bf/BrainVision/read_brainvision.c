@@ -87,7 +87,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_LONG, "epochs: Specify maximum number of epochs to get", "e", 1, NULL},
  {T_ARGS_TAKES_STRING_WORD, "offset: The zero point 'beforetrig' is shifted by offset", "o", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_FILENAME, "trigger_file: Read trigger points and codes from this file", "R", ARGDESC_UNUSED, (char const *const *)"*.trg"},
- {T_ARGS_TAKES_FILENAME, "Input file (.vhdr)", "", ARGDESC_UNUSED, (char const *const *)"*.vhdr"},
+ {T_ARGS_TAKES_FILENAME, "Input file (.vhdr/.ahdr)", "", ARGDESC_UNUSED, (char const *const *)"*.vhdr"},
  {T_ARGS_TAKES_STRING_WORD, "beforetrig", "", ARGDESC_UNUSED, (char const *const *)"1s"},
  {T_ARGS_TAKES_STRING_WORD, "aftertrig", "", ARGDESC_UNUSED, (char const *const *)"1s"}
 };
@@ -100,6 +100,7 @@ struct read_brainvision_storage {
  int current_trigger;
  growing_buf triggers;
  int nr_of_channels;
+ int nr_of_binchannels; /* Storage channels are nr_of_channels+1 for V-Amps */
  int itemsize;
  long points_in_file;
  long bytes_per_point;
@@ -113,6 +114,7 @@ struct read_brainvision_storage {
  float sfreq;
  enum DATATYPE_ENUM datatype;
  Bool multiplexed;
+ Bool V_Amp; /* V_Amp ahdr/amrk/eeg variant */
  char *markerfilename;
 
  growing_buf filepath_buf;
@@ -316,7 +318,7 @@ read_brainvision_init(transform_info_ptr tinfo) {
  growing_buf readbuf;
 
  if(vhdr==NULL) {
-  ERREXIT1(tinfo->emethods, "read_brainvision_init: Can't open vhdr file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
+  ERREXIT1(tinfo->emethods, "read_brainvision_init: Can't open hdr file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
 
  /* Record the path component so that we can open the other files in the same directory */
@@ -350,8 +352,14 @@ read_brainvision_init(transform_info_ptr tinfo) {
  /* Read fractional sensitivities correctly: */
  setlocale(LC_NUMERIC, "C");
  growing_buf_read_line(vhdr, &readbuf);
- if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Header File Version 1.0")!=0) {
-  ERREXIT1(tinfo->emethods, "read_brainvision_init: %s is not a Brain Vision .vhdr file\n", MSGPARM(args[ARGS_IFILE].arg.s));
+ if (strcmp(readbuf.buffer_start,"Brain Vision V-Amp Data Header File Version 1.0")==0) {
+  /* This is ahdr/amrk/eeg format, has an additional "signature" channel */
+  local_arg->V_Amp=TRUE;
+ } else {
+  local_arg->V_Amp=FALSE;
+  if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Header File Version 1.0")!=0) {
+   ERREXIT1(tinfo->emethods, "read_brainvision_init: %s is not a Brain Vision .vhdr or .ahdr file\n", MSGPARM(args[ARGS_IFILE].arg.s));
+  }
  }
  while (1) {
   growing_buf_read_line(vhdr, &readbuf);
@@ -388,9 +396,17 @@ reevaluate:
      /* Can be MULTIPLEXED or VECTORIZED */
      local_arg->multiplexed=(strcmp(readbuf.buffer_start+16, "MULTIPLEXED")==0);
      //printf("local_arg->multiplexed=%d, >%s<\n", local_arg->multiplexed, readbuf.buffer_start+16);
+     if (local_arg->V_Amp && !local_arg->multiplexed) {
+      ERREXIT(tinfo->emethods, "read_brainvision_init: V-Amp data format must be MULTIPLEXED\n");
+     }
     } else if (strncmp(readbuf.buffer_start,"NumberOfChannels=",17)==0) {
      local_arg->nr_of_channels=atoi(readbuf.buffer_start+17);
-     //printf("nr_of_channels=%d\n", local_arg->nr_of_channels);
+     if (local_arg->V_Amp) {
+      local_arg->nr_of_binchannels=local_arg->nr_of_channels+1;
+     } else {
+      local_arg->nr_of_binchannels=local_arg->nr_of_channels;
+     }
+     //printf("nr_of_channels=%d, nr_of_binchannels=%d\n", local_arg->nr_of_channels, local_arg->nr_of_binchannels);
     } else if (strncmp(readbuf.buffer_start,"SamplingInterval=",17)==0) {
      local_arg->sfreq=1.0e6/atof(readbuf.buffer_start+17);
      //printf("sfreq=%g\n", local_arg->sfreq);
@@ -502,7 +518,7 @@ reevaluate:
   local_arg->bytes_per_point = 0;
   local_arg->points_in_file = 0;
  } else {
-  local_arg->bytes_per_point=(local_arg->nr_of_channels*local_arg->itemsize)*datatype_size[local_arg->datatype];
+  local_arg->bytes_per_point=(local_arg->nr_of_binchannels*local_arg->itemsize)*datatype_size[local_arg->datatype];
   if (statbuff.st_size==0) {
    local_arg->points_in_file = 0;
   } else {
@@ -748,6 +764,7 @@ read_brainvision(transform_info_ptr tinfo) {
      array_advance(&myarray);
      local_arg->first_in_epoch=FALSE;
     } while (myarray.message==ARRAY_CONTINUE);
+    if (local_arg->V_Amp) read_value(infile, local_arg); /* Read the "signature" channel */
    } while (myarray.message!=ARRAY_ENDOFSCAN);
    break;
   case ERR_READ:

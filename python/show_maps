@@ -13,6 +13,7 @@ argparser.add_argument('-n', '--ncols', dest='ncols', type=int, help='Plot this 
 argparser.add_argument('-i', '--isolines', dest='isolines', help='Draw iso lines at these values (comma separated; default: 0, Don\'t plot: None)')
 argparser.add_argument('-l', '--scale_local', dest='scale_local', action='store_true', help='Scale each map instead of global max(abs)')
 argparser.add_argument('-s', '--save_fig', dest='save_fig', action='store_true', help='Save plots to .png instead of showing them')
+argparser.add_argument('-p', '--save_fig_pdf', dest='save_fig_pdf', action='store_true', help='Save plots to .pdf instead of showing them')
 argparser.add_argument('-S', '--size', dest='size', help='Set size of the output in inch (one or two comma-separated values)')
 argparser.add_argument('-v', '--vrange', dest='vrange', type=float, nargs=2, help='Set vertical scale [vmin vmax]')
 args = argparser.parse_args()
@@ -38,10 +39,10 @@ a=avg_q.avg_q()
 figno=1
 pngfile=None
 for ascfile in args.ascfiles:
- if args.save_fig:
+ if args.save_fig or args.save_fig_pdf:
   import os
   base,ext=os.path.splitext(ascfile)
-  pngfile=base+'.png'
+  pngfile=base+('.pdf' if args.save_fig_pdf else '.png')
   if os.path.exists(pngfile):
    print("%s exists!" % pngfile)
    continue
@@ -73,6 +74,9 @@ for ascfile in args.ascfiles:
  script.plot_maps(ncols=args.ncols,vmin=vmin,vmax=vmax,globalscale=globalscale,isolines=isolines)
  if args.save_fig:
   plt.savefig(pngfile,format='png',dpi=100,transparent=True,bbox_inches='tight',pad_inches=0)
+  plt.close()
+ elif args.save_fig_pdf:
+  plt.savefig(pngfile,format='pdf',bbox_inches='tight',pad_inches=0)
   plt.close()
  else:
   figno+=1

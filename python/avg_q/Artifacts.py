@@ -114,7 +114,7 @@ trim -M 0 0
 writeasc -b -c %(tempscalefile)s
 pop
 # Divide each channel by its median
-subtract -d -P -c %(tempscalefile)s
+subtract -d -P -e -c %(tempscalefile)s
 push
 # Get highest value across channels for jumps
 collapse_channels -h
@@ -127,7 +127,7 @@ write_crossings collapsed 0.5 stdout
 pop
 # Now we're back at the preprocessed data; Filter for artifacts, also divided by tempscale
 fftfilter 0 0 30Hz 35Hz
-subtract -d -P -c %(tempscalefile)s
+subtract -d -P -e -c %(tempscalefile)s
 calc abs
 collapse_channels -h
 write_crossings -E collapsed %(ArtifactDetectionThreshold)g stdout

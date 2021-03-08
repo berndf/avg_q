@@ -7,7 +7,7 @@ from .avg_q import escape_filename
 # Extensions are first matched case sensitive, then lowercased.
 formats_and_extensions=[
  ('NeuroScan', ['.avg','.eeg','.cnt']),
- ('BrainVision', ['.vmrk','.vhdr','.eeg']),
+ ('BrainVision', ['.vhdr','.ahdr','.vmrk','.amrk','.eeg']),
  ('asc', ['.asc']),
  ('hdf', ['.hdf']),
  ('rec', ['.edf','.rec', '.bdf']),
@@ -22,6 +22,7 @@ formats_and_extensions=[
  ('Embla', ['.ebm']),
  ('Unisens', ['.bin','.csv']),
  ('CFS', ['.cfs']),
+ ('Sigma', ['.EEG']),
 ]
 
 class avg_q_file(object):
@@ -108,6 +109,10 @@ read_tucker %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %
   elif fileformat=='CFS':
    self.getepochmethod='''
 read_cfs %(fromepoch_arg)s %(epochs_arg)s %(filename)s
+'''
+  elif fileformat=='Sigma':
+   self.getepochmethod='''
+read_sigma %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='generic':
    # Handled specially because read_generic reads headerless data

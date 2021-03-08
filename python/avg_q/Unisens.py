@@ -76,7 +76,9 @@ class UnisensFile(object):
      getepochstart='read_generic -C %d -s %g ' % (nr_of_channels,sampleRate)
     comment_parts=[self.timestampStart.strftime("%Y-%m-%d %H:%M:%S"),self.measurementId]
     if self.comment:
-     comment_parts.append(self.comment)
+     # Single '%' signs in the comment must be replaced since the result is
+     # used as input for expansion
+     comment_parts.append(self.comment.replace('%','%%'))
     getepochmethod=getepochstart+'%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s '+read_generic_format+'''
 >set_channelposition -s %(channelpositions)s
 >add %(negbaseline)g

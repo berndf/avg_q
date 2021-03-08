@@ -2708,11 +2708,20 @@ brainvision
 
  Read Brain Vision (tm) files.
  This format consists of at least three files with endings .vhdr, .vmrk and
- .eeg.
- The .vhdr file is the main header file explicitly containing the names of
- the other two files, therefore this file must be specified as Inputfile.
- Markers are contained in the .vmrk file, while the actual data is in the
- .eeg file.
+ .eeg, or in the 
+\begin_inset Quotes eld
+\end_inset
+
+V-Amp
+\begin_inset Quotes erd
+\end_inset
+
+ variant .ahdr, .amrk and .eeg.
+ The .vhdr or .ahdr file is the main header file explicitly containing the
+ names of the other two files, therefore this file must be specified as
+ Inputfile.
+ Markers are contained in the .vmrk or .amrk file, while the actual data is
+ in the .eeg file.
  The other files are opened with the same path as the .vhdr file.
  Note that when the files are renamed from whatever was specified during
  saving, the names in the .vhdr text file must be changed as well.
