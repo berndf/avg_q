@@ -1,0 +1,8 @@
+title: Avg_q
+description: avg_q M/EEG multichannel analysis software
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-minimal
+
+gems:
+  - jekyll-mentions
