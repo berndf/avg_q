@@ -26,7 +26,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with avg_q.  If not, see <https://www.gnu.org/licenses/>.
 
-Dr. Bernd Feige <Bernd.Feige@gmx.net>  
+[Dr. Bernd Feige](Bernd.Feige@gmx.net)  
 <https://www.researchgate.net/profile/Bernd-Feige>  
 Dept. for Psychiatry and Psychotherapy  
 Freiburg University Clinic  
