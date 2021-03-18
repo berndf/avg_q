@@ -9,8 +9,7 @@ The documentation can be found in the Documentation/ subdirectory (LyX source)
 or the Programs_handbook.pdf file.
 
 *Binary distribution downloads*: You can find compiled packages (Windows 64 and 32 bit 
-including python bindings) here:
-https://www.dropbox.com/sh/86akhq4vtskojf4/AAAFYkqfLjuc-1ou9RCYCDS8a?dl=0
+including python bindings) [here](https://www.dropbox.com/sh/86akhq4vtskojf4/AAAFYkqfLjuc-1ou9RCYCDS8a?dl=0)
 
 I can make other binary packages (Linux 64-bit) available upon request.
 
@@ -25,10 +24,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with avg_q.  If not, see https://www.gnu.org/licenses/.
+along with avg_q.  If not, see <https://www.gnu.org/licenses/>.
 
 Dr. Bernd Feige <Bernd.Feige@gmx.net>  
-https://www.researchgate.net/profile/Bernd-Feige  
+<https://www.researchgate.net/profile/Bernd-Feige>  
 Dept. for Psychiatry and Psychotherapy  
 Freiburg University Clinic  
 Hauptstr.5  
