@@ -40,7 +40,7 @@ Author
 ------
 
 [Dr. Bernd Feige](mailto:Bernd.Feige@gmx.net)  
-<https://www.researchgate.net/profile/Bernd-Feige/>
+<https://www.researchgate.net/profile/Bernd-Feige/>  
 Dept. for Psychiatry and Psychotherapy  
 Freiburg University Clinic  
 Hauptstr.5  
