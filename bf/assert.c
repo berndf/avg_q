@@ -145,11 +145,19 @@ compare_values(DATATYPE const v1, DATATYPE const v2, enum COMPARISON_ENUM const 
  switch (whichcomp) {
   case MATCH:
   case EQUAL:
-   retval=(v1==v2);
+   if (isnan(v2)) {
+    retval=isnan(v1);
+   } else {
+    retval=(v1==v2);
+   }
    break;
   case NOMATCH:
   case UNEQUAL:
-   retval=(v1!=v2);
+   if (isnan(v2)) {
+    retval= !isnan(v1);
+   } else {
+    retval=(v1!=v2);
+   }
    break;
   case LESSTHAN:
    retval=(v1<v2);
