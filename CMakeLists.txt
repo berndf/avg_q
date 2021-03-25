@@ -14,7 +14,7 @@ ELSE(AVG_Q_BUILD_DEBUG)
  SET(CMAKE_BUILD_TYPE Release)
 ENDIF(AVG_Q_BUILD_DEBUG)
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6...3.20)
 
 INCLUDE("Signatures/Signature.GPL")
 

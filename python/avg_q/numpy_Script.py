@@ -88,8 +88,9 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer
     avg_q.Epochsource.send_trigpoints(self,avg_q_instance)
    # It's a bit unfortunate that array.array does support tofile() with pipes but numpy.array doesn't...
    # So we have to take the route via a string buffer just as with reading
-   thisdata=numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data
-   avg_q_instance.avg_q.stdin.write(thisdata.tostring())
+   # We have to take good care that the data type corresponds to what avg_q reads (ie, float32)
+   thisdata=(numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data).astype('float32')
+   avg_q_instance.avg_q.stdin.write(thisdata.tobytes())
    avg_q_instance.avg_q.stdin.flush()
 
 class numpy_Script(avg_q.Script):

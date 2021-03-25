@@ -21,14 +21,14 @@ SET_SOURCE_FILES_PROPERTIES("src/text.c"
  PROPERTIES COMPILE_FLAGS "-DSYS5"
 )
 SET(driversources
- ps
+ ps.c
 )
 SET(driverflags
  "-DPOSTSCRIPT -DVGUI"
 )
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
 SET(driversources
- ps hpdxy tek X11
+ ps.c hpdxy.c tek.c X11.c
 )
 SET(driverflags
  "-DPOSTSCRIPT -DHPGL -DTEK -DX11 -DVGUI"

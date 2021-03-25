@@ -16,7 +16,7 @@ rawfile_paths=(
  '/AD/sldaten01/',
  '/AD/sldaten01/EDF/',
  '/AD/slarchiv/01/',
- '/AD/slarchiv/EDF_Axxx/',
+ '/AD/slarchiv/A0000-Axxxx/',
  '/AD/slarchiv/A3000_Axxxx/',
  '/AD/slarchiv/A4000_Axxxx/',
  '/AD/slarchiv/A5000_Axxxx/',
