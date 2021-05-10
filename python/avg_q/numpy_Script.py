@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2014 Bernd Feige
+# Copyright (C) 2013-2021 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 import avg_q
 import numpy
@@ -23,6 +23,7 @@ class numpy_epoch(object):
   self.nr_of_points=0
   self.nr_of_channels=0
   self.itemsize=0
+  self.nrofaverages=None
   self.trigpoints=None
   self.xdata=None
   if data is None:
@@ -77,6 +78,8 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer
     avg_q_instance.write(methodline+'\n')
    if epoch.comment:
     avg_q_instance.write('>set_comment %s\n' % epoch.comment)
+   if epoch.nrofaverages:
+    avg_q_instance.write('>set nrofaverages %d\n' % epoch.nrofaverages)
    for methodline in self.branch:
     avg_q_instance.write(methodline+'\n')
  def send_trigpoints(self,avg_q_instance):
@@ -110,6 +113,7 @@ query -N comment stdout
 query -N sfreq stdout
 query -N nr_of_points stdout
 query -N itemsize stdout
+query -N nrofaverages stdout
 echo -F stdout Data:\\n
 write_generic -x stdout float32
 """
@@ -142,6 +146,8 @@ write_generic -x stdout float32
      epoch.nr_of_points=int(value)
     elif name=='itemsize':
      epoch.itemsize=int(value)
+    elif name=='nrofaverages':
+     epoch.nrofaverages=int(value)
     r=next(rdr)
    epoch.nr_of_channels=len(epoch.channelnames)
    #print(epoch)

@@ -33,13 +33,21 @@ class trgfile(object):
   self.reader=None
   self.tuples=None
   self.description_codes=None
-  if isinstance(source,str):
-   self.filename=source
-   self.trgfile=open(self.filename,mode='r')
-  else:
-   self.filename=None
-   if source:
-    self.reader=iter(source)
+  self.filename=source
+  if source:
+   if type(source) is not str:
+    if hasattr(source, '__iter__'):
+     # Allow to pass a list or generator as source
+     self.filename=None
+     self.reader=iter(source)
+    elif hasattr(source, '__fspath__'):
+     # Allow source to be os.PathLike
+     self.filename=source.__fspath__()
+    else:
+     self.filename=str(source)
+   if self.filename:
+    self.trgfile=open(self.filename,mode='r')
+
   self.preamble=Preamble()
   self.start_datetime=None
  def __del__(self):

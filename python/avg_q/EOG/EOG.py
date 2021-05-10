@@ -163,6 +163,9 @@ writeasc -a -b %(avgHEOGfile)s
   '''Average the EOG files. The output file self.sessionaverage_EOGfile is default_sessionaverage_EOGfile
   in the current directory, unless set differently by the caller.
   Returns the total number of averages.'''
+  # Protect against EOGfiles==[], which results in self.indir being undefined
+  if not EOGfiles:
+   return 0
   if not self.sessionaverage_EOGfile:
    self.sessionaverage_EOGfile=os.path.join(self.indir,default_sessionaverage_EOGfile)
   if os.path.exists(self.sessionaverage_EOGfile):

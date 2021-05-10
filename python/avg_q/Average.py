@@ -116,10 +116,10 @@ class GrandAverage(object):
   self.beforetrig_points=None
   self.session_shift_points=None
   for avgfile in infiles:
-   if not os.path.exists(avgfile):
+   f=avg_q_file(avgfile)
+   if not os.path.exists(f.filename):
     print("GrandAverage: %s doesn't exist, omitting this file!" % avgfile)
     continue
-   f=avg_q_file(avgfile)
    if not self.sfreq:
     self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_instance.get_description(f,('sfreq','nr_of_points','beforetrig'))
    self.alltuples[avgfile]=self.avg_q_instance.get_filetriggers(f).gettuples()

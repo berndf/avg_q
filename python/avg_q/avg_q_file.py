@@ -27,8 +27,15 @@ formats_and_extensions=[
 
 class avg_q_file(object):
  def __init__(self,filename=None,fileformat=None):
-  if filename and not fileformat:
-   filename,fileformat=self.guessformat(filename)
+  if filename:
+   # cf. https://github.com/pandas-dev/pandas/blob/325dd686de1589c17731cf93b649ed5ccb5a99b4/pandas/io/common.py#L131-L160
+   if not isinstance(filename, str):
+    if hasattr(filename, '__fspath__'):
+     filename=filename.__fspath__()
+    else:
+     filename=str(filename)
+   if not fileformat:
+    filename,fileformat=self.guessformat(filename)
   self.filename=filename
   self.fileformat=fileformat
   self.epoched=False

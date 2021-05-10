@@ -65,7 +65,13 @@ class Detector(avg_q.Script):
    outtuples.append((point,code,'\t'.join(descriptionitems)))
   if outtrigfile:
    t=trgfile.trgfile()
-   if self.sfreq: t.preamble['Sfreq']=str(self.sfreq)
+   if self.sfreq:
+    t.preamble['Sfreq']=str(self.sfreq)
+   if hasattr(outtrigfile, '__fspath__'):
+    # Allow outtrigfile to be os.PathLike
+    outtrigfile=outtrigfile.__fspath__()
+   else:
+    outtrigfile=str(outtrigfile)
    trgout=open(outtrigfile, 'w')
    t.writetuples(outtuples,trgout)
    trgout.close()

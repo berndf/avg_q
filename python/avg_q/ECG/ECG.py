@@ -103,6 +103,9 @@ writeasc -b %(avgECGfile)s
   '''Average the ECG files. The output file self.sessionaverage_ECGfile is default_sessionaverage_ECGfile
   in the current directory, unless set differently by the caller.
   Returns the total number of averages.'''
+  # Protect against ECGfiles==[], which results in self.indir being undefined
+  if not ECGfiles:
+   return 0
   if not self.sessionaverage_ECGfile:
    self.sessionaverage_ECGfile=os.path.join(self.indir,default_sessionaverage_ECGfile)
   if os.path.exists(self.sessionaverage_ECGfile):

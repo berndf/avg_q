@@ -308,7 +308,7 @@ query triggers_for_trigfile stdout
     else:
      correction-=correct_correct
      trigpoint+=correction
-    print("Correction %g Position %d" % (correction, trigpoint))
+    #print("Correction %g Position %d" % (correction, trigpoint))
     outtuples.append(trigpoint)
     # Comment this out to prove idempotency:
     trigpoint+=self.TR_points
@@ -434,7 +434,7 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
     else:
      intermediatestart=lastpoint+myEPI.aftertrig_points
     intermediatelength=readpoint-myEPI.beforetrig_points-intermediatestart
-    print("Intermediate points %d-%d..." % (intermediatestart,intermediatestart+intermediatelength-1))
+    #print("Intermediate points %d-%d..." % (intermediatestart,intermediatestart+intermediatelength-1))
     lefttrim=''
     if intermediatelength>0:
      self.transferSection(intermediatestart, 0, intermediatelength)

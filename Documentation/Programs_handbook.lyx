@@ -4,7 +4,7 @@
 \begin_header
 \save_transient_properties true
 \origin unavailable
-\textclass bfown
+\textclass article
 \begin_preamble
 %%tth:\begin{html}<title>avg_q program description</title>\end{html}
 %%tth: \comment{
@@ -11155,6 +11155,38 @@ average
  have equal types and sizes).
  The `leaveright' rightmost items are summed (non-weighted, even in the
  presence of the -W option) instead of averaged.
+\begin_inset Newline newline
+\end_inset
+
+Note that the effect of this is that 
+\begin_inset Quotes eld
+\end_inset
+
+Grand averages
+\begin_inset Quotes erd
+\end_inset
+
+ of averages obtained with 
+\series bold
+-t -u
+\series default
+ automatically accumulate the sums and sums of squares of the incoming averages
+ correctly.
+ Using the option 
+\series bold
+-t
+\series default
+ on such average files containing three items results in a 9-item epoch
+ with useless items 3-8 (counting from 0).
+ To avoid this, add 
+\series bold
+extract_item 0
+\series default
+ before averaging with 
+\series bold
+-t
+\series default
+ to obtain the between-average variance.
 \begin_inset Separator latexpar
 \end_inset
 
@@ -11279,11 +11311,11 @@ t-test
 \begin_inset Formula $0$
 \end_inset
 
- (note that this is equivalent to the option -d of 
+ (equivalent to the option -d of 
 \series bold
 ascaverage
 \series default
- !).
+).
  By using the 
 \series bold
 baseline_subtract
@@ -11462,8 +11494,8 @@ Arguments: NONE
 \end_deeper
 \begin_layout Subsection
 Methods to output data sets: Put_\SpecialChar softhyphen
- Epoch_\SpecialChar softhyphen
- Methods 
+Epoch_\SpecialChar softhyphen
+Methods 
 \end_layout
 
 \begin_layout Standard
