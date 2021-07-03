@@ -50,7 +50,7 @@ for ascfile in args.ascfiles:
  else:
   print("Plotting %s" % ascfile)
  fig=plt.figure(figno,figsize=size)
- fig.canvas.set_window_title(ascfile)
+ fig.canvas.manager.set_window_title(ascfile)
  f=avg_q.avg_q_file(ascfile)
  epochsource=avg_q.Epochsource(f)
  script=avg_q.numpy_Script.numpy_Script(a)
