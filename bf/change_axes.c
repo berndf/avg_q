@@ -28,7 +28,7 @@ enum ARGS_ENUM {
  NR_OF_ARGUMENTS
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
- {T_ARGS_TAKES_STRING_WORD, "x_offset", "", 0, NULL},
+ {T_ARGS_TAKES_DOUBLE, "x_offset", "", 0, NULL},
  {T_ARGS_TAKES_DOUBLE, "x_factor", "", 1, NULL},
  {T_ARGS_TAKES_STRING_WORD, "x_newlabel", "", ARGDESC_UNUSED, (const char *const *)"*"},
  {T_ARGS_TAKES_DOUBLE, "z_offset", "", 0, NULL},
@@ -62,14 +62,13 @@ METHODDEF DATATYPE *
 change_axes(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
  int i;
- long const xoffset=gettimeslice(tinfo, args[ARGS_XOFFSET].arg.s);
 
  /*{{{  Scale xdata*/
  if (tinfo->xdata==(DATATYPE *)NULL) {
   create_xaxis(tinfo, NULL);
  }
  for (i=0; i<tinfo->nr_of_points; i++) {
-  tinfo->xdata[i]=(tinfo->xdata[i]+xoffset)*args[ARGS_XFACTOR].arg.d;
+  tinfo->xdata[i]=(tinfo->xdata[i]+args[ARGS_XOFFSET].arg.d)*args[ARGS_XFACTOR].arg.d;
  }
  /*}}}  */
  tinfo->z_value=(tinfo->z_value+args[ARGS_ZOFFSET].arg.d)*args[ARGS_ZFACTOR].arg.d;
