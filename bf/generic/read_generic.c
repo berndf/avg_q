@@ -72,6 +72,7 @@ enum ARGS_ENUM {
  ARGS_ITEMSIZE,
  ARGS_FILEOFFSET,
  ARGS_BLOCKGAP,
+ ARGS_DECIMAL_SEPARATOR,
  ARGS_IFILE,
  ARGS_BEFORETRIG,
  ARGS_AFTERTRIG,
@@ -94,6 +95,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_LONG, "Items: Specify the number of items", "I", 1, NULL},
  {T_ARGS_TAKES_LONG, "File_offset: Skip this many bytes (`string':Lines) at the start", "O", 0, NULL},
  {T_ARGS_TAKES_LONG, "Block_gap: Skip this many bytes between (point/channel) blocks", "B", 0, NULL},
+ {T_ARGS_TAKES_STRING_WORD, "Decimal_separator: Read floating point values with this separator", "D", ARGDESC_UNUSED, (const char *const *)"."},
  {T_ARGS_TAKES_FILENAME, "Input file", "", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_STRING_WORD, "beforetrig", "", ARGDESC_UNUSED, (const char *const *)"1s"},
  {T_ARGS_TAKES_STRING_WORD, "aftertrig", "", ARGDESC_UNUSED, (const char *const *)"1s"},
@@ -120,6 +122,7 @@ struct read_generic_storage {
  long epochs;
  float sfreq;
  enum DATATYPE_ENUM datatype;
+ char decimal_separator;
  growing_buf stringbuf;
  Bool new_line;
  Bool first_in_epoch;
@@ -210,6 +213,7 @@ read_generic_init(transform_info_ptr tinfo) {
  local_arg->itemsize=(args[ARGS_ITEMSIZE].is_set ? args[ARGS_ITEMSIZE].arg.i : 1);
  tinfo->sfreq=local_arg->sfreq=(args[ARGS_SFREQ].is_set ? args[ARGS_SFREQ].arg.d : 100.0);
  local_arg->datatype=(enum DATATYPE_ENUM)args[ARGS_DATATYPE].arg.i;
+ local_arg->decimal_separator=(args[ARGS_DECIMAL_SEPARATOR].is_set ? args[ARGS_DECIMAL_SEPARATOR].arg.s[0] : '.');
  local_arg->fileoffset=(args[ARGS_FILEOFFSET].is_set ? args[ARGS_FILEOFFSET].arg.i : 0);
  local_arg->block_gap=(args[ARGS_BLOCKGAP].is_set ? args[ARGS_BLOCKGAP].arg.i : 0);
  /*}}}  */
@@ -234,6 +238,10 @@ read_generic_init(transform_info_ptr tinfo) {
   growing_buf_init(&local_arg->stringbuf);
   growing_buf_allocate(&local_arg->stringbuf, 0);
   local_arg->new_line=TRUE;
+ } else {
+  if (args[ARGS_DECIMAL_SEPARATOR].is_set) {
+   ERREXIT(tinfo->emethods, "read_generic_init: Decimal_separator is specific to the `string' datatype.\n");
+  }
  }
 
  if (datatype_size[local_arg->datatype]==0) {
@@ -374,8 +382,8 @@ read_value(FILE *infile,
      err=ERR_READ;
      break;
     }
-    if (strchr("-+0123456789.eEdD", inchar)!=NULL) {
-     ch=inchar;
+    if (strchr("-+0123456789eEdD", inchar)!=NULL || inchar==local_arg->decimal_separator) {
+     ch=(inchar==local_arg->decimal_separator ? '.' : inchar);
      /* Fortran 'double' data is output with a 'D' instead of 'E';
       * C does not recognise this so we have to fix it... */
      if (ch=='d' || ch=='D') ch='e';

@@ -35,6 +35,7 @@ class UnisensFile(object):
   self.measurementId=root.get('measurementId')
   self.comment=root.get('comment')
   self.members=[]
+  add_argument=None
   for member in root:
    # Attribute "id" is actually a file name with extension
    id_value=member.get('id')
@@ -62,6 +63,11 @@ class UnisensFile(object):
     read_generic_format=None
     if ext=='.csv':
      read_generic_format='string'
+     for item in member:
+      if item.tag.endswith('csvFileFormat'):
+       decimalSeparator=item.get('decimalSeparator')
+       if decimalSeparator is not None:
+        add_argument='-D '+decimalSeparator
     elif dataType=='int16':
      read_generic_format='int16'
     elif dataType=='int32':
@@ -74,6 +80,8 @@ class UnisensFile(object):
      getepochstart='read_generic -x TIME[s] -C %d -s %g ' % (nr_of_channels,sampleRate)
     else:
      getepochstart='read_generic -C %d -s %g ' % (nr_of_channels,sampleRate)
+    if add_argument is not None:
+     getepochstart+=add_argument+' '
     comment_parts=[self.timestampStart.strftime("%Y-%m-%d %H:%M:%S"),self.measurementId]
     if self.comment:
      # Single '%' signs in the comment must be replaced since the result is

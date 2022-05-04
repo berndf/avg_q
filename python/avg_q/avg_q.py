@@ -272,12 +272,12 @@ class Epochsource(object):
     or reading around explicitly specified points (trigpoints).
  '''
  def __init__(self, infile, beforetrig=0, aftertrig=0, continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
-  # For convenience, allow infile to be passed as a file name
-  if isinstance(infile,str):
-   from . import avg_q_file
-   self.infile=avg_q_file(infile)
-  else:
+  # For convenience, allow infile to be passed as a file name or pathlib.Path
+  from . import avg_q_file
+  if isinstance(infile,avg_q_file):
    self.infile=infile
+  else:
+   self.infile=avg_q_file(infile)
   self.beforetrig=beforetrig
   self.aftertrig=aftertrig
   self.continuous=continuous

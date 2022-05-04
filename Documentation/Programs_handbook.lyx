@@ -3332,6 +3332,15 @@ Block_gap: Skip this many bytes between `blocks'.
  
 \end_layout
 
+\begin_layout Description
+-D
+\begin_inset space ~
+\end_inset
+
+Decimal_separator: Read floating point values using this decimal separator
+ (default: .)
+\end_layout
+
 \end_deeper
 \end_deeper
 \begin_layout Description

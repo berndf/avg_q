@@ -135,3 +135,105 @@ writeasc -b %s
    self.average_ECG()
    ecgfiles.append(self.avgECGfile)
   return self.sessionaverage_ECG(ecgfiles)
+ def from_trgfile(self,ECGtrgpath,base=None):
+  if base is not None:
+   self.base=base
+  else:
+   self.base,ext=os.path.splitext(ECGtrgpath)
+   self.base=self.base.replace('_ECG','')
+  self.indir,name=os.path.split(self.base)
+  trgfile=avg_q.trgfile.trgfile(ECGtrgpath)
+  self.ECGtriggers=trgfile.gettuples()
+  self.sfreq=float(trgfile.preamble['Sfreq'])
+ def get_HRV_asc(self,resample_interval='30s'):
+  '''Create {self.base}_HRV.asc with HR and HRV measures.
+     By default these are resampled in 30s bins.
+     Set resample_interval=None for no resampling (1s steps).
+  '''
+  import numpy
+  import pandas
+  import statsmodels.nonparametric.smoothers_lowess
+  import scipy.interpolate
+  import avg_q.numpy_Script
+
+  s=pandas.Series([x[0] for x in self.ECGtriggers])/self.sfreq
+  s.index=s.values
+
+  HR=60/s.diff().iloc[1:]
+  HR=HR[HR>20]
+
+  lo=statsmodels.nonparametric.smoothers_lowess.lowess(
+   HR,HR.index,
+   is_sorted=True,
+   frac=0.05)
+
+  ind=HR/lo[:,1]<0.4
+  HR[ind]=HR[ind]*3
+  ind=HR/lo[:,1]<0.6
+  HR[ind]=HR[ind]*2
+
+  ip=scipy.interpolate.interp1d(HR.index,HR,kind='linear',fill_value='extrapolate')
+  xvals=numpy.arange(numpy.floor(s.index[1]),numpy.ceil(s.index[-1]))
+  rHR=pandas.Series(ip(xvals), index=xvals)
+
+  epoch=avg_q.numpy_Script.numpy_epoch(rHR.values)
+  epoch.xdata=rHR.index.values
+  epoch.sfreq=1
+  epochs=[epoch]
+
+  epochsource=avg_q.numpy_Script.numpy_Epochsource(epochs)
+  script=avg_q.Script(self.avg_q_instance)
+  script.add_Epochsource(epochsource)
+  script.set_collect('append -l')
+  # Ranges: LF 0.04–0.15 Hz, HF 0.15– 0.4 Hz (Vandewalle:2007)
+  # Order written: HR, LF, HF
+  script.add_postprocess('''
+push
+%(sliding_average)s
+writeasc -b -c %(HRVfile)s
+# Back to original data and save it again for HRP analysis below
+pop
+push
+detrend -0
+push
+fftfilter 0 0 0.03Hz 0.04Hz 0.15Hz 0.16Hz 1 1
+calc abs
+add 1
+calc log
+%(sliding_average)s
+writeasc -a -b -c %(HRVfile)s
+pop
+fftfilter 0 0 0.14Hz 0.15Hz 0.40Hz 0.41Hz 1 1
+calc abs
+add 1
+calc log
+%(sliding_average)s
+writeasc -a -b -c %(HRVfile)s
+
+# Now get the original data and convert to heart rate period HRP=1/HR
+pop
+calc inv
+push
+%(sliding_average)s
+writeasc -a -b -c %(HRVfile)s
+pop
+detrend -0
+push
+fftfilter 0 0 0.03Hz 0.04Hz 0.15Hz 0.16Hz 1 1
+calc abs
+add 1
+calc log
+%(sliding_average)s
+writeasc -a -b -c %(HRVfile)s
+pop
+fftfilter 0 0 0.14Hz 0.15Hz 0.40Hz 0.41Hz 1 1
+calc abs
+add 1
+calc log
+%(sliding_average)s
+writeasc -a -b -c %(HRVfile)s
+''' % {
+   'sliding_average': ' '.join(['sliding_average',str(resample_interval),str(resample_interval)]) if resample_interval is not None else '',
+   'HRVfile': self.base+'_HRV.asc',
+  })
+  script.run()
