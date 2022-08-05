@@ -356,7 +356,6 @@ read_neurofile(transform_info_ptr tinfo) {
 
  /* There actually are x-y positions in the file, but some of them are zero,
   * so they're not really suited for us */
- tinfo->probepos=NULL;
  /* Force create_channelgrid to really allocate the channel info anew.
   * Otherwise, deepfree_tinfo will free someone else's data ! */
  tinfo->channelnames=NULL; tinfo->probepos=NULL;

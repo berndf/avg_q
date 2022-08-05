@@ -20,6 +20,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_read_labview,
  select_read_kn,
  select_read_neurofile,
+ select_read_nke,
  select_read_rec,
  select_read_sigma,
 #ifdef AVG_Q_WITH_SOUND

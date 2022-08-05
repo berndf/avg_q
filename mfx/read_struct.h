@@ -38,6 +38,7 @@ enum struct_member_types {
  STRUCT_MEMBER_SKIP=0,
  STRUCT_MEMBER_INT,	/* Size of the int is given by the struct_member entry */
  STRUCT_MEMBER_UINT,	/* Size of the unsigned int is given by the struct_member entry */
+ STRUCT_MEMBER_XINT,	/* As UINT but output in hexadecimal (%x) */
  STRUCT_MEMBER_FLOAT,	/* Size of the float is given by the struct_member entry */
  STRUCT_MEMBER_CHAR	/* Number of chars is given by the struct_member entry */
 };

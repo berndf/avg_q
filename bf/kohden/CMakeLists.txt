@@ -3,8 +3,10 @@
 
 SET(bf_sources
  read_neurofile.c neurofile_sm.c neurofile_smd.c
+ read_nke.c nke_format_sm.c nke_format_smd.c
 )
 
 SET(programs
  dump_neurofile_header
+ dump_nke_header
 )

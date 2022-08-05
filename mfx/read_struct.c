@@ -181,7 +181,8 @@ print_structcontents(char *structure, struct_member *smp, struct_member_descript
     }
     }
     break;
-   case STRUCT_MEMBER_UINT: {
+   case STRUCT_MEMBER_UINT:
+   case STRUCT_MEMBER_XINT: {
     unsigned long value=0;
     int have_value=TRUE;
     switch (in_smp->length) {
@@ -203,7 +204,7 @@ print_structcontents(char *structure, struct_member *smp, struct_member_descript
       break;
     }
     if (have_value) {
-     fprintf(stream, "%lu\n", value);
+     fprintf(stream, in_smdp->member_type==STRUCT_MEMBER_XINT ? "%lx\n" : "%lu\n", value);
     }
     }
     break;

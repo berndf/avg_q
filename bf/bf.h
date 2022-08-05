@@ -205,6 +205,7 @@ void select_append(transform_info_ptr tinfo);
 void select_add(transform_info_ptr tinfo);
 void select_recode(transform_info_ptr tinfo);
 void select_read_neurofile(transform_info_ptr tinfo);
+void select_read_nke(transform_info_ptr tinfo);
 void select_read_inomed(transform_info_ptr tinfo);
 void select_push(transform_info_ptr tinfo);
 void select_pop(transform_info_ptr tinfo);
