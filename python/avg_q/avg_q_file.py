@@ -10,9 +10,10 @@ formats_and_extensions=[
  ('BrainVision', ['.vhdr','.ahdr','.vmrk','.amrk','.eeg']),
  ('asc', ['.asc']),
  ('hdf', ['.hdf']),
- ('rec', ['.edf','.rec', '.bdf']),
+ ('rec', ['.edf','.rec','.bdf']),
  ('freiburg', ['.co']),
  ('neurofile', ['.eeg']),
+ ('nke', ['.eeg']),
  ('Inomed', ['.emg','.trg']),
  ('sound', ['.wav','.au','.snd','.aiff','.mp3','.ogg']),
  ('Coherence', ['.Eeg']),
@@ -84,6 +85,10 @@ read_vitaport %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s
   elif fileformat=='neurofile':
    self.getepochmethod='''
 read_neurofile %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
+'''
+  elif fileformat=='nke':
+   self.getepochmethod='''
+read_nke %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='Inomed':
    self.getepochmethod='''
@@ -184,17 +189,21 @@ read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
   } + ((self.addmethods+'\n') if self.addmethods else '')
  def guessformat(self,filename):
   name,ext=os.path.splitext(filename)
-  def findformat(ext):
-   for format,extlist in formats_and_extensions:
-    if ext in extlist:
-     return format
-   for format,extlist in formats_and_extensions:
-    if ext.lower() in extlist:
-     return format
-   return None
-  fileformat=findformat(ext)
-  if not fileformat:
-   fileformat=findformat(ext.lower())
-  if not fileformat:
+  format_and_score=[]
+  for format,extlist in formats_and_extensions:
+   score=0
+   if ext in extlist:
+    score=5
+   lext=ext.lower()
+   if score==0 and lext in [x.lower() for x in extlist]:
+    score=1
+   if lext=='.eeg' and score>0:
+    if format=='nke' and os.path.exists(name+'.21e') or\
+       format=='BrainVision' and os.path.exists(name+'.vhdr'):
+     score+=2
+   if score>0:
+    format_and_score.append((format,score))
+  if len(format_and_score)==0:
    raise Exception("Can't guess format of %s!" % filename)
-  return filename,fileformat
+  format_and_score.sort(key=lambda x: x[1],reverse=True)
+  return filename,format_and_score[0][0]

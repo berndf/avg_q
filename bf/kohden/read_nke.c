@@ -80,6 +80,8 @@ LOCAL Bool check_signature(FILE *infile, long where) {
 #define ELECTRODE_UNTAG "["
 #define ELECTRODE_NAME_MAXLEN 256
 #define COMMENT_MAXLEN 100
+/* Compatible with synamps_sm.c */
+#define trigcode_STARTSTOP 256
 
 /*{{{  Definition of read_nke_storage*/
 /* Per wfm_block we need to record the start address and data duration
@@ -138,16 +140,11 @@ LOCAL void read_21e(char const *eegfilename, transform_info_ptr tinfo) {
   TRACEMS1(tinfo->emethods, 1, "read_nke read_21e: Reading channel names from %s\n", MSGPARM(filename.buffer_start));
   while (!feof(file21e)) {
    if (fgets(buffer, ELECTRODE_NAME_MAXLEN-1, file21e)==NULL) break;
-tryagain:
    if (seeking) {
-    /* Still looking for ELECTRODE_TAG or REFERENCE_TAG */
-    if (strncmp(buffer, ELECTRODE_TAG, strlen(ELECTRODE_TAG)) == 0 || 
-        strncmp(buffer, REFERENCE_TAG, strlen(ELECTRODE_TAG)) == 0) seeking=FALSE;
+    /* Still looking for ELECTRODE_TAG */
+    if (strncmp(buffer, ELECTRODE_TAG, strlen(ELECTRODE_TAG)) == 0) seeking=FALSE;
    } else {
-    if (strncmp(buffer, ELECTRODE_UNTAG, strlen(ELECTRODE_UNTAG)) == 0) {
-     seeking=TRUE;
-     goto tryagain;
-    }
+    if (strncmp(buffer, ELECTRODE_UNTAG, strlen(ELECTRODE_UNTAG)) == 0) break;
     /* Remove EOL */
     for (char *inbuf=buffer; *inbuf!='\0'; inbuf++) {
      if (*inbuf=='\r' || *inbuf=='\n') *inbuf='\0';
@@ -181,11 +178,13 @@ LOCAL void add_channelname(transform_info_ptr tinfo, int chan) {
     break;
    }
   }
-  if (label==NULL) {
-   ERREXIT1(tinfo->emethods, "read_nke add_channelname: No label for channel ID %d\n", MSGPARM(chan));
+  if (label!=NULL) {
+   growing_buf_append(&local_arg->channelnames,label,strlen(label)+1);
   }
-  growing_buf_append(&local_arg->channelnames,label,strlen(label)+1);
- } else {
+ }
+ /* We fall through here, setting standard labels if the .21e file doesn't contain them.
+  * This sounds strange but from example files this seems the way to go... */
+ if (label==NULL) {
   /* Set standard labels */
   switch (chan) {
    case 0:
@@ -357,7 +356,68 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
   }
   if (triggerfile!=stdin) fclose(triggerfile);
  } else {
-  TRACEMS(tinfo->emethods, 0, "read_nke_build_trigbuffer: No trigger source known.\n");
+  growing_buf logfilename;
+
+  growing_buf_init(&logfilename);
+  growing_buf_takethis(&logfilename,args[ARGS_IFILE].arg.s);
+  char *const dot=strrchr(logfilename.buffer_start,'.');
+  if (dot!=NULL) {
+   logfilename.current_length=dot-logfilename.buffer_start+1;
+  }
+  growing_buf_appendstring(&logfilename,".log");
+  FILE *logfile=fopen(logfilename.buffer_start, "rb");
+  if (logfile!=NULL) {
+   check_signature(logfile,0L);
+   if (!check_signature(logfile,0L)) {
+    ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Invalid signature in >%s<\n", MSGPARM(logfilename.buffer_start));
+   }
+   fseeko(logfile, 0x0091L, SEEK_SET);
+   int log_block_cnt = fgetc(logfile);
+   for (int lg_block=0; lg_block<log_block_cnt; lg_block++) {
+    fseeko(logfile, 0x0092L+lg_block*sm_nke_control_block[0].offset, SEEK_SET);
+    struct nke_control_block clog_block;
+    if (read_struct((char *)&clog_block, sm_nke_control_block, logfile)==0) {
+     ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+    }
+#ifndef LITTLE_ENDIAN
+    change_byteorder((char *)&clog_block, sm_nke_control_block);
+#endif
+    // Read datablock_cnt which is a member of the first data block...
+    fseeko(logfile, clog_block.address+18, SEEK_SET);
+    int const data_block_cnt = fgetc(logfile);
+    for (int dta_block=0; dta_block<data_block_cnt; dta_block++) {
+     int code=1;
+     char description[NKE_DESCRIPTION_LENGTH+1];
+     fseeko(logfile, clog_block.address+20+dta_block*sm_nke_log_block[0].offset, SEEK_SET);
+     struct nke_log_block log_block;
+     if (read_struct((char *)&log_block, sm_nke_log_block, logfile)==0) {
+      ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+     }
+#ifndef LITTLE_ENDIAN
+     change_byteorder((char *)&log_block, sm_nke_log_block);
+#endif
+     strncpy(description,(char *)&log_block.description,NKE_DESCRIPTION_LENGTH);
+     description[NKE_DESCRIPTION_LENGTH]='\0';
+     if (strncmp(description,"REC START",9)==0 ||
+         strncmp(description,"Recording Gap",13)==0) {
+      code=trigcode_STARTSTOP;
+     }
+     /* Format of timestamp[:6] is HHMMSS starting from recording start */
+     push_trigger(&local_arg->triggers, 
+      (36000L*(log_block.timestamp[0]-'0')+
+       3600L*(log_block.timestamp[1]-'0')+
+	600L*(log_block.timestamp[2]-'0')+
+	 60L*(log_block.timestamp[3]-'0')+
+	 10L*(log_block.timestamp[4]-'0')+
+	     (log_block.timestamp[5]-'0'))*local_arg->sfreq,
+      code, description);
+    }
+   }
+   fclose(logfile);
+  } else {
+   TRACEMS(tinfo->emethods, 0, "read_nke_build_trigbuffer: No trigger source known.\n");
+  }
+  growing_buf_free(&logfilename);
  }
 }
 /*}}}  */
@@ -400,10 +460,10 @@ read_nke_init(transform_info_ptr tinfo) {
  local_arg->channelnames.delimiters=""; /* Only \0 is a delimiter */
 
  local_arg->points_in_file=0L;
- if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
+ if ((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_nke_init: Can't open EEG file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
- if(!check_signature(local_arg->infile,0L) || !check_signature(local_arg->infile,0x0081L)) {
+ if (!check_signature(local_arg->infile,0L) || !check_signature(local_arg->infile,0x0081L)) {
   ERREXIT1(tinfo->emethods, "read_nke_init: Invalid signature in >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
 
