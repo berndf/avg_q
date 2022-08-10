@@ -1,4 +1,4 @@
-// Copyright (C) 1997-1999,2001,2005,2008,2011 Bernd Feige
+// Copyright (C) 1997-1999,2001,2005,2008,2010,2011,2013-2015 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 /*{{{}}}*/
 /*{{{  Description*/

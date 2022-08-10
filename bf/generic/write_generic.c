@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008,2010,2012-2014 Bernd Feige
+ * Copyright (C) 2008,2010,2012-2014,2020 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/

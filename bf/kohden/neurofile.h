@@ -1,4 +1,8 @@
 /*
+ * Copyright (C) 1997 Bernd Feige
+ * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+ */
+/*
  * Header for the Nihon Kohden NeuroFile II format
  */
 #ifndef _NEUROFILE_H_INCLUDED

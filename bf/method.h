@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1997,2001,2002,2008,2016 Bernd Feige
+ * Copyright (C) 1996,1997,2001,2002,2008,2010,2013-2016,2020 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*

@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2014,2016,2018-2020 Bernd Feige
+# Copyright (C) 2006-2014,2016-2021 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 PROJECT(avg_q)

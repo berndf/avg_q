@@ -152,6 +152,12 @@ bf/kohden/dump_neurofile_header.c
 bf/kohden/neurofile_sm.c
 bf/kohden/neurofile_smd.c
 bf/kohden/read_neurofile.c
+bf/kohden/dump_nke_header.c
+bf/kohden/nke_format_sm.c
+bf/kohden/nke_format_smd.c
+bf/kohden/read_nke.c
+bf/kohden/neurofile.h
+bf/kohden/nke_format.h
 bf/laplacian.cc
 bf/link_order.c
 bf/malloc_trace.c
