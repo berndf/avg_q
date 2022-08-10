@@ -373,9 +373,11 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
    }
    fseeko(logfile, 0x0091L, SEEK_SET);
    int log_block_cnt = fgetc(logfile);
+   /* log_block_cnt can be at most 22; Afterwards "subevents" may follow with milliseconds information */
+   Bool read_subevents=TRUE;
    for (int lg_block=0; lg_block<log_block_cnt; lg_block++) {
     fseeko(logfile, 0x0092L+lg_block*sm_nke_control_block[0].offset, SEEK_SET);
-    struct nke_control_block clog_block;
+    struct nke_control_block clog_block,sclog_block;
     if (read_struct((char *)&clog_block, sm_nke_control_block, logfile)==0) {
      ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
     }
@@ -385,6 +387,25 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
     // Read datablock_cnt which is a member of the first data block...
     fseeko(logfile, clog_block.address+18, SEEK_SET);
     int const data_block_cnt = fgetc(logfile);
+    if (read_subevents) {
+     /* Read subevents */
+     if (fseeko(logfile, 0x0092L+(lg_block+22)*sm_nke_control_block[0].offset, SEEK_SET)) {
+      read_subevents=FALSE;
+     } else {
+      if (read_struct((char *)&sclog_block, sm_nke_control_block, logfile)==0) {
+       ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+      }
+#ifndef LITTLE_ENDIAN
+      change_byteorder((char *)&sclog_block, sm_nke_control_block);
+#endif
+      // Read datablock_cnt which is a member of the first data block...
+      fseeko(logfile, sclog_block.address+18, SEEK_SET);
+      int const subdata_block_cnt = fgetc(logfile);
+      if (subdata_block_cnt!=data_block_cnt) {
+       read_subevents=FALSE;
+      }
+     }
+    }
     for (int dta_block=0; dta_block<data_block_cnt; dta_block++) {
      int code=1;
      char description[NKE_DESCRIPTION_LENGTH+1];
@@ -403,14 +424,30 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
       code=trigcode_STARTSTOP;
      }
      /* Format of timestamp[:6] is HHMMSS starting from recording start */
-     push_trigger(&local_arg->triggers, 
-      (36000L*(log_block.timestamp[0]-'0')+
-       3600L*(log_block.timestamp[1]-'0')+
-	600L*(log_block.timestamp[2]-'0')+
-	 60L*(log_block.timestamp[3]-'0')+
-	 10L*(log_block.timestamp[4]-'0')+
-	     (log_block.timestamp[5]-'0'))*local_arg->sfreq,
-      code, description);
+    /* Format of timestamp[:6] is HHMMSS starting from recording start */
+    float marker_time_s=
+     36000L*(log_block.timestamp[0]-'0')+
+      3600L*(log_block.timestamp[1]-'0')+
+       600L*(log_block.timestamp[2]-'0')+
+        60L*(log_block.timestamp[3]-'0')+
+        10L*(log_block.timestamp[4]-'0')+
+            (log_block.timestamp[5]-'0');
+     if (read_subevents) {
+      /* Read the corresponding "sub event" */
+      fseeko(logfile, sclog_block.address+20+dta_block*sm_nke_log_block[0].offset, SEEK_SET);
+      struct nke_log_block slog_block;
+      if (read_struct((char *)&slog_block, sm_nke_log_block, logfile)==0) {
+       ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+      }
+#ifndef LITTLE_ENDIAN
+      change_byteorder((char *)&slog_block, sm_nke_log_block);
+#endif
+      marker_time_s+=
+	 0.1*(slog_block.timestamp[4]-'0')+
+	0.01*(slog_block.timestamp[5]-'0')+
+       0.001*(slog_block.timestamp[6]-'0');
+     }
+     push_trigger(&local_arg->triggers, marker_time_s*local_arg->sfreq, code, description);
     }
    }
    fclose(logfile);

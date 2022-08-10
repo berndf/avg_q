@@ -165,7 +165,7 @@ main(int argc, char **argv) {
  const long expected=nr_of_records*total_samples_per_record*sizeof(int16_t)+bytes_in_header;
  printf("%ld records, file size is %ld", nr_of_records, statbuff.st_size);
  if (statbuff.st_size==expected) {
-  printf(" as expected.");
+  printf(" as expected.\n");
  } else {
   printf(", expected %ld!\n", expected);
  }
