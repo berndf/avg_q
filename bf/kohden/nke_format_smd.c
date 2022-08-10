@@ -49,3 +49,8 @@ struct_member_description smd_nke_channel_block[]={
  {STRUCT_MEMBER_XINT, "dummy2"},
  {STRUCT_MEMBER_XINT, "dummy3"},
 };
+
+struct_member_description smd_nke_log_block[]={
+ {STRUCT_MEMBER_CHAR, "description"},
+ {STRUCT_MEMBER_CHAR, "timestamp"},
+};
