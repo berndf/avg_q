@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2000,2003,2007,2010,2013-2015 Bernd Feige
+ * Copyright (C) 1996-2000,2003,2007,2013,2022 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #ifndef _GROWING_BUF_H
@@ -31,9 +31,10 @@ extern void growing_buf_init(growing_buf *buf);
 extern Bool growing_buf_allocate(growing_buf *buf, long length);
 extern Bool growing_buf_takewithlength(growing_buf *buf, char const *str, long length);
 extern Bool growing_buf_takethis(growing_buf *buf, char const *str);
-extern Bool growing_buf_append(growing_buf *buf, char const *from, int length);
+extern Bool growing_buf_append(growing_buf *buf, char const *from, long length);
 extern Bool growing_buf_appendstring(growing_buf *buf, char const *str);
 extern Bool growing_buf_appendchar(growing_buf *buf, char const c);
+extern Bool growing_buf_appendf(growing_buf *buf, const char *format, ...);
 extern void growing_buf_free(growing_buf *buf);
 
 extern void growing_buf_settothis(growing_buf *buf, char *str);

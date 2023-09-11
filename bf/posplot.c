@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2018,2020 Bernd Feige
+ * Copyright (C) 1996-2018,2020,2023 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -56,7 +56,7 @@ enum ARGS_ENUM {
 };
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Quit after plotting the epoch - never go interactive", "q", FALSE, NULL},
- {T_ARGS_TAKES_NOTHING, "Run the event replay file `posplot.rec'", "R", FALSE, NULL},
+ {T_ARGS_TAKES_NOTHING, "Run the event replay file `posplot_rec'", "R", FALSE, NULL},
  {T_ARGS_TAKES_FILENAME, "Run the named event replay file", "r", ARGDESC_UNUSED, NULL}
 };
 /*}}}  */

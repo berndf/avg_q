@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2002,2004,2006-2016,2020 Bernd Feige
+ * Copyright (C) 1996-2002,2004,2006-2010,2012-2014,2016,2022 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -32,6 +32,7 @@ LOCAL const char *const variables_choice[]={
  "file_start_point",
  "points_in_file",
  "nroffreq",
+ "basefreq",
  "nrofaverages",
  "accepted_epochs",
  "rejected_epochs",
@@ -67,6 +68,7 @@ enum variables_choice {
  C_FILESTARTPOINT,
  C_POINTSINFILE,
  C_NROFFREQ,
+ C_BASEFREQ,
  C_NROFAVERAGES,
  C_ACCEPTED_EPOCHS,
  C_REJECTED_EPOCHS,
@@ -106,8 +108,6 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_FILENAME, "Output file", " ", ARGDESC_UNUSED, (const char *const *)"stdout"}
 };
 
-#define OUTPUT_LINE_LENGTH 1024
-
 /*{{{  Definition of query_storage*/
 struct query_storage {
  FILE *outfile;
@@ -117,13 +117,14 @@ struct query_storage {
 /*}}}  */
 
 LOCAL void
-myflush(transform_info_ptr tinfo, char *buffer) {
+myflush(transform_info_ptr tinfo, growing_buf *bufferp) {
  struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
  if (local_arg->outfile==NULL) {
-  TRACEMS(tinfo->emethods, -1, buffer);
+  TRACEMS(tinfo->emethods, -1, bufferp->buffer_start);
  } else {
-  fputs(buffer, local_arg->outfile);
+  fputs(bufferp->buffer_start, local_arg->outfile);
  }
+ growing_buf_clear(bufferp);
 }
 
 /*{{{  query_init(transform_info_ptr tinfo) {*/
@@ -131,7 +132,9 @@ METHODDEF void
 query_init(transform_info_ptr tinfo) {
  struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- char buffer[OUTPUT_LINE_LENGTH], *inbuf=buffer;
+ growing_buf buffer;
+ growing_buf_init(&buffer);
+ growing_buf_allocate(&buffer, 0);
 
  if (!args[ARGS_OFILE].is_set) {
   local_arg->outfile=NULL;
@@ -155,7 +158,7 @@ query_init(transform_info_ptr tinfo) {
   case C_FILETRIGGERS_FOR_TRIGFILE:
   case C_FILETRIGGERS_FOR_TRIGFILE_S:
   case C_FILETRIGGERS_FOR_TRIGFILE_MS:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "# Sfreq=%f%s", tinfo->sfreq, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "# Sfreq=%f%s", tinfo->sfreq, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   default:
    break;
@@ -175,125 +178,125 @@ query(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
  int channel;
  int point;
- char buffer[OUTPUT_LINE_LENGTH], *inbuf=buffer;
  transform_info_ptr const tinfoptr=tinfo;
+ growing_buf buffer;
+ growing_buf_init(&buffer);
+ growing_buf_allocate(&buffer, 0);
 
  if (args[ARGS_PRINTNAME].is_set) {
-  snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=", variables_choice[args[ARGS_VARNAME].arg.i]);
-  inbuf+=strlen(inbuf);
+  growing_buf_appendf(&buffer, "%s=", variables_choice[args[ARGS_VARNAME].arg.i]);
  }
  switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
   case C_SFREQ:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%g%s", tinfoptr->sfreq, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%g%s", tinfoptr->sfreq, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_NR_OF_POINTS:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->nr_of_points, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->nr_of_points, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_NR_OF_CHANNELS:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->nr_of_channels, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->nr_of_channels, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_ITEMSIZE:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->itemsize, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->itemsize, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_LEAVERIGHT:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->leaveright, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->leaveright, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_LENGTH_OF_OUTPUT_REGION:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld%s", tinfoptr->length_of_output_region, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%ld%s", tinfoptr->length_of_output_region, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_BEFORETRIG:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->beforetrig, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->beforetrig, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_AFTERTRIG:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->aftertrig, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->aftertrig, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_FILESTARTPOINT:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld%s", tinfoptr->file_start_point, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%ld%s", tinfoptr->file_start_point, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_POINTSINFILE:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld%s", tinfoptr->points_in_file, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%ld%s", tinfoptr->points_in_file, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_NROFFREQ:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->nroffreq, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->nroffreq, local_arg->delimiter); myflush(tinfo, &buffer);
+   break;
+  case C_BASEFREQ:
+   growing_buf_appendf(&buffer, "%g%s", tinfoptr->basefreq, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_NROFAVERAGES:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->nrofaverages, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->nrofaverages, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_ACCEPTED_EPOCHS:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->accepted_epochs, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->accepted_epochs, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_REJECTED_EPOCHS:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->rejected_epochs, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->rejected_epochs, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_FAILED_ASSERTIONS:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->failed_assertions, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->failed_assertions, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_CONDITION:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%d%s", tinfoptr->condition, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%d%s", tinfoptr->condition, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_Z_LABEL:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s%s", tinfoptr->z_label, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%s%s", tinfoptr->z_label, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_Z_VALUE:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%g%s", tinfoptr->z_value, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%g%s", tinfoptr->z_value, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_COMMENT:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s%s", tinfoptr->comment, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%s%s", tinfoptr->comment, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_DATETIME: {
    short dd, mm, yy, yyyy, hh, mi, ss;
    if (comment2time(tinfoptr->comment, &dd, &mm, &yy, &yyyy, &hh, &mi, &ss)) {
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%02d/%02d/%04d,%02d:%02d:%02d%s", mm, dd, yyyy, hh, mi, ss, local_arg->delimiter);
+    growing_buf_appendf(&buffer, "%02d/%02d/%04d,%02d:%02d:%02d%s", mm, dd, yyyy, hh, mi, ss, local_arg->delimiter);
    } else {
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "UNDEFINED%s", local_arg->delimiter);
+    growing_buf_appendf(&buffer, "UNDEFINED%s", local_arg->delimiter);
    }
-   myflush(tinfo, buffer);
+   myflush(tinfo, &buffer);
    }
    break;
   case C_XCHANNELNAME:
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s%s", tinfoptr->xchannelname, local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendf(&buffer, "%s%s", tinfoptr->xchannelname, local_arg->delimiter); myflush(tinfo, &buffer);
    break;
   case C_XDATA:
    if (tinfoptr->xdata==NULL) {
     create_xaxis(tinfoptr, NULL);
    }
    for (point=0; point<tinfoptr->nr_of_points; point++) {
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%g%s", tinfoptr->xdata[point], local_arg->delimiter); myflush(tinfo, buffer);
-    inbuf=buffer;
+    growing_buf_appendf(&buffer, "%g%s", tinfoptr->xdata[point], local_arg->delimiter); myflush(tinfo, &buffer);
    }
    break;
   case C_CHANNELNAMES:
    for (channel=0; channel<tinfoptr->nr_of_channels; channel++) {
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s%s", tinfoptr->channelnames[channel], local_arg->delimiter); myflush(tinfo, buffer);
-    inbuf=buffer;
+    growing_buf_appendf(&buffer, "%s%s", tinfoptr->channelnames[channel], local_arg->delimiter); myflush(tinfo, &buffer);
    }
    break;
   case C_CHANNELPOSITIONS:
    for (channel=0; channel<tinfoptr->nr_of_channels; channel++) {
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s\t%g\t%g\t%g%s", tinfoptr->channelnames[channel], tinfoptr->probepos[channel*3], tinfoptr->probepos[channel*3+1], tinfoptr->probepos[channel*3+2], local_arg->delimiter); myflush(tinfo, buffer);
-    inbuf=buffer;
+    growing_buf_appendf(&buffer, "%s\t%g\t%g\t%g%s", tinfoptr->channelnames[channel], tinfoptr->probepos[channel*3], tinfoptr->probepos[channel*3+1], tinfoptr->probepos[channel*3+2], local_arg->delimiter); myflush(tinfo, &buffer);
    }
    break;
   case C_TRIGGERS:
    if (tinfoptr->triggers.buffer_start!=NULL) {
     struct trigger *intrig=(struct trigger *)tinfoptr->triggers.buffer_start;
-    snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "# File position: %ld%s", intrig->position, local_arg->delimiter); myflush(tinfo, buffer);
+    growing_buf_appendf(&buffer, "# File position: %ld%s", intrig->position, local_arg->delimiter); myflush(tinfo, &buffer);
     intrig++;
     while (intrig->code!=0) {
      if (intrig->description==NULL) {
       if (tinfoptr->xdata==NULL) {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld\t%d%s", intrig->position, intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
+       growing_buf_appendf(&buffer, "%ld\t%d%s", intrig->position, intrig->code, local_arg->delimiter); myflush(tinfo, &buffer);
       } else {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=%g\t%d%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
+       growing_buf_appendf(&buffer, "%s=%g\t%d%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, local_arg->delimiter); myflush(tinfo, &buffer);
       }
      } else {
       if (tinfoptr->xdata==NULL) {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld\t%d\t%s%s", intrig->position, intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
+       growing_buf_appendf(&buffer, "%ld\t%d\t%s%s", intrig->position, intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, &buffer);
       } else {
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s=%g\t%d\t%s%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
+       growing_buf_appendf(&buffer, "%s=%g\t%d\t%s%s", tinfoptr->xchannelname, tinfoptr->xdata[intrig->position], intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, &buffer);
       }
      }
-     inbuf=buffer;
      intrig++;
     }
    }
@@ -310,25 +313,23 @@ query(transform_info_ptr tinfo) {
      long const pointno=local_arg->total_points+intrig->position;
      switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
       case C_TRIGGERS_FOR_TRIGFILE:
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld", pointno);
+       growing_buf_appendf(&buffer, "%ld", pointno);
        break;
       case C_TRIGGERS_FOR_TRIGFILE_S:
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%gs", ((double)pointno)/tinfo->sfreq);
+       growing_buf_appendf(&buffer, "%gs", ((double)pointno)/tinfo->sfreq);
        break;
       case C_TRIGGERS_FOR_TRIGFILE_MS:
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%gms", ((double)pointno*1000.0)/tinfo->sfreq);
+       growing_buf_appendf(&buffer, "%gms", ((double)pointno*1000.0)/tinfo->sfreq);
        break;
       default:
        /* Can't happen */
        break;
      }
-     inbuf+=strlen(inbuf);
      if (intrig->description==NULL) {
-      snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "\t%d%s", intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
+      growing_buf_appendf(&buffer, "\t%d%s", intrig->code, local_arg->delimiter); myflush(tinfo, &buffer);
      } else {
-      snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "\t%d\t%s%s", intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
+      growing_buf_appendf(&buffer, "\t%d\t%s%s", intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, &buffer);
      }
-     inbuf=buffer;
      intrig++;
     }
    }
@@ -345,38 +346,49 @@ query(transform_info_ptr tinfo) {
      struct trigger * const intrig=((struct trigger *)tinfoptr->filetriggersp->buffer_start)+current_trigger;
      switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
       case C_FILETRIGGERS_FOR_TRIGFILE:
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%ld", intrig->position);
+       growing_buf_appendf(&buffer, "%ld", intrig->position);
        break;
       case C_FILETRIGGERS_FOR_TRIGFILE_S:
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%gs", ((double)intrig->position)/tinfo->sfreq);
+       growing_buf_appendf(&buffer, "%gs", ((double)intrig->position)/tinfo->sfreq);
        break;
       case C_FILETRIGGERS_FOR_TRIGFILE_MS:
-       snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%gms", ((double)intrig->position*1000.0)/tinfo->sfreq);
+       growing_buf_appendf(&buffer, "%gms", ((double)intrig->position*1000.0)/tinfo->sfreq);
        break;
       default:
        /* Can't happen */
        break;
      }
-     inbuf+=strlen(inbuf);
-     if (intrig->description==NULL) {
-      snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "\t%d%s", intrig->code, local_arg->delimiter); myflush(tinfo, buffer);
-     } else {
-      snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "\t%d\t%s%s", intrig->code, intrig->description, local_arg->delimiter); myflush(tinfo, buffer);
+     growing_buf_appendf(&buffer, "\t%d", intrig->code);
+     if (intrig->description!=NULL) {
+      /* With strings, current_length includes the zero at the end; we want to
+       * overwrite this zero and copy that of str */
+      if (buffer.current_length>0) buffer.current_length--;
+      growing_buf_appendchar(&buffer, '\t');
+      for (char *indesc=intrig->description; *indesc!='\0'; indesc++) {
+       char thischar= *indesc;
+       if (strchr("\n\r\t", thischar)) thischar=' ';
+       growing_buf_appendchar(&buffer, thischar);
+      }
+      growing_buf_appendchar(&buffer, '\0');
      }
-     inbuf=buffer;
+     growing_buf_appendstring(&buffer, local_arg->delimiter); myflush(tinfo, &buffer);
     }
    }
    break;
-  case C_CWD:
-   if (getcwd(inbuf,OUTPUT_LINE_LENGTH-(inbuf-buffer)-3)==NULL) {
-    strcpy(inbuf,"ERROR");
+  case C_CWD: {
+   char *const cwd=getcwd(NULL,0);
+   if (cwd==NULL) {
+    growing_buf_appendstring(&buffer, "ERROR");
+   } else {
+    growing_buf_appendstring(&buffer, cwd);
    }
-   inbuf+=strlen(inbuf);
-   snprintf(inbuf, OUTPUT_LINE_LENGTH-(inbuf-buffer), "%s", local_arg->delimiter); myflush(tinfo, buffer);
+   growing_buf_appendstring(&buffer, local_arg->delimiter); myflush(tinfo, &buffer);
+   }
    break;
  }
  if (local_arg->outfile!=NULL) fflush(local_arg->outfile);
 
+ growing_buf_free(&buffer);
  return tinfo->tsdata;
 }
 /*}}}  */

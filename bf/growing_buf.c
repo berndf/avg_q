@@ -1,13 +1,15 @@
 /*
- * Copyright (C) 1996,1998-2000,2003,2007,2010,2011,2013-2015 Bernd Feige
+ * Copyright (C) 1996,1998-2000,2003,2007,2011,2013,2022 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
+#include <stdlib.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "growing_buf.h"
 
-#define MIN_INITIAL_SIZE 20
+#define MIN_INITIAL_SIZE 128
 
 void 
 growing_buf_clear(growing_buf *buf) {
@@ -52,10 +54,9 @@ growing_buf_takethis(growing_buf *buf, char const *str) {
  return growing_buf_takewithlength(buf, str, strlen(str)+1);
 }
 
-Bool
-growing_buf_append(growing_buf *buf, char const *from, int length) {
+static Bool
+growing_buf_ensurelength(growing_buf *buf, long future_length) {
  long const current_size=buf->buffer_end-buf->buffer_start;
- long const future_length=buf->current_length+length;
  long future_size=current_size;
 
  if (!buf->can_be_freed) return FALSE;
@@ -72,6 +73,13 @@ growing_buf_append(growing_buf *buf, char const *from, int length) {
   buf->buffer_end=buf->buffer_start+future_size;
   if (buf->current_token!=NULL) buf->current_token+=buf->buffer_start-oldstart;
  }
+ return TRUE;
+}
+
+Bool
+growing_buf_append(growing_buf *buf, char const *from, long length) {
+ long const future_length=buf->current_length+length;
+ if (!growing_buf_ensurelength(buf, future_length)) return FALSE;
  memcpy(buf->buffer_start+buf->current_length, from, length);
  buf->current_length=future_length;
  return TRUE;
@@ -88,6 +96,23 @@ growing_buf_appendstring(growing_buf *buf, char const *str) {
 Bool 
 growing_buf_appendchar(growing_buf *buf, char const c) {
  return growing_buf_append(buf, &c, 1);
+}
+Bool 
+growing_buf_appendf(growing_buf *buf, const char *format, ...) {
+ va_list ap;
+ va_start(ap, format);
+ /* With strings, current_length includes the zero at the end; we want to
+  * overwrite this zero and copy that of str */
+ if (buf->current_length>0) buf->current_length--;
+ long const length=vsnprintf(NULL, 0, format, ap);
+ long const future_length=buf->current_length+length+1;
+ va_end(ap);
+ if (!growing_buf_ensurelength(buf, future_length)) return FALSE;
+ va_start(ap, format);
+ vsnprintf(buf->buffer_start+buf->current_length, length+1, format, ap);
+ va_end(ap);
+ buf->current_length=future_length;
+ return TRUE;
 }
 
 void 

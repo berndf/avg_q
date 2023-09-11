@@ -70,13 +70,9 @@ LOCAL char const *const accepted_signatures[]={
  "EEG-1100A V02.0",
  NULL
 };
-LOCAL Bool check_signature(FILE *infile, long where) {
- char signature[17];
+LOCAL Bool check_signature(char *const signature) {
  int i;
- fseek(infile, where, SEEK_SET);
- fread(signature, 16, 1, infile);
- signature[16]=(char)0;
- for (i=0; accepted_signatures[i]!=NULL && strcmp(signature,accepted_signatures[i])!=0; i++);
+ for (i=0; accepted_signatures[i]!=NULL && strncmp(signature,accepted_signatures[i],16)!=0; i++);
  return accepted_signatures[i]!=NULL;
 }
 #define ELECTRODE_TAG "[ELECTRODE]"
@@ -127,16 +123,20 @@ struct read_nke_storage {
 LOCAL void read_21e(char const *eegfilename, transform_info_ptr tinfo) {
  struct read_nke_storage *local_arg=(struct read_nke_storage *)tinfo->methods->local_storage;
  growing_buf filename;
- FILE *file21e;
-
  growing_buf_init(&filename);
  growing_buf_takethis(&filename,eegfilename);
  char *const dot=strrchr(filename.buffer_start,'.');
  if (dot!=NULL) {
   filename.current_length=dot-filename.buffer_start+1;
  }
+ long const savelength=filename.current_length;
  growing_buf_appendstring(&filename,".21e");
- file21e=fopen(filename.buffer_start, "rb");
+ FILE *file21e=fopen(filename.buffer_start, "rb");
+ if (file21e==NULL) {
+  filename.current_length=savelength;
+  growing_buf_appendstring(&filename,".21E");
+  file21e=fopen(filename.buffer_start, "rb");
+ }
  if (file21e!=NULL) {
   char buffer[ELECTRODE_NAME_MAXLEN];
   Bool seeking=TRUE;
@@ -368,19 +368,29 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
   if (dot!=NULL) {
    logfilename.current_length=dot-logfilename.buffer_start+1;
   }
+  long const savelength=logfilename.current_length;
   growing_buf_appendstring(&logfilename,".log");
   FILE *logfile=fopen(logfilename.buffer_start, "rb");
+  if (logfile==NULL) {
+   logfilename.current_length=savelength;
+   growing_buf_appendstring(&logfilename,".LOG");
+   logfile=fopen(logfilename.buffer_start, "rb");
+  }
   if (logfile!=NULL) {
-   check_signature(logfile,0L);
-   if (!check_signature(logfile,0L)) {
+   struct nke_file_header logfile_header;
+   if (read_struct((char *)&logfile_header, sm_nke_file_header, logfile)==0) {
+    ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+   }
+#ifndef LITTLE_ENDIAN
+   change_byteorder((char *)&logfile_header, sm_nke_file_header);
+#endif
+   if (!check_signature(logfile_header.signature1) || !check_signature(logfile_header.signature2)) {
     ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Invalid signature in >%s<\n", MSGPARM(logfilename.buffer_start));
    }
-   fseeko(logfile, 0x0091L, SEEK_SET);
-   int log_block_cnt = fgetc(logfile);
    /* log_block_cnt can be at most 22; Afterwards "subevents" may follow with milliseconds information */
    Bool read_subevents=TRUE;
-   for (int lg_block=0; lg_block<log_block_cnt; lg_block++) {
-    fseeko(logfile, 0x0092L+lg_block*sm_nke_control_block[0].offset, SEEK_SET);
+   for (int lg_block=0; lg_block<logfile_header.ctl_block_cnt; lg_block++) {
+    fseeko(logfile, sm_nke_file_header[0].offset+lg_block*sm_nke_control_block[0].offset, SEEK_SET);
     struct nke_control_block clog_block,sclog_block;
     if (read_struct((char *)&clog_block, sm_nke_control_block, logfile)==0) {
      ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
@@ -389,11 +399,17 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
     change_byteorder((char *)&clog_block, sm_nke_control_block);
 #endif
     // Read datablock_cnt which is a member of the first data block...
-    fseeko(logfile, clog_block.address+18, SEEK_SET);
-    int const data_block_cnt = fgetc(logfile);
+    fseeko(logfile, clog_block.address, SEEK_SET);
+    struct nke_log_header log_header;
+    if (read_struct((char *)&log_header, sm_nke_log_header, logfile)==0) {
+     ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+    }
+#ifndef LITTLE_ENDIAN
+    change_byteorder((char *)&log_header, sm_nke_log_header);
+#endif
     if (read_subevents) {
      /* Read subevents */
-     if (fseeko(logfile, 0x0092L+(lg_block+22)*sm_nke_control_block[0].offset, SEEK_SET)) {
+     if (fseeko(logfile, sm_nke_file_header[0].offset+(lg_block+22)*sm_nke_control_block[0].offset, SEEK_SET)) {
       read_subevents=FALSE;
      } else {
       if (read_struct((char *)&sclog_block, sm_nke_control_block, logfile)==0) {
@@ -403,17 +419,23 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
       change_byteorder((char *)&sclog_block, sm_nke_control_block);
 #endif
       // Read datablock_cnt which is a member of the first data block...
-      fseeko(logfile, sclog_block.address+18, SEEK_SET);
-      int const subdata_block_cnt = fgetc(logfile);
-      if (subdata_block_cnt!=data_block_cnt) {
+      fseeko(logfile, sclog_block.address, SEEK_SET);
+      struct nke_log_header slog_header;
+      if (read_struct((char *)&slog_header, sm_nke_log_header, logfile)==0) {
+       ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
+      }
+#ifndef LITTLE_ENDIAN
+      change_byteorder((char *)&slog_header, sm_nke_log_header);
+#endif
+      if (slog_header.log_block_cnt!=log_header.log_block_cnt) {
        read_subevents=FALSE;
       }
      }
     }
-    for (int dta_block=0; dta_block<data_block_cnt; dta_block++) {
+    for (int dta_block=0; dta_block<log_header.log_block_cnt; dta_block++) {
      int code=1;
      char description[NKE_DESCRIPTION_LENGTH+1];
-     fseeko(logfile, clog_block.address+20+dta_block*sm_nke_log_block[0].offset, SEEK_SET);
+     fseeko(logfile, clog_block.address+sm_nke_log_header[0].offset+dta_block*sm_nke_log_block[0].offset, SEEK_SET);
      struct nke_log_block log_block;
      if (read_struct((char *)&log_block, sm_nke_log_block, logfile)==0) {
       ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
@@ -438,7 +460,7 @@ read_nke_build_trigbuffer(transform_info_ptr tinfo) {
             (log_block.timestamp[5]-'0');
      if (read_subevents) {
       /* Read the corresponding "sub event" */
-      fseeko(logfile, sclog_block.address+20+dta_block*sm_nke_log_block[0].offset, SEEK_SET);
+      fseeko(logfile, sclog_block.address+sm_nke_log_header[0].offset+dta_block*sm_nke_log_block[0].offset, SEEK_SET);
       struct nke_log_block slog_block;
       if (read_struct((char *)&slog_block, sm_nke_log_block, logfile)==0) {
        ERREXIT1(tinfo->emethods, "read_nke_build_trigbuffer: Can't read header in file >%s<\n", MSGPARM(logfilename.buffer_start));
@@ -504,7 +526,16 @@ read_nke_init(transform_info_ptr tinfo) {
  if ((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_nke_init: Can't open EEG file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
- if (!check_signature(local_arg->infile,0L) || !check_signature(local_arg->infile,0x0081L)) {
+
+ struct nke_file_header file_header;
+ if (read_struct((char *)&file_header, sm_nke_file_header, local_arg->infile)==0) {
+  ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
+ }
+#ifndef LITTLE_ENDIAN
+ change_byteorder((char *)&file_header, sm_nke_file_header);
+#endif
+
+ if (!check_signature(file_header.signature1) || !check_signature(file_header.signature2)) {
   ERREXIT1(tinfo->emethods, "read_nke_init: Invalid signature in >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
 
@@ -514,11 +545,9 @@ read_nke_init(transform_info_ptr tinfo) {
  growing_buf_init(&local_arg->nke21e_channels);
  read_21e(args[ARGS_IFILE].arg.s, tinfo);
 
- fseeko(local_arg->infile, 0x0091L, SEEK_SET);
- int const ctl_block_cnt = fgetc(local_arg->infile);
  local_arg->n_blocks=0; /* First pass through the data blocks to count the wfm_blocks */
- for (int ctl_block=0; ctl_block<ctl_block_cnt; ctl_block++) {
-  fseeko(local_arg->infile, 0x0092L+ctl_block*sm_nke_control_block[0].offset, SEEK_SET);
+ for (int ctl_block=0; ctl_block<file_header.ctl_block_cnt; ctl_block++) {
+  fseeko(local_arg->infile, sm_nke_file_header[0].offset+ctl_block*sm_nke_control_block[0].offset, SEEK_SET);
   struct nke_control_block control_block;
   if (read_struct((char *)&control_block, sm_nke_control_block, local_arg->infile)==0) {
    ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
@@ -526,16 +555,22 @@ read_nke_init(transform_info_ptr tinfo) {
 #ifndef LITTLE_ENDIAN
   change_byteorder((char *)&control_block, sm_nke_control_block);
 #endif
-  fseeko(local_arg->infile, control_block.address+17, SEEK_SET);
-  int const data_block_cnt = fgetc(local_arg->infile);
-  local_arg->n_blocks+=data_block_cnt;
+  struct nke_data_block1 data_block1;
+  fseeko(local_arg->infile, control_block.address, SEEK_SET);
+  if (read_struct((char *)&data_block1, sm_nke_data_block1, local_arg->infile)==0) {
+   ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
+  }
+#ifndef LITTLE_ENDIAN
+  change_byteorder((char *)&data_block1, sm_nke_data_block1);
+#endif
+  local_arg->n_blocks+=data_block1.datablock_cnt;
  }
  if ((local_arg->wfm_blocks=(struct wfm_block *)calloc(local_arg->n_blocks, sizeof(struct wfm_block)))==NULL) {
   ERREXIT(tinfo->emethods, "read_nke_init: Error allocating wfm_blocks memory\n");
  }
  int current_block=0;
- for (int ctl_block=0; ctl_block<ctl_block_cnt; ctl_block++) {
-  fseeko(local_arg->infile, 0x0092L+ctl_block*sm_nke_control_block[0].offset, SEEK_SET);
+ for (int ctl_block=0; ctl_block<file_header.ctl_block_cnt; ctl_block++) {
+  fseeko(local_arg->infile, sm_nke_file_header[0].offset+ctl_block*sm_nke_control_block[0].offset, SEEK_SET);
   struct nke_control_block control_block;
   if (read_struct((char *)&control_block, sm_nke_control_block, local_arg->infile)==0) {
    ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
@@ -543,20 +578,29 @@ read_nke_init(transform_info_ptr tinfo) {
 #ifndef LITTLE_ENDIAN
   change_byteorder((char *)&control_block, sm_nke_control_block);
 #endif
-  // Read datablock_cnt which is a member of the first data block...
-  fseeko(local_arg->infile, control_block.address+17, SEEK_SET);
-  int const data_block_cnt = fgetc(local_arg->infile);
-  for (int dta_block=0; dta_block<data_block_cnt; dta_block++) {
-   fseeko(local_arg->infile, control_block.address+dta_block*sm_nke_control_block[0].offset, SEEK_SET);
-   struct nke_data_block data_block;
-   if (read_struct((char *)&data_block, sm_nke_data_block, local_arg->infile)==0) {
-    ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
-   }
+  struct nke_data_block1 data_block1;
+  fseeko(local_arg->infile, control_block.address, SEEK_SET);
+  if (read_struct((char *)&data_block1, sm_nke_data_block1, local_arg->infile)==0) {
+   ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
+  }
 #ifndef LITTLE_ENDIAN
-   change_byteorder((char *)&data_block, sm_nke_data_block);
+  change_byteorder((char *)&data_block1, sm_nke_data_block1);
 #endif
+  unsigned long	wfmblock_address=data_block1.wfmblock_address;
+  for (int dta_block=0; dta_block<data_block1.datablock_cnt; dta_block++) {
+   if (dta_block>0) {
+    fseeko(local_arg->infile, control_block.address+sm_nke_data_block1[0].offset+(dta_block-1)*sm_nke_data_block[0].offset, SEEK_SET);
+    struct nke_data_block data_block;
+    if (read_struct((char *)&data_block, sm_nke_data_block, local_arg->infile)==0) {
+     ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
+    }
+#ifndef LITTLE_ENDIAN
+    change_byteorder((char *)&data_block, sm_nke_data_block);
+#endif
+    wfmblock_address=data_block.wfmblock_address;
+   }
 
-   fseeko(local_arg->infile, data_block.wfmblock_address, SEEK_SET);
+   fseeko(local_arg->infile, wfmblock_address, SEEK_SET);
    struct nke_wfm_block wfm_block;
    if (read_struct((char *)&wfm_block, sm_nke_wfm_block, local_arg->infile)==0) {
     ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
@@ -567,7 +611,7 @@ read_nke_init(transform_info_ptr tinfo) {
    wfm_block.sfreq&=0x3fff; /* Patch-up sfreq in place */
    long int const points_in_block=wfm_block.record_duration*wfm_block.sfreq/10L; /* 0.1s units */
    local_arg->points_in_file+=points_in_block;
-   local_arg->wfm_blocks[current_block].data_start=data_block.wfmblock_address+sm_nke_wfm_block[0].offset+wfm_block.channels*sm_nke_channel_block[0].offset;
+   local_arg->wfm_blocks[current_block].data_start=wfmblock_address+sm_nke_wfm_block[0].offset+wfm_block.channels*sm_nke_channel_block[0].offset;
    local_arg->wfm_blocks[current_block].points_in_block=points_in_block;
    if (ctl_block==0 && dta_block==0) {
     /* Only prepare channel memory etc. once because we disallow changing parameters across blocks */
@@ -576,7 +620,7 @@ read_nke_init(transform_info_ptr tinfo) {
     }
     sprintf(local_arg->comment, "read_nke %02x/%02x/%02x,%02x:%02x:%02x", wfm_block.month, wfm_block.day, wfm_block.year, wfm_block.hour, wfm_block.minute, wfm_block.second);
     for (int channel=0; channel<wfm_block.channels; channel++) {
-     fseeko(local_arg->infile, data_block.wfmblock_address+sm_nke_wfm_block[0].offset+channel*sm_nke_channel_block[0].offset, SEEK_SET);
+     fseeko(local_arg->infile, wfmblock_address+sm_nke_wfm_block[0].offset+channel*sm_nke_channel_block[0].offset, SEEK_SET);
      struct nke_channel_block channel_block;
      if (read_struct((char *)&channel_block, sm_nke_channel_block, local_arg->infile)==0) {
       ERREXIT1(tinfo->emethods, "read_nke_init: Can't read header in file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
@@ -708,7 +752,7 @@ read_nke(transform_info_ptr tinfo) {
 
  /*{{{  Handle triggers within the epoch (option -T)*/
  if (args[ARGS_TRIGTRANSFER].is_set) {
-  int trigs_in_epoch, code;
+  int code;
   long trigpoint;
   long const old_current_trigger=local_arg->current_trigger;
   char *thisdescription;
@@ -716,10 +760,9 @@ read_nke(transform_info_ptr tinfo) {
   /* First trigger entry holds file_start_point */
   push_trigger(&tinfo->triggers, file_start_point, -1, NULL);
   read_nke_reset_triggerbuffer(tinfo);
-  for (trigs_in_epoch=1; (code=read_nke_read_trigger(tinfo, &trigpoint, &thisdescription))!=0;) {
+  while ((code=read_nke_read_trigger(tinfo, &trigpoint, &thisdescription))!=0) {
    if (trigpoint>=file_start_point && trigpoint<=file_end_point) {
     push_trigger(&tinfo->triggers, trigpoint-file_start_point, code, thisdescription);
-    trigs_in_epoch++;
    }
   }
   push_trigger(&tinfo->triggers, 0, 0, NULL); /* End of list */

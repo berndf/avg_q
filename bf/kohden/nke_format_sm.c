@@ -9,6 +9,18 @@
 #include <read_struct.h>
 #include "nke_format.h"
 
+struct_member sm_nke_file_header[]={
+ {sizeof(struct nke_file_header), 146, 0, 0},
+ {(long)&((struct nke_file_header *)NULL)->signature1, 0, 16, 0},
+ {(long)&((struct nke_file_header *)NULL)->addfilename1, 16, 16, 0},
+ {(long)&((struct nke_file_header *)NULL)->addfilename2, 32, 32, 0},
+ {(long)&((struct nke_file_header *)NULL)->datetime, 64, 16, 0},
+ {(long)&((struct nke_file_header *)NULL)->dummy2, 80, 31, 0},
+ {(long)&((struct nke_file_header *)NULL)->swversion, 111, 18, 0},
+ {(long)&((struct nke_file_header *)NULL)->signature2, 129, 16, 0},
+ {(long)&((struct nke_file_header *)NULL)->ctl_block_cnt, 145, 1, 1},
+ {0,0,0,0}
+};
 struct_member sm_nke_control_block[]={
  {sizeof(struct nke_control_block), 20, 0, 0},
  {(long)&((struct nke_control_block *)NULL)->address, 0, 4, 1},
@@ -18,15 +30,18 @@ struct_member sm_nke_control_block[]={
  {(long)&((struct nke_control_block *)NULL)->dummy4, 16, 4, 1},
  {0,0,0,0}
 };
+struct_member sm_nke_data_block1[]={
+ {sizeof(struct nke_data_block1), 22, 0, 0},
+ {(long)&((struct nke_data_block1 *)NULL)->dummy1, 0, 1, 0},
+ {(long)&((struct nke_data_block1 *)NULL)->name, 1, 16, 0},
+ {(long)&((struct nke_data_block1 *)NULL)->datablock_cnt, 17, 1, 0},
+ {(long)&((struct nke_data_block1 *)NULL)->wfmblock_address, 18, 4, 1},
+ {0,0,0,0}
+};
 struct_member sm_nke_data_block[]={
- {sizeof(struct nke_data_block), 22, 0, 0},
- {(long)&((struct nke_data_block *)NULL)->dummy1, 0, 4, 1},
- {(long)&((struct nke_data_block *)NULL)->dummy2, 4, 4, 1},
- {(long)&((struct nke_data_block *)NULL)->dummy3, 8, 4, 1},
- {(long)&((struct nke_data_block *)NULL)->dummy4, 12, 4, 1},
- {(long)&((struct nke_data_block *)NULL)->dummy5, 16, 1, 0},
- {(long)&((struct nke_data_block *)NULL)->datablock_cnt, 17, 1, 0},
- {(long)&((struct nke_data_block *)NULL)->wfmblock_address, 18, 4, 1},
+ {sizeof(struct nke_data_block), 20, 0, 0},
+ {(long)&((struct nke_data_block *)NULL)->name, 0, 16, 0},
+ {(long)&((struct nke_data_block *)NULL)->wfmblock_address, 16, 4, 1},
  {0,0,0,0}
 };
 struct_member sm_nke_wfm_block[]={
@@ -58,6 +73,15 @@ struct_member sm_nke_channel_block[]={
  {0,0,0,0}
 };
 
+struct_member sm_nke_log_header[]={
+ {sizeof(struct nke_log_header), 20, 0, 0},
+ {(long)&((struct nke_log_header *)NULL)->dummy1, 0, 1, 1},
+ {(long)&((struct nke_log_header *)NULL)->signature, 1, 16, 0},
+ {(long)&((struct nke_log_header *)NULL)->dummy2, 17, 1, 1},
+ {(long)&((struct nke_log_header *)NULL)->log_block_cnt, 18, 1, 1},
+ {(long)&((struct nke_log_header *)NULL)->dummy3, 19, 1, 1},
+ {0,0,0,0}
+};
 struct_member sm_nke_log_block[]={
  {sizeof(struct nke_log_block), NKE_DESCRIPTION_LENGTH+NKE_TIMESTAMP_LENGTH, 0, 0},
  {(long)&((struct nke_log_block *)NULL)->description, 0, NKE_DESCRIPTION_LENGTH, 0},

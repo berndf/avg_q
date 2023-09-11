@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1995,1996,2001,2010,2013-2015,2022 Bernd Feige
+ * Copyright (C) 1995,1996,2001,2022 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /* This include file defines the data structures necessary to implement

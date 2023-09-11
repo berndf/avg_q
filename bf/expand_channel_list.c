@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1995-1998,2001,2003,2010,2011,2013-2015 Bernd Feige
+ * Copyright (C) 1995-1998,2001,2003,2011 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /* expand_channel_list.c was derived from the channel selection part of

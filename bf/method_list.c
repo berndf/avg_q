@@ -108,6 +108,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
 #endif
  select_write_kn,
  select_write_mfx,
+ select_write_nke,
  select_write_rec,
 #ifdef AVG_Q_WITH_SOUND
  select_write_sound,

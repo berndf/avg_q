@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2001,2003,2004,2008,2010-2015,2017,2018,2020 Bernd Feige
+ * Copyright (C) 1996-2001,2003,2004,2008,2011-2013,2017,2018,2022 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -157,6 +157,11 @@ fftfilter(transform_info_ptr tinfo) {
  struct blockdef *inblocks;
  array myarray, fftarray;
  long datasize=tinfo->nr_of_points, fftsize;
+ growing_buf tracebuf;
+ if (args[ARGS_VERBOSE].is_set) {
+  growing_buf_init(&tracebuf);
+  growing_buf_allocate(&tracebuf,0);
+ }
 
  /* Re-init if sfreq changed. This is important both for data entered in Hz and
   * in relative-sfreq units. */
@@ -174,13 +179,13 @@ fftfilter(transform_info_ptr tinfo) {
  norm=(DATATYPE)(fftsize>>1);
 
  if (args[ARGS_VERBOSE].is_set) {
-#define STRINGBUFFER_SIZE 100
-  char stringbuffer[STRINGBUFFER_SIZE];
-  snprintf(stringbuffer, STRINGBUFFER_SIZE, "fftfilter: FFT size %ld points, Frequency resolution %gHz\n", fftsize, tinfo->sfreq/fftsize);
-  TRACEMS(tinfo->emethods, -1, stringbuffer);
+  growing_buf_clear(&tracebuf);
+  growing_buf_appendf(&tracebuf, "fftfilter: FFT size %ld points, Frequency resolution %gHz\n", fftsize, tinfo->sfreq/fftsize);
+  TRACEMS(tinfo->emethods, -1, tracebuf.buffer_start);
   for (inblocks=local_arg->blockdefs; inblocks!=NULL; inblocks++) {
-   snprintf(stringbuffer, STRINGBUFFER_SIZE, "fftfilter: Block %ld %ld %ld %ld Factor %g\n", (long)rint(inblocks->start*fftsize), (long)rint(inblocks->nullstart*fftsize), (long)rint(inblocks->nullend*fftsize), (long)rint(inblocks->end*fftsize), inblocks->factor);
-   TRACEMS(tinfo->emethods, -1, stringbuffer);
+   growing_buf_clear(&tracebuf);
+   growing_buf_appendf(&tracebuf, "fftfilter: Block %ld %ld %ld %ld Factor %g\n", (long)rint(inblocks->start*fftsize), (long)rint(inblocks->nullstart*fftsize), (long)rint(inblocks->nullend*fftsize), (long)rint(inblocks->end*fftsize), inblocks->factor);
+   TRACEMS(tinfo->emethods, -1, tracebuf.buffer_start);
    if (inblocks->last_block) break;
   }
  }
@@ -221,18 +226,17 @@ fftfilter(transform_info_ptr tinfo) {
       float ratio=((float)i)/fftsize, factor;
       if (ratio<inblocks->start || ratio>inblocks->end) continue;
       /* factor is 1.0 in the middle of the block and 0.0 at the ends */
-      if      (ratio<inblocks->nullstart) factor=(ratio-inblocks->start)/(inblocks->nullstart-inblocks->start);
-      else if (ratio>inblocks->nullend)   factor=1.0-(ratio-inblocks->nullend)/(inblocks->end-inblocks->nullend);
-      else factor=1.0;
+      factor=(ratio<inblocks->nullstart ? (ratio-inblocks->start)/(inblocks->nullstart-inblocks->start) :
+            ((ratio>inblocks->nullend) ? 1.0-(ratio-inblocks->nullend)/(inblocks->end-inblocks->nullend) :
+              1.0));
       /* We interpolate between 1.0 and inblocks->factor, which may also be >1! */
       factor=1.0+(inblocks->factor-1.0)*factor;
       fftarray.start[i  ]*=factor;
       fftarray.start[i+1]*=factor;
       if (show_factors) {
-#define STRINGBUFFER_SIZE 100
-       char stringbuffer[STRINGBUFFER_SIZE];
-       snprintf(stringbuffer, STRINGBUFFER_SIZE, "\t%d:%g", i/2, factor);
-       TRACEMS(tinfo->emethods, -1, stringbuffer);
+       growing_buf_clear(&tracebuf);
+       growing_buf_appendf(&tracebuf, "\t%d:%g", i/2, factor);
+       TRACEMS(tinfo->emethods, -1, tracebuf.buffer_start);
       }
      }
      if (inblocks->last_block) break;
@@ -250,6 +254,9 @@ fftfilter(transform_info_ptr tinfo) {
   }
  array_free(&fftarray);
 
+ if (args[ARGS_VERBOSE].is_set) {
+  growing_buf_free(&tracebuf);
+ }
  return tinfo->tsdata;
 }
 /*}}}  */

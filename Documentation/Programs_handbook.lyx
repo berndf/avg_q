@@ -8288,7 +8288,7 @@ avg_q
 \end_layout
 
 \begin_layout Description
--R: Run the event replay file named `posplot.rec'.
+-R: Run the event replay file named `posplot_rec'.
 \end_layout
 
 \begin_layout Description
@@ -8296,7 +8296,7 @@ avg_q
 \begin_inset space ~
 \end_inset
 
-eventfile: Run the named event replay file.
+eventfile: Run the named event replay file. If the name is `stdin', read replay from standard input.
 \end_layout
 
 \end_deeper

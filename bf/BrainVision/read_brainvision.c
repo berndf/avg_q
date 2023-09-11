@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2016,2018,2020,2021 Bernd Feige
+ * Copyright (C) 2007-2016,2018,2021,2023 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -357,7 +357,8 @@ read_brainvision_init(transform_info_ptr tinfo) {
   local_arg->V_Amp=TRUE;
  } else {
   local_arg->V_Amp=FALSE;
-  if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Header File Version 1.0")!=0) {
+  if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Header File Version 1.0")!=0 &&
+      strcmp(readbuf.buffer_start,"BrainVision Data Exchange Header File Version 1.0")!=0) {
    ERREXIT1(tinfo->emethods, "read_brainvision_init: %s is not a Brain Vision .vhdr or .ahdr file\n", MSGPARM(args[ARGS_IFILE].arg.s));
   }
  }

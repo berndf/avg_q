@@ -1,6 +1,7 @@
-# Copyright (C) 2006-2014,2016-2021 Bernd Feige
+# Copyright (C) 2006-2014,2016,2018-2021,2023 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
+cmake_minimum_required(VERSION 3.5)
 PROJECT(avg_q)
 
 OPTION(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)

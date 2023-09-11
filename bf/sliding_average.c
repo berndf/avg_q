@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998,1999,2001,2003,2004,2006,2008,2010,2011,2013-2015,2018,2020 Bernd Feige
+ * Copyright (C) 1996,1998,1999,2001,2003,2004,2006,2008,2011,2014,2018,2022 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -51,9 +51,8 @@ typedef struct sliding_data_struct {
 
  /*{{{  Struct for passing information to single_sliding_function*/
  DATATYPE *fromstart;
- int fromskip;
  DATATYPE *tostart;
- int toskip;
+ int pointskip;
 
  int ssize;
  int leftover;
@@ -78,9 +77,21 @@ single_sliding_average(sliding_data *sdata) {
  /* Optimization: Treat three different cases.
   * The second and third implementations are mathematically equivalent. */
  if (sdata->ssize==1) {
+  int previous_middle_point= -1;
+  DATATYPE previous_value;
+  DATATYPE next_value;
+  /* Linear interpolation between adjacent points.
+   * Slightly better than just replicating the point value n times, but by no
+   * means a clean upsampling method either... */
   for (spoint=0; spoint<sdata->allocated_outpoints; spoint++) { /* Loop across target points */
    int const middle_point=(int)floorf(spoint*sdata->sstep);
-   sdata->tostart[spoint*sdata->toskip]=sdata->fromstart[middle_point*sdata->fromskip];
+   float const fraction=spoint*sdata->sstep-middle_point;
+   if (middle_point!=previous_middle_point) {
+    previous_value=sdata->fromstart[middle_point*sdata->pointskip];
+    next_value=middle_point+1<sdata->inpoints ? sdata->fromstart[(middle_point+1)*sdata->pointskip] : previous_value;
+    previous_middle_point=middle_point;
+   }
+   sdata->tostart[spoint*sdata->pointskip]=previous_value*(1.0-fraction)+next_value*fraction;
   }
  } else if (sdata->sstep>sdata->ssize/2) {
   /* Compute the whole average anew */
@@ -91,9 +102,9 @@ single_sliding_average(sliding_data *sdata) {
    DATATYPE sum=0.0;
    int point;
    for (point=new_left_point; point<=new_right_point; point++) {
-    sum+=sdata->fromstart[point*sdata->fromskip];
+    sum+=sdata->fromstart[point*sdata->pointskip];
    }
-   sdata->tostart[spoint*sdata->toskip]=sum/(new_right_point-new_left_point+1);
+   sdata->tostart[spoint*sdata->pointskip]=sum/(new_right_point-new_left_point+1);
   }
  } else {
   /* Sliding-Window algorithm subtracting points falling out on the left 
@@ -108,15 +119,15 @@ single_sliding_average(sliding_data *sdata) {
 
    if (new_left_point>0) { /* Nothing to subtract at the start */
     for (point=left_point; point<new_left_point; point++) {
-     sum-=sdata->fromstart[point*sdata->fromskip];
+     sum-=sdata->fromstart[point*sdata->pointskip];
     }
    }
    for (point=right_point+1; point<=new_right_point; point++) {
-    sum+=sdata->fromstart[point*sdata->fromskip];
+    sum+=sdata->fromstart[point*sdata->pointskip];
    }
    left_point=new_left_point;
    right_point=new_right_point;
-   sdata->tostart[spoint*sdata->toskip]=sum/(new_right_point-new_left_point+1);
+   sdata->tostart[spoint*sdata->pointskip]=sum/(new_right_point-new_left_point+1);
   }
  }
 }
@@ -126,16 +137,16 @@ single_sliding_quantile(sliding_data *sdata) {
  array a;
 
  a.current_vector=0;
- a.nr_of_vectors=a.element_skip=sdata->fromskip;
+ a.nr_of_vectors=a.element_skip=sdata->pointskip;
 
  for (spoint=0; spoint<sdata->allocated_outpoints; spoint++) { /* Loop across target points */
   int const middle_point=(int)floorf(spoint*sdata->sstep);
   int const new_left_point= (middle_point-sdata->leftover>0 ? middle_point-sdata->leftover : 0);
   int const new_right_point=(middle_point+sdata->rightover<sdata->inpoints ? middle_point+sdata->rightover : sdata->inpoints)-1;
-  a.start=sdata->fromstart+new_left_point*sdata->fromskip;
+  a.start=sdata->fromstart+new_left_point*sdata->pointskip;
   a.nr_of_elements=new_right_point-new_left_point+1;
   array_setreadwrite(&a);
-  sdata->tostart[spoint*sdata->toskip]=array_quantile(&a,sdata->quantile);
+  sdata->tostart[spoint*sdata->pointskip]=array_quantile(&a,sdata->quantile);
  }
 }
 
@@ -209,13 +220,18 @@ sliding_average(transform_info_ptr tinfo) {
   return tinfo->tsdata;
  }
 
+ if (tinfo->data_type==FREQ_DATA) {
+  if (tinfo->nrofshifts>1) {
+   ERREXIT(tinfo->emethods, "sliding_average: Cannot operate on multi-shift frequency data\n");
+  }
+  tinfo->nr_of_points=tinfo->nroffreq;
+ }
+
  sdata->allocated_outpoints=(int)rint(tinfo->nr_of_points/sdata->sstep);
  if (sdata->allocated_outpoints==0) {
   /* Zero size result data set! Reject this epoch. */
   return NULL;
  }
-
- multiplexed(tinfo);
 
  /*{{{  Allocate the output memory*/
  if ((slidedata=(DATATYPE *)malloc(tinfo->nr_of_channels*sdata->allocated_outpoints*tinfo->itemsize*sizeof(DATATYPE)))==NULL) {
@@ -230,12 +246,12 @@ sliding_average(transform_info_ptr tinfo) {
  }
  /*}}}  */
  /*{{{  Perform the sliding average on the points for each item in each channel*/
- sdata->fromskip=sdata->toskip=tinfo->nr_of_channels*tinfo->itemsize;
+ sdata->pointskip=tinfo->multiplexed ? tinfo->nr_of_channels*tinfo->itemsize : tinfo->itemsize;
  sdata->inpoints=tinfo->nr_of_points;
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
   for (itempart=0; itempart<tinfo->itemsize; itempart++) {
-   sdata->fromstart=tinfo->tsdata+channel*tinfo->itemsize+itempart;
-   sdata->tostart  =    slidedata+channel*tinfo->itemsize+itempart;
+   sdata->fromstart=tinfo->tsdata+(tinfo->multiplexed ? channel : channel*tinfo->nr_of_points)*tinfo->itemsize+itempart;
+   sdata->tostart  =    slidedata+(tinfo->multiplexed ? channel : channel*sdata->allocated_outpoints)*tinfo->itemsize+itempart;
    (*sdata->single_sliding_function)(sdata);
   }
  }
@@ -244,7 +260,7 @@ sliding_average(transform_info_ptr tinfo) {
   /*{{{  Perform the sliding average function on xdata*/
   sdata->fromstart=tinfo->xdata;
   sdata->tostart  = slide_xdata;
-  sdata->fromskip = sdata->toskip=1;
+  sdata->pointskip = 1;
   single_sliding_average(sdata);
   /*}}}  */
   strcpy((char *)(slide_xdata+sdata->allocated_outpoints),tinfo->xchannelname);
@@ -262,6 +278,9 @@ sliding_average(transform_info_ptr tinfo) {
  }
  tinfo->sfreq*= size_factor;	/* Adjust the sampling rate */
  tinfo->nr_of_points=sdata->allocated_outpoints;
+ if (tinfo->data_type==FREQ_DATA) {
+  tinfo->nroffreq=tinfo->nr_of_points;
+ }
  tinfo->beforetrig=(int)rint(tinfo->beforetrig*size_factor);
  tinfo->aftertrig=tinfo->nr_of_points-tinfo->beforetrig;
  tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels*tinfo->itemsize;
