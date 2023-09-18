@@ -86,6 +86,9 @@ ELSE(CMAKE_SYSTEM_NAME MATCHES Windows)
  ENDIF(UNAME MATCHES "x86_64")
 ENDIF(CMAKE_SYSTEM_NAME MATCHES Windows)
 
+INCLUDE(CheckIncludeFiles)
+CHECK_INCLUDE_FILES("f2c.h" F2C_H_AVAILABLE)
+
 # NOTE Don't include -ffast-math because it screws up NaN handling (e.g. in
 # recode, specifically anything that tests for NaN)
 SET(C_FLAGS_COMMON "${C_FLAGS_ARCHITECTURE} -O4 -fomit-frame-pointer -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
