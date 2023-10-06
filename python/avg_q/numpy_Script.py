@@ -26,6 +26,7 @@ class numpy_epoch(object):
   self.nrofaverages=None
   self.trigpoints=None
   self.xdata=None
+  self.xchannelname='xdata'
   if data is None:
    self.data=None
    self.nr_of_points=0
@@ -61,7 +62,7 @@ class numpy_Epochsource(avg_q.Epochsource):
    avg_q_instance.write('''
 read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin 0 %(aftertrig)d float32
 ''' % {
-    'readx': '-x xdata' if epoch.xdata is not None else '',
+    'readx': ('-x '+epoch.xchannelname.replace(' ', '_').replace('\t', '_')) if epoch.xdata is not None else '',
     'sfreq': epoch.sfreq if epoch.sfreq else 100.0,
     'aftertrig': nr_of_points,
     'nr_of_channels': nr_of_channels,
@@ -73,7 +74,8 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer
      channelpos=epoch.channelpos
     else:
      # If channelpos is not available, make it up
-     channelpos=[(i,0,0) for i in range(len(channelnames))]
+     nrows,ncols=nrows_ncols_from_nplots(len(channelnames))
+     channelpos=[(i%ncols,-(i//ncols),0) for i in range(len(channelnames))]
     methodline='>set_channelposition -s '+' '.join(["%s %g %g %g" % (channelnames[channel],channelpos[channel][0],channelpos[channel][1],channelpos[channel][2]) for channel in range(len(epoch.channelnames))])
     avg_q_instance.write(methodline+'\n')
    if epoch.comment:

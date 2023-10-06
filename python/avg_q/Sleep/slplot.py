@@ -88,11 +88,11 @@ def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False,trim=T
  axes.set_xlim(xmin,xmax)
  axes.yaxis.set_label_text('Stage')
  axes.set_ylim(ymin,ymax)
- yformatter=matplotlib.ticker.FixedFormatter((['EM'] if EMplot else [])+['N3','N2','N1','REM','W']+(['Arousal'] if arousalplot else []))
  # Without this the labels jump to other values when panning...
  ylocator=matplotlib.ticker.FixedLocator(range(ymin+1,ymax))
- axes.yaxis.set_major_formatter(yformatter)
  axes.yaxis.set_major_locator(ylocator)
+ yformatter=matplotlib.ticker.FixedFormatter((['EM'] if EMplot else [])+['N3','N2','N1','REM','W']+(['Arousal'] if arousalplot else []))
+ axes.yaxis.set_major_formatter(yformatter)
  if lightsonoff:
   axes.vlines(X[[x['offset'] for x in sl.lights_out]],ymin,ymax,color='green',linewidth=linewidthOne,linestyle='solid')
   axes.vlines(X[[x['offset'] for x in sl.lights_on]],ymin,ymax,color='red',linewidth=linewidthOne,linestyle='solid')

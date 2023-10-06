@@ -25,7 +25,7 @@ class ECG(avg_q.Detector.Detector):
   self.protect_channels=standard_protect_channels
  def set_Epochsource(self,epochsource):
   # This must be used instead of the Script base class 'add_Epochsource' for any file output
-  self.Epochsource_list=[epochsource]
+  super().set_Epochsource(epochsource)
   self.base,ext=os.path.splitext(self.Epochsource_list[0].infile.filename)
   self.indir,name=os.path.split(self.base)
   self.ECGtriggers=None

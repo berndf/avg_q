@@ -103,12 +103,14 @@ calc log
     if os.path.getsize(tfile)>0:
      print("%s exists and >0 but sl file not found???" % tfile)
     return
-   sl_mtime=os.path.getmtime(sl.filename)
-   cnt_mtime=os.path.getmtime(c.filename)
-   trg_mtime=os.path.getmtime(tfile)
    # Keep the existing trg file if it is newer than both sl and cnt files,
    # otherwise re-generate it
-   if sl_mtime<trg_mtime and cnt_mtime<trg_mtime: return
+   if os.path.getsize(tfile)>0:
+    sl_mtime=os.path.getmtime(sl.filename)
+    cnt_mtime=os.path.getmtime(c.filename)
+    trg_mtime=os.path.getmtime(tfile)
+    if sl_mtime<trg_mtime and cnt_mtime<trg_mtime:
+     return
   elif sl is None:
    # Create 0-length file
    with open(tfile,'w') as f:
@@ -229,21 +231,22 @@ swap_fc
 calc exp
 '''+self.get_spect_trim(bands)+'''
 calc log
-''' if bands else '''
-trim -x 0+1 48
-''')+'''
 query -N nrofaverages
 write_generic -P stdout string
+''' if bands else '''
+trim -x 0+1 48
+query -N nrofaverages
+write_generic -P -x stdout string
+''')+'''
 ''')
-  outline=[]
+  nrofaverages=0
   for line in script.runrdr():
    if '=' in line:
     varname,value=line.split('=')
     if varname=='nrofaverages':
-     outline.append(int(value))
+     nrofaverages=int(value)
    else:
-    yield outline+[float(x) for x in line.split('\t')]
-    outline=[]
+    yield [nrofaverages]+[float(x) for x in line.split('\t')]
  def get_measures(self,cntfile,stage,cycle=None,bands=defaultbands):
   '''Average epochs from cnt and directly measure the result'''
   return self.get_measures_using_epochfilter(cntfile,get_epochfilter_stage_cycle(stage,cycle),bands)

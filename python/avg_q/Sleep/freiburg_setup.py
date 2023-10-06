@@ -55,16 +55,19 @@ import os
 def sleep_channels(infile,nr_of_channels):
  from . import bookno
  global somno
+ global connection
  if somno is None:
   import klinik
   import sqlalchemy as sa
   klinikdb = sa.create_engine(klinik.klinikurl)
-  somno=sa.Table('somno',sa.MetaData(klinikdb),autoload=True)
+  klinikdb_metadata=sa.MetaData()
+  connection=klinikdb.connect()
+  somno=sa.Table('somno',klinikdb_metadata,autoload_with=connection)
 
  infile,ext=os.path.splitext(infile)
  booknumber=os.path.basename(infile).lower()
  eegnr=bookno.database_bookno(booknumber.upper())
- s=somno.select(somno.c.bn==eegnr).execute().fetchall()
+ s=connection.execute(somno.select().where(somno.c.bn==eegnr)).fetchall()
  schema=None
  if len(s)==0:
   print("Oops: Can't find %s in database!" % eegnr)

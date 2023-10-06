@@ -64,6 +64,7 @@ def readstring(filehandle,start=b""):
   mystring+=char
  return mystring
 
+
 data_offset=5359
 bytespermarker=268
 
@@ -154,6 +155,7 @@ class CoherenceTriggers(trgfile.trgfile):
   coherencefile=CoherenceFile(source,sfreq)
   for name,value in coherencefile.getHeader():
    self.preamble[name]=value
+  self.preamble['Sfreq']=sfreq
   self.tuples=coherencefile.getEvents()
   coherencefile.close()
  def close(self):
@@ -167,6 +169,7 @@ class CoherenceTriggers(trgfile.trgfile):
    yield event
  def gettuples(self):
   return self.tuples
+
 
 from . import avg_q_file
 # Files are stored uncompressed starting with 020705AA.Eeg
@@ -189,9 +192,10 @@ class avg_q_Coherencefile(avg_q_file):
   if self.compressed:
    self.getepochmethod=getepochstart+'''%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s int8
 >integrate
+>scale_by 0.1
 '''
   else:
    self.getepochmethod=getepochstart+'''%(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s int16
+>scale_by 0.1
 '''
   self.trigfile=None
-

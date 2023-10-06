@@ -94,13 +94,17 @@ class Artifact_Segmentation(avg_q.Script):
  def collect_artifacts(self,remove_channels=None,preprocess=''):
   '''Analyze the given section of the continuous file for artifacts.
      remove_channels is a list of channel names to exclude for detection.'''
+  import copy
+  # This allows for some processing pipeline to be set before calling collect_artifacts
+  script=copy.copy(self)
   epochsource=avg_q.Epochsource(self.infile,0,self.end_point-self.start_point)
   epochsource.set_trigpoints(self.start_point)
-  script=avg_q.Script(self.avg_q_instance)
-  script.add_Epochsource(epochsource)
+  script.set_Epochsource(epochsource)
   script.set_collect('append')
   import tempfile
   tempscalefile=tempfile.NamedTemporaryFile()
+  # Avoid adding postprocess to ourself, since script is only a shallow copy!
+  script.postprocess_transforms=[]
   script.add_postprocess('''
 %(remove_channels)s
 %(preprocess)s

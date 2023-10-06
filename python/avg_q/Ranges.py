@@ -69,7 +69,7 @@ def get_TrueRanges(b,minduration_True_s=0,minduration_False_s=0,name='True'):
  TrueRanges=Ranges()
  # Start with False
  last_obs=(b.index[0],False) # This is (ind,state)
- for ind, state in b.iteritems():
+ for ind, state in b.items():
   if state==last_obs[1]:
    # Unchanged state: Just skip
    continue

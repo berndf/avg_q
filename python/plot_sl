@@ -7,6 +7,7 @@ This takes the form file[+triggerfile]
 where triggerfile is an avg_q (text) format trigger file to show as vertical lines.''')
 argparser.add_argument('-a', '--abstime', dest='abstime', action='store_true', help='Show absolute time instead of minutes since start.')
 argparser.add_argument('-c', '--cycles', dest='cycles', action='store_true', help='Show REM/NREM cycle boundaries')
+argparser.add_argument('-n', '--notrim', dest='notrim', action='store_true', help='Do not trim wake from beginning/end')
 argparser.add_argument('-s', '--save_fig', dest='save_fig', action='store_true', help='Save plots to .pdf instead of showing them')
 args = argparser.parse_args()
 
@@ -35,7 +36,7 @@ for slfile_and_triggerfile in args.files:
  print("SL file: %s" % sl.filename)
  fig=plt.figure(figno)
  fig.canvas.manager.set_window_title(slfile)
- axes=avg_q.Sleep.slplot.slplot(sl,abstime=args.abstime)
+ axes=avg_q.Sleep.slplot.slplot(sl,abstime=args.abstime,trim=not args.notrim)
  if args.cycles:
   remstarts=[]
   nremstarts=[]

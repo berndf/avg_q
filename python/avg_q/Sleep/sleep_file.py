@@ -48,10 +48,12 @@ class sleep_file(avg_q_file):
     self.first,self.ext=os.path.splitext(self.filename)
    else:
     raise Exception('Can\'t locate raw file for book number %s' % filename)
+  self.epoched=False
   self.addmethods=None
+  self.getepochmethod=None
+  self.trigfile=None
   self.f=avg_q_file(self.filename)
   self.fileformat=self.f.fileformat
-  self.epoched=False
   if self.fileformat=='freiburg':
    from . import freiburg_setup
    from .. import channelnames2channelpos
@@ -59,7 +61,7 @@ class sleep_file(avg_q_file):
    nr_of_channels=a.get_description(self.f,'nr_of_channels')
    del a
    self.setup=channelnames2channelpos.channelnames2channelpos(freiburg_setup.sleep_channels(self.first,nr_of_channels))
-  elif self.fileformat=='rec':
+  elif self.fileformat=='edf':
    a=avg_q.avg_q()
    comment,channelnames=a.get_description(self.f,('comment','channelnames'))
    del a
@@ -83,7 +85,6 @@ class sleep_file(avg_q_file):
      'exclude_channelnames': channel_list2arg(exclude_channelnames),
      'reference': channel_list2arg(reference),
     }
-  self.trigfile=None
  def getepoch(self, beforetrig='0', aftertrig='30s', continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
   self.f.addmethods=self.addmethods
   self.f.trigfile=self.trigfile

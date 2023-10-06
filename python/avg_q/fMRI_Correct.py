@@ -37,7 +37,6 @@ class fMRI_Correct(object):
   self.refine_points=None
   self.min_scan_duration_s=5*60 # 5 minutes: For the automatic detection of scans
   self.checkmode=False
-  self.threshold=None
   self.haveTemplate=False
   self.convolvethreshold=0.9
 
@@ -189,20 +188,6 @@ writeasc -b %(templatefilename)s
    script.add_transform(get_template_script)
    script.run()
    self.haveTemplate=True
- def get_threshold(self,start_s):
-   '''Derive a workable EPI threshold from the first 5s of data with EPI artefact.'''
-   script=avg_q.Script(self.avg_q_instance)
-   epochsource=avg_q.Epochsource(self.infile,'0s','5s')
-   epochsource.set_trigpoints('%gs' % start_s)
-   script.add_Epochsource(epochsource)
-   script.add_transform(self.collapseit)
-   script.add_transform('''trim -h 0 0''')
-   script.set_collect('minmax')
-   script.add_postprocess('write_generic stdout string')
-   for line in script.runrdr():
-    minval,maxval=line.split()
-    self.threshold=float(maxval)*0.5
-    print("Automatically set threshold to %g" % self.threshold)
  def set_TSTR(self,TS,TR=None):
   self.TS=TS
   if TR:
@@ -225,11 +210,6 @@ writeasc -b %(templatefilename)s
      print("%s exists!" % crsfilename)
      continue
 
-   if not self.threshold:
-    self.get_threshold(start_s)
-    if not self.threshold:
-     raise Exception("threshold is undefined!")
-
    outtuples=trgfile.HighresTriggers(self.upsample)
 
    # First, only look for the first EPI peak and extract a short template
@@ -237,7 +217,8 @@ writeasc -b %(templatefilename)s
    epochsource=avg_q.Epochsource(self.infile,'0s','%gms' % (5*self.TR))
    epochsource.set_trigpoints('%gs' % start_s)
    detect_first_EPI_script='''
-write_crossings -E -R %(refractory_time)gms collapsed %(threshold)g triggers
+scale_by invpointmax
+write_crossings -E -R %(refractory_time)gms collapsed 0.8 triggers
 %(posplot)s
 query triggers_for_trigfile stdout
 assert -S nr_of_triggers == 0
@@ -246,7 +227,6 @@ null_sink
 ''' % {
     # Refractory time is chosen 0.5ms less than TR to allow the flank of the next peak to be seen
     'refractory_time': self.TR-0.5,
-    'threshold': self.threshold,
     'posplot': 'set_comment Finding first EPI peak...\nposplot' if self.checkmode else ''
    }
    script.add_Epochsource(epochsource)
@@ -514,6 +494,8 @@ class avgEPI(object):
   self.upsampleit=None
   self.filterit=None
   self.remove_channels=Channeltypes.NonEEGChannels
+  # Limit the single EPI epochs tried. With MREEG, it just takes ages to use all EPIs in turn, with questionnable advantage
+  self.maxsingleEPIepoch=10
  def set_upsample(self,upsample):
   self.upsample=upsample
   if self.upsample==1:
@@ -698,10 +680,10 @@ query rejected_epochs stdout
      os.unlink(self.avgEPIfile)
     # Try the next EPI template...
     singleEPIepoch+=1
-    if singleEPIepoch>=len(self.EPIs):
+    if singleEPIepoch>=min(self.maxsingleEPIepoch,len(self.EPIs)):
      if os.path.exists(base_avgEPIfile + '_Best.asc'):
       # Okay, we pragmatically use the one with the least rejection
-      print("No EPI templates would fit, using best rejection fraction (%g)" % rejection_fraction)
+      print("No EPI templates would fit, using best rejection fraction (%g)" % min_rejection_fraction)
       os.rename(base_avgEPIfile + '_Best.asc', self.avgEPIfile)
       break
      else:

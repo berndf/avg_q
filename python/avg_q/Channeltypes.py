@@ -116,5 +116,6 @@ AUXchannels=set([
  'Druck Flow',
  'Pressur',
  'Schnarc',
+ 'x_dir','y_dir','z_dir', # BrainVision LiveAmp accelerometer
 ])
 NonEEGChannels=set.union(BipolarEOGchannels,ECGchannels,EMGchannels,AUXchannels)

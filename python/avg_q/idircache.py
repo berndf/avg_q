@@ -16,33 +16,42 @@ class idircache(object):
    if type(extensionstrip)==str:
     extensionstrip=[extensionstrip]
    self.extensionstrip=['.'+e.upper() for e in extensionstrip]
- def normalize(self,n):
-  if self.extensionstrip:
+ def normalize(self,n,nameonly=False):
+  '''Normalize the file name n. Pass nameonly=True to *not* apply the extensionstrip filter.
+  '''
+  if not nameonly and self.extensionstrip:
    n,ext=os.path.splitext(n)
-   if ext and not ext.upper() in self.extensionstrip:
+   if ext is None or not ext.upper() in self.extensionstrip:
     return None
   return n.upper()
  def populate(self,p):
   # If the directory doesn't exist, treat it as empty instead of throwing an error
   try:
-   l=os.listdir(p)
-  except:
-   l=None
-  if l:
-   self.dircache[p]=dict(list(zip([self.normalize(n) for n in l],l)))
-  else:
-   self.dircache[p]={}
- def find(self,pathlist,name):
-  result=None
+   ldir=os.listdir(p)
+  except Exception:
+   ldir=[]
+  self.dircache[p]={}
+  for filename in ldir:
+   normalized=self.normalize(filename)
+   if normalized is not None:
+    self.dircache[p].setdefault(normalized,[]).append(filename)
+ def find_all(self,pathlist,name):
+  '''Return a list of all paths matching the given normalized name'''
+  resultlist=[]
   if name:
-   name=self.normalize(name)
+   name=self.normalize(name,nameonly=True)
    if type(pathlist)==str:
     pathlist=[pathlist]
    for p in pathlist:
     if p not in self.dircache:
      self.populate(p)
-    result=self.dircache[p].get(name)
-    if result:
-     result=os.path.join(p,result)
-     break
+    resultlist.extend([os.path.join(p,r) for r in self.dircache[p].get(name,[])])
+  return resultlist
+ def find(self,pathlist,name):
+  '''Return only the first of the find_all results'''
+  result=None
+  if name:
+   resultlist=self.find_all(pathlist,name)
+   if len(resultlist)>0:
+    result=resultlist[0]
   return result

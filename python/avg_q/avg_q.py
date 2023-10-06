@@ -66,18 +66,30 @@ class avg_q(object):
  def __init__(self,avg_q="avg_q_vogl",endstring="End of script",tracelevel=0,iconify=False):
   """Start avg_q."""
   self.endstring=endstring
+  self.avg_q=None
+
   call=[avg_q,'stdin']
   if tracelevel>0:
    call.insert(1,'-t %d' % tracelevel)
   if iconify:
    call.insert(1,'-i')
-
   try:
    self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
   except:
    import os
-   # See if this is a Windows install with python/ within the avg_q binary directory
-   call[0]=os.path.join(os.path.dirname(__file__),'..','..',avg_q+'.exe')
+   if os.path.sep in avg_q:
+    print('avg_q.py: Path to avg_q >%s< contains path separators and is not executable!' % avg_q)
+    return
+   # Try standard install paths
+   if os.sys.platform=='linux':
+    # avg_q.py is below DISTDIR/lib/python/avg_q; binary below DISTDIR/avg_q64
+    call[0]=os.path.join(os.path.dirname(__file__),'..','..','..','avg_q64',avg_q)
+   else:
+    # See if this is a Windows install with python/ within the avg_q binary directory
+    call[0]=os.path.join(os.path.dirname(__file__),'..','..',avg_q+'.exe')
+   if not os.path.exists(call[0]):
+    print('avg_q.py: >%s< is not in PATH and alternative path >%s< failed!' % (avg_q,call[0]))
+    return
    self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
   self.recorded_trigpoints=[]
@@ -271,6 +283,12 @@ class Epochsource(object):
     This includes the ability to read from triggers contained in the file, contained in an external file (trigfile) 
     or reading around explicitly specified points (trigpoints).
  '''
+ def __new__(cls, infile, beforetrig=0, aftertrig=0, continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
+  'Shortcut if avg_q_file has already passed an Epochsource'
+  from . import avg_q_file
+  if isinstance(infile,avg_q_file) and isinstance(infile.getepochmethod,Epochsource):
+   return infile.getepochmethod
+  return super().__new__(cls)
  def __init__(self, infile, beforetrig=0, aftertrig=0, continuous=False, fromepoch=None, epochs=None, offset=None, triglist=None, trigfile=None, trigtransfer=False):
   # For convenience, allow infile to be passed as a file name or pathlib.Path
   from . import avg_q_file
@@ -293,7 +311,8 @@ class Epochsource(object):
   # Add a branch script fragment applying only to epochs from this epoch source.
   # Will accept lines already preceded by the branch mark '>' but otherwise will add '>'.
   # Take care here that every line becomes an item in the 'branch' list
-  for methodline in transform.split('\n'):
+  # Also takes lists of transform lines.
+  for methodline in transform.split('\n') if type(transform) is str else transform:
    methodline=methodline.strip()
    if methodline=='': continue
    if methodline.startswith('>'):
@@ -351,6 +370,11 @@ class Script(object):
   self.transforms=[]
   self.collect='null_sink'
   self.postprocess_transforms=[]
+ def set_Epochsource(self, epochsource):
+  if isinstance(epochsource,list):
+   self.Epochsource_list=epochsource
+  else:
+   self.Epochsource_list=[epochsource]
  def add_Epochsource(self, epochsource):
   if isinstance(epochsource,list):
    self.Epochsource_list.extend(epochsource)

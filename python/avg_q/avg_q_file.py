@@ -10,13 +10,14 @@ formats_and_extensions=[
  ('BrainVision', ['.vhdr','.ahdr','.vmrk','.amrk','.eeg']),
  ('asc', ['.asc']),
  ('hdf', ['.hdf']),
- ('rec', ['.edf','.rec','.bdf']),
+ ('edf', ['.edf','.rec','.bdf']),
  ('freiburg', ['.co']),
  ('neurofile', ['.eeg']),
- ('nke', ['.eeg']),
+ ('nirs', ['.nirs']),
+ ('nke', ['.eeg', '.EEG']),
  ('Inomed', ['.emg','.trg']),
  ('sound', ['.wav','.au','.snd','.aiff','.mp3','.ogg']),
- ('Coherence', ['.Eeg']),
+ ('Coherence', ['.Eeg','.EEG', '.eeg']),
  ('Konstanz', ['.sum', '.raw']),
  ('Vitaport', ['.vpd', '.raw']),
  ('Tucker', ['.raw']),
@@ -65,7 +66,7 @@ readasc %(fromepoch_arg)s %(epochs_arg)s %(filename)s
    self.getepochmethod='''
 read_hdf %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
-  elif fileformat=='rec':
+  elif fileformat=='edf':
    self.getepochmethod='''
 read_rec %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
@@ -86,6 +87,13 @@ read_vitaport %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s
    self.getepochmethod='''
 read_neurofile %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
+  elif fileformat=='nirs':
+   from . import nirs
+   '''
+   NOTE Special case for files to be read using an Epochsource such as numpy_Epochsource
+   This is handled specially in avg_q.Epochsource()
+   '''
+   self.getepochmethod=nirs.nirs_Epochsource(self.filename)
   elif fileformat=='nke':
    self.getepochmethod='''
 read_nke %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
@@ -198,9 +206,15 @@ read_generic %(read_generic_options)s %(std_args)s %(read_generic_data_type)s
    if score==0 and lext in [x.lower() for x in extlist]:
     score=1
    if lext=='.eeg' and score>0:
-    if format=='nke' and os.path.exists(name+'.21e') or\
-       format=='BrainVision' and os.path.exists(name+'.vhdr'):
-     score+=2
+    # Check for additional conditions; Presence increases, absence decreases the score
+    # relative to formats matching only the extension (5)
+    if format in ['nke', 'BrainVision', 'Coherence']:
+     if format=='nke' and (os.path.exists(name+'.21e') or os.path.exists(name+'.21E')) or\
+        format=='BrainVision' and os.path.exists(name+'.vhdr') or\
+        format=='Coherence' and (ext=='.Eeg' or name[:-1].endswith('_000')):
+      score+=2
+     else:
+      score-=2
    if score>0:
     format_and_score.append((format,score))
   if len(format_and_score)==0:

@@ -84,6 +84,8 @@ class UnisensFile(object):
      getepochstart+=add_argument+' '
     comment_parts=[self.timestampStart.strftime("%Y-%m-%d %H:%M:%S"),self.measurementId]
     if self.comment:
+     # Sanitize self.comment
+     self.comment=self.comment.translate(self.comment.maketrans({'\r': ' ', '\n': ' '}))
      # Single '%' signs in the comment must be replaced since the result is
      # used as input for expansion
      comment_parts.append(self.comment.replace('%','%%'))

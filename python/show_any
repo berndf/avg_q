@@ -30,7 +30,7 @@ args = argparser.parse_args()
 
 a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=args.tracelevel,iconify=True)
 a.debug=args.debug
-n_files=0
+script=avg_q.Script(a)
 for filename_and_triggerfile in args.files:
  fsplit=filename_and_triggerfile.split('+')
  if len(fsplit)==1:
@@ -39,6 +39,8 @@ for filename_and_triggerfile in args.files:
  else:
   filename=fsplit[0]
   trgfile=fsplit[1]
+ if filename.startswith('file://'):
+  filename=filename[7:]
  parts=filename.split(':')
  #print(parts)
  if len(parts)==2 and parts[0] in dict(formats_and_extensions):
@@ -74,21 +76,18 @@ for filename_and_triggerfile in args.files:
   infile.trigfile=trgfile
  if fnmatch.fnmatch(filename,'*_residuals[0-9][0-9].hdf'):
   # Show fMRI gradient correction residual files
-  a.getcontepoch(infile, 0, '1s', fromepoch=args.fromepoch, epochs=args.epochs)
+  epochsource=avg_q.Epochsource(infile, 0, '1s', continuous=True, fromepoch=args.fromepoch, epochs=args.epochs)
  else:
-  a.getcontepoch(infile, 0, args.epochlen, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
- if addmethods:
-  for line in addmethods:
-   a.write('>'+line+'\n')
- n_files+=1
-if n_files==0:
+  epochsource=avg_q.Epochsource(infile, 0, args.epochlen, continuous=True, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
+ if addmethods is not None:
+  epochsource.add_branchtransform(addmethods)
+ script.add_Epochsource(epochsource)
+if len(script.Epochsource_list)==0:
  print("Oops, don't have any files to display...")
 else:
- a.write('''
+ script.set_collect('''
 append -%(appendopt)s
-Post:
-posplot
--
 ''' % {'appendopt': args.appendopt})
- a.run()
+ script.add_postprocess('posplot')
+ script.run()
 a.close()
