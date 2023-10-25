@@ -31,8 +31,8 @@ class fMRI_Correct(object):
   self.overviewfilename=None
   self.templatefilename=None
   self.upsample=1 # Must be integer. Don't upsample by default - It's not necessary for SyncBox measurements.
-  self.template_length=12.4 # 62 points at 5kHz
-  self.refine_length=2.4 # 12 points
+  self.template_length_ms=12.4 # 62 points at 5kHz
+  self.refine_length_ms=2.4 # 12 points
   self.template_points=None
   self.refine_points=None
   self.min_scan_duration_s=5*60 # 5 minutes: For the automatic detection of scans
@@ -60,8 +60,8 @@ class fMRI_Correct(object):
    raise Exception("Oops, can't determine sfreq for %s" % self.base)
   if not self.points_in_file:
    raise Exception("Oops, can't determine points_in_file for %s" % self.base)
-  self.template_points=int(self.template_length/1000.0*self.sfreq)
-  self.refine_points=int(self.refine_length/1000.0*self.sfreq)
+  self.template_points=int(self.template_length_ms/1000.0*self.sfreq)
+  self.refine_points=int(self.refine_length_ms/1000.0*self.sfreq)
   # Fall back to sensible values here
   if self.template_points<20: self.template_points=20
   if self.refine_points<5: self.refine_points=5
@@ -201,6 +201,8 @@ writeasc -b %(templatefilename)s
  def get_epitrigs(self,fromto):
   runindex=0
   for start_s,end_s in fromto:
+   if end_s is None:
+    end_s=self.points_in_file/self.sfreq
    self.haveTemplate=False
    runindex+=1
 
@@ -341,13 +343,6 @@ query triggers_for_trigfile stdout
 
  def transferSection(self,sectionstart, sectionbefore, sectionafter, addmethods=None):
   doscript=addmethods if addmethods else ''
-  '''
-fftfilter 40Hz 45Hz 1 1
-sliding_average 1 10ms
-write_generic %(append_arg)s %(correctedfile)s.eeg int16
-writeasc %(append_arg)s %(correctedfile)s.asc
-write_synamps -c %(append_arg)s %(correctedfile)s.cnt %(sensitivity)g
-'''
   writefile='''
 sliding_average %(sliding_size)sms %(sliding_step)sms
 write_hdf -c %(append_arg)s %(correctedfile)s.hdf
@@ -356,7 +351,6 @@ write_hdf -c %(append_arg)s %(correctedfile)s.hdf
    'sliding_step': 1000.0/self.correctedfile_sfreq,
    'append_arg': '-a' if self.append else '',
    'correctedfile': self.correctedfile,
-   'sensitivity': 10,
   }
 
   script=avg_q.Script(self.avg_q_instance)
