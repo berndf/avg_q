@@ -38,12 +38,13 @@ Y_to_lw={
 arousal_tick_length=0.2
 EMplot_unitlength=0.05
 
-def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False,trim=True):
+def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False,rectime=False,trim=True):
  '''
  lightsonoff: Show lights on and off times by vertical lines
  arousalplot: Show arousals
  EMplot: Show eye movements
- abstime: Show clock time instead of time since sleep onset
+ abstime: Show clock time instead of time since lights out
+ rectime: Show time since recording start instead of time since lights out
  trim: Remove Wake times at beginning and end
  '''
  axes = plt.gca() # Get Current Axis
@@ -51,13 +52,13 @@ def slplot(sl,lightsonoff=True,arousalplot=True,EMplot=True,abstime=False,trim=T
  sl.create_tuples()
  #print(sl.tuples)
  if not abstime:
-  if len(sl.lights_out)>0:
+  if not rectime and len(sl.lights_out)>0:
    # Use first lights_out as zero time, as I don't think anybody wants time since
    # sleep onset which is in x.time
    offset=sl.lights_out[0]['offset']
-   X=(np.linspace(1,len(sl.tuples),num=len(sl.tuples))-1-offset)*sl.minutes_per_epoch
   else:
-   X=np.array([x.time for x in sl.tuples])
+   offset=0
+  X=(np.linspace(1,len(sl.tuples),num=len(sl.tuples))-1-offset)*sl.minutes_per_epoch
   axes.xaxis.set_label_text('Time[min]')
  else:
   X=np.array(sl.abstime)
