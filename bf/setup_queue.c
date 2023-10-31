@@ -320,6 +320,8 @@ setup_queue(transform_info_ptr tinfo, void (* const *m_selects)(transform_info_p
  int c;
  while (1) {
   c=fgetc(scriptfile);
+  /* Allow MSDOS files by dropping \r characters: */
+  if (c=='\r') continue;
   if (c==0x04) c=EOF; /* Interpret ^D as EOF */
   if (linestart && c=='-') {
    /* '-' at linestart: End of script. Skip the rest of the line. */

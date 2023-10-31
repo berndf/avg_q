@@ -8,7 +8,7 @@
  * Author:	Bernd Feige
  * Created:	7.03.1999
  * Updated:
- * Copyright:	(c) 1999-2019, Bernd Feige
+ * Copyright:	(c) 1999-2023, Bernd Feige
  */
 
 /*{{{ Includes*/
@@ -153,7 +153,7 @@ LOCAL GtkWidget *Run_Entry, *Stop_Entry, *Kill_Entry, *Dump_Entry;
 LOCAL GtkWidget *Run_Subscript_Entry;
 LOCAL GtkWidget *Dialog_Configuration_Error;
 LOCAL gint Avg_q_Run_Keypress_Now_Tag=0;
-LOCAL GIOChannel *script_file=NULL;
+LOCAL FILE *scriptfile=NULL;
 LOCAL int subscript_loaded=0;
 #endif
 LOCAL int only_script=0, nr_of_script_variables=0;
@@ -1430,7 +1430,7 @@ Run_Script(void) {
      gdk_threads_leave();
     }
     only_script=save_only_script;
-    if (!interactive && script_file==NULL) {
+    if (!interactive && scriptfile==NULL) {
      g_idle_add((GSourceFunc)gtk_main_quit, NULL);
     }
     break;
@@ -1469,7 +1469,7 @@ Run_Script(void) {
   gtk_widget_set_sensitive(Dump_Entry, TRUE);
   gtk_widget_set_sensitive(Stop_Entry, FALSE);
   gtk_widget_set_sensitive(Kill_Entry, FALSE);
-  if (script_file!=NULL) {
+  if (scriptfile!=NULL) {
    Avg_q_Load_Subscript_Tag=g_idle_add(Load_Next_Subscript, NULL);
   }
   gdk_threads_leave();
@@ -1518,48 +1518,42 @@ clear_script(void) {
 }
 LOCAL void
 Close_script_file(void) {
- if (script_file!=NULL) {
-  if (g_io_channel_unix_get_fd(script_file)!=STDIN_FILENO)  g_io_channel_shutdown(script_file,TRUE,NULL);
-  script_file=NULL;
+ if (scriptfile!=NULL) {
+  if (scriptfile!=stdin) fclose(scriptfile);
+  scriptfile=NULL;
  }
 }
 LOCAL gint
 Load_Next_Subscript(gpointer data) {
- gunichar thischar=0;
- GIOStatus giostatus=G_IO_STATUS_NORMAL;
- struct stat statbuf;
- Bool script_is_FIFO=FALSE;
-
- fstat(g_io_channel_unix_get_fd(script_file),&statbuf);
- if (S_ISFIFO(statbuf.st_mode)) {
-  script_is_FIFO=TRUE;
- }
-
+ int c;
  growing_buf_clear(&static_linebuf);
- do {
-  giostatus=g_io_channel_read_unichar(script_file,&thischar,NULL);
-  //printf("%lc",thischar);
+ while (1) {
+  c=fgetc(scriptfile);
   /* Allow MSDOS files by dropping \r characters: */
-  if (thischar=='\r') continue;
-  if (thischar==0x04) giostatus=G_IO_STATUS_EOF; /* Interpret ^D as EOF */
-  if (giostatus!=G_IO_STATUS_EOF) {
-   gchar thisgchar[6];
-   gsize const thisgcharlength=g_unichar_to_utf8(thischar,(gchar *)&thisgchar);
-   growing_buf_append(&static_linebuf, thisgchar, thisgcharlength);
-   gtk_text_buffer_insert_at_cursor(CurrentScriptBuffer, (gchar *)&thisgchar, thisgcharlength);
+  if (c=='\r') continue;
+  if (c==0x04) c=EOF; /* Interpret ^D as EOF */
+  if (c==EOF) {
+   /* If there was no EOL at EOF, no separator would be present
+    * at the end of the script. So we add one in this case. */
+   if (static_linebuf.current_length>0 && static_linebuf.buffer_start[static_linebuf.current_length-1]!='\n') growing_buf_appendchar(&static_linebuf, '\n');
+  } else {
+   growing_buf_appendchar(&static_linebuf, c);
   }
-  if (giostatus==G_IO_STATUS_EOF || thischar=='\n') {
+  if (c=='\n' || c==EOF) {
+   gsize thisutflength;
+   gchar * const thisutfstring=g_locale_to_utf8(static_linebuf.buffer_start,static_linebuf.current_length,NULL,&thisutflength,NULL);
+   gtk_text_buffer_insert_at_cursor(CurrentScriptBuffer, thisutfstring, thisutflength);
+   free_pointer((void **)&thisutfstring);
    growing_buf_appendchar(&static_linebuf, '\0');
-   if (!interactive && IS_SEPLINE(static_linebuf.buffer_start)) {
+   if (!interactive && (c==EOF || IS_SEPLINE(static_linebuf.buffer_start))) {
     subscript_loaded++;
-    if ((only_script==0 && script_is_FIFO && !dumponly) || only_script==subscript_loaded) break;
+    if ((only_script==0 && scriptfile==stdin && !dumponly) || only_script==subscript_loaded) break;
    }
+   if (c==EOF) break;
    growing_buf_clear(&static_linebuf);
-   if (giostatus==G_IO_STATUS_EOF) break;
   }
- } while (1);
- if (giostatus==G_IO_STATUS_EOF) {
-  subscript_loaded++;
+ }
+ if (c==EOF) {
   Close_script_file();
  }
  if (only_script==subscript_loaded) {
@@ -1567,7 +1561,7 @@ Load_Next_Subscript(gpointer data) {
  }
  if (!interactive) {
   /* In dumponly mode, we need to dump all sub-scripts at once, only_script=0 */
-  if (only_script==0 && script_is_FIFO && !dumponly) {
+  if (only_script==0 && scriptfile==stdin && !dumponly) {
    only_script=subscript_loaded;
   }
   Run_Script();
@@ -1578,9 +1572,9 @@ LOCAL Bool
 Load_Script(gchar *name) {
  GError *error=NULL;
  if (strcmp(name, "stdin")==0) {
-  script_file=g_io_channel_unix_new(STDIN_FILENO);
+  scriptfile=stdin;
  } else {
-  script_file=g_io_channel_new_file(name,"r",&error);
+  scriptfile=fopen(name,"r");
  }
 
  /* We want to always set the current filename, no matter whether the
@@ -1599,7 +1593,7 @@ Load_Script(gchar *name) {
   interactive=TRUE;
  }
  set_status(errormessage);
- return (script_file!=NULL);
+ return (scriptfile!=NULL);
 }
 LOCAL void
 open_file(GtkWidget *menuitem) {
