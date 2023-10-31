@@ -13,7 +13,7 @@ from avg_q import channel_list2arg
 import os
 
 rawfile_paths=(
- '/AD/sldaten01/',
+ '/AD/Group/PPT-A-Schlaflabor-Daten/EEG-Aufzeichnung/',
  '/AD/sldaten01/EDF/',
  '/AD/slarchiv/01/',
  '/AD/slarchiv/A0000-Axxxx/',

@@ -22,6 +22,7 @@ class numpy_epoch(object):
   self.channelpos=[]
   self.nr_of_points=0
   self.nr_of_channels=0
+  self.beforetrig=0
   self.itemsize=0
   self.nrofaverages=None
   self.trigpoints=None
@@ -29,8 +30,6 @@ class numpy_epoch(object):
   self.xchannelname='xdata'
   if data is None:
    self.data=None
-   self.nr_of_points=0
-   self.nr_of_channels=0
    self.sfreq=None
   else:
    if type(data) is numpy.array:
@@ -58,14 +57,14 @@ class numpy_Epochsource(avg_q.Epochsource):
  def send(self,avg_q_instance):
   if len(self.epochs)==0: return
   for epoch in self.epochs:
-   nr_of_points,nr_of_channels=epoch.data.shape
    avg_q_instance.write('''
-read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin 0 %(aftertrig)d float32
+read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin %(beforetrig)d %(aftertrig)d float32
 ''' % {
     'readx': ('-x '+epoch.xchannelname.replace(' ', '_').replace('\t', '_')) if epoch.xdata is not None else '',
     'sfreq': epoch.sfreq if epoch.sfreq else 100.0,
-    'aftertrig': nr_of_points,
-    'nr_of_channels': nr_of_channels,
+    'beforetrig': epoch.beforetrig,
+    'aftertrig': epoch.nr_of_points-epoch.beforetrig,
+    'nr_of_channels': epoch.nr_of_channels,
     'trigtransfer_arg': '-T -R stdin' if epoch.trigpoints is not None else '',
    })
    if epoch.channelnames:
@@ -114,6 +113,7 @@ query channelpositions stdout
 query -N comment stdout
 query -N sfreq stdout
 query -N nr_of_points stdout
+query -N beforetrig stdout
 query -N itemsize stdout
 query -N nrofaverages stdout
 echo -F stdout Data:\\n
@@ -146,6 +146,8 @@ write_generic -x stdout float32
      epoch.sfreq=float(value)
     elif name=='nr_of_points':
      epoch.nr_of_points=int(value)
+    elif name=='beforetrig':
+     epoch.beforetrig=int(value)
     elif name=='itemsize':
      epoch.itemsize=int(value)
     elif name=='nrofaverages':

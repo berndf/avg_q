@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2009-2013 Bernd Feige
+# Copyright (C) 2009-2023 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 import avg_q
@@ -24,14 +24,17 @@ No trigtransfer. Normally triggers are read but some file types have to be read
 completely to build the trigger list, so that display is speedier when suppressing triggers.
 ''')
 argparser.add_argument('-a', '--appendopt', default='l', choices=['l','p','c','i'], dest='appendopt', help='(l)ink epochs in memory (default) or append (p)oints, (c)hannels or (i)tems')
+argparser.add_argument('-A', '--avg_q', dest='avg_q', action='store_true', help='Use avg_q instead of avg_q_ui')
 argparser.add_argument('-t', '--tracelevel', type=int, default=0, dest='tracelevel', help='Set avg_q trace level (verbosity)')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true', help='Debug mode, ie dump avg_q scripts to stdout during processing')
 args = argparser.parse_args()
 
-a=avg_q.avg_q(avg_q='avg_q_ui',tracelevel=args.tracelevel,iconify=True)
+a=avg_q.avg_q(tracelevel=args.tracelevel) if args.avg_q else\
+ avg_q.avg_q(avg_q='avg_q_ui',tracelevel=args.tracelevel,iconify=True)
 a.debug=args.debug
 script=avg_q.Script(a)
 for filename_and_triggerfile in args.files:
+ epochsource=None
  fsplit=filename_and_triggerfile.split('+')
  if len(fsplit)==1:
   filename=filename_and_triggerfile
@@ -49,17 +52,36 @@ for filename_and_triggerfile in args.files:
   filetype=None
  base,ext=os.path.splitext(filename)
  addmethods=None
- if filetype is None and ext=='':
-  # Try to interpret this as a sleep bookno
-  import avg_q.Sleep.sleep_file
-  print("Reading sleep file for bookno: %s" % filename)
-  infile=avg_q.Sleep.sleep_file.sleep_file(filename)
- else:
-  if not os.path.exists(filename):
-   print("Oops, %s doesn't exist - skipping..." % filename)
-   continue
-  print("Opening file: %s type %s" % (filename,filetype))
-  infile=avg_q.avg_q_file(filename,filetype)
+ if filetype is None:
+  if ext=='':
+   # Try to interpret this as a sleep bookno
+   import avg_q.Sleep.sleep_file
+   print("Reading sleep file for bookno: %s" % filename)
+   infile=avg_q.Sleep.sleep_file.sleep_file(filename)
+  elif ext=='.fif' or filename.endswith('.fif.gz'):
+   import mne
+   import avg_q.numpy_Script
+   mnedata=mne.read_evokeds(filename)
+   epochs=[]
+   for thisepoch in mnedata:
+    epoch=avg_q.numpy_Script.numpy_epoch(thisepoch.data.transpose())
+    epoch.sfreq=thisepoch.info['sfreq']
+    epoch.beforetrig= -round(thisepoch.baseline[0]*thisepoch.info['sfreq'])
+    epoch.nrofaverages=thisepoch.nave
+    epoch.comment=' '.join([thisepoch.comment,thisepoch.get_channel_types()[0]])
+    epoch.channelnames=thisepoch.ch_names
+    epoch.channelpos=[x[:3] for x in mne.channels.find_layout(thisepoch.info).pos]
+    epochs.append(epoch)
+   epochsource=avg_q.numpy_Script.numpy_Epochsource(epochs)
+   infile=avg_q.avg_q_file()
+   infile.filename=filename
+   infile.fileformat='FIFF'
+  else:
+   if not os.path.exists(filename):
+    print("Oops, %s doesn't exist - skipping..." % filename)
+    continue
+   print("Opening file: %s type %s" % (filename,filetype))
+   infile=avg_q.avg_q_file(filename,filetype)
  if trgfile:
   if infile.fileformat=='asc':
    addmethods=['set triggers_from_trigfile '+trgfile]
@@ -74,11 +96,12 @@ for filename_and_triggerfile in args.files:
    trgfile=base+'.trg'
  if os.path.exists(trgfile):
   infile.trigfile=trgfile
- if fnmatch.fnmatch(filename,'*_residuals[0-9][0-9].hdf'):
-  # Show fMRI gradient correction residual files
-  epochsource=avg_q.Epochsource(infile, 0, '1s', continuous=True, fromepoch=args.fromepoch, epochs=args.epochs)
- else:
-  epochsource=avg_q.Epochsource(infile, 0, args.epochlen, continuous=True, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
+ if epochsource is None:
+  if fnmatch.fnmatch(filename,'*_residuals[0-9][0-9].hdf'):
+   # Show fMRI gradient correction residual files
+   epochsource=avg_q.Epochsource(infile, 0, '1s', continuous=True, fromepoch=args.fromepoch, epochs=args.epochs)
+  else:
+   epochsource=avg_q.Epochsource(infile, 0, args.epochlen, continuous=True, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
  if addmethods is not None:
   epochsource.add_branchtransform(addmethods)
  script.add_Epochsource(epochsource)
