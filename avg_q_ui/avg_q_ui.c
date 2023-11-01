@@ -1526,6 +1526,9 @@ Close_script_file(void) {
 LOCAL gint
 Load_Next_Subscript(gpointer data) {
  int c;
+ /* We remember this here because it is tested also one time after scriptfile is already
+  * closed and therefore scriptfile==NULL */
+ Bool const script_is_FIFO=(scriptfile==stdin);
  growing_buf_clear(&static_linebuf);
  while (1) {
   c=fgetc(scriptfile);
@@ -1546,25 +1549,26 @@ Load_Next_Subscript(gpointer data) {
    free_pointer((void **)&thisutfstring);
    growing_buf_appendchar(&static_linebuf, '\0');
    if (!interactive && (c==EOF || IS_SEPLINE(static_linebuf.buffer_start))) {
+    /* If reading from stdin, we must execute the sub-script just read now;
+     * otherwise, all sub-scripts are read and executed in one go by Run_Script */
     subscript_loaded++;
-    if ((only_script==0 && scriptfile==stdin && !dumponly) || only_script==subscript_loaded) break;
+    if ((only_script==0 && script_is_FIFO && !dumponly) || only_script==subscript_loaded) break;
    }
    if (c==EOF) break;
    growing_buf_clear(&static_linebuf);
   }
  }
- if (c==EOF) {
-  Close_script_file();
- }
- if (only_script==subscript_loaded) {
+ if (c==EOF || only_script==subscript_loaded) {
   Close_script_file();
  }
  if (!interactive) {
   /* In dumponly mode, we need to dump all sub-scripts at once, only_script=0 */
-  if (only_script==0 && scriptfile==stdin && !dumponly) {
+  save_only_script=only_script;
+  if (only_script==0 && script_is_FIFO && !dumponly) {
    only_script=subscript_loaded;
   }
   Run_Script();
+  only_script=save_only_script;
  }
  return FALSE;
 }
