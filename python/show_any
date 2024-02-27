@@ -60,19 +60,9 @@ for filename_and_triggerfile in args.files:
    infile=avg_q.Sleep.sleep_file.sleep_file(filename)
   elif ext=='.fif' or filename.endswith('.fif.gz'):
    import mne
-   import avg_q.numpy_Script
+   import avg_q.mne
    mnedata=mne.read_evokeds(filename)
-   epochs=[]
-   for thisepoch in mnedata:
-    epoch=avg_q.numpy_Script.numpy_epoch(thisepoch.data.transpose())
-    epoch.sfreq=thisepoch.info['sfreq']
-    epoch.beforetrig= -round(thisepoch.baseline[0]*thisepoch.info['sfreq'])
-    epoch.nrofaverages=thisepoch.nave
-    epoch.comment=' '.join([thisepoch.comment,thisepoch.get_channel_types()[0]])
-    epoch.channelnames=thisepoch.ch_names
-    epoch.channelpos=[x[:3] for x in mne.channels.find_layout(thisepoch.info).pos]
-    epochs.append(epoch)
-   epochsource=avg_q.numpy_Script.numpy_Epochsource(epochs)
+   epochsource=avg_q.mne.mne_Epochsource(mnedata)
    infile=avg_q.avg_q_file()
    infile.filename=filename
    infile.fileformat='FIFF'
