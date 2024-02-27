@@ -370,6 +370,12 @@ trim(transform_info_ptr tinfo) {
   tinfo->nroffreq=tinfo->nr_of_points;
  } else {
   tinfo->beforetrig-=((struct range *)(ranges.buffer_start))->offset;
+  /* Neither beforetrig nor aftertrig may become negative */
+  if (tinfo->beforetrig<0) {
+   tinfo->beforetrig=0;
+  } else if (tinfo->beforetrig>output_points) {
+   tinfo->beforetrig=output_points;
+  }
   tinfo->aftertrig=output_points-tinfo->beforetrig;
  }
  tinfo->length_of_output_region=tinfo->nr_of_points*tinfo->nr_of_channels*tinfo->itemsize*nrofshifts;
