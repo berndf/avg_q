@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014,2016-2020,2023 Bernd Feige
+ * Copyright (C) 2008-2014,2016-2020,2023,2024 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -1574,7 +1574,6 @@ Load_Next_Subscript(gpointer data) {
 }
 LOCAL Bool
 Load_Script(gchar *name) {
- GError *error=NULL;
  if (strcmp(name, "stdin")==0) {
   scriptfile=stdin;
  } else {
@@ -1587,7 +1586,7 @@ Load_Script(gchar *name) {
  if (name!=filename) strncpy(filename, name, FilenameLength);
  set_main_window_title();
 
- if (error==NULL) {
+ if (scriptfile!=NULL) {
   subscript_loaded=0;
   clear_script();
   Avg_q_Load_Subscript_Tag=g_idle_add(Load_Next_Subscript, NULL);

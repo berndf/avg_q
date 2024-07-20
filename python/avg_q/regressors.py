@@ -23,7 +23,7 @@ class regressors(object):
 
   epifile=hdffile.replace('_corr','').replace('.hdf','.crs')
   epi_t=trgfile.trgfile(epifile)
-  #epi_triggers=epi_t.gettuples()
+  epi_t.gettuples() # Actually read the file - necessary to access the header
   #epi_sfreq=float(epi_t.preamble['Sfreq'])
   self.TR=float(epi_t.preamble['TR'])/1000.0 # in seconds
   #self.nscans=len(epi_triggers)
@@ -138,7 +138,6 @@ null_sink
 
   for i in range(len(self.regressors[0])):
    row=[self.regressors[j][i] for j in range(len(self.regressors))]
-   self.avg_q_instance.write("\t".join(row))
-   self.avg_q_instance.write("\n")
+   self.avg_q_instance.write("\t".join(row)+'\n')
 
   self.avg_q_instance.run()

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016,2022 Bernd Feige
+ * Copyright (C) 2008-2016,2022,2024 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -248,7 +248,7 @@ read_generic_init(transform_info_ptr tinfo) {
   /* For "string", we don't know bytes_per_point and how many samples may fit in the input file... */
   local_arg->bytes_per_point = 0;
   local_arg->points_in_file = 0;
-  if (args[ARGS_CONTINUOUS].is_set && local_arg->points_in_file==0) {
+  if (args[ARGS_CONTINUOUS].is_set && local_arg->beforetrig==0 && local_arg->aftertrig==0) {
    /* In this case we need points_in_file to be able to read one epoch
     * extending to the end, so determine the number of text lines */
    int inchar;

@@ -14,12 +14,14 @@ triggercodes={
 }
 
 class vmrkfile(trgfile.trgfile):
+ starttimes=[]
  def rdr(self):
   version=self.getline().rstrip('\r\n')
-  if version!="Brain Vision Data Exchange Marker File, Version 1.0":
+  if version not in ['Brain Vision Data Exchange Marker File, Version 1.0', 'BrainVision Data Exchange Marker File Version 1.0']:
    print("BV: This does not seem to be a VMRK file!")
    return
   Section=None
+  self.starttimes=[]
   while 1:
    line=self.getline()
    # EOF:
@@ -41,7 +43,9 @@ class vmrkfile(trgfile.trgfile):
      if len(vals)==5:
       Type,Description,Position,size,channel=vals
      elif len(vals)==6:
+      import datetime
       Type,Description,Position,size,channel,timestamp=vals
+      self.starttimes.append(datetime.datetime.strptime(timestamp, '%Y%m%d%H%M%S%f'))
      else:
       continue
      point=int(Position)-1 # Positions in BrainVision start at 1

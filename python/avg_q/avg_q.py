@@ -59,6 +59,7 @@ def channel_list2arg(channel_list):
 def channel_arg2list(channel_arg):
  return [unescape_channelname(x) for x in channel_arg.split(',')]
 
+
 outtuple=[]
 collectvalue=None
 listvalue=[]
@@ -75,7 +76,7 @@ class avg_q(object):
    call.insert(1,'-i')
   try:
    self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-  except:
+  except Exception:
    import os
    if os.path.sep in avg_q:
     print('avg_q.py: Path to avg_q >%s< contains path separators and is not executable!' % avg_q)
@@ -223,7 +224,8 @@ null_sink
        value=valuetype[var](value)
        self.outtuple.append(value)
        self.collectvalue=False
-     else: m=None
+     else:
+      m=None
     if not m:
      if self.collectvalue:
       self.listvalue.append(line)
@@ -322,8 +324,9 @@ class Epochsource(object):
  def set_trigpoints(self,trigpoints):
   if self.trigfile is not None:
    raise Exception("Epochsource: cannot specify both trigpoints and trigfile!")
-  if isinstance(trigpoints,list):
-   self.trigpoints=trigpoints
+  # Allow to also pass generators, but we do need a list - see below
+  if hasattr(trigpoints,'__iter__'):
+   self.trigpoints=list(trigpoints)
   else:
    # Allow a single point to be specified
    self.trigpoints=[trigpoints]
@@ -440,6 +443,7 @@ class Script(object):
   """Run script, printing the output."""
   for line in self:
    print(line)
+
 
 if __name__ == '__main__':
  # A simple self-contained test case: Run 5 scripts with varying sampling frequencies

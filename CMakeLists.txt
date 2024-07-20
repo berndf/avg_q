@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2014,2016,2018-2021,2023 Bernd Feige
+# Copyright (C) 2006-2014,2016,2018-2021,2023,2024 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 cmake_minimum_required(VERSION 3.5)
@@ -21,7 +21,7 @@ INCLUDE("Signatures/Signature.GPL")
 
 SET(CPACK_GENERATOR TBZ2)
 SET(CPACK_PACKAGE_VERSION_MAJOR 6)
-SET(CPACK_PACKAGE_VERSION_MINOR 0)
+SET(CPACK_PACKAGE_VERSION_MINOR 1)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
 INCLUDE(CPack)
 IF(CMAKE_SYSTEM_NAME MATCHES Windows)

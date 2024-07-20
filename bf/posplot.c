@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2018,2020,2023 Bernd Feige
+ * Copyright (C) 1996-2018,2020,2023,2024 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -634,7 +634,7 @@ posplot_init(transform_info_ptr tinfo) {
  local_arg->linestyle_type=0; 
  local_arg->function=TS_RAW;
  local_arg->dev=NEWBORDER;
- local_arg->red_message="This is posplot (c) 1993-2018 by Bernd Feige.";
+ local_arg->red_message="This is posplot (c) 1993-2024 by Bernd Feige.";
 
  if (tinfo->data_type==FREQ_DATA) tinfo->nr_of_points=tinfo->nroffreq;
  local_arg->lastselected= 0.0;
@@ -1007,7 +1007,8 @@ posplot(transform_info_ptr tinfo) {
 #ifdef INCLUDE_DIPOLE_FIT
  DATATYPE dipole_pos[3]={0.0, 0.0, 0.0}, dipole_vec[3];
 #endif
- struct transform_methods_struct swap_methods_struct, *org_methods_ptr;
+ struct transform_methods_struct tmp1_methods_struct, tmp2_methods_struct;
+ struct transform_info_struct tmp_tinfo;
  const int char_width=getwidth(), char_height=getheight();
  channel_map_entry *entry;
  unsigned int entry_number;
@@ -2374,14 +2375,14 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        snprintf(stringbuffer, STRBUFLEN, "%ld", get_selectedpoint(top_tinfo));
        growing_buf_takethis(&buf, stringbuffer);
 
-       org_methods_ptr=top_tinfo->methods;	/* Don't modify ->methods */
-       top_tinfo->methods= &swap_methods_struct;
-       select_dip_fit(top_tinfo);
-       setup_method(top_tinfo, &buf);
+       tmp_tinfo=*top_tinfo;
+       tmp_tinfo.methods= &tmp1_methods_struct;
+       select_dip_fit(&tmp_tinfo);
+       setup_method(&tmp_tinfo, &buf);
        growing_buf_free(&buf);
-       (*top_tinfo->methods->transform_init)(top_tinfo);
-       (*top_tinfo->methods->transform)(top_tinfo);
-       fixedargsp= &((struct dip_fit_storage *)top_tinfo->methods->local_storage)->fixedargs;
+       (*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+       (*tmp_tinfo.methods->transform)(&tmp_tinfo);
+       fixedargsp= &((struct dip_fit_storage *)&tmp_tinfo->methods->local_storage)->fixedargs;
        /*{{{  Extract position*/
        array_reset(&fixedargsp->position);
        for (i=0; i<3; i++) {
@@ -2396,53 +2397,62 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
         dipole_vec[i]=array_scan(&fixedargsp->x3d)/hold/33.3;	/* Scale to 3cm */
        }
        /*}}}  */
-       (*top_tinfo->methods->transform_exit)(top_tinfo);
-       top_tinfo->methods=org_methods_ptr;
+       (*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        }
        break;
 #endif
       case 'D':
        for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
 	if (!dataset_is_shown(current_dataset)) continue;
-	org_methods_ptr=tinfoptr->methods;
-	tinfoptr->methods= &swap_methods_struct;
-	select_detrend(tinfoptr);
-	setup_method(tinfoptr, NULL);
-	(*tinfoptr->methods->transform_init)(tinfoptr);
-	(*tinfoptr->methods->transform)(tinfoptr);
-	(*tinfoptr->methods->transform_exit)(tinfoptr);
-	tinfoptr->methods=org_methods_ptr;
+        tmp_tinfo=*tinfoptr;
+	tmp_tinfo.methods= &tmp1_methods_struct;
+	select_detrend(&tmp_tinfo);
+	setup_method(&tmp_tinfo, NULL);
+	(*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        }
        local_arg->red_message="Selected data sets detrended.";
        dev=NEWDATA; leave=TRUE;
        break;
       case 'W': {
+       int const left=first_x(tinfo_to_use), right=last_x(tinfo_to_use);
        char const * const writeasc_outfile=(*inputbuffer!='\0' ? inputbuffer : WRITEASC_OUTFILE);
        int n_written=0;
+       tmp_tinfo=*tinfo;
        growing_buf buf;
+       /* Setup trim method */
        growing_buf_init(&buf);
-       snprintf(stringbuffer, STRBUFLEN, "-a -b %s", writeasc_outfile);
-       growing_buf_takethis(&buf, stringbuffer);
-       org_methods_ptr=tinfo->methods;
-       tinfo->methods= &swap_methods_struct;
-       select_writeasc(tinfo);
-       setup_method(tinfo, &buf);
+       growing_buf_allocate(&buf,0);
+       growing_buf_appendf(&buf,"%d %d", left, right-left+1);
+       tmp_tinfo.methods= &tmp1_methods_struct;
+       select_trim(&tmp_tinfo);
+       setup_method(&tmp_tinfo, &buf);
+       (*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+       /* Setup writeasc method */
+       growing_buf_clear(&buf);
+       growing_buf_appendf(&buf,"-a -b %s", writeasc_outfile);
+       tmp_tinfo.methods= &tmp2_methods_struct;
+       select_writeasc(&tmp_tinfo);
+       setup_method(&tmp_tinfo, &buf);
        growing_buf_free(&buf);
-       (*tinfo->methods->transform_init)(tinfo);
-       tinfo->methods=org_methods_ptr;
+       (*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
        for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
 	/* Save all datasets if none is selected, or only the selected datasets */
         if (top_tinfo!=NULL && !dataset_is_shown(current_dataset)) continue;
-        org_methods_ptr=tinfoptr->methods;
-        tinfoptr->methods= &swap_methods_struct;
-        (*tinfoptr->methods->transform)(tinfoptr);
-        tinfoptr->methods=org_methods_ptr;
+	deepcopy_tinfo(&tmp_tinfo, tinfoptr);
+	tmp_tinfo.methods= &tmp1_methods_struct;
+	tmp_tinfo.tsdata=(*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	tmp_tinfo.methods= &tmp2_methods_struct;
+        (*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	deepfree_tinfo(&tmp_tinfo);
 	n_written++;
        }
-       org_methods_ptr=tinfo->methods;
-       tinfo->methods= &swap_methods_struct;
-       (*tinfo->methods->transform_exit)(tinfo);
-       tinfo->methods=org_methods_ptr;
+       tmp_tinfo=*tinfo;
+       tmp_tinfo.methods= &tmp1_methods_struct;
+       (*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
+       tmp_tinfo.methods= &tmp2_methods_struct;
+       (*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        snprintf(local_arg->messagebuffer, MESSAGELEN, "%d dataset%s written to %s", n_written, (n_written==1 ? "" : "s"), writeasc_outfile);
        local_arg->red_message=local_arg->messagebuffer;
        }
@@ -2459,14 +2469,13 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 	whichpoint=get_selectedpoint(tinfoptr);
 	snprintf(stringbuffer, STRBUFLEN, "-o %d", whichpoint);
 	growing_buf_takethis(&buf, stringbuffer);
-	org_methods_ptr=tinfoptr->methods;
-	tinfoptr->methods= &swap_methods_struct;
-	select_detrend(tinfoptr);
-	setup_method(tinfoptr, &buf);
-	(*tinfoptr->methods->transform_init)(tinfoptr);
-	(*tinfoptr->methods->transform)(tinfoptr);
-	(*tinfoptr->methods->transform_exit)(tinfoptr);
-	tinfoptr->methods=org_methods_ptr;
+        tmp_tinfo=*tinfoptr;
+	tmp_tinfo.methods= &tmp1_methods_struct;
+	select_detrend(&tmp_tinfo);
+	setup_method(&tmp_tinfo, &buf);
+	(*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        }
        growing_buf_free(&buf);
        local_arg->red_message="Current point value subtracted from selected datasets.";
@@ -2476,14 +2485,13 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       case '&':
        for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
 	if (!dataset_is_shown(current_dataset)) continue;
-	org_methods_ptr=tinfoptr->methods;
-	tinfoptr->methods= &swap_methods_struct;
-	select_integrate(tinfoptr);
-	setup_method(tinfoptr, NULL);
-	(*tinfoptr->methods->transform_init)(tinfoptr);
-	(*tinfoptr->methods->transform)(tinfoptr);
-	(*tinfoptr->methods->transform_exit)(tinfoptr);
-	tinfoptr->methods=org_methods_ptr;
+        tmp_tinfo=*tinfoptr;
+	tmp_tinfo.methods= &tmp1_methods_struct;
+	select_integrate(&tmp_tinfo);
+	setup_method(&tmp_tinfo, NULL);
+	(*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        }
        local_arg->red_message="Selected data sets integrated.";
        dev=NEWDATA; leave=TRUE;
@@ -2491,14 +2499,13 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       case '%':
        for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
 	if (!dataset_is_shown(current_dataset)) continue;
-        org_methods_ptr=tinfoptr->methods;
-	tinfoptr->methods= &swap_methods_struct;
-	select_differentiate(tinfoptr);
-	setup_method(tinfoptr, NULL);
-	(*tinfoptr->methods->transform_init)(tinfoptr);
-	(*tinfoptr->methods->transform)(tinfoptr);
-	(*tinfoptr->methods->transform_exit)(tinfoptr);
-	tinfoptr->methods=org_methods_ptr;
+        tmp_tinfo=*tinfoptr;
+	tmp_tinfo.methods= &tmp1_methods_struct;
+	select_differentiate(&tmp_tinfo);
+	setup_method(&tmp_tinfo, NULL);
+	(*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        }
        local_arg->red_message="Selected data sets differentiated.";
        dev=NEWDATA; leave=TRUE;
@@ -2521,17 +2528,16 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
        growing_buf_takethis(&buf, "-d");
        for (current_dataset=0, tinfoptr=tinfo; tinfoptr!=NULL; current_dataset++, tinfoptr=tinfoptr->next) {
 	if (!dataset_is_shown(current_dataset)) continue;
-	org_methods_ptr=tinfoptr->methods;
-	tinfoptr->methods= &swap_methods_struct;
-	select_normalize_channelbox(tinfoptr);
-	setup_method(tinfoptr, &buf);
-	(*tinfoptr->methods->transform_init)(tinfoptr);
-	(*tinfoptr->methods->transform)(tinfoptr);
-	(*tinfoptr->methods->transform_exit)(tinfoptr);
-	tinfoptr->methods=org_methods_ptr;
+        tmp_tinfo=*tinfoptr;
+	tmp_tinfo.methods= &tmp1_methods_struct;
+	select_normalize_channelbox(&tmp_tinfo);
+	setup_method(&tmp_tinfo, &buf);
+	(*tmp_tinfo.methods->transform_init)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform)(&tmp_tinfo);
+	(*tmp_tinfo.methods->transform_exit)(&tmp_tinfo);
        }
        growing_buf_free(&buf);
-       rightleftview=(*((Bool*)swap_methods_struct.local_storage) ? 2:1);
+       rightleftview=(*((Bool*)tmp1_methods_struct.local_storage) ? 2:1);
        dev=NEWBORDER; leave=TRUE;
        }
        break;

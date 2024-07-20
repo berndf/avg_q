@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2018,2020 Bernd Feige
+ * Copyright (C) 1999-2018,2020,2024 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #include <stdlib.h>
@@ -24,7 +24,7 @@
 
 LOCAL char const * const sig=
  "avg_q multichannel (EEG/MEG) data processing tool\n"
- "(c) 1992-2020 by Bernd Feige, Bernd.Feige@gmx.net\n"
+ "(c) 1992-2024 by Bernd Feige, Bernd.Feige@gmx.net\n"
  "This version (" VERSION ", " FLOAT_SIZE ") was compiled on " DATE ".\n"
  SIGNATURE;
 

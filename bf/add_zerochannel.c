@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008,2016 Bernd Feige
+ * Copyright (C) 2008,2016,2024 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -61,7 +61,7 @@ add_zerochannel(transform_info_ptr tinfo) {
  struct add_zerochannel_storage *local_arg=(struct add_zerochannel_storage *)tinfo->methods->local_storage;
  struct transform_info_struct tmptinfo= *tinfo;
  tmptinfo.nr_of_channels=1;
- tmptinfo.channelnames=&local_arg->channelname;
+ tmptinfo.channelnames= (char **)&local_arg->channelname;
  tmptinfo.probepos=&local_arg->probepos[0];
  return add_channels_or_points(tinfo, &tmptinfo, /* channel_list= */NULL, ADD_CHANNELS, /* zero_newdata= */TRUE);
 }

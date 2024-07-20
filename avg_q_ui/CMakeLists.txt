@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2015,2018 Bernd Feige
+# Copyright (C) 2006-2015,2018,2024 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 PROJECT(avg_q_ui)
@@ -110,7 +110,7 @@ INSTALL(
 )
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
 INSTALL(
- FILES avg_q.desktop avg_q.png avg_q.xml
+ FILES ../Desktop/avg_q.desktop avg_q.png avg_q.xml
  DESTINATION ${INSTALLDIR}
  PERMISSIONS ${FILE_PERMISSIONS}
 )

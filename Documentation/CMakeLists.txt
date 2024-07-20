@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Bernd Feige
+# Copyright (C) 2009,2024 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 PROJECT(avg_q_Documentation)
@@ -15,7 +15,7 @@ IF(NOT ${_LYX_EXECUTABLE} STREQUAL "_LYX_EXECUTABLE-NOTFOUND")
   ADD_CUSTOM_COMMAND(
    TARGET Programs_handbook
    #OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.pdf
-   COMMAND ${_LYX_EXECUTABLE} -e pdf2 ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx
+   COMMAND ${_LYX_EXECUTABLE} -e pdflatex ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx
    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx
    COMMENT "Running LyX"
   )
