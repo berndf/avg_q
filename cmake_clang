@@ -1,1 +1,2 @@
-cmake -DCMAKE_TOOLCHAIN_FILE=~/work/avg_q/CMake_Toolchain_clang.txt $* ~/work/avg_q
+avg_q_dir=`dirname $0`
+cmake -DCMAKE_TOOLCHAIN_FILE=~/work/avg_q/CMake_Toolchain_clang.txt $* $avg_q_dir

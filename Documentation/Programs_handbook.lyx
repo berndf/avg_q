@@ -167,7 +167,7 @@ mailto:bernd.feige@uniklinik-freiburg.de
 \begin_layout Standard
 \noindent
 \align center
-Version 6.0.0
+Version 6.1.0
 \end_layout
 
 \begin_layout Standard
@@ -6549,6 +6549,9 @@ relative gain
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "Sec:Intrasubject"
+plural "false"
+caps "false"
+noprefix "false"
 nolink "false"
 
 \end_inset
