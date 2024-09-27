@@ -84,15 +84,18 @@ class regressors(object):
   self.regressor_names.append(regressor_name)
 
  def add_regressor_avg_q_file(self,regressor_avg_q_file):
+  import tempfile
+  tempchannelfile=tempfile.NamedTemporaryFile()
   channelnames=self.avg_q_instance.get_description(regressor_avg_q_file,'channelnames')
   for channelname in channelnames:
    script=avg_q.Script(self.avg_q_instance)
    script.add_Epochsource(avg_q.Epochsource(regressor_avg_q_file))
    script.add_transform('remove_channel -k %s' % escape_channelname(channelname))
    script.add_transform('detrend') # An offset produces irreparable problems with waver's padding
-   script.add_transform('write_generic %s.dat string' % escape_filename(channelname))
+   script.add_transform('write_generic %s string' % tempchannelfile.name)
    script.run()
-   self.add_regressor_file(channelname,'%s.dat' % channelname)
+   self.add_regressor_file(channelname,'%s' % tempchannelfile.name)
+  tempchannelfile.close() # The temp file will be deleted at this point.
 
  def write_table(self,orthogonalize_order=None,with_column_names=True):
   '''Write the regressor table to stdout.
