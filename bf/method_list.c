@@ -11,6 +11,7 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_null_source,
  select_read_brainvision,
  select_read_cfs,
+ select_read_curry,
  select_read_freiburg,
  select_read_generic,
 #ifdef AVG_Q_WITH_HDF

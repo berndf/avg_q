@@ -199,6 +199,7 @@ void select_write_vitaport(transform_info_ptr tinfo);
 void select_read_brainvision(transform_info_ptr tinfo);
 void select_write_brainvision(transform_info_ptr tinfo);
 void select_read_labview(transform_info_ptr tinfo);
+void select_read_curry(transform_info_ptr tinfo);
 void select_laplacian(transform_info_ptr tinfo);
 void select_write_mfx(transform_info_ptr tinfo);
 void select_append(transform_info_ptr tinfo);

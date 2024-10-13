@@ -86,6 +86,7 @@ SET(subdirs
  TriAn
  cfs
  sigma
+ curry
 )
 
 set(METHOD_LIST_DEFINES "")

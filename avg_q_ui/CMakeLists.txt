@@ -11,6 +11,7 @@ IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
    SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk3/usr/i686-w64-mingw32/sys-root/mingw/)
   ENDIF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
   SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-3.0
+   -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED
    -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0
    -I${GTKPATH}/include/glib-2.0 -I${GTKPATH}/include/pango-1.0
    -I${GTKPATH}/include/cairo)
