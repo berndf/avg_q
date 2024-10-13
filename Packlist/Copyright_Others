@@ -22,6 +22,7 @@ bf/ica/r250.c
 bf/ica/r250.h
 bf/ica/randlcg.c
 bf/ica/randlcg.h
+bf/kn/kn.h
 bf/kn/rawdatan.c
 bf/kn/rawdatan.h
 bf/kn/rawlimit.h

@@ -196,6 +196,7 @@ bf/real2fft.c
 bf/realfft.c
 bf/rec/RECfile.h
 bf/rec/dump_edf_header.c
+bf/rec/join_edf.c
 bf/rec/read_rec.c
 bf/rec/rec_sm.c
 bf/rec/rec_smd.c
