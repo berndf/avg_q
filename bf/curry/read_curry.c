@@ -1,8 +1,8 @@
 /*{{{}}}*/
 /*{{{  Description*/
 /*
- * read_curry.c module to read data from BrainVision vhdr+vmrk+eeg files
- *	-- Bernd Feige 11.06.2007
+ * read_curry.c module to read data from Curry cdt files
+ *	-- Bernd Feige 13.10.2024
  */
 /*}}}  */
 
@@ -102,7 +102,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_LONG, "epochs: Specify maximum number of epochs to get", "e", 1, NULL},
  {T_ARGS_TAKES_STRING_WORD, "offset: The zero point 'beforetrig' is shifted by offset", "o", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_FILENAME, "trigger_file: Read trigger points and codes from this file", "R", ARGDESC_UNUSED, (char const *const *)"*.trg"},
- {T_ARGS_TAKES_FILENAME, "Input file (.vhdr/.ahdr)", "", ARGDESC_UNUSED, (char const *const *)"*.vhdr"},
+ {T_ARGS_TAKES_FILENAME, "Input file .cdt", "", ARGDESC_UNUSED, (char const *const *)"*.cdt"},
  {T_ARGS_TAKES_STRING_WORD, "beforetrig", "", ARGDESC_UNUSED, (char const *const *)"1s"},
  {T_ARGS_TAKES_STRING_WORD, "aftertrig", "", ARGDESC_UNUSED, (char const *const *)"1s"}
 };
