@@ -9,8 +9,11 @@ from . import trgfile
 class ExpyrimentLog(object):
  # Basic log file reading.
  def __init__(self,logfile):
+  import charset_normalizer
   self.logfile=logfile
-  self.log=open(self.logfile,"r")
+  with open(self.logfile,"rb") as binfile:
+   cn=charset_normalizer.from_fp(binfile)
+  self.log=open(self.logfile,"r",encoding=cn.best().encoding)
   fileheader=next(self.log).rstrip('\r\n')
   if not fileheader.startswith('#Expyriment '):
    raise Exception("ExpyrimentLog: File doesn't start with '#Expyriment '")
@@ -23,7 +26,7 @@ class ExpyrimentLog(object):
     # Try with en_US locale
     locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')
     self.timestamp=datetime.datetime.strptime(dateline[7:],"%a %b %d %Y %H:%M:%S")
-   except:
+   except Exception:
     # Try the current locale
     locale.setlocale(locale.LC_ALL, '')
     self.timestamp=datetime.datetime.strptime(dateline[7:],"%a %b %d %Y %H:%M:%S")

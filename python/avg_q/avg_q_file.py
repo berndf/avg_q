@@ -25,6 +25,7 @@ formats_and_extensions=[
  ('Unisens', ['.bin','.csv']),
  ('CFS', ['.cfs']),
  ('Sigma', ['.EEG']),
+ ('Curry', ['.cdt']),
 ]
 
 class avg_q_file(object):
@@ -133,6 +134,10 @@ read_cfs %(fromepoch_arg)s %(epochs_arg)s %(filename)s
   elif fileformat=='Sigma':
    self.getepochmethod='''
 read_sigma %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
+'''
+  elif fileformat=='Curry':
+   self.getepochmethod='''
+read_curry %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='generic':
    # Handled specially because read_generic reads headerless data
