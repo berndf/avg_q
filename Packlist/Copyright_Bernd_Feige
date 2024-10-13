@@ -120,6 +120,8 @@ bf/collapse_channels.c
 bf/complex.c
 bf/convolve.c
 bf/correlate.c
+bf/curry/CMakeLists.txt
+bf/curry/read_curry.c
 bf/date_now.c
 bf/demean_maps.c
 bf/detrend.c
