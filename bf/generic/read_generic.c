@@ -493,7 +493,7 @@ read_generic(transform_info_ptr tinfo) {
 
  /*{{{  Handle triggers within the epoch (option -T)*/
  if (args[ARGS_TRIGTRANSFER].is_set) {
-  int trigs_in_epoch, code;
+  int code;
   long trigpoint;
   long const old_current_trigger=local_arg->current_trigger;
   char *thisdescription;
@@ -501,10 +501,9 @@ read_generic(transform_info_ptr tinfo) {
   /* First trigger entry holds file_start_point */
   push_trigger(&tinfo->triggers, file_start_point, -1, NULL);
   read_generic_reset_triggerbuffer(tinfo);
-  for (trigs_in_epoch=1; (code=read_generic_read_trigger(tinfo, &trigpoint, &thisdescription))!=0;) {
+  for (; (code=read_generic_read_trigger(tinfo, &trigpoint, &thisdescription))!=0;) {
    if (trigpoint>=file_start_point && trigpoint<=file_end_point) {
     push_trigger(&tinfo->triggers, trigpoint-file_start_point, code, thisdescription);
-    trigs_in_epoch++;
    }
   }
   push_trigger(&tinfo->triggers, 0, 0, NULL); /* End of list */

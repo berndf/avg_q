@@ -30,16 +30,6 @@
 #define MAX_COMMENTLEN 1024
 
 /*{{{  Local defs and args*/
-LOCAL struct triggercode {
- char *triggerstring;
- int triggercode;
-} triggercodes[]={
- {"New Segment,",256}, /* similar to NAV_STARTSTOP for synamps */
- {"DC Correction,",257}, /* similar to NAV_DCRESET for synamps */
- {"SyncStatus,Sync On",0}, /* Dropped. */
- {"SyncStatus,Sync Off",0}, /* Dropped. */
- {NULL,0}
-};
 /* Presently, I've seen only files with IEEE_FLOAT_32 */
 LOCAL char *datatype_choice[]={
  "UNKNOWN",
@@ -68,7 +58,9 @@ enum DATATYPE_ENUM {
 };
 typedef enum {
  /* Arranged so that this is an index into sectionstartend[] */
-  None = -1, DATA, DEVICE, DEVICE_OTHERS, LABELS, LABELS_LIST, GEOMETRY,
+  None = -1, DATA, DEVICE, DEVICE_OTHERS, 
+  IMPEDANCE_TIMES, IMPEDANCE_TIMES_LIST, IMPEDANCE_VALUES, IMPEDANCE_VALUES_LIST,
+  LABELS, LABELS_LIST, GEOMETRY,
   SENSORS, SENSORS_LIST, LABELS_OTHERS, LABELS_OTHERS_LIST,
   SECTION_EXHAUSTED
 } SectionEnum;
@@ -77,6 +69,10 @@ struct {char *startstring; char *endstring; SectionEnum section; } sectionstarte
  {"DATA_PARAMETERS START", "DATA_PARAMETERS END", DATA},
  {"DEVICE_PARAMETERS START", "DEVICE_PARAMETERS END", DEVICE},
  {"DEVICE_PARAMETERS_OTHERS START", "DEVICE_PARAMETERS_OTHERS END", DEVICE_OTHERS},
+ {"IMPEDANCE_TIMES START", "IMPEDANCE_TIMES END", IMPEDANCE_TIMES},
+ {"IMPEDANCE_TIMES START_LIST", "IMPEDANCE_TIMES END_LIST", IMPEDANCE_TIMES_LIST},
+ {"IMPEDANCE_VALUES START", "IMPEDANCE_VALUES END", IMPEDANCE_VALUES},
+ {"IMPEDANCE_VALUES START_LIST", "IMPEDANCE_VALUES END_LIST", IMPEDANCE_VALUES_LIST},
  {"LABELS START", "LABELS END", LABELS},
  {"LABELS START_LIST", "LABELS END_LIST", LABELS_LIST},
  {"GEOMETRY START", "GEOMETRY END", GEOMETRY},
@@ -119,6 +115,8 @@ struct read_curry_storage {
  int current_trigger;
  growing_buf triggers;
  int nr_of_channels;
+ int nr_of_binchannels; /* More channels than read by avg_q can be present in the form of a Trigger channel */
+ int trigger_channel; /* More channels than read by avg_q can be present in the form of a Trigger channel */
  int itemsize;
  long points_in_file;
  long bytes_per_point;
@@ -132,12 +130,9 @@ struct read_curry_storage {
  float sfreq;
  enum DATATYPE_ENUM datatype;
  Bool multiplexed;
- Bool V_Amp; /* V_Amp ahdr/amrk/eeg variant */
- char *markerfilename;
 
  growing_buf filepath_buf;
  growing_buf channelnames_buf;
- growing_buf resolutions_buf;
  growing_buf coordinates_buf;
  growing_buf commentbuf;
 
@@ -188,10 +183,7 @@ read_curry_get_filestrings(transform_info_ptr tinfo) {
   growing_buf_get_nexttoken(&local_arg->channelnames_buf,NULL);
  }
  if (local_arg->coordinates_buf.buffer_start!=NULL) {
-  if (local_arg->coordinates_buf.current_length!=3*tinfo->nr_of_channels*sizeof(double)) {
-   ERREXIT2(tinfo->emethods, "read_curry: Coordinates count mismatch, %d!=%d\n", MSGPARM(local_arg->coordinates_buf.current_length/sizeof(double)), MSGPARM(3*tinfo->nr_of_channels));
-  }
-  if ((tinfo->probepos=(double *)malloc(3*tinfo->nr_of_channels*sizeof(double)))==NULL) {
+  if ((tinfo->probepos=(double *)calloc(3*tinfo->nr_of_channels, sizeof(double)))==NULL) {
    ERREXIT(tinfo->emethods, "read_curry: Error allocating probe positions\n");
   }
   memcpy(tinfo->probepos, local_arg->coordinates_buf.buffer_start, local_arg->coordinates_buf.current_length);
@@ -211,6 +203,7 @@ read_curry_reset_triggerbuffer(transform_info_ptr tinfo) {
 /*}}}  */
 /*{{{  read_curry_build_trigbuffer(transform_info_ptr tinfo) {*/
 /* This function has all the knowledge about events in the various file types */
+LOCAL DATATYPE read_value(FILE *infile, struct read_curry_storage *local_arg);
 LOCAL void 
 read_curry_build_trigbuffer(transform_info_ptr tinfo) {
  struct read_curry_storage *local_arg=(struct read_curry_storage *)tinfo->methods->local_storage;
@@ -236,78 +229,25 @@ read_curry_build_trigbuffer(transform_info_ptr tinfo) {
    free_pointer((void **)&description);
   }
   if (triggerfile!=stdin) fclose(triggerfile);
- } else if (local_arg->markerfilename!=NULL) {
-  FILE * const markerfile=fopen(local_arg->markerfilename, "r");
-  growing_buf readbuf;
-  if (markerfile==NULL) {
-   ERREXIT1(tinfo->emethods, "read_curry_build_trigbuffer: Can't open marker file %s\n", MSGPARM(local_arg->markerfilename));
-  }
-  growing_buf_init(&readbuf);
-  growing_buf_allocate(&readbuf, 0);
-  while (1) {
-   growing_buf_read_line(markerfile, &readbuf);
-   if (feof(markerfile)) break;
-   if (readbuf.current_length==1 || strncmp(readbuf.buffer_start,";",1)==0) {
-    /* Empty line or comment */
-   } else if (strcmp(readbuf.buffer_start,"Brain Vision Data Exchange Marker File, Version 1.0")==0) {
-    /* Header line */
-   } else if (strcmp(readbuf.buffer_start,"[Common Infos]")==0) {
-    while (1) {
-     growing_buf_read_line(markerfile, &readbuf);
-     //if (*readbuf.buffer_start=='[' || feof(markerfile)) goto reevaluate;
-    }
-   } else if (strcmp(readbuf.buffer_start,"[Marker Infos]")==0) {
-    while (1) {
-     growing_buf_read_line(markerfile, &readbuf);
-     //if (*readbuf.buffer_start=='[' || feof(markerfile)) goto reevaluate;
-     if (readbuf.current_length==1 || strncmp(readbuf.buffer_start,";",1)==0) {
-      /* Empty line or comment */
-     } else if (strncmp(readbuf.buffer_start,"Mk",2)==0) {
-      char * const equalsign=strchr(readbuf.buffer_start+2, '=');
-      if (equalsign!=NULL) {
-       char * const firstcomma=strchr(equalsign+1, ',');
-       if (firstcomma!=NULL) {
-	char * const secondcomma=strchr(firstcomma+1, ',');
-	if (secondcomma!=NULL) {
-	 /* Positions in BrainVision apparently start at 1 */
-	 long const trigpoint=atol(secondcomma+1)-1;
-	 int code= -1;
-	 char *description;
-	 struct triggercode *in_triggercodes;
-	 if ((description=(char *)malloc(secondcomma-equalsign))==NULL) {
-	  ERREXIT(tinfo->emethods, "read_curry_build_trigbuffer: Error allocating description\n");
-	 }
-	 strncpy(description,equalsign+1,secondcomma-equalsign-1);
-	 description[secondcomma-equalsign-1]='\0';
-	 for (in_triggercodes=triggercodes; in_triggercodes->triggerstring!=NULL; in_triggercodes++) {
-	  if (strncmp(in_triggercodes->triggerstring, equalsign+1, secondcomma-equalsign-1)==0) {
-	   code=in_triggercodes->triggercode;
-	   break;
-	  }
-	 }
-	 /* Allow 0 codes in triggercodes to cause dropping of these triggers */
-	 if (code!=0) {
-	  if (code==-1) {
-	   if (strncmp("Stimulus,S",description,10)==0) {
-	    code=atoi(description+10);
-	   } else if (strncmp("Response,R",description,10)==0) {
-	    code= -atoi(description+10);
-	   } else if (strncmp("Comment,",description,8)==0) {
-	    code= -256;
-	   }
-	  }
-	  push_trigger(&local_arg->triggers, trigpoint, code, description);
-	 }
-	 free(description);
-	}
-       }
-      }
-     }
-    }
+ } else if (local_arg->trigger_channel>=0) {
+  long current_triggerpoint=0;
+  int last_trigvalue=0;
+
+  TRACEMS(tinfo->emethods, 1, "read_curry_build_trigbuffer: Scanning trigger traces\n");
+  while (current_triggerpoint<local_arg->points_in_file) {
+   FILE *const infile=local_arg->infile;
+   if (local_arg->multiplexed) {
+    fseek(infile, current_triggerpoint*local_arg->bytes_per_point+local_arg->trigger_channel*local_arg->itemsize*datatype_size[local_arg->datatype], SEEK_SET);
+   } else {
+    fseek(infile, (local_arg->points_in_file*local_arg->trigger_channel+current_triggerpoint)*local_arg->itemsize*datatype_size[local_arg->datatype], SEEK_SET);
    }
+   int trigvalue=read_value(infile, local_arg)-61440;
+   if (trigvalue!=0 && trigvalue!=last_trigvalue) {
+    push_trigger(&local_arg->triggers, current_triggerpoint, trigvalue, NULL);
+   }
+   last_trigvalue=trigvalue;
+   current_triggerpoint++;
   }
-  growing_buf_free(&readbuf);
-  fclose(markerfile);
  } else {
   TRACEMS(tinfo->emethods, 0, "read_curry_build_trigbuffer: No trigger source known.\n");
  }
@@ -357,7 +297,6 @@ read_curry_init(transform_info_ptr tinfo) {
   growing_buf_append(&local_arg->filepath_buf, args[ARGS_IFILE].arg.s, last_sep-args[ARGS_IFILE].arg.s+1);
  }
  growing_buf_appendchar(&local_arg->filepath_buf, '\0');
- int const savelength=local_arg->filepath_buf.current_length;
  growing_buf_appendstring(&local_arg->filepath_buf, last_sep!=NULL ? last_sep+1 : args[ARGS_IFILE].arg.s);
  local_arg->infile=fopen(local_arg->filepath_buf.buffer_start,"rb");
  if(local_arg->infile==NULL) {
@@ -368,21 +307,17 @@ read_curry_init(transform_info_ptr tinfo) {
  if(parameterfile==NULL) {
   ERREXIT1(tinfo->emethods, "read_curry_init: Can't open dpo file %s\n", MSGPARM(local_arg->filepath_buf.buffer_start));
  }
- local_arg->filepath_buf.current_length=savelength;
- local_arg->filepath_buf.buffer_start[local_arg->filepath_buf.current_length]='\0';
 
  local_arg->datatype= DT_FLOAT32;
  local_arg->multiplexed= TRUE;
- local_arg->markerfilename=NULL;
  local_arg->itemsize=1;
+ local_arg->trigger_channel= -1; /* Not set / available */
  growing_buf_init(&local_arg->triggers);
  growing_buf_init(&local_arg->channelnames_buf);
  growing_buf_allocate(&local_arg->channelnames_buf, 0);
  local_arg->channelnames_buf.delimiters="";
- growing_buf_allocate(&local_arg->coordinates_buf, 0);
- growing_buf_init(&local_arg->resolutions_buf);
- growing_buf_allocate(&local_arg->resolutions_buf, 0);
  growing_buf_init(&local_arg->coordinates_buf);
+ growing_buf_allocate(&local_arg->coordinates_buf, 0);
 
  /*{{{  Process options*/
  local_arg->fromepoch=(args[ARGS_FROMEPOCH].is_set ? args[ARGS_FROMEPOCH].arg.i : 1);
@@ -397,6 +332,7 @@ read_curry_init(transform_info_ptr tinfo) {
  growing_buf_init(&local_arg->commentbuf);
  growing_buf_allocate(&local_arg->commentbuf, 0);
  int year=1900, month=1, day=1, hour=0, min=0, sec=0, millisec=0;
+ int labels_seen=0; /* This tracks the channel groups, supposed to be in the order of physical/binary channels */
  while (1) {
   growing_buf_read_line(parameterfile, &readbuf);
   if (feof(parameterfile)) break;
@@ -429,7 +365,9 @@ read_curry_init(transform_info_ptr tinfo) {
     }
    }
    if (current_section==None) {
-    ERREXIT1(tinfo->emethods, "read_curry_init: %s is not a Curry cdt.dpo file\n", MSGPARM(local_arg->filepath_buf.buffer_start));
+    ERREXIT2(tinfo->emethods, "read_curry_init: %s is not a Curry cdt.dpo file (unknown section >%s<)\n",
+     MSGPARM(local_arg->filepath_buf.buffer_start),
+     MSGPARM(readbuf.buffer_start));
    }
   } else {
    /* We are within a section */
@@ -451,7 +389,7 @@ read_curry_init(transform_info_ptr tinfo) {
     } else if (strcmp(key,"NumSamples")==0) {
     } else if (strcmp(key,"NumTrials")==0) {
     } else if (strcmp(key,"NumChannels")==0) {
-     local_arg->nr_of_channels=atoi(value);
+     local_arg->nr_of_binchannels=atoi(value);
     } else if (strcmp(key,"NumGroups")==0) {
     } else if (strcmp(key,"StartYear")==0) {
      year=atoi(value);
@@ -470,8 +408,19 @@ read_curry_init(transform_info_ptr tinfo) {
     } else if (strcmp(key,"SampleFreqHz")==0) {
      local_arg->sfreq=atof(value);
     }
-   } else if (current_section==LABELS_LIST || current_section==LABELS_OTHERS_LIST) {
+   } else if (current_section==LABELS) {
+    growing_buf_get_key_value(&readbuf, &key, &value);
+    if (strcmp(key,"ListNrRows")==0) {
+     local_arg->nr_of_channels=atoi(value);
+    }
+   } else if (current_section==LABELS_LIST) {
     growing_buf_append(&local_arg->channelnames_buf, readbuf.buffer_start, strlen(readbuf.buffer_start)+1);
+    labels_seen++;
+   } else if (current_section==LABELS_OTHERS_LIST) {
+    if (strcmp(readbuf.buffer_start,"Trigger")==0) {
+     local_arg->trigger_channel=labels_seen;
+    }
+    labels_seen++;
    } else if (current_section==SENSORS_LIST) {
     double x, y, z;
     x=strtod(readbuf.buffer_start, NULL);
@@ -511,7 +460,7 @@ read_curry_init(transform_info_ptr tinfo) {
   local_arg->bytes_per_point = 0;
   local_arg->points_in_file = 0;
  } else {
-  local_arg->bytes_per_point=(local_arg->nr_of_channels*local_arg->itemsize)*datatype_size[local_arg->datatype];
+  local_arg->bytes_per_point=(local_arg->nr_of_binchannels*local_arg->itemsize)*datatype_size[local_arg->datatype];
   if (statbuff.st_size==0) {
    local_arg->points_in_file = 0;
   } else {
@@ -623,7 +572,7 @@ read_curry(transform_info_ptr tinfo) {
  struct read_curry_storage * const local_arg=(struct read_curry_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  array myarray;
- FILE *infile=local_arg->infile;
+ FILE *const infile=local_arg->infile;
  Bool not_correct_trigger=FALSE;
  long trigger_point, file_start_point, file_end_point;
  char *description=NULL;
@@ -682,7 +631,7 @@ read_curry(transform_info_ptr tinfo) {
 
  /*{{{  Handle triggers within the epoch (option -T)*/
  if (args[ARGS_TRIGTRANSFER].is_set) {
-  int trigs_in_epoch, code;
+  int code;
   long trigpoint;
   long const old_current_trigger=local_arg->current_trigger;
   char *thisdescription;
@@ -690,23 +639,15 @@ read_curry(transform_info_ptr tinfo) {
   /* First trigger entry holds file_start_point */
   push_trigger(&tinfo->triggers, file_start_point, -1, NULL);
   read_curry_reset_triggerbuffer(tinfo);
-  for (trigs_in_epoch=1; (code=read_curry_read_trigger(tinfo, &trigpoint, &thisdescription))!=0;) {
+  for (; (code=read_curry_read_trigger(tinfo, &trigpoint, &thisdescription))!=0;) {
    if (trigpoint>=file_start_point && trigpoint<=file_end_point) {
     push_trigger(&tinfo->triggers, trigpoint-file_start_point, code, thisdescription);
-    trigs_in_epoch++;
    }
   }
   push_trigger(&tinfo->triggers, 0L, 0, NULL); /* End of list */
   local_arg->current_trigger=old_current_trigger;
  }
  /*}}}  */
-
- /* If bytes_per_point is unknown (DT_STRING...) we just continuously scan the data.
-  * fromepoch won't work! */
- if (local_arg->multiplexed && local_arg->bytes_per_point>0) {
-  /* Multiplexed: read all data of one data point at once, only one seek necessary */
-  fseek(infile, file_start_point*local_arg->bytes_per_point, SEEK_SET);
- }
 
  /*{{{  Configure myarray*/
  myarray.element_skip=tinfo->itemsize;
@@ -737,21 +678,19 @@ read_curry(transform_info_ptr tinfo) {
    local_arg->first_in_epoch=TRUE;
    do {
     double resolution=1.0;
-    if (!local_arg->multiplexed) {
-     /* Nonmultiplexed: read all data of one channel at once, but need to seek for every channel */
+    if (local_arg->multiplexed) {
+     /* Multiplexed: read all data of one data point at once, seek for every point
+      * because nr_of_binchannels!=nr_of_channels */
+     int const point = file_start_point + myarray.current_vector;
+     fseek(infile, point * local_arg->bytes_per_point, SEEK_SET);
+    } else {
+     /* Nonmultiplexed: read all data of one channel at once, seek for every channel */
      int const channel=myarray.current_vector;
-     //resolution=((double *)local_arg->resolutions_buf.buffer_start)[channel];
-     resolution=1;
      fseek(infile, (local_arg->points_in_file*channel+file_start_point)*local_arg->itemsize*datatype_size[local_arg->datatype], SEEK_SET);
     }
     do {
      DATATYPE * const item0_addr=ARRAY_ELEMENT(&myarray);
      int itempart;
-     if (local_arg->multiplexed) {
-      //int const channel=myarray.current_element;
-      //resolution=((double *)local_arg->resolutions_buf.buffer_start)[channel];
-      resolution=1;
-     }
      /* Multiple items are always stored side by side: */
      for (itempart=0; itempart<tinfo->itemsize; itempart++) {
       item0_addr[itempart]=read_value(infile, local_arg)*resolution;
@@ -759,7 +698,6 @@ read_curry(transform_info_ptr tinfo) {
      array_advance(&myarray);
      local_arg->first_in_epoch=FALSE;
     } while (myarray.message==ARRAY_CONTINUE);
-    if (local_arg->V_Amp) read_value(infile, local_arg); /* Read the "signature" channel */
    } while (myarray.message!=ARRAY_ENDOFSCAN);
    break;
   case ERR_READ:
@@ -799,11 +737,9 @@ read_curry_exit(transform_info_ptr tinfo) {
 
  growing_buf_free(&local_arg->filepath_buf);
  growing_buf_free(&local_arg->channelnames_buf);
- growing_buf_free(&local_arg->resolutions_buf);
  growing_buf_free(&local_arg->coordinates_buf);
  growing_buf_free(&local_arg->commentbuf);
  if (local_arg->infile!=NULL) fclose(local_arg->infile);
- free_pointer((void **)&local_arg->markerfilename);
  free_pointer((void **)&local_arg->trigcodes);
 
  if (local_arg->triggers.buffer_start!=NULL) {
@@ -825,7 +761,7 @@ select_read_curry(transform_info_ptr tinfo) {
  tinfo->methods->method_type=GET_EPOCH_METHOD;
  tinfo->methods->method_name="read_curry";
  tinfo->methods->method_description=
-  "Get-epoch method to read data from the BrainVision format\n";
+  "Get-epoch method to read data from the Curry(tm) format\n";
  tinfo->methods->local_storage_size=sizeof(struct read_curry_storage);
  tinfo->methods->nr_of_arguments=NR_OF_ARGUMENTS;
  tinfo->methods->argument_descriptors=argument_descriptors;

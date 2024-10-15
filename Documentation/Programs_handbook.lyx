@@ -13647,7 +13647,7 @@ NeuroScan file format
  option -A) file.
  For the .EEG and .CNT formats,
  data is coded as short integers,
- and the conversio n factor conv_factor is used to project the data to a 16 bit-codeable range.
+ and the conversion factor conv_factor is used to project the data to a 16 bit-codeable range.
  This factor is stored with the data as a 32-bit floating-point value (inversely coded into the channel property `sensitivity',
  which is actually an amplitude-p er-bit measure) and taken into account on reads,
  so that its application does not result in an actual data scaling.
