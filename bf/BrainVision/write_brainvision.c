@@ -151,7 +151,7 @@ BinaryFormat=%s\n\
   if ((local_arg->vmrkfile=fopen(vmrkfilename.buffer_start, "w"))==NULL) {
    ERREXIT1(tinfo->emethods, "write_brainvision_open_file: Can't open %s\n", MSGPARM(vmrkfilename.buffer_start));
   }
-  fprintf(vhdrfile,"\
+  fprintf(local_arg->vmrkfile,"\
 Brain Vision Data Exchange Marker File, Version 1.0\n\
 \n\
 [Common Infos]\n\

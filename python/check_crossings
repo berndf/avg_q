@@ -42,6 +42,10 @@ for filename in sys.argv[1:]:
    tuples=[(float(x[4]),1,'%s:%s:%s %s' % (x[0],x[1],x[2],x[3])) for x in mkkfile]
    trg=avg_q.trgfile.trgfile(source=tuples)
    trg.preamble['Sfreq']='1' # Entries are in seconds
+  elif ext=='.tri':
+   # nirx trigger file
+   import avg_q.nirs
+   trg=avg_q.nirs.nirx_trifile(filename)
   else:
    trg=avg_q.trgfile.trgfile(filename)
  else:

@@ -160,7 +160,7 @@ LOCAL void
 read_curry_get_filestrings(transform_info_ptr tinfo) {
  struct read_curry_storage *local_arg=(struct read_curry_storage *)tinfo->methods->local_storage;
  char *innamebuf;
- int channel, ntokens;
+ int channel;
 
  tinfo->xdata=NULL;
  if ((tinfo->channelnames=(char **)malloc(tinfo->nr_of_channels*sizeof(char *)))==NULL ||
@@ -171,11 +171,6 @@ read_curry_get_filestrings(transform_info_ptr tinfo) {
  memcpy(innamebuf, local_arg->channelnames_buf.buffer_start, local_arg->channelnames_buf.current_length);
  strncpy(tinfo->comment, local_arg->commentbuf.buffer_start, MAX_COMMENTLEN);
 
- ntokens=growing_buf_count_tokens(&local_arg->channelnames_buf);
- //printf("Have found %d channel names!\n", ntokens);
- if (ntokens!=tinfo->nr_of_channels) {
-  ERREXIT2(tinfo->emethods, "read_curry: Channel count mismatch, %d!=%d\n", MSGPARM(ntokens), MSGPARM(tinfo->nr_of_channels));
- }
  /* Reset token pointer, just as growing_buf_get_firsttoken does */
  local_arg->channelnames_buf.current_token=local_arg->channelnames_buf.buffer_start;
  for (channel=0; channel<tinfo->nr_of_channels; channel++) {
@@ -408,17 +403,15 @@ read_curry_init(transform_info_ptr tinfo) {
     } else if (strcmp(key,"SampleFreqHz")==0) {
      local_arg->sfreq=atof(value);
     }
-   } else if (current_section==LABELS) {
-    growing_buf_get_key_value(&readbuf, &key, &value);
-    if (strcmp(key,"ListNrRows")==0) {
-     local_arg->nr_of_channels=atoi(value);
-    }
    } else if (current_section==LABELS_LIST) {
     growing_buf_append(&local_arg->channelnames_buf, readbuf.buffer_start, strlen(readbuf.buffer_start)+1);
     labels_seen++;
    } else if (current_section==LABELS_OTHERS_LIST) {
+    /* Labels for bipolar channels go here, but also "Trigger" */
     if (strcmp(readbuf.buffer_start,"Trigger")==0) {
      local_arg->trigger_channel=labels_seen;
+    } else {
+     growing_buf_append(&local_arg->channelnames_buf, readbuf.buffer_start, strlen(readbuf.buffer_start)+1);
     }
     labels_seen++;
    } else if (current_section==SENSORS_LIST) {
@@ -446,6 +439,7 @@ read_curry_init(transform_info_ptr tinfo) {
  if (local_arg->channelnames_buf.current_length==0) {
   ERREXIT(tinfo->emethods, "read_curry_init: No channel table!\n");
  }
+ local_arg->nr_of_channels=growing_buf_count_tokens(&local_arg->channelnames_buf);
 
  /*{{{  Parse arguments that can be in seconds*/
  tinfo->sfreq=local_arg->sfreq;

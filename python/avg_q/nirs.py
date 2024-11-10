@@ -4,6 +4,35 @@
 (f)NIRS utilities.
 """
 
+from . import trgfile
+import datetime
+
+class nirx_trifile(trgfile.trgfile):
+ def __init__(self,infile):
+  self.infile=infile
+  trgfile.trgfile.__init__(self,infile)
+  self.sfreq=100.0
+  self.preamble['Sfreq']=self.sfreq
+  self.firsttime=None
+ def rdr(self):
+  while True:
+   line=self.getline()
+   if not isinstance(line,str):
+    break
+   line=line.rstrip('\r\n')
+   # EOF:
+   if line=='EOF':
+    break
+   tup=line.split(';')
+   dt=datetime.datetime.fromisoformat(tup[0])
+   if self.firsttime is None:
+    self.firsttime=dt
+   point=(dt-self.firsttime).total_seconds()*self.sfreq
+   code=int(tup[4])
+   description=None
+   yield (point, code, description)
+
+
 import scipy
 
 from . import numpy_Script

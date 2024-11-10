@@ -43,7 +43,8 @@ for filename_and_triggerfile in args.files:
   filename=fsplit[0]
   trgfile=fsplit[1]
  if filename.startswith('file://'):
-  filename=filename[7:]
+  import urllib.parse
+  filename=urllib.parse.unquote(filename[7:])
  parts=filename.split(':')
  #print(parts)
  if len(parts)==2 and parts[0] in dict(formats_and_extensions):
