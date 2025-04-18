@@ -6209,6 +6209,16 @@ fromepoch:
 \end_layout
 
 \begin_layout Description
+-C:
+ Close and reopen add_channels_file for every epoch.
+ This only has an effect together with 
+\series bold
+-e
+\series default
+.
+\end_layout
+
+\begin_layout Description
 -n
 \begin_inset space ~
 \end_inset

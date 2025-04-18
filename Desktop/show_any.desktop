@@ -1,0 +1,16 @@
+[Desktop Entry]
+Name=show_any
+Name[de]=show_any
+GenericName=show_any avg_q Multichannel data analysis
+GenericName[de]=show_any avg_q Vielkanal-Datenanalyse
+X-GNOME-FullName=show_any avg_q Multichannel data analysis
+X-GNOME-FullName[de]=show_any avg_q Vielkanal-Datenanalyse
+Comment=Fast and flexible data analysis, data viewer
+Comment[de]=Schnelle und vielseitige Datenanalyse, Datenanzeige
+Exec=show_any %U
+Icon=avg_q
+Terminal=false
+Type=Application
+Categories=GTK;Science;
+StartupNotify=true
+MimeType=application/show_any;application/x-hdf;

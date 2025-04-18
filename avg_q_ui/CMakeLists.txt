@@ -111,7 +111,7 @@ INSTALL(
 )
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
 INSTALL(
- FILES ../Desktop/avg_q.desktop avg_q.png avg_q.xml
+ FILES ../Desktop/avg_q.desktop ../Desktop/avg_q-show_any.xml avg_q.png
  DESTINATION ${INSTALLDIR}
  PERMISSIONS ${FILE_PERMISSIONS}
 )

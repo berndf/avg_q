@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+  <mime-type type="application/avg_q">
+   <comment xml:lang="en">avg_q script</comment>
+    <glob pattern="*.script" weight="60"/>
+  </mime-type>
+  <mime-type type="application/show_any">
+   <comment>Show any multichannel EEG/MEG file using avg_q</comment>
+    <glob pattern="*.asc" weight="60"/>
+    <glob pattern="*.avg" weight="60"/>
+    <glob pattern="*.cnt" weight="60"/>
+    <glob pattern="*.eeg" weight="60"/>
+    <glob pattern="*.vhdr" weight="60"/>
+    <glob pattern="*.hdf" weight="60"/>
+    <glob pattern="*.edf" weight="60"/>
+    <glob pattern="*.rec" weight="60"/>
+    <glob pattern="*.co" weight="60"/>
+    <glob pattern="*.nirs" weight="60"/>
+    <glob pattern="*.Eeg" weight="60"/>
+    <glob pattern="*.emg" weight="60"/>
+    <glob pattern="*.vpd" weight="60"/>
+    <glob pattern="*.ebm" weight="60"/>
+    <glob pattern="*.sum" weight="60"/>
+    <glob pattern="*.raw" weight="60"/>
+    <glob pattern="*.cfs" weight="60"/>
+    <glob pattern="*.fif" weight="60"/>
+    <glob pattern="*.cdt" weight="60"/>
+    <glob pattern="*.mfx" weight="60"/>
+  </mime-type>
+</mime-info>

@@ -8,7 +8,6 @@ filter and potentially orthogonalize the resulting regressors.
 import avg_q
 from . import trgfile
 from . import channelnames2channelpos
-from .avg_q import escape_filename
 from .avg_q import escape_channelname
 from .avg_q import channel_list2arg
 import subprocess

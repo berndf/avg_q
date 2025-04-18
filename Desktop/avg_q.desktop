@@ -1,0 +1,16 @@
+[Desktop Entry]
+Name=avg_q
+Name[de]=avg_q
+GenericName=avg_q Multichannel data analysis
+GenericName[de]=avg_q Vielkanal-Datenanalyse
+X-GNOME-FullName=avg_q Multichannel data analysis
+X-GNOME-FullName[de]=avg_q Vielkanal-Datenanalyse
+Comment=Fast and flexible data analysis
+Comment[de]=Schnelle und vielseitige Datenanalyse
+Exec=avg_q_ui %U
+Icon=avg_q
+Terminal=false
+Type=Application
+Categories=GTK;Science;
+StartupNotify=true
+MimeType=application/avg_q;

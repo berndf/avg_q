@@ -29,7 +29,8 @@ class PresLog(object):
   self.header_fields=None
   for line in self.log:
    fields=line.rstrip('\r\n').split('\t')
-   if len(fields)<=1: continue
+   if len(fields)<=1:
+    continue
    if self.header_fields is None:
     # The first table is skipped...
     if fields[0] in table_start:
@@ -41,8 +42,10 @@ class PresLog(object):
    fields=line.rstrip('\r\n').split('\t')
    if len(fields)<=1:
     # Only at the start skip empty line(s)
-    if self.atstart: continue
-    else: break
+    if self.atstart:
+     continue
+    else:
+     break
    self.atstart=False
    yield fields
  def __del__(self):
@@ -64,7 +67,7 @@ class PresLogfile(trgfile.trgfile):
    description=data['Event Type']
    try:
     code=int(data['Code'])
-   except:
+   except Exception:
     code= -1
     description=' '.join([description,data['Code']])
    yield (point, code, description)
@@ -87,4 +90,3 @@ class PresLogfile(trgfile.trgfile):
   # converts it to the TZ-unaware local time we really want...
   self.start_datetime=tz_aware_end.tzinfo.normalize(tz_aware_end-last_s).replace(tzinfo=None)
   return trgfile.trgfile.gettuples_abstime(self)
-

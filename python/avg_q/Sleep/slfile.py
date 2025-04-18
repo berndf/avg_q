@@ -58,9 +58,10 @@ sl3cache=None
 def int_or_1(s):
  try:
   result=int(s)
- except:
+ except Exception:
   result=1
- return(result)
+ return result
+
 
 import collections
 
@@ -118,7 +119,8 @@ class slfile(object):
   (index,time,stage,checks,arousals,myos,eyemovements,apnea_z,apnea_za,apnea_o,apnea_oa,apnea_g,apnea_ga,hypopnea,hypopnea_a)=(0,-1,0)+(0,)*12;
   while True:
    sl=self.slfile.read(14)
-   if len(sl)<14: break
+   if len(sl)<14:
+    break
    if sl.startswith('WA'):
     sl=sl.rstrip()
     if len(sl)==6:
@@ -160,10 +162,11 @@ class slfile(object):
     time+=self.minutes_per_epoch
  def rdr3(self):
   '''Reader for sl3 files.'''
-  (index,time,stage)=(0,-1, 0);
+  (index,time,stage)=(0,-1, 0)
   while True:
    sl=self.slfile.readline()
-   if not sl.startswith('#'): break
+   if not sl.startswith('#'):
+    break
    sl=sl[1:].rstrip("\r\n") # Remove #
    if sl.startswith('Epoche*'):
     self.minutes_per_epoch=float(sl[7:])/60
@@ -180,7 +183,8 @@ class slfile(object):
     if self.Date=='1.1.1900':
      self.Date=None
     continue
-   if not sl.lower().startswith('ep*'): continue
+   if not sl.lower().startswith('ep*'):
+    continue
    fields=sl.split('#')
    #epochfields=fields[0].split('*') # 'Ep',index,time(s)
    fields=fields[1:]
@@ -271,9 +275,11 @@ class slfile(object):
    self.sfile=None
  def find_datetime(self,datetime):
   '''Convenience function to locate the stage for a given absolute time.'''
-  if datetime<self.abstime[0]: return None
+  if datetime<self.abstime[0]:
+   return None
   for row,rt in enumerate(self.abstime):
-   if datetime>=rt and datetime<rt+self.step: return row
+   if datetime>=rt and datetime<rt+self.step:
+    return row
   return None
  # Lazy evaluation functions to get the epoch-wise data (tuples) and REM/NREM cycle (remcycles)
  def create_tuples(self):
@@ -416,4 +422,4 @@ class slfile(object):
    self.creator_functions[name](self)
    return self.__dict__[name]
   else:
-   raise AttributeError('\'slfile\' object has no attribute \''+name+'\'');
+   raise AttributeError('\'slfile\' object has no attribute \''+name+'\'')

@@ -81,7 +81,8 @@ class trgfile(object):
  def translate(self,tuple):
   '''Every tuple read passes through this function for translation.
   Here we implement the description_codes translation.'''
-  if self.description_codes is None: return tuple
+  if self.description_codes is None:
+   return tuple
   point, code, description=tuple
   if description in self.description_codes:
    code=self.description_codes[description]
@@ -129,13 +130,15 @@ class trgfile(object):
    factor=1.0
    if point.endswith('ms'):
     point=point[:-2]
-    if sfreq: factor=sfreq/1000
+    if sfreq:
+     factor=sfreq/1000
    elif point.endswith('s'):
     point=point[:-1]
-    if sfreq: factor=sfreq
+    if sfreq:
+     factor=sfreq
    try:
     point=float(point)*factor
-   except:
+   except Exception:
     point=None
    yield self.translate((point, int(code), description))
  def gettuples(self):

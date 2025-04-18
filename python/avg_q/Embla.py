@@ -17,7 +17,7 @@ class EmblaChannel(object):
   while True:
    try:
     tag=Sagura.readint32(aStream)
-   except:
+   except Exception:
     break
    size=Sagura.readint32(aStream)
    #print(tag,size)
@@ -51,6 +51,7 @@ class EmblaChannel(object):
    elif tag==208:
     self.Subject=buf.rstrip(b'\0').decode('latin1')
   aStream.close()
+
 
 from . import avg_q_file
 class avg_q_Emblafile(avg_q_file):

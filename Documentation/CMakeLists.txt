@@ -16,7 +16,7 @@ IF(NOT ${_LYX_EXECUTABLE} STREQUAL "_LYX_EXECUTABLE-NOTFOUND")
    TARGET Programs_handbook
    #OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.pdf
    COMMAND ${_LYX_EXECUTABLE} -e pdf4 ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx
-   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx
+   POST_BUILD
    COMMENT "Running LyX"
   )
  #ENDIF (NOT EXISTS ${Programs_handbook_pdf} OR ${Programs_handbook_lyx} IS_NEWER_THAN ${Programs_handbook_pdf})

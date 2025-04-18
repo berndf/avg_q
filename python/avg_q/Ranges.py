@@ -13,6 +13,8 @@ class Range(object):
    return(("%.1fh: " % d)+str(self.start)+' - '+str(self.end)+' '+str(sorted(self.sensors)))
   else:
    return(str(self.start)+' '+str(self.end))
+ def __gt__(self, r2):
+  return self.start > r2.start
  def duration_h(self):
   return (self.end-self.start).total_seconds()/60/60 if isinstance(self.start,datetime.datetime) else None
  def join_with_range(self,r2):
@@ -55,6 +57,8 @@ class Ranges(list):
   return [r for r in self if r.sensors.intersection(sensors)]
  def contains(self,ts):
   return any([r.contains(ts) for r in self])
+ def which_overlap(self,r2):
+  return [ind for ind,r in enumerate(self) if r.overlap_with_range(r2) is not None]
  def range_overlap(self,r2):
   overlap=[r.overlap_with_range(r2) for r in self]
   return Ranges([x for x in overlap if x is not None])

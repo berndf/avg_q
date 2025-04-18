@@ -54,7 +54,8 @@ def readDateTime(aStream):
 def readStreamString(aStream):
  n=readint16(aStream)
  nbuf=str(aStream.read(2*n),'utf16')
- return(nbuf)
+ return nbuf
+
 
 MarkerMsg2Code={
  'Ableitungsbeginn': 256, # NAV_STARTSTOP
@@ -72,7 +73,7 @@ class Marker(object):
    self._MarkerType=readint16(aStream)
    self._MarkerNum=readint16(aStream)
    self._MarkerGroup=readint16(aStream)
-  except:
+  except Exception:
    self._DT=None
  def __str__(self):
   return str(self._DT)+" "+self._MarkerMsg
@@ -87,7 +88,8 @@ class Markers(object):
   self.markers=[]
   while True:
    m=Marker(mrkf)
-   if m._DT is None: break
+   if m._DT is None:
+    break
    self.markers.append(m)
   mrkf.close()
  def __str__(self):
