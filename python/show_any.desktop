@@ -13,4 +13,4 @@ Terminal=false
 Type=Application
 Categories=GTK;Science;
 StartupNotify=true
-MimeType=application/show_any;
+MimeType=application/show_any;application/x-hdf;

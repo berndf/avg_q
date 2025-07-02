@@ -18,6 +18,10 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <ctype.h>
 #include <Intel_compat.h>
 #include "transform.h"
@@ -60,8 +64,14 @@ read_cfs_init(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
  long pos;
 
- if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) local_arg->infile=stdin;
- else if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
+ if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) {
+  local_arg->infile=stdin;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stdin ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "read_cfs_init: Can't set binary mode for stdin\n");
+  }
+#endif
+ } else if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_cfs_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
  if (read_struct((char *)&local_arg->filehead, sm_TFileHead, local_arg->infile)==0) {

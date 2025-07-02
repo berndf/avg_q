@@ -21,6 +21,10 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <Intel_compat.h>
 #include <read_struct.h>
 #include "transform.h"
@@ -96,8 +100,21 @@ write_rec_open_file(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
  FILE *outfptr=NULL;
  
- if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) outfptr=stdout;
- else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) outfptr=stderr;
+ if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) {
+  outfptr=stdout;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stdout ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "write_rec_open_file: Can't set binary mode for stdout\n");
+  }
+#endif
+ } else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) {
+  outfptr=stderr;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stderr ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "write_rec_open_file: Can't set binary mode for stderr\n");
+  }
+#endif
+ }
  local_arg->appendmode=args[ARGS_APPEND].is_set;
  if (local_arg->appendmode) {
   /*{{{  Append mode open if cofile exists and is of non-zero length*/

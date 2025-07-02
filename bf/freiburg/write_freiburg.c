@@ -20,6 +20,10 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <string.h>
 #include <Intel_compat.h>
 #include <read_struct.h>
@@ -84,14 +88,20 @@ write_freiburg_open_file(transform_info_ptr tinfo) {
  strcpy(coa_name, args[ARGS_OFILE].arg.s); strcat(coa_name, ".coa");
  local_arg->coafptr=NULL;
  
- if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) outfptr=stdout;
- else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) outfptr=stderr;
+ if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) {
+  outfptr=stdout;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stdout ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "write_freiburg_open_file: Can't set binary mode for stdout\n");
+  }
+#endif
+ } else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) outfptr=stderr;
  local_arg->appendmode=args[ARGS_APPEND].is_set;
  if (local_arg->appendmode) {
   /*{{{  Append mode open if cofile exists and is of non-zero length*/
   if (outfptr==NULL) {
    if ((outfptr=fopen(co_name, "a+b"))==NULL) {
-    ERREXIT1(tinfo->emethods, "write_freiburg_init: Can't append to %s\n", MSGPARM(co_name));
+    ERREXIT1(tinfo->emethods, "write_freiburg_open_file: Can't append to %s\n", MSGPARM(co_name));
    }
   }
   fseek(outfptr, 0L, SEEK_END);
@@ -100,7 +110,7 @@ write_freiburg_open_file(transform_info_ptr tinfo) {
   } else {
    char coa_buffer[COA_BUFSIZE];
    if ((local_arg->coafptr=fopen(coa_name, "r+b"))==NULL) {
-    ERREXIT1(tinfo->emethods, "write_freiburg_init: Can't append to %s\n", MSGPARM(coa_name));
+    ERREXIT1(tinfo->emethods, "write_freiburg_open_file: Can't append to %s\n", MSGPARM(coa_name));
    }
    /*{{{  Seek to the end of the current segment table*/
    do {

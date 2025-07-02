@@ -14,6 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <Intel_compat.h>
 #include "LabView.h"
 #include "bf.h"
@@ -71,8 +75,14 @@ read_labview_init(transform_info_ptr tinfo) {
  local_arg->epochs=(args[ARGS_EPOCHS].is_set ? args[ARGS_EPOCHS].arg.i : -1);
  /*}}}  */
 
- if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) local_arg->infile=stdin;
- else if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
+ if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) {
+  local_arg->infile=stdin;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stdin ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "read_labview_init: Can't set binary mode for stdin\n");
+  }
+#endif
+ } else if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "read_labview_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
 

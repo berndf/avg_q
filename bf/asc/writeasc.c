@@ -17,6 +17,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include "transform.h"
 #include "bf.h"
 #include "ascfile.h"
@@ -59,8 +63,21 @@ writeasc_open_file(transform_info_ptr tinfo) {
  FILE *outfptr=NULL;
  Bool append_mode=args[ARGS_APPEND].is_set;
  
- if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) outfptr=stdout;
- else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) outfptr=stderr;
+ if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) {
+  outfptr=stdout;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stdout ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "writeasc_open_file: Can't set binary mode for stdout\n");
+  }
+#endif
+ } else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) {
+  outfptr=stderr;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stderr ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "writeasc_open_file: Can't set binary mode for stderr\n");
+  }
+#endif
+ }
  if (append_mode) {
   /*{{{  Append mode open*/
   if (outfptr==NULL) {

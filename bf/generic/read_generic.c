@@ -18,6 +18,10 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <ctype.h>
 #include <setjmp.h>
 #include <Intel_compat.h>
@@ -223,8 +227,16 @@ read_generic_init(transform_info_ptr tinfo) {
  local_arg->offset=(args[ARGS_OFFSET].is_set ? gettimeslice(tinfo, args[ARGS_OFFSET].arg.s) : 0);
  /*}}}  */
 
- if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) local_arg->infile=stdin;
- else if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, filemode))==NULL) {
+ if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) {
+  local_arg->infile=stdin;
+#ifdef __MINGW32__
+  if (local_arg->datatype!=DT_STRING) {
+   if (_setmode( _fileno( stdin ), _O_BINARY ) == -1) {
+    ERREXIT(tinfo->emethods, "read_generic_init: Can't set binary mode for stdin\n");
+   }
+  }
+#endif
+ } else if((local_arg->infile=fopen(args[ARGS_IFILE].arg.s, filemode))==NULL) {
   ERREXIT1(tinfo->emethods, "read_generic_init: Can't open file %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
 

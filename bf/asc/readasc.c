@@ -23,6 +23,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include "transform.h"
 #include "bf.h"
 #include "Intel_compat.h"
@@ -166,8 +170,14 @@ readasc_open_file(transform_info_ptr tinfo) {
  FILE *ascfileptr;
 
  TRACEMS1(tinfo->emethods, 1, "readasc: Opening file >%s<\n", MSGPARM(args[ARGS_IFILE].arg.s));
- if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) ascfileptr=stdin;
- else if ((ascfileptr=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
+ if (strcmp(args[ARGS_IFILE].arg.s, "stdin")==0) {
+  ascfileptr=stdin;
+#ifdef __MINGW32__
+  if (_setmode( _fileno( stdin ), _O_BINARY ) == -1) {
+   ERREXIT(tinfo->emethods, "readasc_open_file: Can't set binary mode for stdin\n");
+  }
+#endif
+ } else if ((ascfileptr=fopen(args[ARGS_IFILE].arg.s, "rb"))==NULL) {
   ERREXIT1(tinfo->emethods, "readasc_init: Can't open %s\n", MSGPARM(args[ARGS_IFILE].arg.s));
  }
  ASCFILEPTR=ascfileptr;

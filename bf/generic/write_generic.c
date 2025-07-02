@@ -16,6 +16,10 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #endif
+#ifdef __MINGW32__
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <string.h>
 #include <setjmp.h>
 #include <Intel_compat.h>
@@ -97,8 +101,22 @@ write_generic_open_file(transform_info_ptr tinfo) {
  local_arg->beginning_of_file=FALSE;
  if (strcmp(args[ARGS_OFILE].arg.s, "stdout")==0) {
   local_arg->outfile=stdout;
+#ifdef __MINGW32__
+  if (local_arg->datatype!=DT_STRING) {
+   if (_setmode( _fileno( stdout ), _O_BINARY ) == -1) {
+    ERREXIT(tinfo->emethods, "write_generic_open_file: Can't set binary mode for stdout\n");
+   }
+  }
+#endif
  } else if (strcmp(args[ARGS_OFILE].arg.s, "stderr")==0) {
   local_arg->outfile=stderr;
+#ifdef __MINGW32__
+  if (local_arg->datatype!=DT_STRING) {
+   if (_setmode( _fileno( stderr ), _O_BINARY ) == -1) {
+    ERREXIT(tinfo->emethods, "write_generic_open_file: Can't set binary mode for stderr\n");
+   }
+  }
+#endif
  } else {
   local_arg->outfile=fopen(args[ARGS_OFILE].arg.s, filemode_rw);
   if (!args[ARGS_APPEND].is_set || local_arg->outfile==NULL) {   /* target does not exist*/

@@ -35,7 +35,7 @@ class numpy_epoch(object):
    if type(data) is numpy.array:
     self.data=data
    else:
-    self.data=numpy.array(data,dtype='float32')
+    self.data=numpy.array(data,dtype='float64')
    if len(self.data.shape)==1:
     # If given a vector, make it a 1-channel array
     self.data=self.data.reshape((self.data.shape[0],1))
@@ -58,7 +58,7 @@ class numpy_Epochsource(avg_q.Epochsource):
   if len(self.epochs)==0: return
   for epoch in self.epochs:
    avg_q_instance.write('''
-read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin %(beforetrig)d %(aftertrig)d float32
+read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin %(beforetrig)d %(aftertrig)d float64
 ''' % {
     'readx': ('-x '+epoch.xchannelname.replace(' ', '_').replace('\t', '_')) if epoch.xdata is not None else '',
     'sfreq': epoch.sfreq if epoch.sfreq else 100.0,
@@ -92,8 +92,8 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer
     avg_q.Epochsource.send_trigpoints(self,avg_q_instance)
    # It's a bit unfortunate that array.array does support tofile() with pipes but numpy.array doesn't...
    # So we have to take the route via a string buffer just as with reading
-   # We have to take good care that the data type corresponds to what avg_q reads (ie, float32)
-   thisdata=(numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data).astype('float32')
+   # We have to take good care that the data type corresponds to what avg_q reads (ie, float64)
+   thisdata=(numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data).astype('float64')
    avg_q_instance.avg_q.stdin.write(thisdata.tobytes())
    avg_q_instance.avg_q.stdin.flush()
 
@@ -117,7 +117,7 @@ query -N beforetrig stdout
 query -N itemsize stdout
 query -N nrofaverages stdout
 echo -F stdout Data:\\n
-write_generic -x stdout float32
+write_generic -x stdout float64
 """
   if self.collect=='null_sink':
    self.add_transform(transform)
@@ -158,7 +158,7 @@ write_generic -x stdout float32
 
    # Problem: If executed too quickly, the read() below will return only partial data...
    datapoints=epoch.nr_of_points*(1+epoch.nr_of_channels*epoch.itemsize)
-   datalength=4*datapoints
+   datalength=8*datapoints
    buf=self.avg_q_instance.avg_q.stdout.read(datalength)
    while len(buf)!=datalength:
     buf2=self.avg_q_instance.avg_q.stdout.read(datalength-len(buf))
@@ -166,7 +166,7 @@ write_generic -x stdout float32
 
    #print(len(buf))
    # http://docs.scipy.org/doc/numpy-1.7.0/reference/generated/numpy.frombuffer.html
-   data=numpy.frombuffer(buf,dtype=numpy.float32,count=datapoints)
+   data=numpy.frombuffer(buf,dtype=numpy.float64,count=datapoints)
    data.shape=(epoch.nr_of_points,1+epoch.nr_of_channels*epoch.itemsize)
    epoch.xdata=data[:,0]
    epoch.data=data[:,1:]

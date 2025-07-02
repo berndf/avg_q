@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2014 Bernd Feige
+# Copyright (C) 2007-2025 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 """
 Python interface to avg_q.
@@ -75,7 +75,7 @@ class avg_q(object):
   if iconify:
    call.insert(1,'-i')
   try:
-   self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+   self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=False)
   except Exception:
    import os
    if os.path.sep in avg_q:
@@ -91,7 +91,7 @@ class avg_q(object):
    if not os.path.exists(call[0]):
     print('avg_q.py: >%s< is not in PATH and alternative path >%s< failed!' % (avg_q,call[0]))
     return
-   self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+   self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=False)
 
   self.recorded_trigpoints=[]
   self.debug=False
