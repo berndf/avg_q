@@ -127,7 +127,7 @@ void r250_init(int sd)
 
 }
 
-unsigned int r250()		/* returns a random unsigned integer */
+unsigned int r250(void)		/* returns a random unsigned integer */
 {
 	register int	j;
 	register unsigned int new_rand;
@@ -150,7 +150,7 @@ unsigned int r250()		/* returns a random unsigned integer */
 }
 
 
-double dr250()		/* returns a random double in range 0..1 */
+double dr250(void)		/* returns a random double in range 0..1 */
 {
 	register int	j;
 	register unsigned int new_rand;

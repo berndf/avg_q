@@ -45,7 +45,7 @@
 #define OUR_FPU_CONTROL_WORD (0x137f)
 
 GLOBAL void
-fp_exception_init() {
+fp_exception_init(void) {
 #ifdef linux
 #include <fpu_control.h>
  __fpu_control=OUR_FPU_CONTROL_WORD;

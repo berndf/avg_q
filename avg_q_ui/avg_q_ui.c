@@ -8,7 +8,7 @@
  * Author:	Bernd Feige
  * Created:	7.03.1999
  * Updated:
- * Copyright:	(c) 1999-2023, Bernd Feige
+ * Copyright:	(c) 1999-2025, Bernd Feige
  */
 
 /*{{{ Includes*/
@@ -2022,7 +2022,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
  accpath="<AVG_Q_UI>/File";
- gtk_accel_map_add_entry(accpath, GDK_KEY_Z, GDK_KEY_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_D, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(menuitem, accpath, accel_group);
 
 #ifndef STANDALONE
@@ -2031,7 +2031,7 @@ create_main_window (void) {
  gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
  gtk_widget_show (menuitem);
  accpath="<AVG_Q_UI>/File/Open";
- gtk_accel_map_add_entry(accpath, GDK_KEY_L, GDK_KEY_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_O, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(menuitem, accpath, accel_group);
 
  menuitem=gtk_menu_item_new_with_label("Save");
@@ -2072,7 +2072,7 @@ create_main_window (void) {
  gtk_widget_set_sensitive(Stop_Entry, FALSE);
  gtk_widget_show (Stop_Entry);
  accpath="<AVG_Q_UI>/File/Stop script";
- gtk_accel_map_add_entry(accpath, GDK_KEY_Y, GDK_KEY_Control_R);
+ gtk_accel_map_add_entry(accpath, GDK_KEY_K, GDK_KEY_Control_R);
  gtk_widget_set_accel_path(Stop_Entry, accpath, accel_group);
 
  Kill_Entry=gtk_menu_item_new_with_label("Cancel script");
