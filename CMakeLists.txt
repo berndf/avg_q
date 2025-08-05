@@ -118,7 +118,7 @@ pkg_check_modules(SOX sox)
 
 # For now, set this to FALSE manually if you don't have HDF4 libraries
 # installed...
-SET(HDF_FOUND TRUE)
+SET(HDF_FOUND FALSE)
 
 # Set these to FALSE manually if you don't want posplot or the GTK GUI avg_q_ui to be built.
 # This can be commendable to get a version of avg_q running with minimal
