@@ -20,7 +20,7 @@ IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  LINK_DIRECTORIES(${GTKPATH}/lib)
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
  find_package(PkgConfig REQUIRED)
- pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk4>=4.14)
+ pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk-4)
 
  #message(STATUS "inc: -${GTK_INCLUDE_DIRS}")
  #message(STATUS "link libraries: -${GTK_LIBRARIES}")
