@@ -129,7 +129,7 @@ dopoly(int n)
 	}
 
 	if (vdevice.fill) {
-		if (nout > 2) {
+		if (nout > 2 && vdevice.dev.Vfill) {
 			(*vdevice.dev.Vfill)(nout, ip1, ip2);
 		}
 	} else {

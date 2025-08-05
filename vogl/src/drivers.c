@@ -75,7 +75,7 @@ gexit(void)
 	if (!vdevice.initialised)
 		verror("gexit: vogl not initialised");
 
-	(*vdevice.dev.Vexit)();
+	if (vdevice.dev.Vexit) (*vdevice.dev.Vexit)();
 
 	vdevice.devname = (char *)NULL;
 	vdevice.initialised = 0;
@@ -409,7 +409,7 @@ vnewdev(char *device)
 
 	pushviewport();	
 
-	(*vdevice.dev.Vexit)();
+	if (vdevice.dev.Vexit) (*vdevice.dev.Vexit)();
 
 	vdevice.initialised = 0;
 
@@ -462,7 +462,7 @@ getvaluator(Device dev)
 	if (!vdevice.initialised)
 		verror("getvaluator: vogl not initialised");
 
-	c = (*vdevice.dev.Vlocator)(&a, &b);
+	c = vdevice.dev.Vlocator ? (*vdevice.dev.Vlocator)(&a, &b) : -1;
 
 	if (c != -1) {
 		if (dev == MOUSEX)
@@ -485,14 +485,14 @@ getbutton(Device dev)
 {
 	int	a, b, c;
 
-	if (dev < 256) {
+	if (vdevice.dev.Vcheckkey && dev < 256) {
 		c = (*vdevice.dev.Vcheckkey)();
 		if (c >= 'a' && c <= 'z')
 			c = c - 'a' + 'A';
 		if (c == dev)
 			return(1);
 		return(0);
-	} else if (dev < 261) {
+	} else if (vdevice.dev.Vlocator && dev < 261) {
 		c = (*vdevice.dev.Vlocator)(&a, &b);
 		if (c & 0x01 && dev == MOUSE3)
 			return(1);
@@ -541,7 +541,7 @@ clear(void)
 		return;
 	}
 
-	(*vdevice.dev.Vclear)();
+	if (vdevice.dev.Vclear) (*vdevice.dev.Vclear)();
 }
 
 /*
@@ -580,7 +580,7 @@ color(int i)
 	}
 
 	vdevice.attr->a.color = i;
-	(*vdevice.dev.Vcolor)(i);
+	if (vdevice.dev.Vcolor) (*vdevice.dev.Vcolor)(i);
 }
 
 /*
@@ -608,7 +608,7 @@ mapcolor(Colorindex i, short int r, short int g, short int b)
 		return;
 	}
 
-	(*vdevice.dev.Vmapcolor)(i, r, g, b);
+	if (vdevice.dev.Vmapcolor) (*vdevice.dev.Vmapcolor)(i, r, g, b);
 }
 
 /*
@@ -699,5 +699,5 @@ vflush(void)
 		return;
 	}
 
-	(*vdevice.dev.Vsync)();
+	if (vdevice.dev.Vsync) (*vdevice.dev.Vsync)();
 }

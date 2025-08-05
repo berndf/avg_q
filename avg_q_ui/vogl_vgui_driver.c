@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2008-2014,2016-2018,2020 Bernd Feige
+ * Copyright (C) 2008-2014,2016-2018,2020,2025 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
- * GTK driver for VOGL (c) 1998-2002,2004,2006-2014 by Bernd Feige (Bernd.Feige@uniklinik-freiburg.de)
+ * GTK driver for VOGL (c) 1998-2002,2004,2006-2014,2025 by Bernd Feige (Bernd.Feige@uniklinik-freiburg.de)
  * 
  * To compile:
  * 
@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "avg_q_ui.h"
 /* This helps to canonify some things like Bool etc.: */
 #include <bf.h>
 /* Since Object typedef'd in vogl.h clashes with the X11 definition: */
@@ -37,22 +38,6 @@
 #define POSTSCRIPT_ENVNAME "VPOSTSCRIPT"
 #define POSTSCRIPT_COLORDEV "cps"
 #define POSTSCRIPT_BWDEV "postscript"
-
-#ifdef USE_THREADING
-static GCond *block_thread=NULL;
-static GStaticMutex block_thread_mutex=G_STATIC_MUTEX_INIT;
-#else
-#define gdk_threads_enter()
-#define gdk_threads_leave()
-#endif
-
-/* Need some compatibility definitions */
-#if GTK_MAJOR_VERSION==2
-#define gtk_box_new(orientation,spacing) gtk_vbox_new(FALSE,spacing)
-#define GdkRGBA GdkColor
-#define gdk_cairo_set_source_rgba gdk_cairo_set_source_color
-#define gdk_window_get_device_position(window,device,x,y,state) gdk_window_get_pointer(window,x,y,state)
-#endif
 
 /*-------------------------- Keyboard_Buffer ------------------------------*/
 
@@ -91,6 +76,17 @@ Keyboard_Buffer_push(char c) {
   *Keyboard_Buffer.writeptr=c;
   Keyboard_Buffer.writeptr=nextpos;
   return TRUE;
+ }
+}
+static void
+Keyboard_Buffer_pushstring(char *string) {
+ while (*string!='\0') {
+  if (*string=='\n') {
+   Keyboard_Buffer_push(RETKEY);
+   string++;
+  } else {
+   Keyboard_Buffer_push(*string++);
+  }
  }
 }
 static char
@@ -138,7 +134,7 @@ my_set_font(cairo_t *cr) {
 static GtkWidget *Notice_window=NULL;
 LOCAL void
 Notice_window_close(GtkWidget *mwindow) {
- gtk_widget_destroy(GTK_WIDGET(mwindow));
+ gtk_window_destroy(GTK_WINDOW(mwindow));
  Notice_window=NULL;
 }
 LOCAL void
@@ -149,75 +145,59 @@ static void
 Notice(gchar *message) {
  GtkWidget *box1;
  GtkWidget *label;
+ GtkWidget *button;
 
  if (Notice_window!=NULL) {
   Notice_window_close(Notice_window);
  }
 
- Notice_window=gtk_dialog_new();
+ Notice_window=gtk_window_new();
  gtk_window_set_transient_for(GTK_WINDOW (Notice_window), GTK_WINDOW (VGUI.window));
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK(Notice_window_close), NULL);
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
- box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
- gtk_widget_show (box1);
+ box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+ gtk_window_set_child(GTK_WINDOW(Notice_window), box1);
 
  label = gtk_label_new (message);
- gtk_box_pack_start (GTK_BOX(box1), label, FALSE, FALSE, 0);
- gtk_widget_show (label);
+ gtk_box_append(GTK_BOX(box1), label);
 
- gtk_dialog_add_button (GTK_DIALOG(Notice_window), "Okay", 1);
- g_signal_connect_object (GTK_DIALOG(Notice_window), "response", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window), G_CONNECT_AFTER);
+ button=gtk_button_new_with_label("Okay");
+ g_signal_connect_after(G_OBJECT(button), "clicked", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window));
+ gtk_box_append(GTK_BOX(box1), button);
 
- gtk_widget_show (Notice_window);
+ gtk_window_present (GTK_WINDOW(Notice_window));
 }
-#ifdef USE_THREADING
 static void
-notify_input(void) {
- /* This is called whenever we need to check our input */
- g_static_mutex_lock(&block_thread_mutex);
- g_cond_broadcast(block_thread);
- g_static_mutex_unlock(&block_thread_mutex);
-}
-#else
-#define notify_input()
-#endif
-static Bool
-button_press_event(GtkWidget *widget, GdkEventButton *event) {
- if (event->button>0) {
-  VGUI.lastbutton=(1<<(event->button-1));
+button_press_event(GtkGestureClick *gesture, int n_press, double x, double y) {
+ int const button=gtk_gesture_single_get_current_button(GTK_GESTURE_SINGLE(gesture));
+ if (button>0) {
+  VGUI.lastbutton=(1<<(button-1));
  }
- notify_input();
- //printf("Button: %d\n", VGUI.lastbutton);
- return TRUE;
+ VGUI.lastx=x;
+ VGUI.lasty=y;
+ //printf("Button: %d %d x=%0.3f y=%0.3f\n", VGUI.lastbutton, n_press, x, y);
 }
-static Bool
-motion_notify_event(GtkWidget *widget, GdkEventMotion *event) {
- GdkModifierType state;
-
- if (event->is_hint) {
-  gdk_window_get_device_position (event->window, event->device, &VGUI.lastx, &VGUI.lasty, &state);
- } else {
-  VGUI.lastx = event->x;
-  VGUI.lasty = event->y;
-  state = event->state;
- }
-
- notify_input();
+static void
+motion_notify_event(GtkEventControllerMotion* self, gdouble x, gdouble y, gpointer user_data) {
+ VGUI.lastx = x;
+ VGUI.lasty = y;
  //printf("motion_notify_event: %d %d %d\n", VGUI.lastbutton, VGUI.lastx, VGUI.lasty);
-
- return FALSE;
 }
 static Bool
-key_press_event(GtkWidget *widget, GdkEventKey *event) {
- if (event->length==1) {
-  //printf("Key pressed: >%s<\n", event->string);
-  Keyboard_Buffer_push(*event->string);
+key_press_event(GtkEventControllerKey* self, guint keyval, guint keycode, GdkModifierType state, gpointer user_data) {
+ char keysym='\0';
+ /* Here, keyval is independent of whether CTRL is held.
+  * Enforce the switch below if this is the case. */
+ if (keyval<256 && (state&GDK_CONTROL_MASK)==0) {
+  //printf("Key pressed: >%c<\n", keyval);
+  keysym=(char)keyval;
  } else {
-  char keysym='\0';
-  //printf("Key without string: value %d, state %d->shift %d\n", event->keyval, event->state, (event->state&GDK_SHIFT_MASK));
-  switch(event->keyval) {
+  //printf("Special key: value %d, state %d->shift %d\n", keyval, state, state&GDK_SHIFT_MASK);
+  switch(keyval) {
+   case GDK_KEY_l:
+    keysym=''; /* Ctrl-L */
+    break;
    case GDK_KEY_Return:
    case GDK_KEY_KP_Enter:
     keysym=RETKEY;
@@ -229,29 +209,29 @@ key_press_event(GtkWidget *widget, GdkEventKey *event) {
     keysym='c';
     break;
    case GDK_KEY_Left:
-    if (event->state&GDK_CONTROL_MASK) {
-     keysym=((event->state&GDK_SHIFT_MASK) ? 'H' : 'h');
+    if (state&GDK_CONTROL_MASK) {
+     keysym=((state&GDK_SHIFT_MASK) ? 'H' : 'h');
     } else {
      keysym='I';
     }
     break;
    case GDK_KEY_Right:
-    if (event->state&GDK_CONTROL_MASK) {
-     keysym=((event->state&GDK_SHIFT_MASK) ? 'L' : 'l');
+    if (state&GDK_CONTROL_MASK) {
+     keysym=((state&GDK_SHIFT_MASK) ? 'L' : 'l');
     } else {
      keysym='i';
     }
     break;
    case GDK_KEY_Down:
-    if (event->state&GDK_CONTROL_MASK) {
-     keysym=((event->state&GDK_SHIFT_MASK) ? 'J' : 'j');
+    if (state&GDK_CONTROL_MASK) {
+     keysym=((state&GDK_SHIFT_MASK) ? 'J' : 'j');
     } else {
      keysym=')';
     }
     break;
    case GDK_KEY_Up:
-    if (event->state&GDK_CONTROL_MASK) {
-     keysym=((event->state&GDK_SHIFT_MASK) ? 'K' : 'k');
+    if (state&GDK_CONTROL_MASK) {
+     keysym=((state&GDK_SHIFT_MASK) ? 'K' : 'k');
     } else {
      keysym='(';
     }
@@ -298,42 +278,44 @@ key_press_event(GtkWidget *widget, GdkEventKey *event) {
    default:
     break;
   }
-  if (keysym!='\0') Keyboard_Buffer_push(keysym);
  }
- notify_input();
+ if (keysym!='\0') Keyboard_Buffer_push(keysym);
+ return TRUE;
+}
+/* Redraw the screen from the surface. Note that the ::draw
+ * signal receives a ready-to-be-used cairo_t that is already
+ * clipped to only draw the exposed areas of the widget
+ */
+static void
+draw_function(GtkDrawingArea *area, cairo_t *cr, int width, int height, gpointer data) {
+ //printf("canvas_draw_event %ld %ld %ld\n", widget, cr, user_data);
+ cairo_set_source_surface (cr, VGUI.surface, 0, 0);
+ cairo_paint (cr);
+}
+static Bool
+canvas_configure_event(GtkWidget *widget, void *event) {
+ //printf("canvas_configure_event\n");
+ // Note that in this event, the widget (VGUI.canvas) size is still 0!
+ // Have to do all relevant work in canvas_resize_event...
  return TRUE;
 }
 static Bool
-window_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
- //printf("window_configure_event: %d %d %d %d\n", event->x, event->y, event->width, event->height);
- /* Store position and size so we can open the next window with the same params */
- VGUI.left=event->x;
- VGUI.top=event->y;
- VGUI.width=event->width;
- VGUI.height=event->height;
- /* If we return TRUE here, in GTK-2.0 the sub-widgets won't be resized!! */ 
- return FALSE;
-}
-static Bool
-canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
- GtkAllocation allocation;
+canvas_resize_event(GtkWidget *widget, void *event) {
  cairo_text_extents_t te;
- //printf("canvas_configure_event\n");
-
- gtk_widget_get_allocation(widget,&allocation);
+ //printf("canvas_resize_event\n");
  vdevice.sizeX = 1;
  vdevice.sizeY = 1;
  vdevice.minVx = vdevice.minVy = 0;
- vdevice.maxVx = vdevice.sizeSx = allocation.width;
- vdevice.maxVy = vdevice.sizeSy = allocation.height;
+ vdevice.maxVx = vdevice.sizeSx = gtk_widget_get_width(VGUI.canvas);
+ vdevice.maxVy = vdevice.sizeSy = gtk_widget_get_height(VGUI.canvas);
  vdevice.depth = 3;
  if (VGUI.cr!=NULL) {
   cairo_destroy (VGUI.cr);
   cairo_surface_destroy (VGUI.surface);
  }
- VGUI.surface= gdk_window_create_similar_surface (gtk_widget_get_window (VGUI.canvas),
-  CAIRO_CONTENT_COLOR, vdevice.sizeSx, vdevice.sizeSy);
- VGUI.cr = cairo_create(VGUI.surface);
+ //if (gtk_native_get_surface (gtk_widget_get_native (widget)))
+ VGUI.surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, vdevice.sizeSx, vdevice.sizeSy);
+ VGUI.cr=cairo_create(VGUI.surface);
  cairo_set_antialias(VGUI.cr,VGUI.antialias);
  my_set_font(VGUI.cr);
  cairo_text_extents (VGUI.cr, "A", &te);
@@ -342,110 +324,101 @@ canvas_configure_event(GtkWidget *widget, GdkEventConfigure *event) {
  VGUI.line_width=1;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
  Keyboard_Buffer_push('');	// queue a redraw command
- notify_input();
- return TRUE;
+ gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(VGUI.canvas), draw_function, NULL, NULL);
+ return 1;
 }
-#if GTK_MAJOR_VERSION==2
-static void update_canvas(void); /* Forward ref */
-static Bool
-canvas_expose_event(GtkWidget *widget, GdkEventExpose *event) {
- update_canvas();
- return FALSE;
-}
-#else
-/* Redraw the screen from the surface. Note that the ::draw
- * signal receives a ready-to-be-used cairo_t that is already
- * clipped to only draw the exposed areas of the widget
- */
-static Bool
-canvas_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
- //printf("canvas_draw_event %ld %ld %ld\n", widget, cr, user_data);
- cairo_set_source_surface (cr, VGUI.surface, 0, 0);
- cairo_paint (cr);
- return FALSE;
-}
-#endif
-static Bool
-window_destroy_event(GtkWidget *windowp, gpointer data, GtkWidget *widget) {
+LOCAL void
+window_destroy_event(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  /* We don't want the default handler to be executed: */
- g_signal_stop_emission_by_name(G_OBJECT(widget), "delete_event");
+ g_signal_stop_emission_by_name(G_OBJECT(VGUI.window), "destroy");
  Keyboard_Buffer_push('X');	/* Queue an exit command */
- notify_input();
- return TRUE;
 }
 static void
-toggle_antialias(GtkWidget *menuitem, gpointer data) {
- VGUI.antialias=gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(menuitem)) ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE;
+toggle_antialias(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ bool const newstate=!g_variant_get_boolean(g_action_get_state(G_ACTION(menuitem)));
+ VGUI.antialias=newstate ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE;
  cairo_set_antialias(VGUI.cr,VGUI.antialias);
+ g_action_change_state(G_ACTION(menuitem), g_variant_new_boolean(newstate));
  Keyboard_Buffer_push('');	// queue a redraw command
- notify_input();
 }
 static void
-set_postscriptcolor(GtkWidget *menuitem, gpointer data) {
- Bool const usecolor=(Bool)data;
+toggle_postscriptcolor(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ bool const newstate=!g_variant_get_boolean(g_action_get_state(G_ACTION(menuitem)));
  static char *envbuffer=NULL;
  if (envbuffer==NULL) {
-  /* This assumes that the name of POSTSCRIPT_BWDEV is longer than POSTSCRIPT_COLORDEV */
+  /* This assumes that the name of POSTSCRIPT_COLORDEV is longer than POSTSCRIPT_BWDEV */
   envbuffer=malloc((strlen(POSTSCRIPT_ENVNAME)+strlen(POSTSCRIPT_BWDEV)+2)*sizeof(char));
   if (envbuffer==NULL) {
    fprintf(stderr, "vogl_vgui_driver: Error allocating envbuffer!\n");
    exit(1);
   }
  }
- sprintf(envbuffer, "%s=%s", POSTSCRIPT_ENVNAME, usecolor ? POSTSCRIPT_COLORDEV : POSTSCRIPT_BWDEV);
+ sprintf(envbuffer, "%s=%s", POSTSCRIPT_ENVNAME, newstate ? POSTSCRIPT_COLORDEV : POSTSCRIPT_BWDEV);
  putenv(envbuffer);
+ g_action_change_state(G_ACTION(menuitem), g_variant_new_boolean(newstate));
 }
 static void
-posplot_about (GtkWidget *menuitem) {
+pos_modify_mode(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ Keyboard_Buffer_pushstring("=change\n_");
+}
+static void
+posplot_about(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  Notice(
   "posplot/VOGL GUI driver\n"
-  "(c) 1998-2007,2011-2014 by Bernd Feige, Bernd.Feige@gmx.net\n"
+  "(c) 1998-2007,2011-2014,2025 by Bernd Feige, Bernd.Feige@gmx.net\n"
   "Using the free GTK library: See http://www.gtk.org/"
  );
 }
-static void
-insert_key(GtkWidget *menuitem, gpointer data) {
- char *string=(char *)data;
- while (*string!='\0') {
-  if (*string=='\n') {
-   Keyboard_Buffer_push(RETKEY);
-   string++;
-  } else {
-   Keyboard_Buffer_push(*string++);
-  }
+LOCAL void
+process_menu_key(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ const gchar * name=g_action_get_name(G_ACTION(menuitem));
+ if (strlen(name)==5) {
+  //printf("process_menu_key: %c\n", name[4]);
+  Keyboard_Buffer_push(name[4]);
  }
- notify_input();
+}
+static void
+menu_key_Leftparen(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ Keyboard_Buffer_push('(');
+}
+static void
+menu_key_Rightparen(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ Keyboard_Buffer_push(')');
+}
+static void
+menu_key_ENTER(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ Keyboard_Buffer_push('\n');
+}
+static void
+menu_key_BACKSPACE(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ Keyboard_Buffer_push(BACKSPACEKEY);
+}
+static void
+menu_key_CTRL_L(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ Keyboard_Buffer_push('');
 }
 static void
 set_palette_entry(int n, gdouble r, gdouble g, gdouble b) {
-#if GTK_MAJOR_VERSION==2
- VGUI.palette[n].red=0xffff*r;
- VGUI.palette[n].green=0xffff*g;
- VGUI.palette[n].blue=0xffff*b;
-#else
  VGUI.palette[n].red=r;
  VGUI.palette[n].green=g;
  VGUI.palette[n].blue=b;
  VGUI.palette[n].alpha=1.0;
-#endif
 }
 static int
 VGUI_init(void) {
  GtkWidget *box1;
- GtkWidget *menubar, *submenu, *menuitem;
- GtkWidget *topitem;
- GSList *colorgroup;
-
-#ifdef USE_THREADING
- block_thread=g_cond_new();
-#endif
+ GMenu *menubar, *submenu, *submenu2;
+ GSimpleActionGroup *action_group=g_simple_action_group_new();
+ GtkEventController *ec_key, *ec_motion;
+ GtkGesture *ec_gesture;
+ GVariant *variant;
+ GSimpleAction *g_action;
 
  //printf("VGUI_init\n");
- gdk_threads_enter();
 
  Keyboard_Buffer_init();
 
- VGUI.window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+ VGUI.window = gtk_window_new();
  gtk_window_set_title (GTK_WINDOW (VGUI.window), "posplot");
  if (VGUI.width==0) {
   /* This means that we're executed for the first time */
@@ -453,590 +426,311 @@ VGUI_init(void) {
  } else {
   gtk_window_set_default_size(GTK_WINDOW(VGUI.window), VGUI.width, VGUI.height);
  }
- g_signal_connect_object (G_OBJECT (VGUI.window), "delete_event", G_CALLBACK(window_destroy_event), G_OBJECT(VGUI.window), G_CONNECT_SWAPPED);
- g_signal_connect (G_OBJECT (VGUI.window), "configure_event", G_CALLBACK (window_configure_event), NULL);
+ g_signal_connect(G_OBJECT (VGUI.window), "destroy", G_CALLBACK(window_destroy_event), NULL);
 
- box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_container_add (GTK_CONTAINER (VGUI.window), box1);
- gtk_widget_show (box1);
+ box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+ gtk_window_set_child(GTK_WINDOW(VGUI.window), box1);
 
- menubar = gtk_menu_bar_new ();
- gtk_box_pack_start (GTK_BOX (box1), menubar, FALSE, TRUE, 0);
- gtk_widget_show (menubar);
+ menubar = g_menu_new();
 
  /* Dataset menu */
- submenu=gtk_menu_new();
+ submenu=g_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("quit, accept epoch (q)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"q");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Quit, reject epoch (Q)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"Q");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Quit, reject epoch+stop iterated queue (V)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"V");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Stop (X)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"X");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu,"quit, accept epoch (q)","app.key_q");
+ g_menu_append(submenu,"Quit, reject epoch (Q)","app.key_Q");
+ g_menu_append(submenu,"Quit, reject epoch+stop iterated queue (V)","app.key_V");
+ g_menu_append(submenu,"Stop (X)","app.key_X");
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
 
- menuitem=gtk_menu_item_new_with_label("About");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(posplot_about), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu2,"About","app.about");
+ //g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(posplot_about), NULL);
 
- topitem= gtk_menu_item_new_with_label("Quitting");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
- /* Catch Keypress events also when the mouse points to the open menu: */
- g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
+ g_menu_append_submenu(menubar,"Quitting",G_MENU_MODEL(submenu));
 
  /* Command menu */
- submenu=gtk_menu_new();
+ submenu=g_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
+ g_menu_append(submenu,"Antialias screen plot lines","app.antialias");
  /* Antialiasing doesn't look nice with lines */
  VGUI.antialias=CAIRO_ANTIALIAS_NONE;
- menuitem=gtk_check_menu_item_new_with_label("Antialias screen plot lines");
- gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menuitem), VGUI.antialias==CAIRO_ANTIALIAS_DEFAULT);
- g_signal_connect (G_OBJECT (menuitem), "toggled", G_CALLBACK(toggle_antialias), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
 
- menuitem=gtk_menu_item_new_with_label("Start entering an argument (=)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"=");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu2,"Start entering an argument (=)","app.key_=");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
 
- menuitem=gtk_menu_item_new_with_label("Insert trigger (N)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"N");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu2,"Insert trigger (N)","app.key_N");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Record interactions (r)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"r");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Replay interactions (R)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"R");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Record interactions (r)","app.key_r");
+ g_menu_append(submenu2,"Replay interactions (R)","app.key_R");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Landscape postscript dump (o)","app.key_o");
+ g_menu_append(submenu2,"Portrait postscript dump (O)","app.key_O");
+ g_menu_append(submenu2,"Color postscript","app.color_ps");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
- menuitem=gtk_menu_item_new_with_label("Landscape postscript dump (o)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"o");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Portrait postscript dump (O)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"O");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_radio_menu_item_new_with_label(NULL, "Color postscript");
- colorgroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_postscriptcolor), (gpointer)TRUE);
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_radio_menu_item_new_with_label(colorgroup, "B/W postscript");
- colorgroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_postscriptcolor), (gpointer)FALSE);
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
+#if 0
  { char * const post_dev=getenv(POSTSCRIPT_ENVNAME);
  /* posplot's default is color Postscript */
  if (post_dev!=NULL && strcmp(post_dev, POSTSCRIPT_BWDEV)==0) gtk_widget_activate(menuitem);
  }
+#endif
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Dump current point as ARRAY_ASCII (y)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"y");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Dump current point full (Y)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"Y");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Write datasets (W)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"W");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Dump current point as ARRAY_ASCII (y)","app.key_y");
+ g_menu_append(submenu2,"Dump current point full (Y)","app.key_Y");
+ g_menu_append(submenu2,"Write datasets (W)","app.key_W");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Grid channels (G)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"G");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Enter pos modify mode");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"=change\n_");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Leave/switch pos mode (_)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"_");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Grid channels (G)","app.key_G");
+ g_menu_append(submenu2,"Enter pos modify mode (=change<RET>__)","app.pos_modify");
+ g_menu_append(submenu2,"Leave/switch pos mode (_)","app.key__");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Zero current point ($)","app.key_$");
+ g_menu_append(submenu2,"Detrend datasets (D)","app.key_D");
+ g_menu_append(submenu2,"Differentiate datasets (%)","app.key_%");
+ g_menu_append(submenu2,"Integrate datasets (&)","app.key_&");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
- menuitem=gtk_menu_item_new_with_label("Zero current point ($)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"$");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Detrend datasets (D)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"D");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Differentiate datasets (%)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"%");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Integrate datasets (&)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"&");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- topitem= gtk_menu_item_new_with_label("Commands");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
- /* Catch Keypress events also when the mouse points to the open menu: */
- g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
+ g_menu_append_submenu(menubar,"Commands",G_MENU_MODEL(submenu));
 
  /* Show menu */
- submenu=gtk_menu_new();
+ submenu=g_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Plots (p)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"p");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Axes (x)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"x");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Names (n)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"n");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Marker (m)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"m");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Triggers (M)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"M");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Grayscale (d)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"d");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Info (?)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"?");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Triangulation (z)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"z");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- topitem= gtk_menu_item_new_with_label("Show");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
- /* Catch Keypress events also when the mouse points to the open menu: */
- g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
+ g_menu_append(submenu,"Plots (p)","app.key_p");
+ g_menu_append(submenu,"Axes (x)","app.key_x");
+ g_menu_append(submenu,"Names (n)","app.key_n");
+ g_menu_append(submenu,"Marker (m)","app.key_m");
+ g_menu_append(submenu,"Triggers (M)","app.key_M");
+ g_menu_append(submenu,"Grayscale (d)","app.key_d");
+ g_menu_append(submenu,"Info (?)","app.key_?");
+ g_menu_append(submenu,"Triangulation (z)","app.key_z");
+ g_menu_append_submenu(menubar,"Show",G_MENU_MODEL(submenu));
 
  /* Select menu */
- submenu=gtk_menu_new();
+ submenu=g_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Point by argument (.)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)".");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Next point (i)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"i");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Previous point (I)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"I");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Left interval boundary ([)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"[");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Right interval boundary (])");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"]");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu,"Point by argument (.)","app.key_.");
+ g_menu_append(submenu,"Next point (i)","app.key_i");
+ g_menu_append(submenu,"Previous point (I)","app.key_I");
+ g_menu_append(submenu,"Left interval boundary ([)","app.key_[");
+ g_menu_append(submenu,"Right interval boundary (])","app.key_]");
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
 
- menuitem=gtk_menu_item_new_with_label("Dataset by argument (,)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)",");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Toggle datasets (*)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"*");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Datasets up '('");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"(");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Datasets down ')'");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)")");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu2,"Dataset by argument (,)","app.key_,");
+ g_menu_append(submenu2,"Toggle datasets (*)","app.key_*");
+ g_menu_append(submenu2,"Datasets up '('","app.key_Leftparen");
+ g_menu_append(submenu2,"Datasets down ')'","app.key_Rightparen");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Next item (})");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"}");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Previous item ({)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"{");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Next item (})","app.key_}");
+ g_menu_append(submenu2,"Previous item ({)","app.key_{");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"One channel (ENTER)","app.key_ENTER");
+ g_menu_append(submenu2,"Hide channel (BACKSPACE)","app.key_BACKSPACE");
+ g_menu_append(submenu2,"All channels (C)","app.key_C");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
- menuitem=gtk_menu_item_new_with_label("One channel (ENTER)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"\n");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Hide channel (BACKSPACE)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("All channels (C)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"C");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- topitem= gtk_menu_item_new_with_label("Select");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
- /* Catch Keypress events also when the mouse points to the open menu: */
- g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
+ g_menu_append_submenu(menubar,"Select",G_MENU_MODEL(submenu));
 
  /* Transform menu */
- submenu=gtk_menu_new();
+ submenu=g_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
-
- menuitem=gtk_menu_item_new_with_label("Exponential (e)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"e");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Logarithm (E)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"E");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu,"Exponential (e)","app.key_e");
+ g_menu_append(submenu,"Logarithm (E)","app.key_E");
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Single item mode (')","app.key_'");
+ g_menu_append(submenu2,"Absolute values (a)","app.key_a");
+ g_menu_append(submenu2,"Power values (P)","app.key_P");
+ g_menu_append(submenu2,"Phase values (A)","app.key_A");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
- menuitem=gtk_menu_item_new_with_label("Single item mode (')");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"'");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Absolute values (a)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"a");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Power values (P)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"P");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Phase values (A)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"A");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- topitem= gtk_menu_item_new_with_label("Transform");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
- /* Catch Keypress events also when the mouse points to the open menu: */
- g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
+ g_menu_append_submenu(menubar,"Transform",G_MENU_MODEL(submenu));
 
  /* View menu */
- submenu=gtk_menu_new();
+ submenu=g_menu_new();
 
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Redraw (^L)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Vertical scale lock (v)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"v");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Set/Toggle subsampling (@)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"@");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Toggle black/white background (b)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"b");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Line style mode (u)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"u");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Set first line style (U)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"U");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Swap plus/minus (~)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"~");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Swap x-z (S)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"S");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(submenu,"Redraw (^L)","app.key_CTRL_L");
+ g_menu_append(submenu,"Vertical scale lock (v)","app.key_v");
+ g_menu_append(submenu,"Set/Toggle subsampling (@)","app.key_@");
+ g_menu_append(submenu,"Toggle black/white background (b)","app.key_b");
+ g_menu_append(submenu,"Line style mode (u)","app.key_u");
+ g_menu_append(submenu,"Set first line style (U)","app.key_U");
+ g_menu_append(submenu,"Swap plus/minus (~)","app.key_~");
+ g_menu_append(submenu,"Swap x-z (S)","app.key_S");
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ submenu2=g_menu_new();
+ g_menu_append(submenu2,"Position mode (_)","app.key__");
+ g_menu_append(submenu2,"Center channel (Z)","app.key_Z");
+ g_menu_append(submenu2,"Nearer (+)","app.key_+");
+ g_menu_append(submenu2,"Farther (-)","app.key_-");
+ g_menu_append(submenu2,"Turn l (h)","app.key_h");
+ g_menu_append(submenu2,"Turn r (l)","app.key_l");
+ g_menu_append(submenu2,"Turn u (k)","app.key_k");
+ g_menu_append(submenu2,"Turn d (j)","app.key_j");
+ g_menu_append(submenu2,"Twist l (t)","app.key_t");
+ g_menu_append(submenu2,"Twist r (T)","app.key_T");
+ g_menu_append(submenu2,"Enlarge FOV (/)","app.key_/");
+ g_menu_append(submenu2,"Decrease FOV (\\)","app.key_\\");
+ g_menu_append(submenu2,"Enlarge plots (>)","app.key_>");
+ g_menu_append(submenu2,"Shrink plots (<)","app.key_<");
+ g_menu_append(submenu2,"Reset parameters (c)","app.key_c");
+ g_menu_append_section(submenu,NULL,G_MENU_MODEL(submenu2));
 
- menuitem=gtk_menu_item_new_with_label("Position mode (_)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"_");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append_submenu(menubar,"View",G_MENU_MODEL(submenu));
+ GtkWidget *popover=gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(menubar));
+ gtk_box_append(GTK_BOX(box1), popover);
 
- menuitem=gtk_menu_item_new_with_label("Center channel (Z)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"Z");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
+ const GActionEntry entries[] = {
+  {"key_q", process_menu_key },
+  {"key_Q", process_menu_key },
+  {"key_V", process_menu_key },
+  {"key_X", process_menu_key },
+  {"about", posplot_about },
+  {"key_=", process_menu_key },
+  {"key_N", process_menu_key },
+  {"key_r", process_menu_key },
+  {"key_R", process_menu_key },
+  {"key_o", process_menu_key },
+  {"key_O", process_menu_key },
+  {"key_y", process_menu_key },
+  {"key_Y", process_menu_key },
+  {"key_W", process_menu_key },
+  {"key_G", process_menu_key },
+  {"pos_modify", pos_modify_mode },
+  {"key__", process_menu_key },
+  {"key_$", process_menu_key },
+  {"key_D", process_menu_key },
+  {"key_%", process_menu_key },
+  {"key_&", process_menu_key },
+  {"key_p", process_menu_key },
+  {"key_x", process_menu_key },
+  {"key_n", process_menu_key },
+  {"key_m", process_menu_key },
+  {"key_M", process_menu_key },
+  {"key_d", process_menu_key },
+  {"key_?", process_menu_key },
+  {"key_z", process_menu_key },
+  {"key_.", process_menu_key },
+  {"key_i", process_menu_key },
+  {"key_I", process_menu_key },
+  {"key_[", process_menu_key },
+  {"key_]", process_menu_key },
+  {"key_,", process_menu_key },
+  {"key_*", process_menu_key },
+  {"key_Leftparen", menu_key_Leftparen },
+  {"key_Rightparen", menu_key_Rightparen },
+  {"key_}", process_menu_key },
+  {"key_{", process_menu_key },
+  {"key_ENTER", menu_key_ENTER },
+  {"key_BACKSPACE", menu_key_BACKSPACE },
+  {"key_C", process_menu_key },
+  {"key_e", process_menu_key },
+  {"key_E", process_menu_key },
+  {"key_'", process_menu_key },
+  {"key_a", process_menu_key },
+  {"key_P", process_menu_key },
+  {"key_A", process_menu_key },
+  {"key_CTRL_L", menu_key_CTRL_L },
+  {"key_v", process_menu_key },
+  {"key_@", process_menu_key },
+  {"key_b", process_menu_key },
+  {"key_u", process_menu_key },
+  {"key_U", process_menu_key },
+  {"key_~", process_menu_key },
+  {"key_S", process_menu_key },
+  {"key__", process_menu_key },
+  {"key_Z", process_menu_key },
+  {"key_+", process_menu_key },
+  {"key_-", process_menu_key },
+  {"key_h", process_menu_key },
+  {"key_l", process_menu_key },
+  {"key_k", process_menu_key },
+  {"key_j", process_menu_key },
+  {"key_t", process_menu_key },
+  {"key_T", process_menu_key },
+  {"key_/", process_menu_key },
+  {"key_\\", process_menu_key },
+  {"key_>", process_menu_key },
+  {"key_<", process_menu_key },
+  {"key_c", process_menu_key },
+ };
+ g_action_map_add_action_entries(G_ACTION_MAP(action_group), entries, G_N_ELEMENTS(entries), NULL);
 
- menuitem=gtk_menu_item_new_with_label("Nearer (+)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"+");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Farther (-)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"-");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Turn l (h)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"h");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Turn r (l)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"l");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Turn u (k)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"k");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Turn d (j)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"j");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Twist l (t)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"t");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Twist r (T)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"T");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Enlarge FOV (/)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"/");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Decrease FOV (\\)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"\\");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Enlarge plots (>)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)">");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Shrink plots (<)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"<");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Reset parameters (c)");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(insert_key), (gpointer)"c");
- gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
- gtk_widget_show (menuitem);
-
- topitem= gtk_menu_item_new_with_label("View");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
- /* Catch Keypress events also when the mouse points to the open menu: */
- g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_event), NULL);
+ variant = g_variant_new_boolean(FALSE);
+ g_action = g_simple_action_new_stateful("antialias", NULL, variant);
+ g_signal_connect(G_OBJECT(g_action), "activate", G_CALLBACK(toggle_antialias), NULL);
+ g_action_map_add_action(G_ACTION_MAP(action_group), G_ACTION(g_action));
+ variant = g_variant_new_boolean(TRUE);
+ g_action = g_simple_action_new_stateful("color_ps", NULL, variant);
+ g_signal_connect(G_OBJECT(g_action), "activate", G_CALLBACK(toggle_postscriptcolor), NULL);
+ g_action_map_add_action(G_ACTION_MAP(action_group), G_ACTION(g_action));
+ gtk_widget_insert_action_group(GTK_WIDGET(VGUI.window), "app", G_ACTION_GROUP(action_group));
 
  VGUI.cr = NULL; /* Allocated by canvas_configure_event */
  VGUI.surface = NULL;
  VGUI.canvas = gtk_drawing_area_new ();
  gtk_widget_set_name (VGUI.canvas, "posplot");
+ gtk_widget_set_hexpand(GTK_WIDGET(VGUI.canvas),TRUE);
+ gtk_widget_set_vexpand(GTK_WIDGET(VGUI.canvas),TRUE);
 
- gtk_box_pack_start (GTK_BOX (box1), VGUI.canvas, TRUE, TRUE, 0);
+ gtk_box_append(GTK_BOX(box1), VGUI.canvas);
  /* Otherwise, a DrawingArea cannot receive key presses: */
  gtk_widget_set_can_focus(VGUI.canvas, TRUE);
- gtk_widget_set_events(VGUI.canvas, GDK_EXPOSURE_MASK
-		      | GDK_BUTTON_PRESS_MASK
-		      | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK
-		      | GDK_KEY_PRESS_MASK
-		      | GDK_PROPERTY_CHANGE_MASK);
- g_signal_connect (G_OBJECT (VGUI.canvas), "configure_event", G_CALLBACK (canvas_configure_event), NULL);
-#if GTK_MAJOR_VERSION==2
- g_signal_connect (G_OBJECT (VGUI.canvas), "expose_event", G_CALLBACK (canvas_expose_event), NULL);
-#else
- g_signal_connect (G_OBJECT (VGUI.canvas), "draw", G_CALLBACK (canvas_draw_event), NULL);
-#endif
- g_signal_connect (G_OBJECT (VGUI.canvas), "key_press_event", G_CALLBACK (key_press_event), NULL);
- g_signal_connect (G_OBJECT (VGUI.canvas), "button_press_event", G_CALLBACK (button_press_event), NULL);
- g_signal_connect (G_OBJECT (VGUI.canvas), "motion_notify_event", G_CALLBACK (motion_notify_event), NULL);
+ g_signal_connect (G_OBJECT (VGUI.canvas), "realize", G_CALLBACK (canvas_configure_event), NULL);
+ g_signal_connect (G_OBJECT (VGUI.canvas), "resize", G_CALLBACK (canvas_resize_event), NULL);
+ ec_key=gtk_event_controller_key_new();
+ g_signal_connect (G_OBJECT (ec_key), "key-pressed", G_CALLBACK (key_press_event), NULL);
+ // Only works adding to window, not canvas...
+ gtk_widget_add_controller (VGUI.window, GTK_EVENT_CONTROLLER(ec_key));
 
- gtk_widget_show (VGUI.canvas);
- gtk_widget_grab_focus(VGUI.canvas);
+ ec_motion=gtk_event_controller_motion_new();
+ g_signal_connect(G_OBJECT(ec_motion), "motion", G_CALLBACK (motion_notify_event), NULL);
+ gtk_widget_add_controller (VGUI.canvas, ec_motion);
+
+ ec_gesture=gtk_gesture_click_new();
+ gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(ec_gesture),0); /* Listen to all buttons */
+ g_signal_connect(G_OBJECT(ec_gesture), "pressed", G_CALLBACK (button_press_event), NULL);
+ gtk_widget_add_controller (VGUI.canvas, GTK_EVENT_CONTROLLER(ec_gesture));
 
 #ifdef WIN32
  /* Under Windows, if the script window starts iconified, the new window
   * of the application will start iconified as well. "deiconify" doesn't work,
   * "present" deiconifies but places behind other windows. */
- gtk_window_set_keep_above (GTK_WINDOW(VGUI.window), TRUE);
+ //gtk_window_set_keep_above (GTK_WINDOW(VGUI.window), TRUE);
 #endif
- gtk_widget_show (VGUI.window);
 
  VGUI.lastbutton=0;
  VGUI.in_frontbuffer=FALSE;
-
- gdk_threads_leave();
 
  /* Set the colors */
  VGUI.fg = BLACK;
@@ -1049,7 +743,11 @@ VGUI_init(void) {
  set_palette_entry(CYAN, 0.0, 1.0, 1.0);
  set_palette_entry(WHITE, 1.0, 1.0, 1.0);
 
+ gtk_window_present(GTK_WINDOW(VGUI.window));
  //printf("VGUI_init end\n");
+ do {
+  g_main_context_iteration(NULL,TRUE);
+ } while (g_main_context_pending(NULL));
 
  return (1);
 }
@@ -1061,7 +759,7 @@ VGUI_init(void) {
 static void
 update_canvas(void) {
  /* Schedule a redraw for the whole area */
- gtk_widget_queue_draw_area(GTK_WIDGET(VGUI.canvas),0,0,vdevice.sizeSx, vdevice.sizeSy);
+ gtk_widget_queue_draw(GTK_WIDGET(VGUI.canvas));
 }
 
 static int 
@@ -1094,12 +792,10 @@ static int
 VGUI_vclear(void) {
  int const vw = vdevice.maxVx - vdevice.minVx + 1;
  int const vh = vdevice.maxVy - vdevice.minVy + 1;
- gdk_threads_enter();
  //printf("VGUI_vclear Clear %d %d - %d %d\n", vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
  gdk_cairo_set_source_rgba (VGUI.cr, &VGUI.palette[VGUI.fg]);
  cairo_rectangle(VGUI.cr, vdevice.minVx, vdevice.sizeSy-vdevice.maxVy-1, vw, vh);
  cairo_fill(VGUI.cr);
- gdk_threads_leave();
  return (1);
 }
 
@@ -1112,18 +808,12 @@ static int
 VGUI_exit(void) {
  //printf("VGUI_exit\n");
 
- gdk_threads_enter();
  if (VGUI.cr!=NULL) {
   cairo_destroy (VGUI.cr);
   cairo_surface_destroy (VGUI.surface);
   VGUI.cr=NULL;
  }
- gtk_widget_destroy (VGUI.window);
- gdk_threads_leave();
-#ifdef USE_THREADING
- g_cond_free(block_thread);
- block_thread=NULL;
-#endif
+ gtk_window_destroy (GTK_WINDOW(VGUI.window));
  return (1);
 }
 
@@ -1166,9 +856,7 @@ VGUI_begin(void) {
    cairo_set_dash (VGUI.cr,dashes,n,0);
   } else {
    /* Solid lines are the default anyway */
-   gdk_threads_enter();
    cairo_set_dash (VGUI.cr,NULL,0,0);
-   gdk_threads_leave();
   }
 
   gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
@@ -1188,12 +876,6 @@ VGUI_sync(void) {
  return (1);
 };
 
-static int
-noop(void) {
- //printf("VGUI_noop\n");
- return (-1);
-}
-
 /*
  * VGUI_font : load either of the fonts
  */
@@ -1209,12 +891,10 @@ static int VGUI_char(char c)
  char const s[2]={c, '\0'};
  //printf("VGUI_char %c %d %d\n", c, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
 
- gdk_threads_enter();
  gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
  my_set_font(VGUI.cr);
  cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
  cairo_show_text(VGUI.cr, s);
- gdk_threads_leave();
 
  return (1);
 };
@@ -1223,12 +903,10 @@ static int VGUI_string(const char *s)
 {
  //printf("VGUI_string %s %d %g (vdevice.sizeSy=%d, vdevice.cpVy=%d, vdevice.hheight=%g)\n", s, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy - vdevice.hheight, vdevice.sizeSy, vdevice.cpVy, vdevice.hheight);
 
- gdk_threads_enter();
  gdk_cairo_set_source_rgba(VGUI.cr,&VGUI.palette[VGUI.fg]);
  my_set_font(VGUI.cr);
  cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
  cairo_show_text(VGUI.cr, s);
- gdk_threads_leave();
 
  return (1);
 }
@@ -1236,14 +914,12 @@ static int VGUI_string(const char *s)
 
 static int VGUI_draw(int x, int y)
 {
- //printf("VGUI_solid %d %d\n", x, y);
+ //printf("VGUI_draw %d %d\n", x, y);
 
- gdk_threads_enter();
  if (vdevice.cpVx!=VGUI.draw_lastx || vdevice.cpVy!=VGUI.draw_lasty) {
   cairo_move_to (VGUI.cr, vdevice.cpVx, vdevice.sizeSy - vdevice.cpVy);
  }
  cairo_line_to (VGUI.cr, x, vdevice.sizeSy - y);
- gdk_threads_leave();
 
  VGUI.draw_lastx = vdevice.cpVx = x;
  VGUI.draw_lasty = vdevice.cpVy = y;
@@ -1284,16 +960,6 @@ static int VGUI_fill(int sides, int *x, int *y)
  return (0);
 };
 
-#ifdef USE_THREADING
-#if 0
-static void
-posplot_cleanup(void *arg) {
- /* The least we need to do when the thread is cancelled while we wait for
-  * being notified about input is to unlock that mutex again... */
- g_static_mutex_unlock(&block_thread_mutex);
-}
-#endif
-#endif
 static int need_empty_loops=0;
 static int
 VGUI_checkkey(void) {
@@ -1303,22 +969,9 @@ VGUI_checkkey(void) {
   return '\0';
  }
  if (Keyboard_Buffer_keys_in_buffer()==0) {
-#ifdef USE_THREADING
-  /* Block until something interesting happens */
-#if 0
-  pthread_cleanup_push(posplot_cleanup, NULL);
-#endif
-  g_static_mutex_lock(&block_thread_mutex);
-  g_cond_wait(block_thread, g_static_mutex_get_mutex(&block_thread_mutex));
-  g_static_mutex_unlock(&block_thread_mutex);
-#if 0
-  pthread_cleanup_pop(FALSE);
-#endif
-#else
   do {
-   gtk_main_iteration_do(TRUE);
-  } while (gtk_events_pending());
-#endif
+   g_main_context_iteration(NULL,TRUE);
+  } while (g_main_context_pending(NULL));
  }
  if (Keyboard_Buffer_keys_in_buffer()>0) need_empty_loops+=5;
  return Keyboard_Buffer_pop();
@@ -1372,7 +1025,7 @@ static DevEntry VGUIdev = {
  VGUI_fill,  /* fill polygon */
  VGUI_font,  /* set hardware font */
  VGUI_frontbuffer, /* front buffer */
- noop,   /* wait for and get key */
+ NULL,   /* wait for and get key */
  VGUI_init,  /* begin graphics */
  VGUI_locator,  /* get mouse position */
  VGUI_mapcolor,  /* map colour (set indices) */

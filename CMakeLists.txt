@@ -1,13 +1,14 @@
-# Copyright (C) 2006-2014,2016,2018-2021,2023,2024 Bernd Feige
+# Copyright (C) 2006-2014,2016,2018-2021,2023-2025 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 cmake_minimum_required(VERSION 3.5...3.31)
-PROJECT(avg_q)
+PROJECT(avg_q LANGUAGES C CXX)
 
 OPTION(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)
 # Note that setting this in ccmake doesn't work, pkg_check_modules runs too
 # early and is cached... Use "cmake -DAVG_Q_GTK3=Off" instead.
-OPTION(AVG_Q_GTK3 "Build avg_q_ui against GTK3" On)
+#OPTION(AVG_Q_GTK3 "Build avg_q_ui against GTK3" On)
+OPTION(AVG_Q_GTK4 "Build avg_q_ui against GTK4" On)
 
 IF(AVG_Q_BUILD_DEBUG)
  SET(CMAKE_BUILD_TYPE Debug)
@@ -21,7 +22,7 @@ INCLUDE("Signatures/Signature.GPL")
 
 SET(CPACK_GENERATOR TBZ2)
 SET(CPACK_PACKAGE_VERSION_MAJOR 6)
-SET(CPACK_PACKAGE_VERSION_MINOR 1)
+SET(CPACK_PACKAGE_VERSION_MINOR 2)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
 INCLUDE(CPack)
 IF(CMAKE_SYSTEM_NAME MATCHES Windows)
@@ -197,7 +198,7 @@ ADD_SUBDIRECTORY(mfx)
 ADD_SUBDIRECTORY(bf)
 ADD_SUBDIRECTORY(readymade)
 
-ADD_SUBDIRECTORY(Documentation)
+#ADD_SUBDIRECTORY(Documentation)
 
 IF (WITH_AVG_Q_UI)
 ADD_SUBDIRECTORY(avg_q_ui)

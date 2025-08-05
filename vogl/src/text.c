@@ -28,12 +28,14 @@ font(short int id)
 		return;
 	}
 
+	if (vdevice.dev.Vfont) {
 	if (id == 1) {
 		if (!(*vdevice.dev.Vfont)(vdevice.dev.large)) 
 			verror("font: unable to open large font");
 	} else if (id == 0) {
 		if (!(*vdevice.dev.Vfont)(vdevice.dev.small))
 			verror("font: unable to open small font");
+	}
 	}
 
 	vdevice.attr->a.fontnum = id;
@@ -78,7 +80,7 @@ charstr(const char *str)
 	/*   If not clipping then simply display text and return  */
 
 	if (oldclipoff) {
-		(*vdevice.dev.Vstring)(str);
+		if (vdevice.dev.Vstring) (*vdevice.dev.Vstring)(str);
 	} else { /* Check if string is within viewport */
 		 /* Could clip in Z maybe? */
 		int	left_s = vdevice.cpVx;
@@ -90,8 +92,9 @@ charstr(const char *str)
 		    bottom_s < vdevice.maxVy &&
 		    top_s > vdevice.minVy &&
 		    right_s < vdevice.maxVx) {
-			(*vdevice.dev.Vstring)(str);
+			if (vdevice.dev.Vstring) (*vdevice.dev.Vstring)(str);
 		} else {
+		 if (vdevice.dev.Vchar)
 			while ((c = *str++)) {
 				if (vdevice.cpVx > vdevice.minVx &&
 				    vdevice.cpVx < vdevice.maxVx - (int)vdevice.hwidth) {

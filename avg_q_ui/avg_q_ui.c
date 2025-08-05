@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2014,2016-2020,2023,2024 Bernd Feige
+ * Copyright (C) 2008-2014,2016-2020,2023-2025 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -28,15 +28,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "avg_q_ui.h"
 #include "transform.h"
 #include "bf.h"
-
-#ifdef USE_THREADING
-LOCAL GThread *script_tid;
-#else
-#define gdk_threads_enter()
-#define gdk_threads_leave()
-#endif
 
 /* We use this in order to process the error exit differently for
  * different instances of my_emethod (namely, for script running and
@@ -107,19 +101,6 @@ LOCAL enum method_types method_types[]={
 #define FRAME_SIZE_Y 500
 #define TRACEFRAME_SIZE_X 400
 #define TRACEFRAME_SIZE_Y 200
-
-/* Need some compatibility definitions */
-#if GTK_MAJOR_VERSION==2 && GTK_MINOR_VERSION<24
-#define GTK_COMBO_BOX_TEXT(x) GTK_COMBO_BOX(x)
-#define gtk_combo_box_text_new() gtk_combo_box_new_text()
-#define gtk_combo_box_text_append_text(x,y) gtk_combo_box_append_text(x,y)
-#define gtk_combo_box_text_get_active_text(x) gtk_combo_box_get_active_text(x)
-#endif
-#if GTK_MAJOR_VERSION==2
-#define gtk_box_new_GTK_ORIENTATION_VERTICAL(spacing) gtk_vbox_new(FALSE,spacing)
-#define gtk_box_new_GTK_ORIENTATION_HORIZONTAL(spacing) gtk_hbox_new(FALSE,spacing)
-#define gtk_box_new(orientation,spacing) gtk_box_new_##orientation(spacing)
-#endif
 /*}}}*/
 
 /*{{{ Declarations*/
@@ -127,32 +108,28 @@ LOCAL struct transform_info_struct tinfostruc;
 LOCAL my_emethod external_method;
 LOCAL struct transform_methods_struct mymethod;
 
+GMainLoop *mainloop;
 LOCAL GtkWidget *Avg_Q_Main_Window;
-LOCAL GtkWidget *CurrentScriptPanel, *TracePanel=NULL;
-#define CurrentScriptBuffer (gtk_text_view_get_buffer(GTK_TEXT_VIEW(CurrentScriptPanel)))
+LOCAL GtkWidget *Avg_Q_Scriptpanel, *TracePanel=NULL;
+#define CurrentScriptBuffer (gtk_text_view_get_buffer(GTK_TEXT_VIEW(Avg_Q_Scriptpanel)))
 LOCAL GtkWidget *TraceMenuItems[4];
 LOCAL GtkWidget *Avg_q_StatusBar;
-LOCAL gint Avg_q_StatusContext, Avg_q_StatusId=0;
 LOCAL GtkWidget *Avg_q_StatusRunBar;
-LOCAL gint Avg_q_StatusRunContext, Avg_q_StatusRunId=0;
 #ifdef STANDALONE
 LOCAL gint Avg_q_Run_Script_Now_Tag=0;
 #else
 LOCAL gint Avg_q_Load_Script_Now_Tag=0;
 LOCAL gint Avg_q_Load_Subscript_Tag=0;
 #endif
-G_LOCK_DEFINE_STATIC (running);
-LOCAL Bool running=FALSE, iconified=FALSE, interactive=FALSE, dumponly=FALSE, single_step=FALSE;
-G_LOCK_DEFINE_STATIC (stop_request);
+LOCAL Bool running=FALSE, iconified=FALSE, interactive=FALSE, dumponly=FALSE;
 LOCAL Bool stop_request=FALSE;
 LOCAL FILE *dumpfile;
 #define FilenameLength 300
 LOCAL char filename[FilenameLength+1]="avg_q_ui.script";
-LOCAL GtkWidget *Run_Entry, *Stop_Entry, *Kill_Entry, *Dump_Entry;
+LOCAL GAction *Run_Action, *Stop_Action, *Kill_Action, *Dump_Action;
 #ifndef STANDALONE
-LOCAL GtkWidget *Run_Subscript_Entry;
+LOCAL GAction *Run_Subscript_Action;
 LOCAL GtkWidget *Dialog_Configuration_Error;
-LOCAL gint Avg_q_Run_Keypress_Now_Tag=0;
 LOCAL FILE *scriptfile=NULL;
 LOCAL int subscript_loaded=0;
 #endif
@@ -172,8 +149,9 @@ LOCAL gint Load_Next_Subscript(gpointer data);
 LOCAL gint Load_Script_Now(gpointer data);
 LOCAL void Close_script_file(void);
 #endif
-static Bool key_press_for_mainwindow(GtkWidget *widget, GdkEventKey *event);
 /*}}}*/
+
+#define gtk_entry_get_text(x) gtk_entry_buffer_get_text(gtk_entry_get_buffer(x))
 
 /*{{{  Local functions*/
 /*{{{ Setting title and status*/
@@ -187,19 +165,34 @@ LOCAL void
 set_status(gchar *message) {
  gsize thisutflength;
  gchar * const thisutfstring=g_locale_to_utf8(message,-1,NULL,&thisutflength,NULL);
- if (Avg_q_StatusId!=0) {
-  gtk_statusbar_remove(GTK_STATUSBAR(Avg_q_StatusBar), Avg_q_StatusContext, Avg_q_StatusId);
- }
- Avg_q_StatusId=gtk_statusbar_push( GTK_STATUSBAR(Avg_q_StatusBar), Avg_q_StatusContext, thisutfstring);
+ gtk_label_set_text(GTK_LABEL(Avg_q_StatusBar), thisutfstring);
 }
 LOCAL void
 set_runstatus(gchar *message) {
  gsize thisutflength;
  gchar * const thisutfstring=g_locale_to_utf8(message,-1,NULL,&thisutflength,NULL);
- if (Avg_q_StatusRunId!=0) {
-  gtk_statusbar_remove(GTK_STATUSBAR(Avg_q_StatusRunBar), Avg_q_StatusRunContext, Avg_q_StatusRunId);
+ gtk_label_set_text(GTK_LABEL(Avg_q_StatusRunBar), thisutfstring);
+}
+LOCAL void
+set_running(Bool run) {
+ running=run;
+ if (running) {
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Run_Action), FALSE);
+#ifndef STANDALONE
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Run_Subscript_Action), FALSE);
+#endif
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Dump_Action), FALSE);
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Stop_Action), TRUE);
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Kill_Action), TRUE);
+ } else {
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Run_Action), TRUE);
+#ifndef STANDALONE
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Run_Subscript_Action), TRUE);
+#endif
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Dump_Action), TRUE);
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Stop_Action), FALSE);
+  g_simple_action_set_enabled(G_SIMPLE_ACTION(Kill_Action), FALSE);
  }
- Avg_q_StatusRunId=gtk_statusbar_push(GTK_STATUSBAR(Avg_q_StatusRunBar), Avg_q_StatusRunContext, thisutfstring);
 }
 /*}}}*/
 
@@ -281,7 +274,7 @@ goto_line(int line) {
 LOCAL GtkWidget *Notice_window=NULL;
 LOCAL void
 Notice_window_close(GtkWidget *window) {
- gtk_widget_destroy(GTK_WIDGET(window));
+ gtk_window_destroy(GTK_WINDOW(window));
  Notice_window=NULL;
 }
 LOCAL void
@@ -292,30 +285,30 @@ LOCAL void
 Notice(gchar *message) {
  GtkWidget *box1;
  GtkWidget *label;
+ GtkWidget *button;
 
  if (Notice_window!=NULL) {
-  gtk_widget_destroy (Notice_window);
+  gtk_window_destroy(GTK_WINDOW(Notice_window));
   Notice_window=NULL;
  }
 
- Notice_window=gtk_dialog_new();
+ Notice_window=gtk_window_new();
  gtk_window_set_transient_for(GTK_WINDOW (Notice_window), GTK_WINDOW (Avg_Q_Main_Window));
- gtk_window_set_position (GTK_WINDOW (Notice_window), GTK_WIN_POS_MOUSE);
+ //gtk_window_set_position (GTK_WINDOW (Notice_window), GTK_WIN_POS_MOUSE);
  g_signal_connect (G_OBJECT (Notice_window), "destroy", G_CALLBACK (Notice_window_close), NULL);
  gtk_window_set_title (GTK_WINDOW (Notice_window), "Notice");
 
- box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(Notice_window))), box1, FALSE, FALSE, 0);
- gtk_widget_show (box1);
+ box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+ gtk_window_set_child(GTK_WINDOW(Notice_window), box1);
 
  label = gtk_label_new (message);
- gtk_box_pack_start (GTK_BOX(box1), label, FALSE, FALSE, 0);
- gtk_widget_show (label);
+ gtk_box_append(GTK_BOX(box1), label);
 
- gtk_dialog_add_button (GTK_DIALOG(Notice_window), "Okay", 1);
- g_signal_connect_object (GTK_DIALOG(Notice_window), "response", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window), G_CONNECT_AFTER);
+ button=gtk_button_new_with_label("Okay");
+ g_signal_connect_after(G_OBJECT(button), "clicked", G_CALLBACK(Notice_window_close_button), G_OBJECT (Notice_window));
+ gtk_box_append(GTK_BOX(box1), button);
 
- gtk_widget_show (Notice_window);
+ gtk_window_present (GTK_WINDOW(Notice_window));
 }
 /*}}}*/
 
@@ -347,7 +340,7 @@ error_exit(const external_methods_ptr emeth, const char *msgtext) {
 LOCAL void
 TracePanelDestroy(GtkWidget *window) {
  if (TracePanel!=NULL) {
-  gtk_widget_destroy(GTK_WIDGET(window));
+  gtk_window_destroy(GTK_WINDOW(window));
   TracePanel=NULL;
  }
 }
@@ -355,37 +348,31 @@ LOCAL void
 trace_message(const external_methods_ptr emeth, const int lvl, const char *msgtext) {
  int const llvl=(lvl>=0 ? lvl : -lvl-1);
  if (emeth->trace_level>=llvl) {
-  gdk_threads_enter();
   if (TracePanel==NULL) {
    GtkWidget *window;
    GtkWidget *box1;
    GtkWidget *scrolledwindow;
 
-   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-   gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_MOUSE);
+   window = gtk_window_new();
+   //gtk_window_set_position (GTK_WINDOW (window), GTK_WIN_POS_MOUSE);
    gtk_window_set_title (GTK_WINDOW (window), "Trace messages");
    gtk_window_set_default_size (GTK_WINDOW(window), TRACEFRAME_SIZE_X, TRACEFRAME_SIZE_Y);
 
    g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (TracePanelDestroy), NULL);
-   g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (TracePanelDestroy), NULL);
-   /* This disables normal processing of keys for the trace panel, including copying... */
-   /*g_signal_connect (G_OBJECT (window), "key_press_event", G_CALLBACK (key_press_for_mainwindow), NULL);*/
 
-   box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-   gtk_container_add (GTK_CONTAINER (window), box1);
-   gtk_widget_show (box1);
+   box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+   gtk_window_set_child(GTK_WINDOW(window), box1);
 
-   scrolledwindow = gtk_scrolled_window_new(NULL, NULL);
+   scrolledwindow = gtk_scrolled_window_new();
+   gtk_widget_set_hexpand(GTK_WIDGET(scrolledwindow),TRUE);
+   gtk_widget_set_vexpand(GTK_WIDGET(scrolledwindow),TRUE);
    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-   gtk_box_pack_start (GTK_BOX (box1), scrolledwindow, TRUE, TRUE, 0);
-   gtk_widget_show (scrolledwindow);
+   gtk_box_append(GTK_BOX(box1), scrolledwindow);
 
    TracePanel=gtk_text_view_new();
-   gtk_container_add (GTK_CONTAINER (scrolledwindow), TracePanel);
+   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledwindow), TracePanel);
    gtk_text_view_set_editable(GTK_TEXT_VIEW(TracePanel), FALSE);
-   gtk_widget_show(TracePanel);
-
-   gtk_widget_show (window);
+   gtk_window_present(GTK_WINDOW(window));
   }
   *errormessage='\0';
   if (lvl==0) {
@@ -410,7 +397,6 @@ trace_message(const external_methods_ptr emeth, const int lvl, const char *msgte
    gtk_text_buffer_insert(textbuffer, &enditer, thisutfstring, thisutflength);
    free_pointer((void **)&thisutfstring);
   }
-  gdk_threads_leave();
  }
 }
 LOCAL void
@@ -420,114 +406,60 @@ static_execution_callback(const transform_info_ptr tinfo, const execution_callba
    * to TRUE by the main program; then the queues are exited, and
    * the execution_callback called with E_CALLBACK_BEFORE_EXIT and 
    * E_CALLBACK_AFTER_EXIT for each method, we don't want to hamper this... */
-  G_LOCK(stop_request);
   stop_request=FALSE;
-  G_UNLOCK(stop_request);
   ERREXIT(tinfostruc.emethods, "Stopped by user.\n");
  }
  if (where==E_CALLBACK_BEFORE_EXEC) {
-  gdk_threads_enter();
-  if (single_step) {
-#if 0
-   ItemVal cval;
-
-   TRACEMS3(tinfo->emethods, -1, "QUEUE line %d script %d: %s\n", MSGPARM(tinfo->methods->line_of_script), MSGPARM(tinfo->methods->script_number), MSGPARM(tinfo->methods->method_name));
-   script_panel->EditCommand(edLineGoto, tinfo->methods->line_of_script);
-   snprintf(errormessage, ERRORMESSAGE_SIZE, "About to execute method %s", tinfo->methods->method_name);
-   if (step_dialog->ShowModalDialog(tinfo, errormessage, cval)==M_Cancel) {
-    ERREXIT(tinfo->emethods, "Stopped by user.\n");
-   }
-#endif
-  } else {
-   snprintf(errormessage, ERRORMESSAGE_SIZE, "Executing script %d line %2d: %s", tinfo->methods->script_number, tinfo->methods->line_of_script, tinfo->methods->method_name);
-   set_runstatus(errormessage);
-#ifndef USE_THREADING
-   while (gtk_events_pending()) gtk_main_iteration();
-#endif
-  }
-  gdk_threads_leave();
+  GMainContext * const context=g_main_context_default();
+  snprintf(errormessage, ERRORMESSAGE_SIZE, "Executing script %d line %2d: %s", tinfo->methods->script_number, tinfo->methods->line_of_script, tinfo->methods->method_name);
+  set_runstatus(errormessage);
+  while (g_main_context_pending(context)) g_main_context_iteration(context, FALSE);
  }
 }
 /*}}}*/
 
 LOCAL void
-change_dir(GtkWidget *menuitem) {
- const gchar *uri = NULL;
-
- /* Note that ACTION_SELECT_FOLDER will create nonexistant folders by default! */
- GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a directory to change to",
-  GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-  "_Cancel", GTK_RESPONSE_CANCEL,
-  "_Open", GTK_RESPONSE_ACCEPT,
-  NULL);
- gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- if (g_path_is_absolute(filename)) {
-  uri=g_filename_to_uri(filename,NULL,NULL);
- } else {
-  char * const path=g_get_current_dir();
-  char * const gfilename=g_build_filename(path,filename,NULL);
-  uri=g_filename_to_uri(gfilename,NULL,NULL);
-  g_free(path);
-  g_free(gfilename);
- }
- gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
-
- if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
-  gchar *gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
+change_dir_finished(GObject *source, GAsyncResult *result, void *data) {
+ GFile *gfile;
+ GError *error = NULL;
+ gfile = gtk_file_dialog_select_folder_finish (GTK_FILE_DIALOG (source), result, &error);
+ if (gfile!=NULL) {
+  char *gfilename=g_file_get_path(gfile);
   if (chdir(gfilename)==0) {
    snprintf(errormessage, ERRORMESSAGE_SIZE, "Current directory is %s", gfilename);
   } else {
    snprintf(errormessage, ERRORMESSAGE_SIZE, "change_dir: %s: %s", gfilename, strerror(errno));
   }
   set_status(errormessage);
-  g_free (gfilename);
+  //g_free (gfile); /* Leads to segfault */
  }
- gtk_widget_destroy (filesel);
 }
-#ifdef USE_THREADING
-LOCAL void * run_script_thread(void *thread_args);
 LOCAL void
-Run_Script(void) {
- script_tid=g_thread_create(run_script_thread, NULL, FALSE, NULL);
+change_dir(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ char * const path=g_get_current_dir();
+ GFile * const gfile=g_file_new_for_path(path);
+ GtkFileDialog *filedialog = gtk_file_dialog_new();
+ gtk_file_dialog_set_initial_folder(filedialog, gfile);
+ //g_free (gfile); /* Leads to segfault */
+ g_free (path);
+ gtk_file_dialog_select_folder(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&change_dir_finished,NULL);
 }
-#if 0
-LOCAL void
-script_cleanup(void *arg) {
- char * const msg=(char *)arg;
- /* Catch errors in exiting the queue (should be none!) */
- switch (setjmp(external_method.error_jmp)) {
-  case 0:
-   free_tinfo(&tinfostruc);
-   if (iter_queue.start!=NULL) exit_queue(&tinfostruc, &iter_queue);
-   if (post_queue.start!=NULL) exit_queue(&tinfostruc, &post_queue);
-   break;
-  case ERROR_STATUS:
-   break;
- }
- G_LOCK(running);
- running=FALSE;
- G_UNLOCK(running);
- gdk_threads_enter();
- gtk_widget_set_sensitive(Run_Entry, TRUE);
-#ifndef STANDALONE
- gtk_widget_set_sensitive(Run_Subscript_Entry, TRUE);
-#endif
- gtk_widget_set_sensitive(Dump_Entry, TRUE);
- gtk_widget_set_sensitive(Stop_Entry, FALSE);
- gtk_widget_set_sensitive(Kill_Entry, FALSE);
- set_runstatus(msg);
- gdk_threads_leave();
+LOCAL int
+change_dir_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
+ change_dir(NULL,NULL,NULL);
+ return 1;
 }
-#endif
-#else
 LOCAL void Run_Script(void);
-#endif
 LOCAL void
-Run_Script_Command(GtkWidget *menuitem) {
+Run_Script_Command(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  set_status("Running script...");
  save_only_script=only_script=0;
  Run_Script();
+}
+LOCAL int
+Run_Script_Command_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
+ Run_Script_Command(NULL,NULL,NULL);
+ return 1;
 }
 /*}}} */
 
@@ -613,7 +545,7 @@ MethodInstance_config_from_dialog(void) {
   if (!variables_only || variable!=0) {
    if (*argument_descriptor->option_letters!='\0') {
     GtkWidget * const checkbox=dialog_widgets[active_widget++];
-    argument->is_set=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
+    argument->is_set=gtk_check_button_get_active(GTK_CHECK_BUTTON(checkbox));
    } else {
     argument->is_set=FALSE;
    }
@@ -624,7 +556,7 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_LONG: {
       GtkWidget * const entry=dialog_widgets[active_widget++];
-      const gchar * const text=gtk_entry_get_text(GTK_ENTRY(entry));
+      const gchar * const text=gtk_entry_buffer_get_text(gtk_entry_get_buffer(GTK_ENTRY(entry)));
       if (*text!='\0') {
        argument->arg.i=strtol(text, &endptr, 10);
        if (*endptr=='\0') argument->is_set=TRUE;
@@ -655,21 +587,8 @@ MethodInstance_config_from_dialog(void) {
       break;
      case T_ARGS_TAKES_SELECTION: {
       GtkWidget * const combo=dialog_widgets[active_widget++];
-      const gchar * const text=gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
-      if (text==NULL) {
-       /* This should be only a security precaution... */
-       TRACEMS(tinfostruc.emethods, 0, "Combo box selection is NULL!\n");
-      } else {
-       const char * const *choice=argument_descriptor->choices;
-       while (*choice!=NULL) {
-	if (strcmp(*choice, text)==0) break;
-	choice++;
-       }
-       if (*choice!=NULL) {
-	argument->arg.i=(choice-argument_descriptor->choices);
-	argument->is_set=TRUE;
-       }
-      }
+      argument->arg.i=gtk_drop_down_get_selected(GTK_DROP_DOWN(combo));
+      argument->is_set=TRUE;
       }
       break;
      default:
@@ -788,7 +707,7 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
    set_status(errormessage);
    /* allocate_methodmem has already been called by setup_method */
    MethodInstance_config_from_defaults();
-   gtk_window_deiconify(GTK_WINDOW(Avg_Q_Main_Window));
+   gtk_window_unminimize(GTK_WINDOW(Avg_Q_Main_Window));
    return TRUE;
  }
 
@@ -827,19 +746,16 @@ MethodInstance_setup_from_line(growing_buf *linebuf) {
 }
 LOCAL void
 method_dialog_close(GtkWidget *window) {
- gtk_widget_destroy(GTK_WIDGET(window));
- MethodInstance_window=NULL;
- free_methodmem(&instance_tinfo);
- set_status("Operation canceled.");
+ if (MethodInstance_window!=NULL) {
+  gtk_window_destroy(GTK_WINDOW(MethodInstance_window));
+  MethodInstance_window=NULL;
+  free_methodmem(&instance_tinfo);
+  set_status("Operation canceled.");
+ }
 }
 LOCAL void
-method_dialog_ok(GtkDialog *dialog, gint response_id, GtkWidget *window) {
+method_dialog_ok(GtkWidget *window) {
  char *message;
-
- if (response_id==0) {
-  method_dialog_close(window);
-  return;
- }
 
  MethodInstance_config_from_dialog();
 
@@ -915,13 +831,17 @@ method_dialog_ok(GtkDialog *dialog, gint response_id, GtkWidget *window) {
   }
   growing_buf_free(&buf);
 
-  gtk_widget_destroy(GTK_WIDGET(window));
-  window=NULL;
+  /* This is necessary because method_dialog_close() is also called on destroy, so MethodInstance_window
+   * must be NULL before it is destroyed... */
+  GtkWidget *tmpwin=MethodInstance_window;
+  MethodInstance_window=NULL;
   free_methodmem(&instance_tinfo);
   set_status("Operation accepted.");
+  gtk_window_destroy(GTK_WINDOW(tmpwin));
+  gtk_widget_grab_focus(GTK_WIDGET(Avg_Q_Scriptpanel));
  } else {
   gtk_label_set_text(GTK_LABEL(Dialog_Configuration_Error), message);
-  gtk_widget_show(Dialog_Configuration_Error);
+  gtk_widget_set_visible (Dialog_Configuration_Error,TRUE);
  }
 }
 typedef struct {
@@ -929,58 +849,57 @@ typedef struct {
  Bool optional;
 } method_file_sel_data;
 LOCAL void
+method_fileselect_finished(GObject *source, GAsyncResult *result, void *gdata) {
+ GFile *gfile;
+ GError *error = NULL;
+ method_file_sel_data *data=(method_file_sel_data *)gdata;
+ gfile = gtk_file_dialog_open_finish (GTK_FILE_DIALOG (source), result, &error);
+ if (gfile!=NULL) {
+  char *gfilename=g_file_get_path(gfile);
+  GtkEntryBuffer * const entrybuffer=gtk_entry_buffer_new(gfilename,strlen(gfilename));
+  gtk_entry_set_buffer(GTK_ENTRY(*data->in_dialog_widgets), entrybuffer);
+  if (data->optional) {
+   gtk_check_button_set_active(GTK_CHECK_BUTTON(data->in_dialog_widgets[-1]), TRUE);
+  }
+  g_free (gfilename);
+  //g_free (gfile); /* Leads to segfault */
+ }
+}
+LOCAL void
 method_fileselect_all(method_file_sel_data *data) {
  const gchar * const text=gtk_entry_get_text(GTK_ENTRY(*data->in_dialog_widgets));
- const gchar *uri = NULL;
+ GFile *gfile;
+ GtkFileDialog *filedialog = gtk_file_dialog_new();
 
- /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
-  * so we need to use ACTION_SAVE to present any argument... */
- GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a file argument",
-  GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_SAVE,
-  "_Cancel", GTK_RESPONSE_CANCEL,
-  "_Use", GTK_RESPONSE_ACCEPT,
-  NULL);
- gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  if (text!=NULL) {
   if (strchr(text, '*')!=NULL) {
    GtkFileFilter *filter=gtk_file_filter_new();
    GtkFileFilter *allfiles=gtk_file_filter_new();
    gtk_file_filter_add_pattern(filter,text); gtk_file_filter_set_name(filter,text);
    gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
-   gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
+   GListStore* liststore = g_list_store_new (GTK_TYPE_FILE_FILTER);
+   g_list_store_append(liststore, filter);
+   g_list_store_append(liststore, allfiles);
+   gtk_file_dialog_set_filters(filedialog,G_LIST_MODEL(liststore));
+   char * const path=g_get_current_dir();
+   gfile=g_file_new_for_path(path);
+   gtk_file_dialog_set_initial_folder(filedialog, gfile);
+   //g_free (gfile); /* Leads to segfault */
+   g_free (path);
   } else {
    if (g_path_is_absolute(text)) {
-    uri=g_filename_to_uri(text,NULL,NULL);
+    gfile=g_file_new_for_path(text);
    } else {
     char * const path=g_get_current_dir();
-    char * const gfilename=g_build_filename(path,text,NULL);
-    uri=g_filename_to_uri(gfilename,NULL,NULL);
+    gfile=g_file_new_build_filename(path,text,NULL);
     g_free(path);
-    g_free(gfilename);
    }
-   gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
+   gtk_file_dialog_set_initial_file(filedialog, gfile);
+   g_free(gfile);
   }
-  /* This is necessary to default to a name that does not exist yet... */
-  gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_path_get_basename(text));
  }
- if (uri==NULL) {
-  /* Set current folder */
-  char * const path=g_get_current_dir();
-  uri=g_filename_to_uri(path,NULL,NULL);
-  gtk_file_chooser_set_current_folder_uri (GTK_FILE_CHOOSER (filesel), uri);
-  g_free(path);
- }
- if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
-  char *gfilename;
-  gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
-  gtk_entry_set_text(GTK_ENTRY(*data->in_dialog_widgets), gfilename);
-  if (data->optional) {
-   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data->in_dialog_widgets[-1]), TRUE);
-  }
-  g_free (gfilename);
- }
- gtk_widget_destroy (filesel);
+ gtk_file_dialog_set_title(filedialog, "Select a file argument");
+ gtk_file_dialog_open(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&method_fileselect_finished,data);
 }
 LOCAL void
 method_fileselect_normal(GtkWidget *select_button, GtkWidget **in_dialog_widgets) {
@@ -1000,70 +919,35 @@ method_fileselect_optional(GtkWidget *select_button, GtkWidget **in_dialog_widge
 
  method_fileselect_all(&data);
 }
-LOCAL gint
-Run_Keypress_Now(gpointer data) {
- GtkWidget **in_dialog_widgets=(GtkWidget **)data;
- const gchar * const text=gtk_entry_get_text(GTK_ENTRY(*in_dialog_widgets));
- Avg_q_Run_Keypress_Now_Tag=0;
-
- if (*text=='\0') {
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(in_dialog_widgets[-1]), FALSE);
- } else {
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(in_dialog_widgets[-1]), TRUE);
- }
- return FALSE;
-}
 LOCAL Bool
-method_normal_entry_keypress_event(GtkWidget *widget, GdkEventKey *event, GtkWidget **in_dialog_widgets) {
- if (event->keyval==GDK_KEY_Return) {
-  g_signal_stop_emission_by_name(G_OBJECT(widget), "key_press_event");
-  g_signal_emit_by_name(G_OBJECT(MethodInstance_Defaultbutton), "clicked", NULL);
-  return TRUE;
- }
- return FALSE;
-}
-LOCAL Bool
-method_optional_entry_keypress_event(GtkWidget *widget, GdkEventKey *event, GtkWidget **in_dialog_widgets) {
- if (event->keyval==GDK_KEY_Return) {
-  g_signal_stop_emission_by_name(G_OBJECT(widget), "key_press_event");
-  g_signal_emit_by_name(G_OBJECT(MethodInstance_Defaultbutton), "clicked", NULL);
-  return TRUE;
- }
- /* Since we'd like Run_Keypress_Now to be executed AFTER any processing of the
-  * key press by the entry editor, we do it the complicated way: */
- Avg_q_Run_Keypress_Now_Tag=g_idle_add(Run_Keypress_Now, (gpointer)in_dialog_widgets);
- return FALSE;
-}
-LOCAL Bool
-method_combo_changed_event(GtkWidget *widget, GtkWidget **in_dialog_widgets) {
- gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(in_dialog_widgets[-1]), TRUE);
+method_combo_changed_event(GtkWidget *widget, gpointer data, gpointer checkbutton) {
+ //printf("method_combo_changed_event\n");
+ gtk_check_button_set_active(GTK_CHECK_BUTTON(checkbutton), TRUE);
  return FALSE;
 }
 LOCAL void
 MethodInstance_build_dialog(void) {
  GtkWidget *box1, *hbox;
  GtkWidget *label;
+ GtkWidget *button;
 
  old_method_cursorline=CursorLineNumber();
  nr_of_active_elements=0;
- MethodInstance_window=gtk_dialog_new();
+ MethodInstance_window=gtk_window_new();
  gtk_window_set_transient_for(GTK_WINDOW (MethodInstance_window), GTK_WINDOW (Avg_Q_Main_Window));
- gtk_window_set_position (GTK_WINDOW (MethodInstance_window), GTK_WIN_POS_MOUSE);
+ //gtk_window_set_position (GTK_WINDOW (MethodInstance_window), GTK_WIN_POS_MOUSE);
  g_signal_connect (G_OBJECT (MethodInstance_window), "destroy", G_CALLBACK (method_dialog_close), NULL);
  gtk_window_set_title (GTK_WINDOW (MethodInstance_window), method.method_name);
 
- box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(MethodInstance_window))), box1, FALSE, FALSE, 0);
- gtk_widget_show (box1);
+ box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+ gtk_window_set_child(GTK_WINDOW(MethodInstance_window), box1);
 
  label = gtk_label_new (method.method_description);
- gtk_box_pack_start (GTK_BOX(box1), label, FALSE, FALSE, 0);
- gtk_widget_show (label);
+ gtk_box_append(GTK_BOX(box1), label);
 
  if (method.nr_of_arguments==0) {
   label = gtk_label_new ("This method has neither options nor arguments.");
-  gtk_box_pack_start (GTK_BOX(box1), label, FALSE, FALSE, 0);
-  gtk_widget_show (label);
+  gtk_box_append(GTK_BOX(box1), label);
  } else {
   int current_argument;
   for (current_argument=0; current_argument<method.nr_of_arguments; current_argument++) {
@@ -1096,20 +980,17 @@ MethodInstance_build_dialog(void) {
     int entry_index= -1;	/* Where in dialog_widgets is the last entry widget */
 
     hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start (GTK_BOX(box1), hbox, FALSE, FALSE, 0);
-    gtk_widget_show (hbox);
+    gtk_box_append(GTK_BOX(box1), hbox);
     if (*argument_descriptor->option_letters!='\0') {
      GtkWidget * const checkbox=gtk_check_button_new_with_label(argument_descriptor->option_letters);
      entry_is_optional=TRUE;
-     gtk_box_pack_start (GTK_BOX (hbox), checkbox, FALSE, FALSE, 0);
-     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbox), argument->is_set);
-     gtk_widget_show (checkbox);
+     gtk_box_append (GTK_BOX (hbox), checkbox);
+     gtk_check_button_set_active(GTK_CHECK_BUTTON(checkbox), argument->is_set);
      dialog_widgets[nr_of_active_elements++]=checkbox;
     }
     /* Here comes the option description as label: */
     label = gtk_label_new (argument_descriptor->description);
-    gtk_box_pack_start (GTK_BOX(hbox), label, FALSE, FALSE, 0);
-    gtk_widget_show (label);
+    gtk_box_append (GTK_BOX(hbox), label);
 
     switch(argument_descriptor->type) {
      case T_ARGS_TAKES_NOTHING:
@@ -1117,25 +998,21 @@ MethodInstance_build_dialog(void) {
      case T_ARGS_TAKES_LONG: {
 #define BUFFER_SIZE 300
       char buffer[BUFFER_SIZE];
-      GtkWidget * const entry=gtk_entry_new();
-
       snprintf(buffer, BUFFER_SIZE, "%ld", argument->arg.i);
-      gtk_box_pack_start (GTK_BOX(hbox), entry, FALSE, FALSE, 0);
-      gtk_entry_set_text(GTK_ENTRY(entry), buffer);
+      GtkEntryBuffer * const entrybuffer=gtk_entry_buffer_new(buffer,strlen(buffer));
+      GtkWidget * const entry=gtk_entry_new_with_buffer(GTK_ENTRY_BUFFER(entrybuffer));
+      gtk_box_append (GTK_BOX(hbox), entry);
       entry_index=nr_of_active_elements;
-      gtk_widget_show (entry);
       dialog_widgets[nr_of_active_elements++]=entry;
       }
       break;
      case T_ARGS_TAKES_DOUBLE: {
       char buffer[BUFFER_SIZE];
-      GtkWidget * const entry=gtk_entry_new();
-
       snprintf(buffer, BUFFER_SIZE, "%g", argument->arg.d);
-      gtk_box_pack_start (GTK_BOX(hbox), entry, FALSE, FALSE, 0);
-      gtk_entry_set_text(GTK_ENTRY(entry), buffer);
+      GtkEntryBuffer * const entrybuffer=gtk_entry_buffer_new(buffer,strlen(buffer));
+      GtkWidget * const entry=gtk_entry_new_with_buffer(GTK_ENTRY_BUFFER(entrybuffer));
+      gtk_box_append (GTK_BOX(hbox), entry);
       entry_index=nr_of_active_elements;
-      gtk_widget_show (entry);
       dialog_widgets[nr_of_active_elements++]=entry;
       }
       break;
@@ -1143,13 +1020,14 @@ MethodInstance_build_dialog(void) {
      case T_ARGS_TAKES_STRING_WORD:
      case T_ARGS_TAKES_SENTENCE: {
       GtkWidget * const entry=gtk_entry_new();
-      gsize thisutflength;
-
-      gtk_box_pack_start (GTK_BOX(hbox), entry, FALSE, FALSE, 0);
-      if (argument->arg.s!=NULL)
-       gtk_entry_set_text(GTK_ENTRY(entry), g_locale_to_utf8(argument->arg.s,-1,NULL,&thisutflength,NULL));
+      gtk_box_append (GTK_BOX(hbox), entry);
+      if (argument->arg.s!=NULL) {
+       gsize thisutflength;
+       gchar *const buffer=g_locale_to_utf8(argument->arg.s,-1,NULL,&thisutflength,NULL);
+       GtkEntryBuffer * const entrybuffer=gtk_entry_buffer_new(buffer,strlen(buffer));
+       gtk_entry_set_buffer(GTK_ENTRY(entry), entrybuffer);
+      }
       entry_index=nr_of_active_elements;
-      gtk_widget_show (entry);
       dialog_widgets[nr_of_active_elements++]=entry;
       }
       break;
@@ -1157,36 +1035,30 @@ MethodInstance_build_dialog(void) {
       GtkWidget * const entry=gtk_entry_new();
       GtkWidget * const select_button=gtk_button_new_with_label("Select");
       GCallback const select_callback=G_CALLBACK(entry_is_optional ? method_fileselect_optional : method_fileselect_normal);
-      gsize thisutflength;
-
-      gtk_box_pack_start (GTK_BOX(hbox), entry, FALSE, FALSE, 0);
-      if (argument->arg.s!=NULL)
-       gtk_entry_set_text(GTK_ENTRY(entry), g_locale_to_utf8(argument->arg.s,-1,NULL,&thisutflength,NULL));
+      gtk_box_append (GTK_BOX(hbox), entry);
+      if (argument->arg.s!=NULL) {
+       gsize thisutflength;
+       gchar *const buffer=g_locale_to_utf8(argument->arg.s,-1,NULL,&thisutflength,NULL);
+       GtkEntryBuffer * const entrybuffer=gtk_entry_buffer_new(buffer,strlen(buffer));
+       gtk_entry_set_buffer(GTK_ENTRY(entry), entrybuffer);
+      }
       entry_index=nr_of_active_elements;
-      gtk_widget_show (entry);
       dialog_widgets[nr_of_active_elements++]=entry;
 
       /* Note that we do not count the select_button as an active element,
        * since there will be no need to access its state or value */
-      gtk_box_pack_start (GTK_BOX(hbox), select_button, FALSE, FALSE, 0);
+      gtk_box_append (GTK_BOX(hbox), select_button);
       g_signal_connect (G_OBJECT (select_button), "clicked", select_callback, (gpointer)&dialog_widgets[nr_of_active_elements-1]);
-      gtk_widget_show (select_button);
       }
       break;
      case T_ARGS_TAKES_SELECTION: {
-      GtkWidget * const combo=gtk_combo_box_text_new ();
-      const gchar *const *choice=argument_descriptor->choices;
+      GtkWidget * const combo=gtk_drop_down_new_from_strings(argument_descriptor->choices);
 
-      while (*choice!=NULL) {
-       gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), *choice);
-       choice++;
-      }
-      gtk_box_pack_start (GTK_BOX(hbox), combo, FALSE, FALSE, 0);
-      gtk_combo_box_set_active(GTK_COMBO_BOX(combo),argument->arg.i);
+      gtk_box_append (GTK_BOX(hbox), combo);
+      gtk_drop_down_set_selected(GTK_DROP_DOWN(combo),argument->arg.i);
       if (entry_is_optional) {
-       g_signal_connect (combo, "changed", G_CALLBACK (method_combo_changed_event), (gpointer)&dialog_widgets[nr_of_active_elements]);
+       g_signal_connect_after(combo, "notify::selected-item", G_CALLBACK(method_combo_changed_event), (gpointer)dialog_widgets[nr_of_active_elements-1]);
       }
-      gtk_widget_show (combo);
       dialog_widgets[nr_of_active_elements++]=combo;
       }
       break;
@@ -1197,30 +1069,34 @@ MethodInstance_build_dialog(void) {
      /* Could be that there is a better way, but we want the `Return' key to
       * select the default button also within an entry widget.
       * We achieve this (for now?) by intercepting the key_press_event. */
-     GCallback const func=G_CALLBACK(entry_is_optional ?  method_optional_entry_keypress_event : method_normal_entry_keypress_event);
-     g_signal_connect (G_OBJECT (dialog_widgets[entry_index]), "key_press_event", func, (gpointer)&dialog_widgets[entry_index]);
+     //GCallback const func=G_CALLBACK(entry_is_optional ?  method_optional_entry_keypress_event : method_normal_entry_keypress_event);
+     //g_signal_connect (G_OBJECT (dialog_widgets[entry_index]), "key_press_event", func, (gpointer)&dialog_widgets[entry_index]);
     }
    }
   }
  }
 
  Dialog_Configuration_Error = gtk_label_new ("<Long message to force Configuration Error field width>");
- gtk_box_pack_start (GTK_BOX(box1), Dialog_Configuration_Error, FALSE, FALSE, 0);
- gtk_widget_hide (Dialog_Configuration_Error);
+ gtk_box_append(GTK_BOX(box1), Dialog_Configuration_Error);
+ gtk_widget_set_visible (Dialog_Configuration_Error,FALSE);
 
  /* An OK button is now always shown - it could be that our convenient
   * start-of-method-name function has kicked in and the user wants to accept
   * that full method name. Therefore, independently of old_method and any
   * modifiable options, we'll have a default OK button. */
- MethodInstance_Defaultbutton=gtk_dialog_add_button (GTK_DIALOG(MethodInstance_window), "Okay", 1);
- gtk_dialog_add_button (GTK_DIALOG(MethodInstance_window), "Close", 0);
- g_signal_connect_object (GTK_DIALOG(MethodInstance_window), "response", G_CALLBACK(method_dialog_ok), G_OBJECT (MethodInstance_window), G_CONNECT_AFTER);
-
- gtk_widget_show (MethodInstance_window);
+ hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+ gtk_box_append(GTK_BOX(box1), hbox);
+ MethodInstance_Defaultbutton=gtk_button_new_with_label("Okay");
+ g_signal_connect_after(G_OBJECT(MethodInstance_Defaultbutton), "clicked", G_CALLBACK(method_dialog_ok), G_OBJECT (MethodInstance_window));
+ gtk_box_append (GTK_BOX(hbox), MethodInstance_Defaultbutton);
+ button=gtk_button_new_with_label("Close");
+ g_signal_connect_after(G_OBJECT(button), "clicked", G_CALLBACK(method_dialog_close), G_OBJECT (MethodInstance_window));
+ gtk_box_append (GTK_BOX(hbox), button);
+ gtk_window_present(GTK_WINDOW(MethodInstance_window));
 }
 
-LOCAL void
-setup_from_line_requested(void) {
+LOCAL int
+setup_from_line_requested(GtkWidget *menuitem, GVariant *gv, gpointer data) {
  Bool have_something=TRUE;
  goto_line(CursorLineNumber());
  if (getNextLine()>0) {
@@ -1270,41 +1146,18 @@ setup_from_line_requested(void) {
    "keyword, nor a comment (`#').\n"
   );
  }
-}
-
-LOCAL Bool
-button_press_event(GtkWidget *widget, GdkEventButton *event) {
- if (event->button==3) {
-  setup_from_line_requested();
-  return TRUE; /* Event has been handled */
- }
- return FALSE;
-}
-LOCAL Bool
-key_press_in_mainwindow(GtkWidget *widget, GdkEventKey *event) {
- if (event->keyval==GDK_KEY_Tab) {
-  setup_from_line_requested();
-  return TRUE;
- }
- return FALSE;
+ return 1;
 }
 /*}}}*/
 
 /*{{{ Running scripts*/
-#ifdef USE_THREADING
-LOCAL void *
-run_script_thread(void *thread_args) {
-#else
 LOCAL void 
 Run_Script(void) {
-#endif
  /* The `succeeded' variable should not be stack-based because it might
   * be clobbered by longjmp */
  succeeded=FALSE;
  if (running) {
-  gdk_threads_enter();
   set_runstatus("Script is already running.");
-  gdk_threads_leave();
  } else {
   void (* const * const method_selects)(transform_info_ptr)=get_method_list();
   int laststatus;
@@ -1312,26 +1165,7 @@ Run_Script(void) {
   growing_buf_init(&script);
   growing_buf_allocate(&script, 0);
 
-  G_LOCK(running);
-  running=TRUE;
-  G_UNLOCK(running);
-  gdk_threads_enter();
-  gtk_widget_set_sensitive(Run_Entry, FALSE);
-  gtk_widget_set_sensitive(Run_Subscript_Entry, FALSE);
-  gtk_widget_set_sensitive(Dump_Entry, FALSE);
-  gtk_widget_set_sensitive(Stop_Entry, TRUE);
-  gtk_widget_set_sensitive(Kill_Entry, TRUE);
-  gdk_threads_leave();
-
-#ifdef USE_THREADING
-#if 0
-  /* Note that push and pop must be outside the setjmp switch, otherwise
-   * things get mangled by a longjmp */
-  pthread_cleanup_push(script_cleanup, (void *)"Script was canceled.");
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-#endif
-#endif
+  set_running(TRUE);
 
   switch (setjmp(external_method.error_jmp)) {
    case 0:
@@ -1400,9 +1234,7 @@ Run_Script(void) {
       free_queuemethodmem(&tinfostruc, &iter_queue);
       free_queuemethodmem(&tinfostruc, &post_queue);
      } else {
-      gdk_threads_enter();
       set_runstatus("Script is empty.");
-      gdk_threads_leave();
      }
      succeeded=TRUE;
      if (only_script>0 && iter_queue.current_input_script==only_script) break;
@@ -1421,17 +1253,13 @@ Run_Script(void) {
       fclose(dumpfile);
       dumpfile=stdout;
      }
-     gdk_threads_enter();
      set_runstatus("Script was dumped.");
-     gdk_threads_leave();
     } else {
-     gdk_threads_enter();
      set_runstatus("Script was executed.");
-     gdk_threads_leave();
     }
     only_script=save_only_script;
     if (!interactive && scriptfile==NULL) {
-     g_idle_add((GSourceFunc)gtk_main_quit, NULL);
+     g_idle_add((GSourceFunc)g_main_loop_quit, mainloop);
     }
     break;
    case ERROR_STATUS:
@@ -1445,42 +1273,21 @@ Run_Script(void) {
      case ERROR_STATUS:
       break;
     }
-    gdk_threads_enter();
     set_runstatus(errormessage);
     goto_line(tinfostruc.methods->line_of_script-1);
-    gtk_window_deiconify(GTK_WINDOW(Avg_Q_Main_Window));
-    gdk_threads_leave();
+    gtk_window_unminimize(GTK_WINDOW(Avg_Q_Main_Window));
     Close_script_file();
     save_only_script=only_script=0;
     interactive=TRUE;
     break;
   }
-#ifdef USE_THREADING
-#if 0
-  pthread_cleanup_pop(FALSE);
-#endif
-#endif
-  G_LOCK(running);
-  running=FALSE;
-  G_UNLOCK(running);
-  gdk_threads_enter();
-  gtk_widget_set_sensitive(Run_Entry, TRUE);
-  gtk_widget_set_sensitive(Run_Subscript_Entry, TRUE);
-  gtk_widget_set_sensitive(Dump_Entry, TRUE);
-  gtk_widget_set_sensitive(Stop_Entry, FALSE);
-  gtk_widget_set_sensitive(Kill_Entry, FALSE);
+  set_running(FALSE);
   if (scriptfile!=NULL) {
    Avg_q_Load_Subscript_Tag=g_idle_add(Load_Next_Subscript, NULL);
   }
-  gdk_threads_leave();
   growing_buf_free(&script);
  }
-#ifdef USE_THREADING
- /* Don't need to call g_thread_exit(), returning is sufficient */
- return(&succeeded);
-#else
  return;
-#endif
 }
 LOCAL int
 CursorSubScript(void) {
@@ -1503,7 +1310,7 @@ CursorSubScript(void) {
  return script;
 }
 LOCAL void
-Run_CursorSubScript(GtkWidget *menuitem) {
+Run_CursorSubScript(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  only_script=CursorSubScript();
  set_status("Running sub-script at cursor...");
  Run_Script();
@@ -1599,42 +1406,51 @@ Load_Script(gchar *name) {
  return (scriptfile!=NULL);
 }
 LOCAL void
-open_file(GtkWidget *menuitem) {
- const gchar *uri = NULL;
-
- GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a script file to load",
-  GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_OPEN,
-  "_Cancel", GTK_RESPONSE_CANCEL,
-  "_Open", GTK_RESPONSE_ACCEPT,
-  NULL);
- gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- /* Note that set_current_name only works for ACTION_SAVE or ACTION_CREATE_FOLDER,
-  * so we need to use gtk_file_chooser_set_uri... */
+open_file_finished(GObject *source, GAsyncResult *result, void *gdata) {
+ GFile *gfile;
+ GError *error = NULL;
+ gfile = gtk_file_dialog_open_finish (GTK_FILE_DIALOG (source), result, &error);
+ if (gfile!=NULL) {
+  char *gfilename=g_file_get_path(gfile);
+  strncpy(filename, gfilename, FilenameLength);
+  Avg_q_Load_Script_Now_Tag=g_idle_add(Load_Script_Now, filename);
+  g_free (gfilename);
+  //g_free (gfile); /* Leads to segfault */
+ }
+}
+LOCAL void
+open_file(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ GFile *gfile;
+ GtkFileDialog *filedialog = gtk_file_dialog_new();
+ GtkFileFilter *filter=gtk_file_filter_new();
+ GtkFileFilter *allfiles=gtk_file_filter_new();
+ gtk_file_filter_add_pattern(filter,"*.script"); gtk_file_filter_set_name(filter,"*.script");
+ gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
+ GListStore* liststore = g_list_store_new (GTK_TYPE_FILE_FILTER);
+ g_list_store_append(liststore, filter);
+ g_list_store_append(liststore, allfiles);
+ gtk_file_dialog_set_filters(filedialog,G_LIST_MODEL(liststore));
+ gtk_file_dialog_set_title(filedialog, "Select a script file to load");
  if (g_path_is_absolute(filename)) {
-  uri=g_filename_to_uri(filename,NULL,NULL);
+  gfile=g_file_new_for_path(filename);
  } else {
   char * const path=g_get_current_dir();
-  char * const gfilename=g_build_filename(path,filename,NULL);
-  uri=g_filename_to_uri(gfilename,NULL,NULL);
+  gfile=g_file_new_build_filename(path,filename,NULL);
   g_free(path);
-  g_free(gfilename);
  }
- gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
-
- if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
-  char *gfilename;
-  gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
-  strncpy(filename, gfilename, FilenameLength);
-  g_free (gfilename);
-  Avg_q_Load_Script_Now_Tag=g_idle_add(Load_Script_Now, filename);
- }
- gtk_widget_destroy (filesel);
+ gtk_file_dialog_set_initial_file(filedialog, gfile);
+ gtk_file_dialog_open(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&open_file_finished,data);
+ g_free(gfile);
+}
+LOCAL int
+open_file_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
+ open_file(NULL,NULL,NULL);
+ return 1;
 }
 /*}}}*/
 /*{{{ Saving script files*/
 LOCAL void
-save_file(GtkWidget *menuitem) {
+save_file(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  FILE *outfile = fopen(filename, "w");
  if (outfile!=NULL) {
   gunichar lastchar=0;
@@ -1660,80 +1476,64 @@ save_file(GtkWidget *menuitem) {
  }
  set_status(errormessage);
 }
+LOCAL int
+save_file_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
+ save_file(NULL,NULL,NULL);
+ return 1;
+}
 LOCAL void
-save_file_as(GtkWidget *menuitem) {
- const gchar *uri = NULL;
-
- GtkWidget *filesel=gtk_file_chooser_dialog_new("Select a script file name to save to",
-  GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_SAVE,
-  "_Cancel", GTK_RESPONSE_CANCEL,
-  "_Save", GTK_RESPONSE_ACCEPT,
-  NULL);
- gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
- if (g_path_is_absolute(filename)) {
-  uri=g_filename_to_uri(filename,NULL,NULL);
- } else {
-  char * const path=g_get_current_dir();
-  char * const gfilename=g_build_filename(path,filename,NULL);
-  uri=g_filename_to_uri(gfilename,NULL,NULL);
-  g_free(path);
-  g_free(gfilename);
- }
- gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
- /* This is necessary to default to a name that does not exist yet... */
- gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_path_get_basename(filename));
- gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
-
- if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
-  char *gfilename;
-  gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
+save_file_as_finished(GObject *source, GAsyncResult *result, void *gdata) {
+ GFile *gfile;
+ GError *error = NULL;
+ gfile = gtk_file_dialog_save_finish (GTK_FILE_DIALOG (source), result, &error);
+ if (gfile!=NULL) {
+  char *gfilename=g_file_get_path(gfile);
   strncpy(filename, gfilename, FilenameLength);
   g_free (gfilename);
   set_main_window_title();
-  save_file(NULL);
+  save_file(NULL,NULL,NULL);
+  //g_free (gfile); /* Leads to segfault */
  }
- gtk_widget_destroy (filesel);
+}
+LOCAL void
+save_file_as(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ GFile *gfile;
+ GtkFileDialog *filedialog = gtk_file_dialog_new();
+ GtkFileFilter *filter=gtk_file_filter_new();
+ GtkFileFilter *allfiles=gtk_file_filter_new();
+ gtk_file_filter_add_pattern(filter,"*.script"); gtk_file_filter_set_name(filter,"*.script");
+ gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
+ GListStore* liststore = g_list_store_new (GTK_TYPE_FILE_FILTER);
+ g_list_store_append(liststore, filter);
+ g_list_store_append(liststore, allfiles);
+ gtk_file_dialog_set_filters(filedialog,G_LIST_MODEL(liststore));
+ gtk_file_dialog_set_title(filedialog, "Select a script file name to save to");
+ if (g_path_is_absolute(filename)) {
+  gfile=g_file_new_for_path(filename);
+ } else {
+  char * const path=g_get_current_dir();
+  gfile=g_file_new_build_filename(path,filename,NULL);
+  g_free(path);
+ }
+ gtk_file_dialog_set_initial_file(filedialog, gfile);
+ gtk_file_dialog_save(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&save_file_as_finished,data);
+ g_free(gfile);
 }
 /*}}}*/
 /*}}}  */
 #else
-/*{{{ Now follows the STANDALONE implementation of run_script_thread */
-#ifdef USE_THREADING
-LOCAL void *
-run_script_thread(void *thread_args) {
-#else
+/*{{{ Now follows the STANDALONE implementation of run_script */
 LOCAL void 
 Run_Script(void) {
-#endif
  /* The `succeeded' variable should not be stack-based because it might
   * be clobbered by longjmp */
  succeeded=FALSE;
  dump_script_pointer=dump_script_pointers;
  if (running) {
-  gdk_threads_enter();
   set_runstatus("Script is already running.");
-  gdk_threads_leave();
  } else {
- G_LOCK(running);
- running=TRUE;
- G_UNLOCK(running);
- gdk_threads_enter();
- gtk_widget_set_sensitive(Run_Entry, FALSE);
- gtk_widget_set_sensitive(Dump_Entry, FALSE);
- gtk_widget_set_sensitive(Stop_Entry, TRUE);
- gtk_widget_set_sensitive(Kill_Entry, TRUE);
- gdk_threads_leave();
+ set_running(TRUE);
 
-#ifdef USE_THREADING
-#if 0
- /* Note that push and pop must be outside the setjmp switch, otherwise
-  * things get mangled by a longjmp */
- pthread_cleanup_push(script_cleanup, (void *)"Script was canceled.");
- pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
- pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-#endif
-#endif
  switch (setjmp(external_method.error_jmp)) {
   case 0:
    if (dumponly) {
@@ -1792,18 +1592,12 @@ Run_Script(void) {
      fclose(dumpfile);
      dumpfile=stdout;
     }
-    gdk_threads_enter();
     set_runstatus("Script was dumped.");
-    gdk_threads_leave();
    } else {
-    gdk_threads_enter();
     set_runstatus("Script was executed.");
-    gdk_threads_leave();
    }
    if (!interactive) {
-    gdk_threads_enter();
-    g_idle_add((GSourceFunc)gtk_main_quit, NULL);
-    gdk_threads_leave();
+    g_idle_add((GSourceFunc)g_main_loop_quit, mainloop);
    }
    break;
   case ERROR_STATUS:
@@ -1817,34 +1611,15 @@ Run_Script(void) {
     case ERROR_STATUS:
      break;
    }
-   gdk_threads_enter();
    set_runstatus(errormessage);
-   gtk_window_deiconify(GTK_WINDOW(Avg_Q_Main_Window));
-   gdk_threads_leave();
+   gtk_window_unminimize(GTK_WINDOW(Avg_Q_Main_Window));
    save_only_script=only_script=0;
    interactive=TRUE;
    break;
  }
-#ifdef USE_THREADING
-#if 0
- pthread_cleanup_pop(FALSE);
-#endif
-#endif
- G_LOCK(running);
- running=FALSE;
- G_UNLOCK(running);
- gdk_threads_enter();
- gtk_widget_set_sensitive(Run_Entry, TRUE);
- gtk_widget_set_sensitive(Dump_Entry, TRUE);
- gtk_widget_set_sensitive(Stop_Entry, FALSE);
- gtk_widget_set_sensitive(Kill_Entry, FALSE);
- gdk_threads_leave();
+ set_running(FALSE);
  }
-#ifdef USE_THREADING
- return(&succeeded);
-#else
  return;
-#endif
 #undef iter_queue
 #undef post_queue
 }
@@ -1852,45 +1627,81 @@ Run_Script(void) {
 #endif
 
 LOCAL void
-Stop_Script(GtkWidget *menuitem) {
+Stop_Script(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  if (running) {
-  G_LOCK(stop_request);
   stop_request=TRUE;
-  G_UNLOCK(stop_request);
   set_status("Script will be stopped...");
  } else {
   set_status("Nothing to stop.");
  }
 }
+/* Callback signature */
+LOCAL int
+Stop_Script_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
+ Stop_Script(NULL,NULL,NULL);
+ return 1;
+}
 LOCAL void
-Cancel_Script(GtkWidget *menuitem) {
+Cancel_Script(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  if (running) {
   set_status("Script will be cancelled...");
-#if 0
-  pthread_cancel(script_tid);
-#endif
  } else {
   set_status("Nothing to cancel.");
  }
 }
 LOCAL void
-Quit_avg_q(GtkWidget *menuitem) {
+Quit_avg_q(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  /* This is called when the main window is destroyed or from the file
   * menu "Quit" entry - meaning we really want to stop the program... */
  if (running) {
-  /* Sadly, Stop_Script isn't sufficient to kill the script, and we also cannot
-   * just wait using pthread_join() since we'd block all GTK processing */
-  Cancel_Script(menuitem);
+  /* Sadly, Stop_Script isn't sufficient to kill the script */
+  Cancel_Script(NULL,NULL,NULL);
  }
- gtk_main_quit();
+ g_idle_add((GSourceFunc)g_main_loop_quit, mainloop);
+}
+/* Callback signature */
+LOCAL int
+Quit_avg_q_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
+ Quit_avg_q(NULL,NULL,NULL);
+ return 1;
 }
 
 LOCAL void
-dump_file_as(GtkWidget *menuitem) {
- const gchar *uri = NULL;
+dump_file_as_finished(GObject *source, GAsyncResult *result, void *gdata) {
+ GFile *gfile;
+ GError *error = NULL;
+ gfile = gtk_file_dialog_save_finish (GTK_FILE_DIALOG (source), result, &error);
+ if (gfile!=NULL) {
+  char *gfilename=g_file_get_path(gfile);
+  if ((dumpfile=fopen(gfilename, "w"))!=NULL) {
+   dumponly=TRUE;
+   set_status("Dumping script...");
+   Run_Script();
+  }
+  g_free (gfilename);
+  //g_free (gfile); /* Leads to segfault */
+ }
+}
+LOCAL void
+dump_file_as(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ GFile *gfile;
+ GtkFileDialog *filedialog = gtk_file_dialog_new();
+ GtkFileFilter *filter=gtk_file_filter_new();
+ GtkFileFilter *allfiles=gtk_file_filter_new();
+#ifndef STANDALONE
+ gtk_file_filter_add_pattern(filter,"*.h"); gtk_file_filter_set_name(filter,"*.h");
+#else
+ gtk_file_filter_add_pattern(filter,"*.script"); gtk_file_filter_set_name(filter,"*.script");
+#endif
+ gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
+ GListStore* liststore = g_list_store_new (GTK_TYPE_FILE_FILTER);
+ g_list_store_append(liststore, filter);
+ g_list_store_append(liststore, allfiles);
+ gtk_file_dialog_set_filters(filedialog,G_LIST_MODEL(liststore));
+
+#ifndef STANDALONE
  const gchar *newfilename;
  const gchar *extension;
-
  /* Add extension ".h" */
  extension=g_strrstr(filename,".");
  if (extension) {
@@ -1900,47 +1711,29 @@ dump_file_as(GtkWidget *menuitem) {
  } else {
   newfilename=g_strconcat(filename,".h",NULL);
  }
-
- GtkWidget *filesel=gtk_file_chooser_dialog_new("Select an include file name to dump to",
-  GTK_WINDOW(Avg_Q_Main_Window),
-  GTK_FILE_CHOOSER_ACTION_SAVE,
-  "_Cancel", GTK_RESPONSE_CANCEL,
-  "_Save", GTK_RESPONSE_ACCEPT,
-  NULL);
- GtkFileFilter *filter=gtk_file_filter_new();
- GtkFileFilter *allfiles=gtk_file_filter_new();
- gtk_file_filter_add_pattern(filter,"*.h"); gtk_file_filter_set_name(filter,"*.h");
- gtk_file_filter_add_pattern(allfiles,"*"); gtk_file_filter_set_name(allfiles,"All files");
- gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),filter); gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(filesel),allfiles);
- gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(filesel),TRUE);
  if (g_path_is_absolute(newfilename)) {
-  uri=g_filename_to_uri(newfilename,NULL,NULL);
+  gfile=g_file_new_for_path(newfilename);
  } else {
   char * const path=g_get_current_dir();
-  char * const gfilename=g_build_filename(path,newfilename,NULL);
-  uri=g_filename_to_uri(gfilename,NULL,NULL);
+  gfile=g_file_new_build_filename(path,newfilename,NULL);
   g_free(path);
-  g_free(gfilename);
  }
- gtk_file_chooser_set_uri (GTK_FILE_CHOOSER (filesel), uri);
- /* This is necessary to default to a name that does not exist yet... */
- gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (filesel), g_path_get_basename(newfilename));
- gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (filesel), TRUE);
-
- if (gtk_dialog_run (GTK_DIALOG (filesel)) == GTK_RESPONSE_ACCEPT) {
-  char *gfilename;
-  gfilename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (filesel));
-  if ((dumpfile=fopen(gfilename, "w"))!=NULL) {
-   dumponly=TRUE;
-   set_status("Dumping script...");
-   Run_Script();
-  }
-  g_free (gfilename);
- }
- gtk_widget_destroy (filesel);
+ g_free((gpointer)newfilename);
+#else
+ GFile *gfile2=g_file_new_for_path(DUMPFILENAME);
+ char * const path=g_get_current_dir();
+ char * const basename=g_file_get_basename(gfile2);
+ gfile=g_file_new_build_filename(path,basename,NULL);;
+ g_free(path);
+ g_free(gfile2);
+#endif
+ gtk_file_dialog_set_initial_file(filedialog, gfile);
+ g_free(gfile);
+ gtk_file_dialog_set_title(filedialog, "Select an include file name to dump to");
+ gtk_file_dialog_save(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&dump_file_as_finished,data);
 }
 LOCAL void
-avg_q_about(GtkWidget *menuitem) {
+avg_q_about(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
 #define BUFFER_SIZE 1024
  char buffer[BUFFER_SIZE];
  snprintf(buffer, BUFFER_SIZE, "%s\nThis user interface was built with the free GTK library (v%d.%d): See http://www.gtk.org/\n", get_avg_q_signature(), GTK_MAJOR_VERSION, GTK_MINOR_VERSION);
@@ -1949,31 +1742,32 @@ avg_q_about(GtkWidget *menuitem) {
 }
 
 LOCAL void
-set_tracelevel(GtkWidget *menuitem, gpointer data) {
- external_method.emethod.trace_level=(int)data;
-}
-
-/* This is used to redirect keypresses to the script panel: */
-static Bool
-key_press_for_mainwindow(GtkWidget *widget, GdkEventKey *event) {
- static gboolean retarg;
- /* Note that this disables the shortcut setting functions that are otherwise
-  * present for menus, when the original key was sent to a menu: */
- g_signal_stop_emission_by_name(G_OBJECT(widget), "key_press_event");
- g_signal_emit_by_name(G_OBJECT(Avg_Q_Main_Window), "key_press_event", event, &retarg);
- return TRUE;
+set_tracelevel(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ gchar const *const name=g_action_get_name(G_ACTION(menuitem));
+ external_method.emethod.trace_level=(int)(name[strlen(name)-1]-'0');
+ printf("Tracelevel set to %d\n", external_method.emethod.trace_level);
 }
 
 #ifndef STANDALONE
 LOCAL void
-method_menu (GtkWidget *menuitem, gpointer data) {
+method_menu(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
+ gchar const *const name=g_action_get_name(G_ACTION(menuitem));
+ gchar const *const methodname=name+7;
+ void (* const * const method_selects)(transform_info_ptr)=get_method_list();
+ void (* const *m_select)(transform_info_ptr);
+ for (m_select=method_selects; *m_select!=NULL; m_select++) {
+  (**m_select)(&tinfostruc);
+  if (strcmp(tinfostruc.methods->method_name,methodname)==0) {
+   break;
+  }
+ }
  MethodInstance_init_methodstruc();
  switch (setjmp(instance_emethod.error_jmp)) {
   case 0: {
    if (MethodInstance_window!=NULL) {
     method_dialog_close(GTK_WIDGET(MethodInstance_window));
    }
-   MethodInstance_setup_from_method((void (*)(transform_info_ptr))data);
+   MethodInstance_setup_from_method(*m_select);
    variables_only=FALSE;
    old_method=FALSE;
    MethodInstance_build_dialog();
@@ -1981,7 +1775,7 @@ method_menu (GtkWidget *menuitem, gpointer data) {
    break;
   case ERROR_STATUS:
    set_status(errormessage);
-   gtk_window_deiconify(GTK_WINDOW(Avg_Q_Main_Window));
+   gtk_window_unminimize(GTK_WINDOW(Avg_Q_Main_Window));
    break;
  }
 }
@@ -1990,165 +1784,88 @@ method_menu (GtkWidget *menuitem, gpointer data) {
 LOCAL void
 create_main_window (void) {
  GtkWidget *box1, *hbox;
- GtkWidget *menubar, *filemenu, *tracemenu, *menuitem;
- GtkWidget *topitem;
- GtkWidget *scriptpanel;
+ GMenu *menubar, *filemenu, *filemenu2, *tracemenu;
  GtkWidget *scrolledwindow;
- GSList *tracegroup;
- GtkAccelGroup *accel_group=gtk_accel_group_new ();
- gchar const *accpath;
+ GSimpleActionGroup *action_group=g_simple_action_group_new();
+ GtkShortcut *shortcut;
+ GtkEventController *ec;
 
- Avg_Q_Main_Window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+ Avg_Q_Main_Window = gtk_window_new();
 #if 0
  gtk_widget_modify_font(GTK_WIDGET(Avg_Q_Main_Window),pango_font_description_from_string(DEFAULT_FONT));
 #endif
  gtk_window_set_default_size (GTK_WINDOW(Avg_Q_Main_Window), FRAME_SIZE_X, FRAME_SIZE_Y);
  g_signal_connect (G_OBJECT (Avg_Q_Main_Window), "destroy", G_CALLBACK (Quit_avg_q), NULL);
- g_signal_connect (G_OBJECT (Avg_Q_Main_Window), "delete_event", G_CALLBACK (Quit_avg_q), NULL);
 
- box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
- gtk_container_add (GTK_CONTAINER (Avg_Q_Main_Window), box1);
- gtk_widget_show (box1);
+ box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+ gtk_window_set_child(GTK_WINDOW(Avg_Q_Main_Window), box1);
 
- menubar = gtk_menu_bar_new ();
- gtk_box_pack_start (GTK_BOX (box1), menubar, FALSE, TRUE, 0);
- gtk_widget_show (menubar);
+ menubar = g_menu_new();
 
  /* File menu */
- filemenu=gtk_menu_new();
+ filemenu=g_menu_new();
 
- menuitem=gtk_menu_item_new_with_label("Change directory");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(change_dir), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
- accpath="<AVG_Q_UI>/File";
- gtk_accel_map_add_entry(accpath, GDK_KEY_D, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(menuitem, accpath, accel_group);
-
+ g_menu_append(filemenu,"Change directory","app.change_dir");
 #ifndef STANDALONE
- menuitem=gtk_menu_item_new_with_label("Open");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(open_file), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
- accpath="<AVG_Q_UI>/File/Open";
- gtk_accel_map_add_entry(accpath, GDK_KEY_O, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(menuitem, accpath, accel_group);
-
- menuitem=gtk_menu_item_new_with_label("Save");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(save_file), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
- accpath="<AVG_Q_UI>/File/Save";
- gtk_accel_map_add_entry(accpath, GDK_KEY_S, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(menuitem, accpath, accel_group);
-
- menuitem=gtk_menu_item_new_with_label("Save as");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(save_file_as), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
+ g_menu_append(filemenu,"Open","app.open");
+ g_menu_append(filemenu,"Save","app.save");
+ g_menu_append(filemenu,"Save as","app.save_as");
 #endif
-
- Run_Entry=gtk_menu_item_new_with_label("Run");
- g_signal_connect (G_OBJECT (Run_Entry), "activate", G_CALLBACK(Run_Script_Command), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Run_Entry);
- gtk_widget_show (Run_Entry);
- accpath="<AVG_Q_UI>/File/Run";
- gtk_accel_map_add_entry(accpath, GDK_KEY_R, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(Run_Entry, accpath, accel_group);
-
+ g_menu_append(filemenu,"Run","app.run");
 #ifndef STANDALONE
- Run_Subscript_Entry=gtk_menu_item_new_with_label("Run sub-script");
- g_signal_connect (G_OBJECT (Run_Subscript_Entry), "activate", G_CALLBACK(Run_CursorSubScript), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Run_Subscript_Entry);
- gtk_widget_show (Run_Subscript_Entry);
- accpath="<AVG_Q_UI>/File/Run sub-script";
- gtk_accel_map_add_entry(accpath, GDK_KEY_T, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(Run_Subscript_Entry, accpath, accel_group);
+ g_menu_append(filemenu,"Run sub-script","app.run_subscript");
 #endif
-
- Stop_Entry=gtk_menu_item_new_with_label("Stop script");
- g_signal_connect (G_OBJECT (Stop_Entry), "activate", G_CALLBACK(Stop_Script), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Stop_Entry);
- gtk_widget_set_sensitive(Stop_Entry, FALSE);
- gtk_widget_show (Stop_Entry);
- accpath="<AVG_Q_UI>/File/Stop script";
- gtk_accel_map_add_entry(accpath, GDK_KEY_K, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(Stop_Entry, accpath, accel_group);
-
- Kill_Entry=gtk_menu_item_new_with_label("Cancel script");
- g_signal_connect (G_OBJECT (Kill_Entry), "activate", G_CALLBACK (Cancel_Script), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Kill_Entry);
- gtk_widget_set_sensitive(Kill_Entry, FALSE);
- gtk_widget_show (Kill_Entry);
-
- Dump_Entry=gtk_menu_item_new_with_label("Dump");
- g_signal_connect (G_OBJECT (Dump_Entry), "activate", G_CALLBACK(dump_file_as), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), Dump_Entry);
- gtk_widget_show (Dump_Entry);
+ g_menu_append(filemenu,"Stop script","app.stop");
+ g_menu_append(filemenu,"Cancel script","app.cancel");
+ g_menu_append(filemenu,"Dump script","app.dump");
 
  /* Separator: */
- menuitem=gtk_menu_item_new();
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
+ filemenu2=g_menu_new();
 
- menuitem=gtk_menu_item_new_with_label("About");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(avg_q_about), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
-
- menuitem=gtk_menu_item_new_with_label("Quit");
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(Quit_avg_q), NULL);
- gtk_menu_shell_append (GTK_MENU_SHELL (filemenu), menuitem);
- gtk_widget_show (menuitem);
- accpath="<AVG_Q_UI>/File/Quit";
- gtk_accel_map_add_entry(accpath, GDK_KEY_Q, GDK_KEY_Control_R);
- gtk_widget_set_accel_path(menuitem, accpath, accel_group);
-
- g_signal_connect (G_OBJECT (filemenu), "key_press_event", G_CALLBACK (key_press_for_mainwindow), NULL);
-
- topitem= gtk_menu_item_new_with_label("Script");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), filemenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
+ g_menu_append(filemenu2,"About","app.about");
+ g_menu_append(filemenu2,"Quit","app.quit");
+ g_menu_append_section(filemenu,NULL,G_MENU_MODEL(filemenu2));
+ g_menu_append_submenu(menubar,"Script",G_MENU_MODEL(filemenu));
 
  /* Trace menu */
- tracemenu=gtk_menu_new();
+ tracemenu=g_menu_new();
 
- menuitem=gtk_radio_menu_item_new_with_label(NULL, "0 (only warnings)");
- tracegroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_tracelevel), (gpointer)0);
- gtk_menu_shell_append (GTK_MENU_SHELL (tracemenu), menuitem);
- gtk_widget_show (menuitem);
- TraceMenuItems[0]=menuitem;
+ g_menu_append(tracemenu,"0 (only warnings)","app.tracelevel_0");
+ g_menu_append(tracemenu,"1 (most messages)","app.tracelevel_1");
+ g_menu_append(tracemenu,"2 (more messages)","app.tracelevel_2");
+ g_menu_append(tracemenu,"3 (even more ...)","app.tracelevel_3");
+ g_menu_append_submenu(menubar,"Tracelvl",G_MENU_MODEL(tracemenu));
 
- menuitem=gtk_radio_menu_item_new_with_label(tracegroup, "1 (most messages)");
- tracegroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_tracelevel), (gpointer)1);
- gtk_menu_shell_append (GTK_MENU_SHELL (tracemenu), menuitem);
- gtk_widget_show (menuitem);
- TraceMenuItems[1]=menuitem;
-
- menuitem=gtk_radio_menu_item_new_with_label(tracegroup, "2 (more messages)");
- tracegroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_tracelevel), (gpointer)2);
- gtk_menu_shell_append (GTK_MENU_SHELL (tracemenu), menuitem);
- gtk_widget_show (menuitem);
- TraceMenuItems[2]=menuitem;
-
- menuitem=gtk_radio_menu_item_new_with_label(tracegroup, "3 (even more...)");
- tracegroup=gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(menuitem));
- g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(set_tracelevel), (gpointer)3);
- gtk_menu_shell_append (GTK_MENU_SHELL (tracemenu), menuitem);
- gtk_widget_show (menuitem);
- TraceMenuItems[3]=menuitem;
- g_signal_connect (G_OBJECT (tracemenu), "key_press_event", G_CALLBACK (key_press_for_mainwindow), NULL);
-
- topitem= gtk_menu_item_new_with_label("Tracelvl");
- gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), tracemenu);
- gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
- gtk_widget_show (topitem);
+ const GActionEntry entries[] = {
+  {"change_dir", change_dir },
+  {"run", Run_Script_Command },
+  {"stop", Stop_Script },
+  {"cancel", Cancel_Script },
+  {"dump", dump_file_as },
+  {"about", avg_q_about },
+  {"quit",  Quit_avg_q  },
+  {"tracelevel_0", set_tracelevel},
+  {"tracelevel_1", set_tracelevel},
+  {"tracelevel_2", set_tracelevel},
+  {"tracelevel_3", set_tracelevel},
+ };
+ g_action_map_add_action_entries(G_ACTION_MAP(action_group), entries, G_N_ELEMENTS(entries), NULL);
+ Run_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"run");
+ Stop_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"stop");
+ Kill_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"cancel");
+ Dump_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"dump");
+ g_simple_action_set_enabled(G_SIMPLE_ACTION(Kill_Action),FALSE);
 
 #ifndef STANDALONE
+ const GActionEntry entries2[] = {
+  {"open", open_file },
+  {"save", save_file },
+  {"save_as", save_file_as },
+  {"run_subscript", Run_CursorSubScript },
+ };
+ g_action_map_add_action_entries(G_ACTION_MAP(action_group), entries2, G_N_ELEMENTS(entries), NULL);
+ Run_Subscript_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"run_subscript");
+
  {
  void (* const * const method_selects)(transform_info_ptr)=get_method_list();
  void (* const *m_select)(transform_info_ptr);
@@ -2156,62 +1873,94 @@ create_main_window (void) {
  int method_type_id;
  for (method_type_id=0; method_type_id<NR_OF_METHOD_TYPES; method_type_id++) {
   enum method_types const method_type=method_types[method_type_id];
-  GtkWidget *submenu;
-
-  submenu=gtk_menu_new();
+  GMenu *submenu=g_menu_new();
+  GString *submenuname=g_string_new(methodtype_names[method_type]);
+  g_string_replace(submenuname,"_","__",0);
 
   for (m_select=method_selects; *m_select!=NULL; m_select++) {
    (**m_select)(&tinfostruc);
    if (tinfostruc.methods->method_type==method_type) {
-    menuitem=gtk_menu_item_new_with_label(tinfostruc.methods->method_name);
-    g_signal_connect (G_OBJECT (menuitem), "activate", G_CALLBACK(method_menu), (gpointer)(*m_select));
-    gtk_menu_shell_append (GTK_MENU_SHELL (submenu), menuitem);
-    gtk_widget_show (menuitem);
+    gchar *actionname=g_strjoin("","app.method_",tinfostruc.methods->method_name,NULL);
+    GString *methodname=g_string_new(tinfostruc.methods->method_name);
+    const GActionEntry tmpentries[] = {{actionname+4, method_menu}};
+    g_action_map_add_action_entries(G_ACTION_MAP(action_group), tmpentries, 1, NULL);
+    g_string_replace(methodname,"_","__",0);
+    g_menu_append(submenu,methodname->str,actionname);
+    g_free(actionname);
+    g_free(methodname);
    }
   }
 
-  g_signal_connect (G_OBJECT (submenu), "key_press_event", G_CALLBACK (key_press_for_mainwindow), NULL);
-
-  topitem= gtk_menu_item_new_with_label(methodtype_names[method_type]);
-  gtk_menu_item_set_submenu (GTK_MENU_ITEM (topitem), submenu);
-  gtk_menu_shell_append (GTK_MENU_SHELL (menubar), topitem);
-  gtk_widget_show (topitem);
-
+  g_menu_append_submenu(menubar,submenuname->str,G_MENU_MODEL(submenu));
  }
  }
 #endif
+ GtkWidget *popover=gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(menubar));
+ gtk_box_append(GTK_BOX(box1), popover);
 
- scrolledwindow = gtk_scrolled_window_new(NULL, NULL);
- gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwindow), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
- gtk_box_pack_start (GTK_BOX (box1), scrolledwindow, TRUE, TRUE, 0);
- gtk_widget_show (scrolledwindow);
+ scrolledwindow = gtk_scrolled_window_new();
+ gtk_widget_set_hexpand(GTK_WIDGET(scrolledwindow),TRUE);
+ gtk_widget_set_vexpand(GTK_WIDGET(scrolledwindow),TRUE);
+ gtk_box_append(GTK_BOX(box1), scrolledwindow);
 
- CurrentScriptPanel=scriptpanel=gtk_text_view_new();
- gtk_container_add (GTK_CONTAINER (scrolledwindow), scriptpanel);
-#ifndef STANDALONE
- g_signal_connect_swapped (G_OBJECT (CurrentScriptPanel), "button_press_event", G_CALLBACK (button_press_event), NULL);
- g_signal_connect_swapped (G_OBJECT (CurrentScriptPanel), "key_press_event", G_CALLBACK (key_press_in_mainwindow), NULL);
-#endif
- gtk_widget_show(scriptpanel);
- gtk_widget_grab_focus(scriptpanel);
+ Avg_Q_Scriptpanel=gtk_text_view_new();
+ gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolledwindow),GTK_WIDGET(Avg_Q_Scriptpanel));
 
  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
- gtk_widget_show (hbox);
- gtk_box_pack_start (GTK_BOX (box1), hbox, FALSE, TRUE, 0);
-
- Avg_q_StatusBar = gtk_statusbar_new();
- gtk_box_pack_start (GTK_BOX (hbox), Avg_q_StatusBar, TRUE, TRUE, 0);
- gtk_widget_show (Avg_q_StatusBar);
- Avg_q_StatusContext = gtk_statusbar_get_context_id(GTK_STATUSBAR(Avg_q_StatusBar), "avg_q status");
+ Avg_q_StatusBar = gtk_label_new(NULL);
+ gtk_widget_set_hexpand(GTK_WIDGET(Avg_q_StatusBar),TRUE);
+ gtk_box_append(GTK_BOX(hbox), Avg_q_StatusBar);
  set_status("Welcome to avg_q!");
 
- Avg_q_StatusRunBar = gtk_statusbar_new();
- gtk_box_pack_start (GTK_BOX (hbox), Avg_q_StatusRunBar, TRUE, TRUE, 0);
- gtk_widget_show (Avg_q_StatusRunBar);
- Avg_q_StatusRunContext = gtk_statusbar_get_context_id(GTK_STATUSBAR(Avg_q_StatusRunBar), "script status");
+ Avg_q_StatusRunBar = gtk_label_new(NULL);
+ gtk_box_append(GTK_BOX(hbox), Avg_q_StatusRunBar);
+ gtk_widget_set_hexpand(GTK_WIDGET(Avg_q_StatusRunBar),TRUE);
+ gtk_box_append(GTK_BOX(box1), hbox);
  set_runstatus("Script processor ready.");
 
- gtk_window_add_accel_group (GTK_WINDOW(Avg_Q_Main_Window), accel_group);
+ gtk_widget_insert_action_group(GTK_WIDGET(Avg_Q_Main_Window), "app", G_ACTION_GROUP(action_group));
+ //gtk_window_add_accel_group (GTK_WINDOW(Avg_Q_Main_Window), accel_group);
+
+ ec=gtk_shortcut_controller_new();
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("<Control>d"),
+  gtk_callback_action_new(&change_dir_cb,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("<Control>q"),
+  gtk_callback_action_new(&Quit_avg_q_cb,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("<Control>r"),
+  gtk_callback_action_new(&Run_Script_Command_cb,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("<Control>k"),
+  gtk_callback_action_new(&Stop_Script_cb,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+#ifndef STANDALONE
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("<Control>o"),
+  gtk_callback_action_new(&open_file_cb,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("<Control>s"),
+  gtk_callback_action_new(&save_file_cb,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+#endif
+ gtk_shortcut_controller_set_scope(GTK_SHORTCUT_CONTROLLER(ec),GTK_SHORTCUT_SCOPE_GLOBAL);
+ gtk_widget_add_controller(GTK_WIDGET(Avg_Q_Main_Window),ec);
+
+#ifndef STANDALONE
+ ec=gtk_shortcut_controller_new();
+ shortcut=gtk_shortcut_new(
+  gtk_shortcut_trigger_parse_string("Tab"),
+  gtk_callback_action_new(&setup_from_line_requested,NULL,NULL));
+ gtk_shortcut_controller_add_shortcut(GTK_SHORTCUT_CONTROLLER(ec),shortcut);
+ gtk_widget_add_controller(GTK_WIDGET(Avg_Q_Scriptpanel),ec);
+#endif
+
+ set_running(FALSE);
 }
 
 /* passing stream=NULL results in output to trace messages */
@@ -2277,7 +2026,7 @@ usage(FILE *stream) {
 #ifdef STANDALONE
 LOCAL gint
 Run_Script_Now(gpointer data) {
- Run_Script_Command(data);
+ Run_Script_Command(NULL,NULL,NULL);
  return FALSE;
 }
 #else
@@ -2333,13 +2082,7 @@ main (int argc, char *argv[]) {
 
  setenv("VDEVICE",vdevice,TRUE);
 
-#ifdef USE_THREADING
- /* init threads */
- g_thread_init(NULL);
- gdk_threads_init();
-#endif
-
- gtk_init (&argc, &argv);
+ gtk_init();
 
 #ifdef HAVE_LIBGLE
  gle_init (&argc, &argv);
@@ -2352,7 +2095,7 @@ main (int argc, char *argv[]) {
  tinfostruc.methods= &mymethod;
  tinfostruc.emethods= &external_method.emethod;
 
- create_main_window ();
+ create_main_window();
 
  /* Now we come to processing the options we were given: */
  mainargc=argc; mainargv=argv;
@@ -2407,7 +2150,10 @@ main (int argc, char *argv[]) {
     continue;
   }
  }
- gtk_widget_show (Avg_Q_Main_Window);
+ gtk_window_present(GTK_WINDOW(Avg_Q_Main_Window));
+ /* This allows things like mimimization to work */
+ GMainContext * const context=g_main_context_default();
+ while (g_main_context_pending(context)) g_main_context_iteration(context, FALSE);
 
  if (errflag>0) {
   usage(NULL);
@@ -2436,26 +2182,23 @@ main (int argc, char *argv[]) {
   "provided with a built-in script.\n\n"
   "The file name of the script was:\n%s\n", DUMP_SCRIPT_NAME);
  gtk_text_buffer_insert_at_cursor(CurrentScriptBuffer, errormessage, strlen(errormessage));
- gtk_text_view_set_editable(GTK_TEXT_VIEW(CurrentScriptPanel), FALSE);
+ gtk_text_view_set_editable(GTK_TEXT_VIEW(Avg_Q_Scriptpanel), FALSE);
 #else
- gtk_text_view_set_editable(GTK_TEXT_VIEW(CurrentScriptPanel), TRUE);
+ gtk_text_view_set_editable(GTK_TEXT_VIEW(Avg_Q_Scriptpanel), TRUE);
 #endif
 
  if (external_method.emethod.trace_level>0 && external_method.emethod.trace_level<4) {
   gtk_widget_activate(TraceMenuItems[external_method.emethod.trace_level]);
  }
 
-#ifndef STANDALONE
- /* Initialize the static line buffer: */
- growing_buf_init(&static_linebuf);
- growing_buf_allocate(&static_linebuf, 0);
-#endif
-
 #ifdef STANDALONE
  if (!interactive) {
   Avg_q_Run_Script_Now_Tag=g_idle_add(Run_Script_Now, NULL);
  }
 #else
+ /* Initialize the static line buffer: */
+ growing_buf_init(&static_linebuf);
+ growing_buf_allocate(&static_linebuf, 0);
  if (mainargc-optind>=END_OF_ARGS) {
   strncpy(filename, MAINARG(SCRIPTFILE), FilenameLength);
   set_main_window_title();
@@ -2464,13 +2207,13 @@ main (int argc, char *argv[]) {
   set_main_window_title();
  }
  if (iconified & !interactive) {
-  gtk_window_iconify(GTK_WINDOW(Avg_Q_Main_Window));
+  gtk_window_minimize(GTK_WINDOW(Avg_Q_Main_Window));
  }
 #endif
 
- gdk_threads_enter();
- gtk_main ();
- gdk_threads_leave();
+ mainloop=g_main_loop_new(NULL, FALSE);
+ g_main_loop_run(mainloop);
+ g_main_loop_unref(mainloop);
 
  free_queue_storage(&iter_queue);
  free_queue_storage(&post_queue);

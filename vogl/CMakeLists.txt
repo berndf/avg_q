@@ -1,5 +1,5 @@
-PROJECT(vogl)
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.8...3.31)
+PROJECT(vogl LANGUAGES C)
 
 SET(voglsources
 arcs.c attr.c buffer.c clip.c curves.c draw.c drivers.c

@@ -46,21 +46,6 @@ static float	graymap[8] = {
 static FILE	*fp;
 
 /*
- * noop
- *
- *	do nothing but return -1
- */
-static int
-noop(void)
-{
-	return(-1);
-}
-static int
-noop2(int *par1, int *par2)
-{
-	return(-1);
-}
-/*
  * PS_color
  *
  *	change the grey value of the ink
@@ -521,28 +506,28 @@ static DevEntry psdev = {
 	"postscript",
 	"large",
 	"small",
-	noop,
+	NULL,
 	PS_char,
-	noop,
+	NULL,
 	PS_clear,
 	PS_color,
 	PS_draw,
 	PS_exit,
 	PS_fill,
 	PS_font,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	PS_init,
-	noop2,
+	NULL,
 	PS_mapcolor,
 #ifndef VOGLE
 	PS_setls,
 #endif
 	PS_setlw,
 	PS_string,
-	noop,
-	noop,
-	noop
+	NULL,
+	NULL,
+	NULL
 };
 
 /*

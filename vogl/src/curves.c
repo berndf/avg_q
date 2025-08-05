@@ -220,7 +220,7 @@ drcurve(int n, float (*r)[4])
 	 */
 	if (sync) {
 		vdevice.sync = 1;
-		(*vdevice.dev.Vsync)();
+		if (vdevice.dev.Vsync) (*vdevice.dev.Vsync)();
 	}
 }
 

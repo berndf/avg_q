@@ -88,8 +88,8 @@ popattributes(void)
 		asfree = nattr;
 	}
 
-	(*vdevice.dev.Vsetls)(vdevice.attr->a.ls);
-	(*vdevice.dev.Vsetlw)(vdevice.attr->a.lw);
+	if (vdevice.dev.Vsetls) (*vdevice.dev.Vsetls)(vdevice.attr->a.ls);
+	if (vdevice.dev.Vsetlw) (*vdevice.dev.Vsetlw)(vdevice.attr->a.lw);
 
 	color(vdevice.attr->a.color);
 }

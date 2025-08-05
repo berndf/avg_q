@@ -56,16 +56,6 @@ static const char * const dxy[] = {
 static const char *const *plotcmds;
 
 /*
- * noop
- *
- *      do nothing but return-1
- */
-static int
-noop()
-{
-	return(-1);
-}
-/*
  * HPGL_common_init()
  *
  * Performs the common parts of HPGL initialization.
@@ -347,27 +337,27 @@ static DevEntry hpgldev = {
 	"hpgl",
 	"large",
 	"small",
-	noop,
+	NULL,
 	PLOT_char,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	PLOT_color,
 	PLOT_draw,
 	PLOT_exit,
 	PLOT_fill,
 	HPGL_font,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	HPGL_A2_init,
-	noop,
-	noop,
+	NULL,
+	NULL,
 #ifndef VOGLE
-	noop,
-	noop,
+	NULL,
+	NULL,
 #endif
 	PLOT_string,
-	noop,
-	noop
+	NULL,
+	NULL
 };
 
 /*
@@ -416,28 +406,28 @@ static DevEntry dxydev = {
 	"dxy",
 	"large",
 	"small",
-	noop,
+	NULL,
 	PLOT_char,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	PLOT_color,
 	PLOT_draw,
 	PLOT_exit,
 	PLOT_fill,
 	DXY_font,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	DXY_init,
-	noop,
-	noop,
+	NULL,
+	NULL,
 #ifndef VOGLE
-	noop,
-	noop,
+	NULL,
+	NULL,
 #endif
 	PLOT_string,
-	noop,
-	noop,
-	noop
+	NULL,
+	NULL,
+	NULL
 };
 
 /*

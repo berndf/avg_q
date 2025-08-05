@@ -58,7 +58,7 @@ clip(float *p0, float *p1)
 			vdevice.cpVy = WtoVy(p0);
 			vx = WtoVx(p1);
 			vy = WtoVy(p1);
-			(*vdevice.dev.Vdraw)(vx, vy);
+			if (vdevice.dev.Vdraw) (*vdevice.dev.Vdraw)(vx, vy);
 			vdevice.cpVx = vx;
 			vdevice.cpVy = vy;
 		}
@@ -136,7 +136,7 @@ quickclip(float *p0, float *p1)
 
 	vx = WtoVx(p1);
 	vy = WtoVy(p1);
-	(*vdevice.dev.Vdraw)(vx, vy);
+	if (vdevice.dev.Vdraw) (*vdevice.dev.Vdraw)(vx, vy);
 	vdevice.cpVx = vx;
 	vdevice.cpVy = vy;
 }

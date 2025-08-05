@@ -268,7 +268,7 @@ callobj(long int ob)
 				t += 5;
 				break;
 			case CLEAR:
-				(*vdevice.dev.Vclear)();
+				if (vdevice.dev.Vclear) (*vdevice.dev.Vclear)();
 				t++;
 				break;
 			case COLOR:

@@ -274,16 +274,6 @@ vo_xt_set_GC(GC gc)
 }
 
 /*
- * noop
- *
- *      do nothing but return -1
- */
-static int
-noop()
-{
-	return(-1);
-}
-/*
  * X11_init
  *
  *	initialises X11 display.
@@ -1270,7 +1260,7 @@ static DevEntry X11dev = {
 	X11_setlw,
 	X11_string,
 	X11_swapbuf,
-	noop,
+	NULL,
 	X11_sync
 };
 

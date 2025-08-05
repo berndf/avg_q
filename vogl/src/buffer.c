@@ -26,7 +26,7 @@ backbuffer(int yes)
 		return;
 
 	if (yes) {
-		if ((*vdevice.dev.Vbackb)() >= 0) {
+		if (vdevice.dev.Vbackb && (*vdevice.dev.Vbackb)() >= 0) {
 		 vdevice.inbackbuffer = 1;
 		 vdevice.sync = 0;
 		}
@@ -60,7 +60,7 @@ frontbuffer(int yes)
 		return;
 
 	if (yes) {
-		(*vdevice.dev.Vfrontb)();
+		if (vdevice.dev.Vfrontb) (*vdevice.dev.Vfrontb)();
 		vdevice.inbackbuffer = 0;
 		vdevice.sync = sync;
 	} else
@@ -95,7 +95,7 @@ swapbuffers(void)
 	if ((*vdevice.dev.Vswapb)() < 0)
 		verror("swapbuffers device doesn't support double buffering\n");
 #endif
-	(*vdevice.dev.Vswapb)();
+	if (vdevice.dev.Vswapb) (*vdevice.dev.Vswapb)();
 }
 
 /*
@@ -110,7 +110,7 @@ doublebuffer(void)
 	if (!vdevice.initialised)
 		verror("doublebuffer: vogl not initialised.");
 
-	if ((*vdevice.dev.Vbackb)() >= 0) {
+	if (vdevice.dev.Vbackb && (*vdevice.dev.Vbackb)() >= 0) {
 	 vdevice.inbackbuffer = 1;
 	 sync = vdevice.sync;
 	 vdevice.sync = 0;
@@ -128,7 +128,7 @@ singlebuffer(void)
 	if (vdevice.attr->a.mode == SINGLE)
 		return;
 
-	(*vdevice.dev.Vfrontb)();
+	if (vdevice.dev.Vfrontb) (*vdevice.dev.Vfrontb)();
 
 	vdevice.inbackbuffer = 0;
 

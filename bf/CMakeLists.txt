@@ -1,7 +1,7 @@
-# Copyright (C) 2006-2008,2010,2013,2016,2018,2020,2023,2024 Bernd Feige
+# Copyright (C) 2006-2008,2010,2013,2016,2018,2020,2023-2025 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
-PROJECT(bflib)
+PROJECT(bflib LANGUAGES C CXX)
 
 SET(ALL_SOURCES
  complex.c fourier.c realfft.c real2fft.c trafo_std.c

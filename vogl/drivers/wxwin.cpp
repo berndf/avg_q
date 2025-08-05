@@ -170,11 +170,6 @@ wxwin_sync(void) {
  return (1);
 };
 
-static int
-noop(void) {
- return (-1);
-}
-
 /*
  * wxwin_font : load either of the fonts
  */
@@ -352,7 +347,7 @@ static DevEntry wxwindev = {
  wxwin_fill,  /* fill polygon */
  wxwin_font,  /* set hardware font */
  wxwin_frontbuffer, /* front buffer */
- noop,   /* wait for and get key */
+ NULL,   /* wait for and get key */
  wxwin_init,  /* begin graphics */
  wxwin_locator,  /* get mouse position */
  wxwin_mapcolor,  /* map colour (set indices) */

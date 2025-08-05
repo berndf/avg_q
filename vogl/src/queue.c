@@ -236,7 +236,8 @@ qread(short int *ret)
 
 	if (!vdevice.mouseevents && vdevice.kbdevents) {
 		while (!(vdevice.enabled[eventind] & eventmask)) {
-			if ((val = c1 = (*vdevice.dev.Vgetkey)()) < 0)
+		 val = c1 = vdevice.dev.Vgetkey ? (*vdevice.dev.Vgetkey)() : -1;
+			if (val < 0)
 				return(val);
 
 			eventind = c1 / 8;
@@ -267,7 +268,7 @@ qread(short int *ret)
 			}
 		}
 	} else if (vdevice.mouseevents && vdevice.kbdevents) {
-		while (!(vdevice.enabled[eventind] & eventmask)) {
+		while (vdevice.dev.Vcheckkey && !(vdevice.enabled[eventind] & eventmask)) {
 			while (c1 == 0 && c2 == 0) {
 				val = c1 = (*vdevice.dev.Vcheckkey)();
 
@@ -324,7 +325,7 @@ qread(short int *ret)
 void
 qreset(void)
 {
-	while (((*vdevice.dev.Vcheckkey)()))
+	while (vdevice.dev.Vcheckkey && ((*vdevice.dev.Vcheckkey)()))
 		;
 
 	vdevice.alreadyread = 0;
@@ -352,9 +353,9 @@ qtest(void)
 	eventind = 0;
 	eventmask = 0;
 
-	val = c1 = (*vdevice.dev.Vcheckkey)();
+	val = c1 = vdevice.dev.Vcheckkey ? (*vdevice.dev.Vcheckkey)() : -1;
 
-	c2 = (*vdevice.dev.Vlocator)(&a, &b);
+	c2 = vdevice.dev.Vlocator ? (*vdevice.dev.Vlocator)(&a, &b) : -1;
 
 	if (c1 != 0) {
 		eventind = c1 / 8;

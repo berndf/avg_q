@@ -1,54 +1,26 @@
-# Copyright (C) 2006-2015,2018,2024 Bernd Feige
+# Copyright (C) 2006-2015,2018,2024,2025 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
-PROJECT(avg_q_ui)
+PROJECT(avg_q_ui LANGUAGES C)
 
 IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
- IF(AVG_Q_GTK3)
-  IF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
-   SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk3/usr/x86_64-w64-mingw32/sys-root/mingw/)
-  ELSE(CMAKE_SYSTEM_VARIANT STREQUAL win64)
-   SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk3/usr/i686-w64-mingw32/sys-root/mingw/)
-  ENDIF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
-  SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-3.0
-   -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED
-   -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0
-   -I${GTKPATH}/include/glib-2.0 -I${GTKPATH}/include/pango-1.0
-   -I${GTKPATH}/include/cairo)
-  SET(GTK_LIBRARIES -lgtk-3.dll -lgdk-3.dll -latk-1.0.dll -lgdk_pixbuf-2.0.dll
-   -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll
-   -lglib-2.0.dll)
- ELSE(AVG_Q_GTK3)
-  SET(GTKPATH ${CMAKE_SOURCE_DIR}/winlibs/wingtk2)
-  SET(GTK_CFLAGS -I${GTKPATH}/include/gtk-2.0 -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/atk-1.0 -I${GTKPATH}/include/cairo -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/glib-2.0)
-  SET(GTK_LIBRARIES -lgtk-win32-2.0.dll -lgdk-win32-2.0.dll -latk-1.0.dll
-   -lgdk_pixbuf-2.0.dll -lm -lpango-1.0.dll -lcairo.dll -lgobject-2.0.dll -lgmodule-2.0.dll -lglib-2.0.dll)
- ENDIF(AVG_Q_GTK3)
- IF(${WIN32_THREADED})
-  SET(GTHREAD_CFLAGS -I${GTKPATH}/include/glib-2.0)
-  SET(USE_THREADING -DUSE_THREADING)
-  SET(GTHREAD_LIBRARIES -lgthread-2.0.dll -lglib-2.0.dll)
- ELSE(${WIN32_THREADED})
-  SET(GTHREAD_CFLAGS)
-  SET(GTHREAD_LIBRARIES)
-  SET(USE_THREADING)
- ENDIF(${WIN32_THREADED})
+ IF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
+  SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk4/mingw64)
+ ELSE(CMAKE_SYSTEM_VARIANT STREQUAL win64)
+  SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk4/mingw32)
+ ENDIF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
+ SET(GTK_CFLAGS -I${GTKPATH}/include/gio-win32-2.0 -I${GTKPATH}/include/gtk-4.0
+  -I${GTKPATH}/include/pixbuf-2.0
+  -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/glib-2.0
+  -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/cairo
+  -I${GTKPATH}/include/harfbuzz -I${GTKPATH}/include/graphene-1.0 )
+ SET(GTK_LIBRARIES -lgtk-4 -lpangocairo-1.0 -lpango-1.0 -lgdk_pixbuf-2.0
+  -lcairo-gobject -lcairo -lharfbuzz -lvulkan-1 -lgraphene-1.0 -lgio-2.0
+  -lgobject-2.0 -lglib-2.0 -lintl)
  LINK_DIRECTORIES(${GTKPATH}/lib)
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
- INCLUDE(FindPkgConfig)
- IF(${UNIX_THREADED})
-  pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
-  SET(USE_THREADING -DUSE_THREADING)
- ELSE(${UNIX_THREADED})
-  SET(GTHREAD_CFLAGS)
-  SET(GTHREAD_LIBRARIES)
-  SET(USE_THREADING)
- ENDIF(${UNIX_THREADED})
- IF(AVG_Q_GTK3)
-  pkg_check_modules(GTK REQUIRED gtk+-3.0)
- ELSE(AVG_Q_GTK3)
-  pkg_check_modules(GTK REQUIRED gtk+-2.0)
- ENDIF(AVG_Q_GTK3)
+ find_package(PkgConfig REQUIRED)
+ pkg_check_modules(GTK REQUIRED gtk4)
 
  #message(STATUS "inc: -${GTK_INCLUDE_DIRS}")
  #message(STATUS "link libraries: -${GTK_LIBRARIES}")
@@ -57,23 +29,20 @@ ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
 ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 ADD_DEFINITIONS(${GTK_CFLAGS} -DGTK_DISABLE_SINGLE_INCLUDES -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED -DGSEAL_ENABLE)
-ADD_DEFINITIONS(${GTHREAD_CFLAGS} ${USE_THREADING})
 
 if (WITH_POSPLOT)
 ADD_LIBRARY(vogl_vgui STATIC vogl_vgui_driver.c)
 endif (WITH_POSPLOT)
 
 ADD_EXECUTABLE(avg_q_ui avg_q_ui.c)
-TARGET_LINK_LIBRARIES(avg_q_ui ${BF_LIBS_VGUI} ${GTK_LIBRARIES}
- ${GTHREAD_LIBRARIES})
+TARGET_LINK_LIBRARIES(avg_q_ui ${BF_LIBS_VGUI} ${GTK_LIBRARIES})
 
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
  ADD_EXECUTABLE(avg_q_ui1 avg_q_ui.c avg_q_dump.h)
  SET_TARGET_PROPERTIES(avg_q_ui1 PROPERTIES 
   COMPILE_FLAGS "-DSTANDALONE"
  )
-TARGET_LINK_LIBRARIES(avg_q_ui1 ${BF_LIBS_VGUI} ${GTK_LIBRARIES}
-  ${GTHREAD_LIBRARIES})
+TARGET_LINK_LIBRARIES(avg_q_ui1 ${BF_LIBS_VGUI} ${GTK_LIBRARIES})
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
 IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  ADD_CUSTOM_COMMAND(

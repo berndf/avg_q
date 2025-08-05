@@ -563,12 +563,12 @@ static DevEntry DECX11dev = {
 	DECX11_init,
 	DECX11_locator,
 	DECX11_mapcolor,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	DECX11_string,
 	DECX11_swapbuf,
-	noop,
-	noop
+	NULL,
+	NULL
 };
 
 /*

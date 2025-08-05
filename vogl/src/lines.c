@@ -73,7 +73,7 @@ setlinestyle(short int n)
 	for (l = ls_table[n % LT_SIZE]; l != (LT *)NULL; l = l->next) {
 		if (l->n == n) {
 			vdevice.attr->a.ls = l->ls;
-			(*vdevice.dev.Vsetls)(l->ls);
+			if (vdevice.dev.Vsetls) (*vdevice.dev.Vsetls)(l->ls);
 			return;
 		}
 	}
@@ -103,7 +103,7 @@ linewidth(short int w)
         }
 
 	vdevice.attr->a.lw = w;
-	(*vdevice.dev.Vsetlw)((int)vdevice.attr->a.lw);
+	if (vdevice.dev.Vsetlw) (*vdevice.dev.Vsetlw)((int)vdevice.attr->a.lw);
 }
 
 /*

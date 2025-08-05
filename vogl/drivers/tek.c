@@ -33,17 +33,6 @@ static int	tlstx, tlsty;
 static int	click;			/* to emulate a mouse click */
 
 /*
- * noop
- *
- *      do nothing but return -1
- */
-static int
-noop()
-{
-	return(-1);
-}
-
-/*
  * TEK_init
  *
  *	set up the graphics mode.
@@ -426,26 +415,26 @@ static DevEntry	tekdev = {
 	"tek",
 	"large",
 	"small",
-	noop,
+	NULL,
 	TEK_char,
-	noop,
+	NULL,
 	TEK_clear,
-	noop,
+	NULL,
 	TEK_draw,
 	TEK_exit,
 	TEK_fill,
 	TEK_font,
-	noop,
+	NULL,
 	TEK_getkey,
 	TEK_init,
 	TEK_locator,
-	noop,
-	noop,
-	noop,
+	NULL,
+	NULL,
+	NULL,
 	TEK_string,
-	noop,
-	noop,
-	noop
+	NULL,
+	NULL,
+	NULL
 };
 
 /*

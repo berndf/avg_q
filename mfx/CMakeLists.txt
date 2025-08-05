@@ -1,7 +1,7 @@
-# Copyright (C) 2006-2008,2011,2012 Bernd Feige
+# Copyright (C) 2006-2008,2011,2012,2025 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
-PROJECT(mfxlib)
+PROJECT(mfxlib LANGUAGES C)
 
 IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  SET(BUILD_SHARED_LIBS OFF)

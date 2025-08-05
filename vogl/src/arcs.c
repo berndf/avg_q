@@ -96,7 +96,7 @@ arc(Coord x, Coord y, Coord radius, Angle sang, Angle eang)
 
 	if (sync) {
 		vdevice.sync = 1;
-		(*vdevice.dev.Vsync)();
+		if (vdevice.dev.Vsync) (*vdevice.dev.Vsync)();
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008,2010,2013,2014,2016,2024 Bernd Feige
+ * Copyright (C) 2008,2010,2013,2014,2016,2024,2025 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -19,8 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "transform.h"
-#include "bf.h"
-#include "sox.h"
+#include "bf_sound.h"
 /*}}}  */
 
 /*{{{  Argument defs*/
@@ -140,23 +139,6 @@ read_sound_read_trigger(transform_info_ptr tinfo, long *position, char **descrip
  return code;
 }
 /*}}}  */
-
-#define IMPORT extern
-
-/* These global variables are defined in write_sound.c together with
- * the other SOX bindings: */
-IMPORT Bool sox_init_done;
-IMPORT char const *myname;
-IMPORT external_methods_ptr sox_emethods;
-IMPORT void sox_list_formats(external_methods_ptr emethods);
-
-IMPORT void
-avg_q_sox_output_message_handler(
-    unsigned level,                       /* 1 = FAIL, 2 = WARN, 3 = INFO, 4 = DEBUG, 5 = DEBUG_MORE, 6 = DEBUG_MOST. */
-    LSX_PARAM_IN_Z char const * filename, /* Source code __FILENAME__ from which message originates. */
-    LSX_PARAM_IN_PRINTF char const * fmt, /* Message format string. */
-    LSX_PARAM_IN va_list ap               /* Message format parameters. */
-);
 
 /*{{{  read_sound_init(transform_info_ptr tinfo) {*/
 METHODDEF void

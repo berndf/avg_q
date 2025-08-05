@@ -41,16 +41,6 @@ static int 			current_color;
 static short 			font_id;
 
 /*
- * Do nothing
- *
- */
-int
-noop()
-{
-	return(-1);
-}
-
-/*
  * APOLLO_init
  *
  *	initialises window to occupy current window
@@ -574,12 +564,12 @@ static DevEntry apdev = {
 	APOLLO_init,
 	APOLLO_locator,
 	APOLLO_mapcolor,
-	noop,
-	noop,
+	NULL,
+	NULL,
 	APOLLO_string,
 	APOLLO_swapb,
-	noop,
-	noop
+	NULL,
+	NULL
 };
 
 /*

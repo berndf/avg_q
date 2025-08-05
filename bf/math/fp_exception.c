@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1994,1997,1999 Bernd Feige
+ * Copyright (C) 1994,1997,1999,2025 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #include "bfmath.h"

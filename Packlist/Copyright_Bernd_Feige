@@ -214,6 +214,7 @@ bf/set_values.c
 bf/setup_queue.c
 bf/show_memuse.c
 bf/sliding_average.c
+bf/sound/bf_sound.h
 bf/sound/read_sound.c
 bf/sound/write_sound.c
 bf/stat/stat.h

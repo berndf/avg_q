@@ -326,12 +326,6 @@ grx_sync()
 {
 };
 
-static int
-noop()
-{
-	return (-1);
-}
-
 /*
  * grx_font : load either of the fonts
  */
@@ -644,7 +638,7 @@ static DevEntry grxdev = {
 #endif
 	grx_lwidth,		/* set line width */
 	grx_string,		/* draw string of chars */
-	noop,
+	NULL,
 	grx_swapbuffers,	/* swap buffers */
 	grx_sync		/* sync display */
 };
