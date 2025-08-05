@@ -3,30 +3,8 @@
 
 PROJECT(avg_q_ui LANGUAGES C)
 
-IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
- IF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
-  SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk4/mingw64)
- ELSE(CMAKE_SYSTEM_VARIANT STREQUAL win64)
-  SET(GTKPATH /home/charly/tmp/Infos/Computer/wingtk4/mingw32)
- ENDIF(CMAKE_SYSTEM_VARIANT STREQUAL win64)
- SET(GTK_CFLAGS -I${GTKPATH}/include/gio-win32-2.0 -I${GTKPATH}/include/gtk-4.0
-  -I${GTKPATH}/include/pixbuf-2.0
-  -I${GTKPATH}/include/gdk-pixbuf-2.0 -I${GTKPATH}/include/glib-2.0
-  -I${GTKPATH}/include/pango-1.0 -I${GTKPATH}/include/cairo
-  -I${GTKPATH}/include/harfbuzz -I${GTKPATH}/include/graphene-1.0 )
- SET(GTK_LIBRARIES -lgtk-4 -lpangocairo-1.0 -lpango-1.0 -lgdk_pixbuf-2.0
-  -lcairo-gobject -lcairo -lharfbuzz -lvulkan-1 -lgraphene-1.0 -lgio-2.0
-  -lgobject-2.0 -lglib-2.0 -lintl)
- LINK_DIRECTORIES(${GTKPATH}/lib)
-ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
- find_package(PkgConfig REQUIRED)
- pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk-4)
-
- #message(STATUS "inc: -${GTK_INCLUDE_DIRS}")
- #message(STATUS "link libraries: -${GTK_LIBRARIES}")
- #message(STATUS "cflags: -${GTK_CFLAGS}")
- #message(STATUS "link dir: -${GTK_LINK_DIR}")
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk4)
 
 ADD_DEFINITIONS(${GTK_CFLAGS} -DGTK_DISABLE_SINGLE_INCLUDES -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED -DGSEAL_ENABLE)
 
@@ -35,15 +13,16 @@ ADD_LIBRARY(vogl_vgui STATIC vogl_vgui_driver.c)
 endif (WITH_POSPLOT)
 
 ADD_EXECUTABLE(avg_q_ui avg_q_ui.c)
-TARGET_LINK_LIBRARIES(avg_q_ui ${BF_LIBS_VGUI} ${GTK_LIBRARIES})
+TARGET_LINK_LIBRARIES(avg_q_ui PRIVATE ${BF_LIBS_VGUI} PkgConfig::GTK)
 
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
  ADD_EXECUTABLE(avg_q_ui1 avg_q_ui.c avg_q_dump.h)
  SET_TARGET_PROPERTIES(avg_q_ui1 PROPERTIES 
   COMPILE_FLAGS "-DSTANDALONE"
  )
-TARGET_LINK_LIBRARIES(avg_q_ui1 ${BF_LIBS_VGUI} ${GTK_LIBRARIES})
+ TARGET_LINK_LIBRARIES(avg_q_ui1 PRIVATE ${BF_LIBS_VGUI} PkgConfig::GTK)
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
+
 IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
  ADD_CUSTOM_COMMAND(
   TARGET avg_q_ui
