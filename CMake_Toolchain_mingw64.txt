@@ -6,6 +6,8 @@ SET(CMAKE_SYSTEM_VARIANT win64)
 SET(CMAKE_C_COMPILER   /usr/bin/x86_64-w64-mingw32-gcc)
 SET(CMAKE_CXX_COMPILER /usr/bin/x86_64-w64-mingw32-g++)
 SET(CMAKE_RC_COMPILER  /usr/bin/x86_64-w64-mingw32-windres)
+set(ENV{PKG_CONFIG_LIBDIR} /usr/x86_64-w64-mingw32/usr/lib/pkgconfig)
+set(ENV{PKG_CONFIG_SYSROOT_DIR} /usr/x86_64-w64-mingw32)
 
 # where is the target environment 
 SET(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32)

@@ -279,7 +279,7 @@ Notice_window_close(GtkWidget *window) {
 }
 LOCAL void
 Notice_window_close_button(GtkDialog *dialog, gint response_id, GtkWidget *window) {
- Notice_window_close(window);
+ Notice_window_close(Notice_window);
 }
 LOCAL void
 Notice(gchar *message) {
@@ -410,10 +410,9 @@ static_execution_callback(const transform_info_ptr tinfo, const execution_callba
   ERREXIT(tinfostruc.emethods, "Stopped by user.\n");
  }
  if (where==E_CALLBACK_BEFORE_EXEC) {
-  GMainContext * const context=g_main_context_default();
   snprintf(errormessage, ERRORMESSAGE_SIZE, "Executing script %d line %2d: %s", tinfo->methods->script_number, tinfo->methods->line_of_script, tinfo->methods->method_name);
   set_runstatus(errormessage);
-  while (g_main_context_pending(context)) g_main_context_iteration(context, FALSE);
+  while (g_main_context_pending(NULL)) g_main_context_iteration(NULL, FALSE);
  }
 }
 /*}}}*/
@@ -431,7 +430,7 @@ change_dir_finished(GObject *source, GAsyncResult *result, void *data) {
    snprintf(errormessage, ERRORMESSAGE_SIZE, "change_dir: %s: %s", gfilename, strerror(errno));
   }
   set_status(errormessage);
-  //g_free (gfile); /* Leads to segfault */
+  g_object_unref(gfile);
  }
 }
 LOCAL void
@@ -440,7 +439,7 @@ change_dir(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  GFile * const gfile=g_file_new_for_path(path);
  GtkFileDialog *filedialog = gtk_file_dialog_new();
  gtk_file_dialog_set_initial_folder(filedialog, gfile);
- //g_free (gfile); /* Leads to segfault */
+ g_object_unref(gfile);
  g_free (path);
  gtk_file_dialog_select_folder(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&change_dir_finished,NULL);
 }
@@ -862,7 +861,7 @@ method_fileselect_finished(GObject *source, GAsyncResult *result, void *gdata) {
    gtk_check_button_set_active(GTK_CHECK_BUTTON(data->in_dialog_widgets[-1]), TRUE);
   }
   g_free (gfilename);
-  //g_free (gfile); /* Leads to segfault */
+  g_object_unref(gfile);
  }
 }
 LOCAL void
@@ -884,7 +883,7 @@ method_fileselect_all(method_file_sel_data *data) {
    char * const path=g_get_current_dir();
    gfile=g_file_new_for_path(path);
    gtk_file_dialog_set_initial_folder(filedialog, gfile);
-   //g_free (gfile); /* Leads to segfault */
+   g_object_unref(gfile);
    g_free (path);
   } else {
    if (g_path_is_absolute(text)) {
@@ -895,7 +894,7 @@ method_fileselect_all(method_file_sel_data *data) {
     g_free(path);
    }
    gtk_file_dialog_set_initial_file(filedialog, gfile);
-   g_free(gfile);
+   g_object_unref(gfile);
   }
  }
  gtk_file_dialog_set_title(filedialog, "Select a file argument");
@@ -1415,7 +1414,7 @@ open_file_finished(GObject *source, GAsyncResult *result, void *gdata) {
   strncpy(filename, gfilename, FilenameLength);
   Avg_q_Load_Script_Now_Tag=g_idle_add(Load_Script_Now, filename);
   g_free (gfilename);
-  //g_free (gfile); /* Leads to segfault */
+  g_object_unref(gfile);
  }
 }
 LOCAL void
@@ -1439,8 +1438,8 @@ open_file(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
   g_free(path);
  }
  gtk_file_dialog_set_initial_file(filedialog, gfile);
- gtk_file_dialog_open(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&open_file_finished,data);
- g_free(gfile);
+ gtk_file_dialog_open(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&open_file_finished,NULL);
+ g_object_unref(gfile);
 }
 LOCAL int
 open_file_cb(GtkWidget *menuitem, GVariant *gv, gpointer data) {
@@ -1492,7 +1491,7 @@ save_file_as_finished(GObject *source, GAsyncResult *result, void *gdata) {
   g_free (gfilename);
   set_main_window_title();
   save_file(NULL,NULL,NULL);
-  //g_free (gfile); /* Leads to segfault */
+  g_object_unref(gfile);
  }
 }
 LOCAL void
@@ -1516,8 +1515,8 @@ save_file_as(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
   g_free(path);
  }
  gtk_file_dialog_set_initial_file(filedialog, gfile);
- gtk_file_dialog_save(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&save_file_as_finished,data);
- g_free(gfile);
+ gtk_file_dialog_save(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&save_file_as_finished,NULL);
+ g_object_unref(gfile);
 }
 /*}}}*/
 /*}}}  */
@@ -1679,7 +1678,7 @@ dump_file_as_finished(GObject *source, GAsyncResult *result, void *gdata) {
    Run_Script();
   }
   g_free (gfilename);
-  //g_free (gfile); /* Leads to segfault */
+  g_object_unref(gfile);
  }
 }
 LOCAL void
@@ -1725,12 +1724,12 @@ dump_file_as(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  char * const basename=g_file_get_basename(gfile2);
  gfile=g_file_new_build_filename(path,basename,NULL);;
  g_free(path);
- g_free(gfile2);
+ g_object_unref(gfile2);
 #endif
  gtk_file_dialog_set_initial_file(filedialog, gfile);
- g_free(gfile);
+ g_object_unref(gfile);
  gtk_file_dialog_set_title(filedialog, "Select an include file name to dump to");
- gtk_file_dialog_save(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&dump_file_as_finished,data);
+ gtk_file_dialog_save(filedialog,GTK_WINDOW(Avg_Q_Main_Window),NULL,&dump_file_as_finished,NULL);
 }
 LOCAL void
 avg_q_about(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
@@ -1850,11 +1849,6 @@ create_main_window (void) {
   {"tracelevel_3", set_tracelevel},
  };
  g_action_map_add_action_entries(G_ACTION_MAP(action_group), entries, G_N_ELEMENTS(entries), NULL);
- Run_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"run");
- Stop_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"stop");
- Kill_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"cancel");
- Dump_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"dump");
- g_simple_action_set_enabled(G_SIMPLE_ACTION(Kill_Action),FALSE);
 
 #ifndef STANDALONE
  const GActionEntry entries2[] = {
@@ -1895,6 +1889,13 @@ create_main_window (void) {
  }
  }
 #endif
+
+ /* Looking up the remaining actions must be done here, after the action group is complete */
+ Run_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"run");
+ Stop_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"stop");
+ Kill_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"cancel");
+ Dump_Action=g_action_map_lookup_action(G_ACTION_MAP(action_group),"dump");
+
  GtkWidget *popover=gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(menubar));
  gtk_box_append(GTK_BOX(box1), popover);
 
@@ -2152,8 +2153,7 @@ main (int argc, char *argv[]) {
  }
  gtk_window_present(GTK_WINDOW(Avg_Q_Main_Window));
  /* This allows things like mimimization to work */
- GMainContext * const context=g_main_context_default();
- while (g_main_context_pending(context)) g_main_context_iteration(context, FALSE);
+ while (g_main_context_pending(NULL)) g_main_context_iteration(NULL, FALSE);
 
  if (errflag>0) {
   usage(NULL);

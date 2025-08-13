@@ -28,10 +28,10 @@ SET(driverflags
 )
 ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
 SET(driversources
- ps.c hpdxy.c tek.c X11.c
+ ps.c hpdxy.c X11.c
 )
 SET(driverflags
- "-DPOSTSCRIPT -DHPGL -DTEK -DX11 -DVGUI"
+ "-DPOSTSCRIPT -DHPGL -DX11 -DVGUI"
 )
 ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
 SET(ALL_SOURCES

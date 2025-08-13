@@ -139,7 +139,7 @@ Notice_window_close(GtkWidget *mwindow) {
 }
 LOCAL void
 Notice_window_close_button(GtkDialog *dialog, gint response_id, GtkWidget *mwindow) {
- Notice_window_close(mwindow);
+ Notice_window_close(Notice_window);
 }
 static void
 Notice(gchar *message) {
