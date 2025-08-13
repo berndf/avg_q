@@ -15,7 +15,7 @@ Binary distribution downloads
 -----------------------------
 
 Github disabled the service providing arbitrary
-file downloads. You can now find compiled packages (Windows 64 and 32 bit 
+file downloads. You can now find compiled packages (Windows 64 with GTK4 UI
 including python bindings) [here](https://www.dropbox.com/sh/86akhq4vtskojf4/AAAFYkqfLjuc-1ou9RCYCDS8a?dl=0)
 
 I can make other binary packages (Linux 64-bit) available upon request.
@@ -39,10 +39,10 @@ along with avg_q.  If not, see <https://www.gnu.org/licenses/>.
 Author
 ------
 
-[Dr. Bernd Feige](mailto:Bernd.Feige@gmx.net)  
+[PD Dr. Bernd Feige](mailto:Bernd.Feige@gmx.net)  
 <https://www.researchgate.net/profile/Bernd-Feige/>  
 Dept. for Psychiatry and Psychotherapy  
-Freiburg University Clinic  
+Freiburg University Medical Center  
 Hauptstr.5  
 79104 Freiburg  
 GERMANY  
