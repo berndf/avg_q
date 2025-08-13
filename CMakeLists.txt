@@ -53,7 +53,7 @@ ELSE(CMAKE_SYSTEM_NAME MATCHES Windows)
   # -D_FILE_OFFSET_BITS=64 is necessary to have working fstat() on CIFS mounts
   SET(C_FLAGS_ARCHITECTURE "-march=i686")
  ENDIF(UNAME MATCHES "x86_64")
- SET(HDF4_INCLUDES )
+ SET(HDF4_INCLUDES /usr/include/hdf4)
  SET(HDF4_LIBS mfhdf df)
 ENDIF(CMAKE_SYSTEM_NAME MATCHES Windows)
 
