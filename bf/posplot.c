@@ -1337,6 +1337,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
      bgnline();
      move2((Coord)0, (Coord)local_arg->ydmin);
      draw2((Coord)0, (Coord)local_arg->ydmax);
+     endline();
 
      if (local_arg->ydmin>0 && local_arg->ydmin<100 && local_arg->ydmax>100) {
       /* Suppose it's more useful to display a bar at y==100 (for percentages) */
@@ -1347,6 +1348,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
       color(BLUE);
       barpos=1.0;
      } else barpos=0;
+     bgnline();
      move2((Coord)xdmin, (Coord)barpos);
      draw2((Coord)xdmax, (Coord)barpos);
      endline();
