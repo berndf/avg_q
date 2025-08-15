@@ -91,7 +91,7 @@ struct external_methods_struct {
  Bool has_been_set;
 
  /* User interface: error exit and trace message routines */
- METHOD(void, error_exit, (const external_methods_ptr emeth, const char *msgtext) __attribute__ ((__noreturn__)));
+ METHOD(__attribute__ ((noreturn)) void, error_exit, (const external_methods_ptr emeth, const char *msgtext));
  METHOD(void, trace_message, (const external_methods_ptr emeth, const int lvl, const char *msgtext));
  /* Working data for error/trace facility */
  /* See macros below for the usage of these variables */
