@@ -1,0 +1,6 @@
+dip_simulate 500 1 1s 15s eg_source
+# Try to downsample to 8Hz (62.4 works and yields 8Hz, 62.6 too but 7.9Hz)
+sliding_average 1 62.5
+query sfreq
+#posplot
+null_sink

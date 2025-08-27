@@ -192,6 +192,9 @@ FOREACH(program ${PROGRAMS})
  TARGET_LINK_LIBRARIES(${program} ${BF_LIBS})
 ENDFOREACH(program)
 
+include(CTest)
+add_test(NAME test_avg_q_vogl COMMAND avg_q_vogl ${CMAKE_CURRENT_SOURCE_DIR}/TestSuite/basic_run_test.script)
+
 INSTALL(
  TARGETS ${PROGRAMS}
  DESTINATION ${INSTALLDIR}
