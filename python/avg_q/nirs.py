@@ -10,10 +10,8 @@ import datetime
 class nirx_trifile(trgfile.trgfile):
  def __init__(self,infile):
   self.infile=infile
-  trgfile.trgfile.__init__(self,infile)
-  self.sfreq=100.0
-  self.preamble['Sfreq']=self.sfreq
-  self.firsttime=None
+  super().__init__(infile)
+  self.firsttime=self.secondtime=None
  def rdr(self):
   while True:
    line=self.getline()
@@ -25,12 +23,27 @@ class nirx_trifile(trgfile.trgfile):
     break
    tup=line.split(';')
    dt=datetime.datetime.fromisoformat(tup[0])
+   point=int(tup[1])
    if self.firsttime is None:
     self.firsttime=dt
-   point=(dt-self.firsttime).total_seconds()*self.sfreq
+    self.firstpoint=point
+   elif self.secondtime is None and point-self.firstpoint>10:
+    self.secondtime=dt
+    self.secondpoint=point
+    self.sfreq=(self.secondpoint-self.firstpoint)/(self.secondtime-self.firsttime).total_seconds()
+    self.preamble['Sfreq']=self.sfreq
    code=int(tup[4])
    description=None
    yield (point, code, description)
+ def write_tri(self,tuples,trifilename):
+  with open(trifilename,"w") as outfile:
+   # 2025-07-28T10:18:34.120759;644;12;4;6;45
+   for point,code,description in tuples:
+    outfile.write(";".join([str(x) for x in [
+     (self.firsttime+datetime.timedelta(seconds=(point-self.firstpoint)/self.sfreq)).isoformat(),
+     int(point),0,0,code,10,
+    ]]))
+    outfile.write("\n")
 
 
 import scipy

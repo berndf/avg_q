@@ -9,7 +9,7 @@ import re
 
 class Preamble(dict):
  def __init__(self,*args,**kwdargs):
-  dict.__init__(self,*args,**kwdargs)
+  super().__init__(*args,**kwdargs)
   self.strings=[]
   self.varmatch=re.compile("^# ([^=]+)=([^=]+)")
  def append(self,string):
@@ -186,7 +186,7 @@ class HighresTrigger(tuple):
 class HighresTriggers(list):
  def __init__(self,upsample=1):
   self.upsample=upsample
-  list.__init__(self)
+  super().__init__()
  def append(self,value):
   list.append(self,HighresTrigger(value,upsample=self.upsample))
  def as_triglist(self):

@@ -13,7 +13,7 @@ class Delta_slope(avg_q.Detector.Detector):
  # This is 0.5-2.0Hz as in Esser:2007 but can be configured from outside
  bandpass='0 0 0.4Hz 0.5Hz 2.0Hz 2.1Hz 1 1'
  def __init__(self,avg_q_instance):
-  avg_q.Detector.Detector.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
  def set_Epochsource(self,epochsource):
   # This must be used instead of the Script base class 'add_Epochsource' for any file output
   self.Epochsource_list=[epochsource]

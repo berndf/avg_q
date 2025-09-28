@@ -116,6 +116,7 @@ query -N nr_of_points stdout
 query -N beforetrig stdout
 query -N itemsize stdout
 query -N nrofaverages stdout
+query -N triggers_for_trigfile stdout
 echo -F stdout Data:\\n
 write_generic -x stdout float64
 """
@@ -152,6 +153,27 @@ write_generic -x stdout float64
      epoch.itemsize=int(value)
     elif name=='nrofaverages':
      epoch.nrofaverages=int(value)
+    elif name=='triggers_for_trigfile':
+     r=value
+     trigpoints=[]
+     while r!='Data:':
+      if not r.startswith('#'):
+       tup=r.split('\t')
+       point=None
+       if len(tup)<2:
+        pass
+       elif len(tup)==2:
+        (point, code)=tup
+        description=None
+       else:
+        (point, code)=tup[0:2]
+        description='\t'.join(tup[2:])
+       if point is not None:
+        trigpoints.append((point, code, description))
+      r=next(rdr)
+     if trigpoints:
+      epoch.trigpoints=trigpoints
+     break
     r=next(rdr)
    epoch.nr_of_channels=len(epoch.channelnames)
    #print(epoch)

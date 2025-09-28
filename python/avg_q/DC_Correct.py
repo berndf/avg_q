@@ -16,7 +16,7 @@ from . import numpy_Script
 
 class DC_Correct_Script(numpy_Script.numpy_Script):
  def __init__(self,avg_q_instance,epochlen_s=1):
-  numpy_Script.numpy_Script.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
   self.interpolators=None
   self.epochlen_s=epochlen_s
 

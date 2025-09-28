@@ -17,7 +17,7 @@ class EOG(avg_q.Detector.Detector):
  HEOG_minamp=60
 
  def __init__(self,avg_q_instance):
-  avg_q.Detector.Detector.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
   self.get_VEOG_script="remove_channel -k VEOG\n"
   self.mapfile=None
   self.sessionaverage_EOGfile=None

@@ -132,9 +132,6 @@ METHODDEF void
 query_init(transform_info_ptr tinfo) {
  struct query_storage *local_arg=(struct query_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
- growing_buf buffer;
- growing_buf_init(&buffer);
- growing_buf_allocate(&buffer, 0);
 
  if (!args[ARGS_OFILE].is_set) {
   local_arg->outfile=NULL;
@@ -150,18 +147,6 @@ query_init(transform_info_ptr tinfo) {
   local_arg->delimiter="\t";
  } else {
   local_arg->delimiter="\n";
- }
- switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
-  case C_TRIGGERS_FOR_TRIGFILE:
-  case C_TRIGGERS_FOR_TRIGFILE_S:
-  case C_TRIGGERS_FOR_TRIGFILE_MS:
-  case C_FILETRIGGERS_FOR_TRIGFILE:
-  case C_FILETRIGGERS_FOR_TRIGFILE_S:
-  case C_FILETRIGGERS_FOR_TRIGFILE_MS:
-   growing_buf_appendf(&buffer, "# Sfreq=%f%s", tinfo->sfreq, local_arg->delimiter); myflush(tinfo, &buffer);
-   break;
-  default:
-   break;
  }
 
  /* This is needed for C_TRIGGERS_FOR_TRIGFILE: */
@@ -185,6 +170,19 @@ query(transform_info_ptr tinfo) {
 
  if (args[ARGS_PRINTNAME].is_set) {
   growing_buf_appendf(&buffer, "%s=", variables_choice[args[ARGS_VARNAME].arg.i]);
+ }
+
+ switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
+  case C_TRIGGERS_FOR_TRIGFILE:
+  case C_TRIGGERS_FOR_TRIGFILE_S:
+  case C_TRIGGERS_FOR_TRIGFILE_MS:
+  case C_FILETRIGGERS_FOR_TRIGFILE:
+  case C_FILETRIGGERS_FOR_TRIGFILE_S:
+  case C_FILETRIGGERS_FOR_TRIGFILE_MS:
+   growing_buf_appendf(&buffer, "# Sfreq=%f%s", tinfo->sfreq, local_arg->delimiter);
+   break;
+  default:
+   break;
  }
  switch((enum variables_choice)args[ARGS_VARNAME].arg.i) {
   case C_SFREQ:

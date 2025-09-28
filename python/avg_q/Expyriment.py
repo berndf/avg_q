@@ -56,7 +56,7 @@ class ExpyrimentLog(object):
 class ExpyrimentLogfile(trgfile.trgfile):
  def __init__(self,logfile):
   self.EL=ExpyrimentLog(logfile)
-  trgfile.trgfile.__init__(self,self.EL)
+  super().__init__(self.EL)
   self.preamble['Sfreq']=1000.0
  def rdr(self):
   for fields in self.reader:

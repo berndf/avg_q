@@ -24,7 +24,7 @@ def get_trigger_dict(tuples):
 class Detector(avg_q.Script):
  distance_from_breakpoint_s=0.5 # Events within that distance are discarded
  def __init__(self,avg_q_instance):
-  avg_q.Script.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
   # Detect within the whole file by default
   self.detection_start=None
   self.detection_length=None

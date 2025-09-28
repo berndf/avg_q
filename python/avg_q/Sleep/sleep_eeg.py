@@ -285,7 +285,7 @@ class cntspectsource(avg_q.Epochsource):
     print("cntspectsource: Can't locate cnt file for book number %s" % first)
     return
   # This prepares for reading continuously - changed when using set_epochfilter
-  avg_q.Epochsource.__init__(self,self.filename,beforetrig=0,aftertrig=1,continuous=True)
+  super().__init__(self.filename,beforetrig=0,aftertrig=1,continuous=True)
   self.add_branchtransform('''
 # NeuroScan files store the sampling freq as int; we have 1/30s...
 set sfreq 0.03333333333

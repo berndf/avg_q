@@ -16,7 +16,7 @@ class Spindles(avg_q.Detector.Detector):
      many movements (strong signals) or empty sections (zeros) it can be preferable to use
      a given fixed threshold threshold_µV.
   '''
-  avg_q.Detector.Detector.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
   self.fixed_threshold=fixed_threshold
  def __del__(self):
   """Destructor."""

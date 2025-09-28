@@ -17,7 +17,7 @@ class ECG(avg_q.Detector.Detector):
  ECG_reject_bandwidth=20000
 
  def __init__(self,avg_q_instance,ECGtemplate=None):
-  avg_q.Detector.Detector.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
   self.ECGtemplate=ECGtemplate
   self.get_ECG_script="remove_channel -k ?%s\n" % channel_list2arg(avg_q.Channeltypes.ECGchannels)
   self.mapfile=None

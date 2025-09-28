@@ -88,6 +88,7 @@ set_comment Condition %(condition)s event %(eventindex)d shift %(shiftwidth)gms
     })
     script.run()
 
+
 """
 Next comes the GrandAverage class, handy for doing grand averages.
 Usage: Init giving a list of the input files, then usually call
@@ -100,6 +101,7 @@ will coincide with standardized_RT_ms.
 def get_shift_from_description(description):
  shift_str=description.split("shift ")[1]
  return float(shift_str.split("ms")[0])
+
 
 from . import avg_q_file
 import os
@@ -124,22 +126,28 @@ class GrandAverage(object):
     self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_instance.get_description(f,('sfreq','nr_of_points','beforetrig'))
    self.alltuples[avgfile]=self.avg_q_instance.get_filetriggers(f).gettuples()
    self.infiles.append(avgfile)
- def get_one_average(self,avgfile,eventindex=None):
-  '''Get one single average for this self.condstr and eventindex, properly aligned and ready for averaging.
+ def get_one_average(self,avgfile,conditions,eventindex=None):
+  '''Get one single average for these conditions and eventindex, properly aligned and ready for averaging.
      This allows to process the input files one by one if so desired.
      Otherwise use get_averages below to read all inputs for a given condition and eventindex.
   '''
+  if type(conditions) is not list:
+   # Allow passing a single condition
+   conditions=[conditions]
+  condstrs=conditions if eventindex is None else [cond+(' event %d' % eventindex) for cond in conditions]
   f=avg_q_file(avgfile)
-  tuples=self.alltuples[avgfile]
   n_averages=0
-  for position,code,description in [(position,code,description) for position,code,description in tuples if self.condstr in description]:
+  for position,code,description in\
+    [(position,code,description) for position,code,description in self.alltuples[avgfile]
+     if any(condstr in description for condstr in condstrs)]:
    #print position,code,description
    self.avg_q_instance.getepoch(f,fromepoch=position+1,epochs=1)
    n_averages+=1
    if eventindex is not None and eventindex!=self.event0index:
     shift=get_shift_from_description(description)
     shift_points=int(round((shift-self.standardized_RT_ms)/1000.0*self.sfreq))
-    if isinstance(self.session_shift_points,list): self.session_shift_points.append(shift_points)
+    if isinstance(self.session_shift_points,list):
+     self.session_shift_points.append(shift_points)
     self.avg_q_instance.write('''
 >trim %(shift_points)d %(epochlength_points)d
 >set beforetrig %(beforetrig_points)d
@@ -150,18 +158,17 @@ class GrandAverage(object):
      'beforetrig_points': self.beforetrig_points,
     })
   return n_averages
- def get_averages(self,condition,eventindex=None):
+ def get_averages(self,conditions,eventindex=None):
   '''Get all single averages, properly aligned and ready for averaging.
      The caller has to issue a collect method etc. if the returned
      number of averages is not zero.
   '''
-  self.condstr=condition+' event %d' % eventindex if eventindex is not None else condition
   self.session_shift_points=[] # Updated by get_one_average
   n_averages=0 # Bail out if no averages are available at all
   for avgfile in self.infiles:
-   n_averages+=self.get_one_average(avgfile,eventindex)
+   n_averages+=self.get_one_average(avgfile,conditions,eventindex)
   if n_averages>0 and eventindex is not None and eventindex!=self.event0index:
-   print("%s Mean shift points: %g" % (self.condstr,float(sum(self.session_shift_points))/len(self.session_shift_points)))
+   print("%s event %d Mean shift points: %g" % (str(conditions),eventindex,float(sum(self.session_shift_points))/len(self.session_shift_points)))
   return n_averages
  def set_outfile(self,outfile,append=False):
   '''Arranges for single_average to write the result to an ASC file.
@@ -171,7 +178,8 @@ class GrandAverage(object):
   self.append=append
  def posplot(self,condition,eventindex=None):
   '''Debug: show all epochs as they would be averaged by single_average.'''
-  if self.get_averages(condition,eventindex)==0: return
+  if self.get_averages(condition,eventindex)==0:
+   return
   self.avg_q_instance.write('''
 extract_item 0
 append -l
@@ -180,8 +188,9 @@ posplot
 -
 ''')
   self.avg_q_instance.run()
- def single_average(self,condition,eventindex=None,average_options='-W -t'):
-  if self.get_averages(condition,eventindex)==0: return
+ def single_average(self,conditions,eventindex=None,average_options='-W -t'):
+  if self.get_averages(conditions,eventindex)==0:
+   return
   if '-t' in average_options and '-u' not in average_options:
    calclog='''
 calc -i 2 log10
@@ -194,11 +203,11 @@ extract_item 0
 average %(average_options)s
 Post:
 %(calclog)s
-set_comment %(condstr)s
+set_comment %(comment)s
 ''' % {
    'average_options': average_options,
    'calclog': calclog,
-   'condstr': self.condstr+(' shift %gms' % (self.standardized_RT_ms if eventindex is not None and eventindex!=self.event0index else 0)) if eventindex is not None else self.condstr,
+   'comment': str(conditions)+((' event %d' % eventindex)+(' shift %gms' % (self.standardized_RT_ms if eventindex is not None and eventindex!=self.event0index else 0)) if eventindex is not None else ''),
   })
   if self.outfile:
    self.avg_q_instance.write('''

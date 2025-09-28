@@ -151,7 +151,7 @@ class CoherenceTriggers(trgfile.trgfile):
  def __init__(self,source=None,sfreq=256):
   if not isinstance(source,str):
    raise Exception("CoherenceTriggers: Can only work with file names!")
-  trgfile.trgfile.__init__(self,None)
+  super().__init__(None)
   coherencefile=CoherenceFile(source,sfreq)
   for name,value in coherencefile.getHeader():
    self.preamble[name]=value

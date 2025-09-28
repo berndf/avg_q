@@ -12,7 +12,7 @@ import copy
 
 class Measure_Script(avg_q.Script):
  def __init__(self,avg_q_instance):
-  avg_q.Script.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
   self.sum_range=False # If set, measure the sum, not the average of each range
   self.output_comment=False # If set, output the epoch comment as second element of the output list
   self.output_averages=False # If set, output nrofaverages as second/third element of the output list

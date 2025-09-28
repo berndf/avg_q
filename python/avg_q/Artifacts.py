@@ -90,7 +90,7 @@ class Artifact_Segmentation(avg_q.Script):
   self.start_point=start_point
   self.end_point=end_point
   self.collected=None
-  avg_q.Script.__init__(self,avg_q_instance)
+  super().__init__(avg_q_instance)
  def collect_artifacts(self,remove_channels=None,preprocess=''):
   '''Analyze the given section of the continuous file for artifacts.
      remove_channels is a list of channel names to exclude for detection.'''
