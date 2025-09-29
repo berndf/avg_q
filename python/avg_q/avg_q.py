@@ -198,6 +198,10 @@ null_sink
   if startsegment<end_point:
    yield (startsegment,end_point)
  def get_description(self,infile,getvars):
+  '''get_description() is an interface to query.
+     getvars can be a single string or an iter (tuple, list) of strings, in which case the result
+     will be a tuple with all the results.
+  '''
   class collect_results(object):
    import re
    querymatch=re.compile('^([^=]+)=(.+)$')
@@ -229,7 +233,8 @@ null_sink
     if not m:
      if self.collectvalue:
       self.listvalue.append(line)
-  if not isinstance(getvars,tuple):
+  # Allow the getvars argument to be a single string as well as an iter of strings:
+  if isinstance(getvars, str):
    getvars=(getvars,)
   self.getcontepoch(infile, 0, 1, epochs=1)
   for var in getvars:
