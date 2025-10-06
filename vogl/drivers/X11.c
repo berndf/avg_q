@@ -83,7 +83,7 @@ void _X11_devcpy(void);
  *
  *	Just sets the drawable to the partucular window.
  */
-int
+static int
 vo_xt_set_win(Display *dis, Drawable win, int xw, int xh)
 {
 	int	backb;
@@ -119,7 +119,7 @@ vo_xt_set_win(Display *dis, Drawable win, int xw, int xh)
  *	Tells VOGL/VOGLE to use a window from an X11 toolkit (eg xview)
  *	and not to make it's own window.
  */
-int
+static int
 vo_xt_window(Display *dis, Window win, int xw, int xh)
 {
 	int	backb, i;
@@ -206,7 +206,7 @@ vo_xt_window(Display *dis, Window win, int xw, int xh)
  * If the X toolkit has changed the window size, then
  * you might wish to call this routine to tell vogl/vogle about it.
  */
-void
+static void
 vo_xt_win_size(int xw, int xh)
 {
 	char	backb;
@@ -240,7 +240,7 @@ vo_xt_win_size(int xw, int xh)
 /*
  * return the X display in use.
  */
-Display *
+static Display *
 vo_xt_get_display(void)
 {
 	return(display);
@@ -249,7 +249,7 @@ vo_xt_get_display(void)
 /*
  * return the X Window in use.
  */
-Window
+static Window
 vo_xt_get_window(void)
 {
 	return(winder);
@@ -258,7 +258,7 @@ vo_xt_get_window(void)
 /*
  * return the Graphics Context in use.
  */
-GC
+static GC
 vo_xt_get_GC(void)
 {
 	return(theGC);
@@ -267,7 +267,7 @@ vo_xt_get_GC(void)
 /*
  * Set the Graphics Context to use.
  */
-void
+static void
 vo_xt_set_GC(GC gc)
 {
 	theGC = gc;
