@@ -79,8 +79,7 @@ class avg_q(object):
   except Exception:
    import os
    if os.path.sep in avg_q:
-    print('avg_q.py: Path to avg_q >%s< contains path separators and is not executable!' % avg_q)
-    return
+    raise Exception('avg_q.py: Path to avg_q >%s< contains path separators and is not executable!' % avg_q) from None
    # Try standard install paths
    if os.sys.platform=='linux':
     # avg_q.py is below DISTDIR/lib/python/avg_q; binary below DISTDIR/avg_q64
@@ -89,8 +88,7 @@ class avg_q(object):
     # See if this is a Windows install with python/ within the avg_q binary directory
     call[0]=os.path.join(os.path.dirname(__file__),'..','..',avg_q+'.exe')
    if not os.path.exists(call[0]):
-    print('avg_q.py: >%s< is not in PATH and alternative path >%s< failed!' % (avg_q,call[0]))
-    return
+    raise Exception('avg_q.py: >%s< is not in PATH and alternative path >%s< failed!' % (avg_q,call[0])) from None
    self.avg_q=subprocess.Popen(call, shell=False, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=False)
 
   self.recorded_trigpoints=[]

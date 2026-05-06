@@ -57,7 +57,7 @@ enum ARGS_ENUM {
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Maximum only. Reject where a channel exceeds a threshold", "m", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Channel mode. Remove individual channels due to the criterion", "C", FALSE, NULL},
- {T_ARGS_TAKES_NOTHING, "Invert. Pass only epochs that would have been rejected", "I", FALSE, NULL},
+ {T_ARGS_TAKES_NOTHING, "Invert. Pass only epochs or channels that would have been rejected", "I", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Select channels by name rather than by number in the bandwidth file", "n", FALSE, NULL},
  {T_ARGS_TAKES_LONG, "nr_of_item: reject on this item # (>=0; default: 0)", "i", 0, NULL},
  {T_ARGS_TAKES_SENTENCE, "[bandwidth] [filename]", " ", ARGDESC_UNUSED, NULL}

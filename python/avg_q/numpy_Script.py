@@ -23,7 +23,7 @@ class numpy_epoch(object):
   self.nr_of_points=0
   self.nr_of_channels=0
   self.beforetrig=0
-  self.itemsize=0
+  self.itemsize=1
   self.nrofaverages=None
   self.trigpoints=None
   self.xdata=None
@@ -58,13 +58,14 @@ class numpy_Epochsource(avg_q.Epochsource):
   if len(self.epochs)==0: return
   for epoch in self.epochs:
    avg_q_instance.write('''
-read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer_arg)s stdin %(beforetrig)d %(aftertrig)d float64
+read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -I %(itemsize)d -e 1 %(trigtransfer_arg)s stdin %(beforetrig)d %(aftertrig)d float64
 ''' % {
     'readx': ('-x '+epoch.xchannelname.replace(' ', '_').replace('\t', '_')) if epoch.xdata is not None else '',
     'sfreq': epoch.sfreq if epoch.sfreq else 100.0,
     'beforetrig': epoch.beforetrig,
     'aftertrig': epoch.nr_of_points-epoch.beforetrig,
     'nr_of_channels': epoch.nr_of_channels,
+    'itemsize': epoch.itemsize,
     'trigtransfer_arg': '-T -R stdin' if epoch.trigpoints is not None else '',
    })
    if epoch.channelnames:
@@ -93,7 +94,12 @@ read_generic -c %(readx)s -s %(sfreq)g -C %(nr_of_channels)d -e 1 %(trigtransfer
    # It's a bit unfortunate that array.array does support tofile() with pipes but numpy.array doesn't...
    # So we have to take the route via a string buffer just as with reading
    # We have to take good care that the data type corresponds to what avg_q reads (ie, float64)
-   thisdata=(numpy.append(epoch.xdata.reshape((epoch.xdata.shape[0],1)),epoch.data,axis=1) if epoch.xdata is not None else epoch.data).astype('float64')
+   if epoch.itemsize==1:
+    tmpdata=epoch.data
+   else:
+    # Flatten the third (item) dimension
+    tmpdata=epoch.data.reshape((epoch.data.shape[0],-1))
+   thisdata=(numpy.append(epoch.xdata.reshape((-1,1)),tmpdata,axis=1) if epoch.xdata is not None else tmpdata).flat.copy().astype('float64')
    avg_q_instance.avg_q.stdin.write(thisdata.tobytes())
    avg_q_instance.avg_q.stdin.flush()
 
@@ -192,6 +198,8 @@ write_generic -x stdout float64
    data.shape=(epoch.nr_of_points,1+epoch.nr_of_channels*epoch.itemsize)
    epoch.xdata=data[:,0]
    epoch.data=data[:,1:]
+   if epoch.itemsize>1:
+    epoch.data=epoch.data.reshape((epoch.nr_of_points,epoch.nr_of_channels,epoch.itemsize))
    self.epochs.append(epoch)
   self.restore_state()
  def plot_maps(self, ncols=None, vmin=None, vmax=None, globalscale=False, isolines=[0]):

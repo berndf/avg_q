@@ -27,11 +27,14 @@ class Measure_Script(avg_q.Script):
      Note that the latency algorithm assumes positive-going amplitudes by default. To measure in negative
      direction, add a third value -1 to the given range.
   '''
+  # If this is set, we measure in the postprocessing queue, otherwise in the iterated queue
+  postproc_measure=self.collect!='null_sink'
   # Save and restore the current list of transforms, since we measure by (temporally)
   # appending to this list
-  storetransforms=copy.copy(self.transforms)
+  storetransforms=copy.copy(self.postprocess_transforms if postproc_measure else self.transforms)
+  my_add_transform=self.add_postprocess if postproc_measure else self.add_transform
   for channel,lat_ranges in channels_and_lat_ranges:
-   self.add_transform("""
+   my_add_transform("""
 extract_item 0
 push
 remove_channel -k %(channel)s
@@ -39,7 +42,7 @@ remove_channel -k %(channel)s
     'channel': escape_channelname(channel),
    })
    for lat_range in lat_ranges:
-    self.add_transform("""
+    my_add_transform("""
 push
 trim -x %(lower)g %(upper)g
 extract_item 0 0
@@ -65,7 +68,7 @@ pop
      'upper': lat_range[1],
      'calc_neg': 'calc -i 1 neg' if len(lat_range)==3 and lat_range[2]== -1 else '',
     })
-   self.add_transform('pop')
+   my_add_transform('pop')
   rdr=self.runrdr()
   result=[]
   # Fixed elements are accepted_epochs [output_comment output_averages] rangename
@@ -86,5 +89,8 @@ pop
    rangename=values[1+N]
    #epoch,channelname,rangename,amp,lat=l.split('\t')
    result.append([epoch]+other_elements+[channelnames,rangename]+[float(x) for x in values[(fixed_elements+N):]])
-  self.transforms=storetransforms
+  if postproc_measure:
+   self.postprocess_transforms=storetransforms
+  else:
+   self.transforms=storetransforms
   return result
