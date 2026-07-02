@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1994,1997,1999,2001,2003 Bernd Feige
+ * Copyright (C) 1994,1997,1999,2001,2003,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -92,9 +92,9 @@ LOCAL void
 sphere_random(float radius, float *x, float *y, float *z) {
  float a, b, c, r;
  do {
-  a=((float)rand())/(RAND_MAX/2)-1;
-  b=((float)rand())/(RAND_MAX/2)-1;
-  c=((float)rand())/(RAND_MAX/2)-1;
+  a=((float)rand())/((float)RAND_MAX/2.0f)-1;
+  b=((float)rand())/((float)RAND_MAX/2.0f)-1;
+  c=((float)rand())/((float)RAND_MAX/2.0f)-1;
   r=a*a+b*b+c*c;
  } while (r>1.0);
  r=radius/sqrt(r);

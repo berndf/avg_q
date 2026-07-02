@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2001 Bernd Feige
+ * Copyright (C) 1996-2001,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -40,7 +40,7 @@ zero_phase(transform_info_ptr tinfo) {
  transform_argument *args=tinfo->methods->arguments;
  Bool const maxamp=(strcmp(args[ARGS_CHANNELNAME].arg.s, "MAXAMP")==0);
  Bool const nyquist=(strcmp(args[ARGS_CHANNELNAME].arg.s, "NYQUIST")==0);
- int zero_phase_channel;
+ int zero_phase_channel=0;
  complex phase_factor;
  array indata;
 

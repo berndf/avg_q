@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Bernd Feige
+ * Copyright (C) 2016,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -153,7 +153,7 @@ main(int argc, char **argv) {
    printf("Error: size=%d > MAXBUF (%d)\n", size, MAXBUF);
    exit(1);
   }
-  fread(readbuf,1,size,cfsfile);
+  IGNORE_RESULT(fread(readbuf,1,size,cfsfile));
   printf("Variable data (%d bytes): ",size);
   print_var(filevardescp[filevar].vType,readbuf);
   printf("\n");
@@ -184,7 +184,7 @@ main(int argc, char **argv) {
    printf("Error: size=%d > MAXBUF (%d)\n", size, MAXBUF);
    exit(1);
   }
-  fread(readbuf,1,size,cfsfile);
+  IGNORE_RESULT(fread(readbuf,1,size,cfsfile));
   printf("Variable data (%d bytes): ",size);
   print_var(DSvardescp[dsvar].vType,readbuf);
   printf("\n");

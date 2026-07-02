@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998-2000,2003,2007,2011,2013,2022 Bernd Feige
+ * Copyright (C) 1996,1998-2000,2003,2007,2011,2013,2022,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #include <stdlib.h>
@@ -66,12 +66,13 @@ growing_buf_ensurelength(growing_buf *buf, long future_length) {
  }
  if (future_size!=current_size) {
   char *oldstart=buf->buffer_start;
+  long token_offset=buf->current_token!=NULL ? buf->current_token-oldstart : 0;
   if ((buf->buffer_start=(char *)realloc(oldstart, future_size))==NULL) {
    growing_buf_init(buf);
    return FALSE;
   }
   buf->buffer_end=buf->buffer_start+future_size;
-  if (buf->current_token!=NULL) buf->current_token+=buf->buffer_start-oldstart;
+  if (buf->current_token!=NULL) buf->current_token=buf->buffer_start+token_offset;
  }
  return TRUE;
 }

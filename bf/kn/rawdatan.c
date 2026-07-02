@@ -656,7 +656,9 @@ static int Packdata(struct Rtrial *trialb, short int *trialdata, short int *trda
     return(newsize);
 }
 
+#ifdef _MSC_VER
 #pragma optimize("",off)
+#endif
 /*--------------------------------------------------------------------*/
 static int Unpackdata(struct Rtrial *trialb, short int *trialdata, short int *trdata)
 /*--------------------------------------------------------------------*/
@@ -694,7 +696,7 @@ static int CompressChan(short int *newarray, short int *charray, int npoints)
   /*    nsubsid groups consisting of*/
   /*      1. a starting level (16-bit)*/
   /*      2. successive differences as groups of bits of length nbits*/
-    short int n, nwords, nwmin=0, ncomp, nsubsid, nsubsidbest, *testarray,
+    short int n, nwords, nwmin=0, ncomp=0, nsubsid, nsubsidbest=0, *testarray,
         bitmax=15, iwasthere=0;
     nwmin = npoints;
 /* find no. of bits that give maximum compression*/
@@ -739,7 +741,9 @@ static int CompressChan(short int *newarray, short int *charray, int npoints)
         }
     return(nwmin);
 }
+#ifdef _MSC_VER
 #pragma optimize("",on)
+#endif
 
 /*--------------------------------------------------------------------*/
 static void Compare(short int *charray, short int *testarray)

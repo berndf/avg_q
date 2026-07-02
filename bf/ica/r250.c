@@ -12,7 +12,7 @@
 
 */
 
-static char rcsid[] = "@(#)r250.c	1.2 15:50:31 11/21/94   EFC";
+static char rcsid[] __attribute__((unused)) = "@(#)r250.c	1.2 15:50:31 11/21/94   EFC";
 
 
 #include <limits.h>

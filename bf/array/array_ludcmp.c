@@ -22,7 +22,7 @@
 
 GLOBAL int
 array_ludcmp(array *a, array *indx) {
- int i,imax,j,k,d,n=a->nr_of_elements;
+ int i,imax=0,j,k,d,n=a->nr_of_elements;
  DATATYPE big,dum,sum,temp,hold;
  array vv;
 

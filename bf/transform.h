@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2001,2003,2004,2006-2010,2014,2018 Bernd Feige
+ * Copyright (C) 1996-2001,2003,2004,2006-2010,2014,2018,2025,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -13,6 +13,9 @@
 
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
+/* Suppress -Wunused-result for functions declared with warn_unused_result
+ * (gcc does not honour a plain (void) cast for these). */
+#define IGNORE_RESULT(expr) do { __typeof__(expr) _ignore_result_r = (expr); (void)_ignore_result_r; } while(0)
 #include "method.h"
 #include "source.h"
 #include "growing_buf.h"

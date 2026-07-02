@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2001,2003,2005-2008,2012-2014 Bernd Feige
+ * Copyright (C) 1996-2001,2003,2005-2008,2012-2014,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -138,7 +138,7 @@ write_vitaport_init(transform_info_ptr tinfo) {
   local_arg->channelmax[channel]= -FLT_MAX;
   local_arg->channelmin[channel]=  FLT_MAX;
 
-  strncpy(local_arg->channelheaders[channel].kname, tinfo->channelnames[channel], 6);
+  snprintf(local_arg->channelheaders[channel].kname, sizeof(local_arg->channelheaders[channel].kname), "%s", tinfo->channelnames[channel]);
   strcpy(local_arg->channelheaders[channel].kunit, "uV");
   local_arg->channelheaders[channel].datype=VP_DATYPE_SIGNED;
   local_arg->channelheaders[channel].dasize=VP_DATATYPE_SHORT;

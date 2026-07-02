@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996,1998,1999,2001,2003,2004,2006,2008,2011,2014,2018,2022 Bernd Feige
+ * Copyright (C) 1996,1998,1999,2001,2003,2004,2006,2008,2011,2014,2018,2022,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -78,8 +78,8 @@ single_sliding_average(sliding_data *sdata) {
   * The second and third implementations are mathematically equivalent. */
  if (sdata->ssize==1) {
   int previous_middle_point= -1;
-  DATATYPE previous_value;
-  DATATYPE next_value;
+  DATATYPE previous_value=0.0;
+  DATATYPE next_value=0.0;
   /* Linear interpolation between adjacent points.
    * Slightly better than just replicating the point value n times, but by no
    * means a clean upsampling method either... */

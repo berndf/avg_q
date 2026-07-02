@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2003,2007,2010,2012,2013,2016,2017 Bernd Feige
+ * Copyright (C) 1996-2003,2007,2010,2012,2013,2016,2017,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -223,7 +223,7 @@ again:
     break;
   }
  }
- fread(&checksum, sizeof(checksum), 1, infile);
+ IGNORE_RESULT(fread(&checksum, sizeof(checksum), 1, infile));
 #ifdef LITTLE_ENDIAN
  Intel_int16((uint16_t *)&checksum);
 #endif
@@ -244,9 +244,9 @@ again:
    uint32_t length;
    struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
    label[VP_TABLEVAR_LENGTH]='\0';
-   fread(label, 1, VP_TABLEVAR_LENGTH, infile);
+   IGNORE_RESULT(fread(label, 1, VP_TABLEVAR_LENGTH, infile));
    if (feof(infile)) break;
-   fread(&length, sizeof(length), 1, infile);
+   IGNORE_RESULT(fread(&length, sizeof(length), 1, infile));
 #ifdef LITTLE_ENDIAN
    Intel_int32((uint32_t *)&length);
 #endif
@@ -258,7 +258,7 @@ again:
      uint32_t pointno;
      int tagno;
      for (tagno=0; tagno<length/(int)sizeof(uint32_t); tagno++) {
-      fread(&pointno, sizeof(pointno), 1, infile);
+      IGNORE_RESULT(fread(&pointno, sizeof(pointno), 1, infile));
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&pointno);
 #endif
@@ -269,14 +269,14 @@ again:
      int pass;
      for (channel=0; channel<NoOfChannels; channel++) {
       unsigned char display_channel;
-      fread(&display_channel, 1, 1, infile);
+      IGNORE_RESULT(fread(&display_channel, 1, 1, infile));
       printf(" %d", display_channel);
      }
      printf("\n");
      for (pass=0; pass<2; pass++) {
       for (channel=0; channel<NoOfChannels; channel++) {
        uint32_t unknown;
-       fread(&unknown, sizeof(unknown), 1, infile);
+       IGNORE_RESULT(fread(&unknown, sizeof(unknown), 1, infile));
 #ifdef LITTLE_ENDIAN
        Intel_int32((uint32_t *)&unknown);
 #endif
@@ -291,7 +291,7 @@ again:
     uint32_t pointno;
     int tagno;
     for (tagno=0; tagno<length/(int)sizeof(uint32_t); tagno++) {
-     fread(&pointno, sizeof(pointno), 1, infile);
+     IGNORE_RESULT(fread(&pointno, sizeof(pointno), 1, infile));
 #ifdef LITTLE_ENDIAN
      Intel_int32((uint32_t *)&pointno);
 #endif

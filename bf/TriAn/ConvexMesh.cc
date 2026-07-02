@@ -1,4 +1,4 @@
-// Copyright (C) 1996,1997,2001,2018 Bernd Feige
+// Copyright (C) 1996,1997,2001,2018,2026 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 /*{{{}}}*/
@@ -131,6 +131,7 @@ void ConvexMesh::fit_sphere() {
  /*}}}  */
 
  residual=opt_powell(&ostruct, sphere_startparameters, &xi, FTOL, &iter);
+ (void)residual;
  array_free(&xi);
  /*}}}  */
 
@@ -201,14 +202,14 @@ void ConvexMesh::Revise() {
 #ifdef DEBUG_REVISE
  Bool do_display=TRUE;
 #endif
- // The layout is: (Observe that the orientation of the 's' triangle is
- // reversed!)
- //          p3
- //        /   \
- //  p1=p1s --- p2=p2s
- //       \    /
- //        p3s
- // With the offending angle(s) at the p3 position(s).
+ /* The layout is: (Observe that the orientation of the 's' triangle is
+    reversed!)
+           p3
+         /   \
+   p1=p1s --- p2=p2s
+        \    /
+         p3s
+    With the offending angle(s) at the p3 position(s). */
 
  do {
   in_triangles=first_tr;
@@ -259,6 +260,7 @@ void ConvexMesh::Revise() {
     }
     Triangle ntr1(tr1.p1,p3s,tr1.p3);
     Triangle ntr2(p2s, tr1.p3, p3s);
+    (void)p1s;
     /* Don't take these triangles if their common boundary is not convex,
      * ie if the normals of the two new triangles would be in opposite directions: */
     if (ntr1.normal()*ntr2.normal()>0

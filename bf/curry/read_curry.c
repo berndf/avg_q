@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Bernd Feige
+ * Copyright (C) 2024,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -31,7 +31,7 @@
 
 /*{{{  Local defs and args*/
 /* Presently, I've seen only files with IEEE_FLOAT_32 */
-LOCAL char *datatype_choice[]={
+LOCAL char *datatype_choice[] __attribute__((unused))={
  "UNKNOWN",
  "INT_8",
  "INT_16",
@@ -169,7 +169,8 @@ read_curry_get_filestrings(transform_info_ptr tinfo) {
   ERREXIT(tinfo->emethods, "read_curry: Error allocating channelnames\n");
  }
  memcpy(innamebuf, local_arg->channelnames_buf.buffer_start, local_arg->channelnames_buf.current_length);
- strncpy(tinfo->comment, local_arg->commentbuf.buffer_start, MAX_COMMENTLEN);
+ strncpy(tinfo->comment, local_arg->commentbuf.buffer_start, MAX_COMMENTLEN-1);
+ tinfo->comment[MAX_COMMENTLEN-1]='\0';
 
  /* Reset token pointer, just as growing_buf_get_firsttoken does */
  local_arg->channelnames_buf.current_token=local_arg->channelnames_buf.buffer_start;
@@ -366,7 +367,7 @@ read_curry_init(transform_info_ptr tinfo) {
    }
   } else {
    /* We are within a section */
-   char *key, *value;
+   char *key=NULL, *value=NULL;
    /* Is this the end string of the section? */
    if (strcmp(readbuf.buffer_start,sectionstartend[current_section].endstring)==0) {
     /* Store things that needed to be accumulated across lines */

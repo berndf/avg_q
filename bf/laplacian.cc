@@ -1,4 +1,4 @@
-// Copyright (C) 1997-1999,2001,2005,2008,2011 Bernd Feige
+// Copyright (C) 1997-1999,2001,2005,2008,2011,2026 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 /*{{{}}}*/
 /*{{{  Description*/
@@ -391,7 +391,7 @@ laplacian_init(transform_info_ptr tinfo) {
     ERREXIT1(tinfo->emethods, "laplacian_init: Can't find a triangle for channel %d.\n", MSGPARM(channel));
    }
    tr->make_firstpoint(tp);
-   surrounding=(Boundary*)surrounding->addmember(new Boundary(tr->p2));
+   surrounding=new Boundary(tr->p2);
    surrounding=(Boundary*)surrounding->addmember(new Boundary(tr->p3));
    while (TRUE) {
     Point* p3=tr->p3;

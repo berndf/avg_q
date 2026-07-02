@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003,2004,2007,2008,2010,2012,2018,2025 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003,2004,2007,2008,2010,2012,2018,2025,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -163,7 +163,7 @@ write_rec_open_file(transform_info_ptr tinfo) {
   if (args[ARGS_PATIENT].is_set) copy_nstring(fileheader.patient, args[ARGS_PATIENT].arg.s, sizeof(fileheader.patient));
   if (args[ARGS_RECORDING].is_set) copy_nstring(fileheader.recording, args[ARGS_RECORDING].arg.s, sizeof(fileheader.recording));
   if (args[ARGS_DATETIME].is_set) {
-   char * const comma=strchr(args[ARGS_DATETIME].arg.s, ',');
+   const char * const comma=strchr(args[ARGS_DATETIME].arg.s, ',');
    if (comma==NULL) {
     ERREXIT(tinfo->emethods, "write_rec_open_file: Datetime format is dd.mm.yy,hh.mi.ss !\n");
    }

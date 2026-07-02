@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1992-1998,2003,2007,2011-2013 Bernd Feige
+ * Copyright (C) 1992-1998,2003,2007,2011-2013,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -23,6 +23,12 @@
 #include "fix_headers.h"
 #endif
 /*}}}  */
+
+#ifndef IGNORE_RESULT
+/* Suppress -Wunused-result for functions declared with warn_unused_result
+ * (gcc does not honour a plain (void) cast for these). */
+#define IGNORE_RESULT(expr) do { __typeof__(expr) _ignore_result_r = (expr); (void)_ignore_result_r; } while(0)
+#endif
 
 /*{{{  #defines*/
 #ifndef TRUE
@@ -714,7 +720,7 @@ mfx_write(void *frombuffer, long count, MFX_FILE *mfxfile) {
   mfxfile->mfxpos++;
   if (mfxfile->mfxpos>mfxfile->mfxlen) mfxfile->mfxlen=mfxfile->mfxpos;
   /* This seems to be necessary to resyncronize the read and write pointers: */
-  ftell(mfxfile->mfxstream);
+  IGNORE_RESULT(ftell(mfxfile->mfxstream));
  }
  return mfx_lasterr=MFX_NOERR;
 }
@@ -926,8 +932,8 @@ void*
 mfx_getepoch(MFX_FILE* mfxfile, long* epochlenp, long beforetrig, 
 	     long aftertrig, char const * triggerchannel, int triggercode) {
  void* memstart;
- long savepos, trigpos, startpos, epochlength;
- int tchannel;
+ long savepos, trigpos=0, startpos, epochlength;
+ int tchannel=0;
 
  savepos=mfx_tell(mfxfile);
  if (triggerchannel!=NULL) {

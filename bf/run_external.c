@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2002 Bernd Feige
+ * Copyright (C) 1996-2002,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -47,7 +47,7 @@ run_external(transform_info_ptr tinfo) {
   }
  } else {
   TRACEMS1(tinfo->emethods, 1, "run: Executing >%s<\n", MSGPARM(args[ARGS_COMMAND].arg.s));
-  system(args[ARGS_COMMAND].arg.s);
+  IGNORE_RESULT(system(args[ARGS_COMMAND].arg.s));
  }
  return tinfo->tsdata;
 }

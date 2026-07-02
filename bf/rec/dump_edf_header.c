@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2000,2002,2003,2007,2010,2012,2016,2020,2022 Bernd Feige
+ * Copyright (C) 2000,2002,2003,2007,2010,2012,2016,2020,2022,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -140,16 +140,16 @@ main(int argc, char **argv) {
   One_REC_channel_header header;
 
   printf("\nChannel number %d (Offset within record: %ld):\n", channel+1, total_samples_per_record*sizeof(int16_t));
-  strncpy(header.label, channelheader.label[channel], 16);
-  strncpy(header.transducer, channelheader.transducer[channel], 80);
-  strncpy(header.dimension, channelheader.dimension[channel], 8);
-  strncpy(header.physmin, channelheader.physmin[channel], 8);
-  strncpy(header.physmax, channelheader.physmax[channel], 8);
-  strncpy(header.digmin, channelheader.digmin[channel], 8);
-  strncpy(header.digmax, channelheader.digmax[channel], 8);
-  strncpy(header.prefiltering, channelheader.prefiltering[channel], 80);
-  strncpy(header.samples_per_record, channelheader.samples_per_record[channel], 8);
-  strncpy(header.reserved, channelheader.reserved[channel], 32);
+  snprintf(header.label, sizeof(header.label), "%s", channelheader.label[channel]);
+  snprintf(header.transducer, sizeof(header.transducer), "%s", channelheader.transducer[channel]);
+  snprintf(header.dimension, sizeof(header.dimension), "%s", channelheader.dimension[channel]);
+  snprintf(header.physmin, sizeof(header.physmin), "%s", channelheader.physmin[channel]);
+  snprintf(header.physmax, sizeof(header.physmax), "%s", channelheader.physmax[channel]);
+  snprintf(header.digmin, sizeof(header.digmin), "%s", channelheader.digmin[channel]);
+  snprintf(header.digmax, sizeof(header.digmax), "%s", channelheader.digmax[channel]);
+  snprintf(header.prefiltering, sizeof(header.prefiltering), "%s", channelheader.prefiltering[channel]);
+  snprintf(header.samples_per_record, sizeof(header.samples_per_record), "%s", channelheader.samples_per_record[channel]);
+  snprintf(header.reserved, sizeof(header.reserved), "%s", channelheader.reserved[channel]);
   print_structcontents((char *)&header, sm_REC_channel_header, smd_REC_channel_header, stdout);
 
   samples_per_record=atoi(channelheader.samples_per_record[channel]);

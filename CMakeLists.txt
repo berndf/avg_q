@@ -1,210 +1,318 @@
-# Copyright (C) 2006-2014,2016,2018-2021,2023-2025 Bernd Feige
+# Copyright (C) 2006-2014,2016,2018-2021,2023-2026 Bernd Feige
 # This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
+# Top-level build configuration for avg_q.
+# Targets C17/C++17 and modern CMake (>= 3.21).
+cmake_minimum_required(VERSION 3.21...4.3)
 
-cmake_minimum_required(VERSION 3.5...3.31)
-PROJECT(avg_q LANGUAGES C CXX)
+project(avg_q
+ VERSION 6.2.0
+ LANGUAGES C CXX
+ DESCRIPTION "Multichannel (EEG/MEG) data processing tool"
+)
 
-OPTION(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)
-# Note that setting this in ccmake doesn't work, pkg_check_modules runs too
-# early and is cached... Use "cmake -DAVG_Q_GTK3=Off" instead.
-#OPTION(AVG_Q_GTK3 "Build avg_q_ui against GTK3" On)
-OPTION(AVG_Q_GTK4 "Build avg_q_ui against GTK4" On)
+# Include the local signature file before anything that might depend on it.
+include("${CMAKE_CURRENT_SOURCE_DIR}/Signatures/Signature.ERPLabFreiburg")
 
-IF(AVG_Q_BUILD_DEBUG)
- SET(CMAKE_BUILD_TYPE Debug)
-ELSE(AVG_Q_BUILD_DEBUG)
- SET(CMAKE_BUILD_TYPE Release)
-ENDIF(AVG_Q_BUILD_DEBUG)
+# ---------------------------------------------------------------------------
+# Build options
+# ---------------------------------------------------------------------------
+option(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)
+option(AVG_Q_ENABLE_ASAN "Enable AddressSanitizer in debug builds" OFF)
+option(AVG_Q_WITH_POSPLOT "Build the posplot method (requires vogl)" ON)
+option(AVG_Q_WITH_AVG_Q_UI "Build the GTK GUI avg_q_ui" ON)
+option(AVG_Q_WITH_HDF4 "Enable HDF4 readers/writers if HDF4 is found" ON)
+option(AVG_Q_GTK4 "Build avg_q_ui against GTK4" ON)
 
-cmake_minimum_required(VERSION 2.6...3.20)
+# Legacy names used by subdirectory CMakeLists.txt files.
+set(WITH_POSPLOT ${AVG_Q_WITH_POSPLOT})
+set(WITH_AVG_Q_UI ${AVG_Q_WITH_AVG_Q_UI})
 
-INCLUDE("Signatures/Signature.GPL")
+# ---------------------------------------------------------------------------
+# C / C++ language standards
+# ---------------------------------------------------------------------------
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 
-SET(CPACK_GENERATOR TBZ2)
-SET(CPACK_PACKAGE_VERSION_MAJOR 6)
-SET(CPACK_PACKAGE_VERSION_MINOR 2)
-SET(CPACK_PACKAGE_VERSION_PATCH 0)
-INCLUDE(CPack)
-IF(CMAKE_SYSTEM_NAME MATCHES Windows)
- SET(BUILD_SHARED_LIBS OFF)
- SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
- SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
- SET(INSTALLDIR "bin")
- SET(VOGL_LIBS vogl)
- SET(HDF4_INCLUDES /usr/x86_64-w64-mingw32/usr/include/hdf4)
- SET(HDF4_LIBS mfhdf)
-ELSE(CMAKE_SYSTEM_NAME MATCHES Windows)
- IF(CMAKE_BUILD_TYPE STREQUAL Debug)
-  SET(BUILD_SHARED_LIBS OFF)
- ELSE(CMAKE_BUILD_TYPE STREQUAL Debug)
-  SET(BUILD_SHARED_LIBS ON)
- ENDIF(CMAKE_BUILD_TYPE STREQUAL Debug)
- SET(X11_LIBS X11)
- SET(VOGL_LIBS vogl ${X11_LIBS})
- #SET(CMAKE_INSTALL_PREFIX /usr/local/) # Set in signature file
- EXECUTE_PROCESS(COMMAND ${CMAKE_UNAME} -m
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ---------------------------------------------------------------------------
+# Build type and shared/static library choice
+# ---------------------------------------------------------------------------
+if(AVG_Q_BUILD_DEBUG)
+ set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+elseif(NOT CMAKE_BUILD_TYPE)
+ set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# The original build forced static libraries for Windows and for Debug builds.
+# Preserve that behaviour unless the user explicitly requested otherwise.
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+elseif(CMAKE_BUILD_TYPE STREQUAL Debug)
+ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+endif()
+
+# ---------------------------------------------------------------------------
+# Packaging
+# ---------------------------------------------------------------------------
+set(CPACK_GENERATOR TBZ2)
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+include(CPack)
+
+# ---------------------------------------------------------------------------
+# Platform-specific defaults
+# ---------------------------------------------------------------------------
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+ unset(CMAKE_INSTALL_PREFIX)
+ set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Installation prefix" FORCE)
+ set(CMAKE_EXECUTABLE_SUFFIX ".exe")
+ set(INSTALLDIR "bin")
+ set(VOGL_LIBS vogl)
+ set(HDF4_INCLUDES /usr/x86_64-w64-mingw32/usr/include/hdf4)
+ set(HDF4_LIBS mfhdf)
+else()
+ set(X11_LIBS X11)
+ set(VOGL_LIBS vogl ${X11_LIBS})
+ execute_process(COMMAND uname -m
   OUTPUT_VARIABLE UNAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
  )
- IF(UNAME MATCHES "x86_64")
-  SET(INSTALLDIR distrib/avg_q64)
-  SET(C_FLAGS_ARCHITECTURE "-march=core2")
- ELSE(UNAME MATCHES "x86_64")
-  SET(INSTALLDIR distrib/avg_q32)
+ if(UNAME STREQUAL "x86_64")
+  set(INSTALLDIR distrib/avg_q64)
+  set(C_FLAGS_ARCHITECTURE "-march=core2")
+ else()
+  set(INSTALLDIR distrib/avg_q32)
   # -D_FILE_OFFSET_BITS=64 is necessary to have working fstat() on CIFS mounts
-  SET(C_FLAGS_ARCHITECTURE "-march=i686")
- ENDIF(UNAME MATCHES "x86_64")
- SET(HDF4_INCLUDES /usr/include/hdf)
- SET(HDF4_LIBS mfhdf df)
-ENDIF(CMAKE_SYSTEM_NAME MATCHES Windows)
+  set(C_FLAGS_ARCHITECTURE "-march=i686")
+ endif()
+ set(HDF4_INCLUDES /usr/include/hdf)
+ set(HDF4_LIBS mfhdf df)
+endif()
 
-INCLUDE(FindLAPACK)
-IF(LAPACK_FOUND)
- SET(ICA_LIBS ${LAPACK_LIBRARIES})
-ENDIF(LAPACK_FOUND)
-SET(AVG_Q_DEFINES -DLITTLE_ENDIAN)
+# ---------------------------------------------------------------------------
+# External dependencies
+# ---------------------------------------------------------------------------
+find_package(LAPACK)
+if(LAPACK_FOUND)
+ set(ICA_LIBS ${LAPACK_LIBRARIES})
+endif()
 
-INCLUDE(CheckIncludeFiles)
-CHECK_INCLUDE_FILES("f2c.h" F2C_H_AVAILABLE)
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+ pkg_check_modules(SOX sox)
+endif()
 
-# NOTE Don't include -ffast-math because it screws up NaN handling (e.g. in
-# recode, specifically anything that tests for NaN)
-SET(C_FLAGS_COMMON "${C_FLAGS_ARCHITECTURE} -O4 -fomit-frame-pointer -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Winline")
+if(AVG_Q_WITH_HDF4)
+ # Try to detect HDF4 in a portable way; fall back to the legacy hard-coded
+ # configuration if detection fails, so existing builds keep working.
+ find_path(HDF4_INCLUDE_DIR hdf.h PATHS ${HDF4_INCLUDES})
+ find_library(HDF4_MFHDF_LIBRARY NAMES mfhdf)
+ find_library(HDF4_DF_LIBRARY NAMES df)
+ if(HDF4_INCLUDE_DIR AND HDF4_MFHDF_LIBRARY)
+  set(HDF4_FOUND TRUE)
+  set(HDF4_LIBS ${HDF4_MFHDF_LIBRARY})
+  if(HDF4_DF_LIBRARY)
+   list(APPEND HDF4_LIBS ${HDF4_DF_LIBRARY})
+  endif()
+  set(HDF4_INCLUDES ${HDF4_INCLUDE_DIR})
+ else()
+  message(WARNING "HDF4 not found by CMake; using legacy hard-coded paths. Set AVG_Q_WITH_HDF4=OFF to disable.")
+  set(HDF4_FOUND TRUE)
+ endif()
+else()
+ set(HDF4_FOUND FALSE)
+endif()
 
-INCLUDE(FindOpenMP)
-IF(OPENMP_FOUND)
- SET(C_FLAGS_COMMON "${C_FLAGS_COMMON} ${OpenMP_C_FLAGS}")
-ENDIF(OPENMP_FOUND)
+# ---------------------------------------------------------------------------
+# Compiler flags
+# ---------------------------------------------------------------------------
+# NOTE: Do not use -ffast-math because it breaks NaN handling (e.g. in recode).
+set(C_FLAGS_COMMON "${C_FLAGS_ARCHITECTURE} -O3 -fomit-frame-pointer")
 
-SET(CMAKE_C_FLAGS_RELEASE "${C_FLAGS_COMMON}")
-SET(CMAKE_CXX_FLAGS_RELEASE ${C_FLAGS_COMMON})
+set(C_FLAGS_WARNINGS
+ -Wall
+ -Wshadow
+ -Wpointer-arith
+ -Wstrict-prototypes
+ -Wmissing-prototypes
+ -Wmissing-declarations
+ -Wnested-externs
+ -Winline
+)
 
-# Permissons to be set on installed files
-SET(EXECUTABLE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-SET(FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+set(CXX_FLAGS_WARNINGS
+ -Wall
+ -Wshadow
+ -Wpointer-arith
+)
 
+find_package(OpenMP)
+if(OpenMP_C_FOUND)
+ set(C_FLAGS_COMMON "${C_FLAGS_COMMON} ${OpenMP_C_FLAGS}")
+endif()
 
-# vvvvvvvvvvvvvvv Library definitions and feature configuration. Look here when porting! vvvvvvvvvvvvvvv
+# Apply flags via CMake variables so that the legacy subdirectory builds pick
+# them up automatically. New code should prefer target-specific options.
+string(REPLACE ";" " " C_FLAGS_WARNINGS_STR "${C_FLAGS_WARNINGS}")
+string(REPLACE ";" " " CXX_FLAGS_WARNINGS_STR "${CXX_FLAGS_WARNINGS}")
 
-SET(MFX_LIBS mfx)
+set(CMAKE_C_FLAGS_RELEASE "${C_FLAGS_COMMON} ${C_FLAGS_WARNINGS_STR}")
+set(CMAKE_CXX_FLAGS_RELEASE "${C_FLAGS_COMMON} ${CXX_FLAGS_WARNINGS_STR}")
 
-INCLUDE(FindPkgConfig)
-pkg_check_modules(SOX sox)
+set(CMAKE_C_FLAGS_DEBUG "-g ${C_FLAGS_WARNINGS_STR}")
+set(CMAKE_CXX_FLAGS_DEBUG "-g ${CXX_FLAGS_WARNINGS_STR}")
 
-# For now, set this to FALSE manually if you don't have HDF4 libraries
-# installed...
-SET(HDF4_FOUND TRUE)
+if(AVG_Q_ENABLE_ASAN)
+ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address")
+ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+endif()
 
-# Set these to FALSE manually if you don't want posplot or the GTK GUI avg_q_ui to be built.
-# This can be commendable to get a version of avg_q running with minimal
-# dependencies.
-SET(WITH_POSPLOT TRUE)
-SET(WITH_AVG_Q_UI TRUE)
+# ---------------------------------------------------------------------------
+# Permissions for installed files
+# ---------------------------------------------------------------------------
+set(EXECUTABLE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+set(FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-if (NOT LAPACK_FOUND)
- MESSAGE("LAPACK libraries not found - compiling without icadecomp")
-endif (NOT LAPACK_FOUND)
-if (NOT SOX_FOUND)
- MESSAGE("SOX library not found - compiling without read_sound/write_sound")
-endif (NOT SOX_FOUND)
-if (NOT HDF4_FOUND)
- MESSAGE("HDF4 library not found - compiling without read_hdf/write_hdf")
-endif (NOT HDF4_FOUND)
-if (NOT WITH_POSPLOT)
- MESSAGE("Compiling without the posplot method.")
-endif (NOT WITH_POSPLOT)
-if (NOT WITH_AVG_Q_UI)
- MESSAGE("Not creating the avg_q_ui GUI.")
-endif (NOT WITH_AVG_Q_UI)
+# ---------------------------------------------------------------------------
+# Library definitions and feature configuration
+# ---------------------------------------------------------------------------
+set(MFX_LIBS mfx)
 
-SET(CMAKE_C_FLAGS_DEBUG "-g -fsanitize=address -Wall")
-#SET(CMAKE_C_FLAGS_DEBUG -g -DMALLOC_TRACE)
+set(AVG_Q_DEFINES -DLITTLE_ENDIAN)
 
-SET(AVG_Q_DEFINES ${AVG_Q_DEFINES} -DTRACE -DFP_EXCEPTION -DFOR_AVG_Q)
-SET(AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/bf ${CMAKE_SOURCE_DIR}/bf/array
- ${CMAKE_SOURCE_DIR}/bf/biomag ${CMAKE_SOURCE_DIR}/mfx
+# Expose POSIX.1-2008/GNU functions such as strdup in strict C17 mode.
+if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+ list(APPEND AVG_Q_DEFINES -D_GNU_SOURCE)
+endif()
+
+if(NOT LAPACK_FOUND)
+ message(STATUS "LAPACK libraries not found - compiling without icadecomp")
+endif()
+if(NOT SOX_FOUND)
+ message(STATUS "SOX library not found - compiling without read_sound/write_sound")
+endif()
+if(NOT HDF4_FOUND)
+ message(STATUS "HDF4 library not found - compiling without read_hdf/write_hdf")
+endif()
+if(NOT AVG_Q_WITH_POSPLOT)
+ message(STATUS "Compiling without the posplot method.")
+endif()
+if(NOT AVG_Q_WITH_AVG_Q_UI)
+ message(STATUS "Not creating the avg_q_ui GUI.")
+endif()
+
+set(AVG_Q_DEFINES ${AVG_Q_DEFINES} -DTRACE -DFP_EXCEPTION -DFOR_AVG_Q)
+
+set(AVG_Q_INCLUDES
+ ${CMAKE_SOURCE_DIR}/bf
+ ${CMAKE_SOURCE_DIR}/bf/array
+ ${CMAKE_SOURCE_DIR}/bf/biomag
+ ${CMAKE_SOURCE_DIR}/mfx
  ${CMAKE_SOURCE_DIR}/bf/stat
- ${CMAKE_SOURCE_DIR}/bf/math ${CMAKE_SOURCE_DIR}/bf/optimize
- ${CMAKE_SOURCE_DIR}/bf/array ${CMAKE_SOURCE_DIR}/bf/biomag
+ ${CMAKE_SOURCE_DIR}/bf/math
+ ${CMAKE_SOURCE_DIR}/bf/optimize
+ ${CMAKE_SOURCE_DIR}/bf/array
+ ${CMAKE_SOURCE_DIR}/bf/biomag
 )
 
 # Arranges that shared libs are found in the same dir as the binary
-SET(CMAKE_INSTALL_RPATH "$ORIGIN")
-SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-g -lasan")
-SET(BF_LIBPATH_DYNAMIC)
-SET(BF_LIBS bf ${MFX_LIBS} m)
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
-if (LAPACK_FOUND)
- LIST(APPEND BF_LIBS ${LAPACK_LIBRARIES})
-endif (LAPACK_FOUND)
+set(BF_LIBPATH_DYNAMIC)
+set(BF_LIBS bf ${MFX_LIBS} m)
 
-if (SOX_FOUND)
- LIST(APPEND AVG_Q_INCLUDES ${SOX_INCLUDES})
- LIST(APPEND BF_LIBS ${SOX_LIBRARIES})
-endif (SOX_FOUND)
+if(LAPACK_FOUND)
+ list(APPEND BF_LIBS ${LAPACK_LIBRARIES})
+endif()
 
-if (HDF4_FOUND)
- LIST(APPEND AVG_Q_INCLUDES ${HDF4_INCLUDES})
- LIST(APPEND BF_LIBS ${HDF4_LIBS})
-endif (HDF4_FOUND)
+if(SOX_FOUND)
+ if(NOT SOX_INCLUDES)
+  set(SOX_INCLUDES ${SOX_INCLUDE_DIRS})
+ endif()
+ list(APPEND AVG_Q_INCLUDES ${SOX_INCLUDES})
+ list(APPEND BF_LIBS ${SOX_LIBRARIES})
+endif()
 
-if (WITH_POSPLOT)
- LIST(APPEND AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/vogl/src)
- SET(BF_LIBS_VGUI ${BF_LIBS} ${VOGL_LIBS} vogl_vgui)
- ADD_LIBRARY(dummy_vogl_vgui STATIC avg_q_ui/dummy_vogl_vgui_driver.c)
- LIST(APPEND BF_LIBS ${VOGL_LIBS} dummy_vogl_vgui)
-else (WITH_POSPLOT)
- SET(BF_LIBS_VGUI ${BF_LIBS})
-endif (WITH_POSPLOT)
+if(HDF4_FOUND)
+ list(APPEND AVG_Q_INCLUDES ${HDF4_INCLUDES})
+ list(APPEND BF_LIBS ${HDF4_LIBS})
+endif()
 
-ADD_DEFINITIONS(${AVG_Q_DEFINES})
-INCLUDE_DIRECTORIES(${AVG_Q_INCLUDES})
-LINK_DIRECTORIES(${BF_LIBPATH_DYNAMIC})
+if(AVG_Q_WITH_POSPLOT)
+ list(APPEND AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/vogl/src)
+ set(BF_LIBS_VGUI ${BF_LIBS} ${VOGL_LIBS} vogl_vgui)
+ add_library(dummy_vogl_vgui STATIC avg_q_ui/dummy_vogl_vgui_driver.c)
+ list(APPEND BF_LIBS ${VOGL_LIBS} dummy_vogl_vgui)
+else()
+ set(BF_LIBS_VGUI ${BF_LIBS})
+endif()
 
-# Imported libs:
-IF (WITH_POSPLOT)
-ADD_SUBDIRECTORY(vogl)
-endif (WITH_POSPLOT)
+add_definitions(${AVG_Q_DEFINES})
+include_directories(${AVG_Q_INCLUDES})
+link_directories(${BF_LIBPATH_DYNAMIC})
 
-ADD_SUBDIRECTORY(mfx)
-ADD_SUBDIRECTORY(bf)
-ADD_SUBDIRECTORY(readymade)
+# ---------------------------------------------------------------------------
+# Subdirectories
+# ---------------------------------------------------------------------------
+if(AVG_Q_WITH_POSPLOT)
+ add_subdirectory(vogl)
+endif()
 
-#ADD_SUBDIRECTORY(Documentation)
+add_subdirectory(mfx)
+add_subdirectory(bf)
+add_subdirectory(readymade)
 
-IF (WITH_AVG_Q_UI)
-ADD_SUBDIRECTORY(avg_q_ui)
-endif (WITH_AVG_Q_UI)
+add_subdirectory(Documentation)
 
-SET(PROGRAMS avg_q_vogl extspec)
+if(AVG_Q_WITH_AVG_Q_UI)
+ add_subdirectory(avg_q_ui)
+endif()
 
-IF (WITH_POSPLOT)
- LIST(APPEND PROGRAMS do_posplot_vogl)
-endif (WITH_POSPLOT)
+# ---------------------------------------------------------------------------
+# Executables
+# ---------------------------------------------------------------------------
+set(PROGRAMS avg_q_vogl extspec)
 
-FOREACH(program ${PROGRAMS})
- IF (program STREQUAL avg_q_vogl)
-  ADD_EXECUTABLE(${program} avg_q.c)
- ELSEIF (program STREQUAL do_posplot_vogl)
-  ADD_EXECUTABLE(${program} do_posplot.c)
- ELSE (program STREQUAL avg_q_vogl)
-  ADD_EXECUTABLE(${program} ${program}.c)
- ENDIF (program STREQUAL avg_q_vogl)
- TARGET_LINK_LIBRARIES(${program} ${BF_LIBS})
-ENDFOREACH(program)
+if(AVG_Q_WITH_POSPLOT)
+ list(APPEND PROGRAMS do_posplot_vogl)
+endif()
 
+foreach(program ${PROGRAMS})
+ if(program STREQUAL avg_q_vogl)
+  add_executable(${program} avg_q.c)
+ elseif(program STREQUAL do_posplot_vogl)
+  add_executable(${program} do_posplot.c)
+ else()
+  add_executable(${program} ${program}.c)
+ endif()
+ target_link_libraries(${program} ${BF_LIBS})
+endforeach()
+
+# ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
 include(CTest)
-add_test(NAME test_avg_q_vogl COMMAND avg_q_vogl ${CMAKE_CURRENT_SOURCE_DIR}/TestSuite/basic_run_test.script)
+if(BUILD_TESTING)
+ add_test(NAME test_avg_q_vogl COMMAND avg_q_vogl ${CMAKE_CURRENT_SOURCE_DIR}/TestSuite/basic_run_test.script)
+endif()
 
-INSTALL(
+# ---------------------------------------------------------------------------
+# Installation
+# ---------------------------------------------------------------------------
+install(
  TARGETS ${PROGRAMS}
  DESTINATION ${INSTALLDIR}
  PERMISSIONS ${EXECUTABLE_PERMISSIONS}
 )
 
-IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
- ADD_EXECUTABLE(avg_q_1 avg_q.c avg_q_dump.h)
- SET_TARGET_PROPERTIES(avg_q_1 PROPERTIES 
-  COMPILE_FLAGS "-DSTANDALONE"
- )
- TARGET_LINK_LIBRARIES(avg_q_1 ${BF_LIBS})
-ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/avg_q_dump.h)
+ add_executable(avg_q_1 avg_q.c avg_q_dump.h)
+ target_compile_definitions(avg_q_1 PRIVATE STANDALONE)
+ target_link_libraries(avg_q_1 ${BF_LIBS})
+endif()

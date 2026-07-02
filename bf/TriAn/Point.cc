@@ -1,7 +1,13 @@
-// Copyright (C) 1996,1997 Bernd Feige
+// Copyright (C) 1996,1997,2026 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 #include "Point.hh"
+
+#ifndef IGNORE_RESULT
+/* Suppress -Wunused-result for functions declared with warn_unused_result
+ * (gcc does not honour a plain (void) cast for these). */
+#define IGNORE_RESULT(expr) do { __typeof__(expr) _ignore_result_r = (expr); (void)_ignore_result_r; } while(0)
+#endif
 
 Point::Point() {
  x=y=z=0;
@@ -110,7 +116,7 @@ void Point::write_to_file(FILE *outfile) {
  fprintf(outfile, "%g %g %g\n", x, y, z);
 }
 void Point::read_from_file(FILE *infile) {
- fscanf(infile, "%f %f %f\n", &x, &y, &z);
+ IGNORE_RESULT(fscanf(infile, "%f %f %f\n", &x, &y, &z));
 }
 Point Point::operator- (const Point& p2) {
  return Point(x-p2.x, y-p2.y, z-p2.z);

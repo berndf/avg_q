@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2014,2017,2018,2024 Bernd Feige
+ * Copyright (C) 1996-2014,2017,2018,2024,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -187,9 +187,9 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
     uint32_t length;
     struct vitaport_idiotic_multiplemarkertablenames *markertable_entry;
     label[VP_TABLEVAR_LENGTH]='\0';
-    fread(label, 1, VP_TABLEVAR_LENGTH, local_arg->infile);
+    IGNORE_RESULT(fread(label, 1, VP_TABLEVAR_LENGTH, local_arg->infile));
     if (feof(local_arg->infile)) break;
-    fread(&length, sizeof(length), 1, local_arg->infile);
+    IGNORE_RESULT(fread(&length, sizeof(length), 1, local_arg->infile));
 #ifdef LITTLE_ENDIAN
     Intel_int32((uint32_t *)&length);
 #endif
@@ -200,7 +200,7 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
      int const ntags=length/sizeof(millisec);
      found_markertable=TRUE;
      for (tagno=0; tagno<ntags; tagno++) {
-      fread(&millisec, sizeof(millisec), 1, local_arg->infile);
+      IGNORE_RESULT(fread(&millisec, sizeof(millisec), 1, local_arg->infile));
 #ifdef LITTLE_ENDIAN
       Intel_int32((uint32_t *)&millisec);
 #endif
@@ -234,13 +234,13 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
      switch (this_size) {
       case 1: {
        unsigned char s;
-       fread(&s, sizeof(s), 1, local_arg->infile);
+       IGNORE_RESULT(fread(&s, sizeof(s), 1, local_arg->infile));
        code=s;
        }
        break;
       case 2: {
        uint16_t s;
-       fread(&s, sizeof(s), 1, local_arg->infile);
+       IGNORE_RESULT(fread(&s, sizeof(s), 1, local_arg->infile));
 #ifdef LITTLE_ENDIAN
        Intel_int16(&s);
 #endif
@@ -262,13 +262,13 @@ read_vitaport_build_trigbuffer(transform_info_ptr tinfo) {
        switch (this_size) {
 	case 1: {
 	 unsigned char s;
-	 fread(&s, sizeof(s), 1, local_arg->infile);
+	 IGNORE_RESULT(fread(&s, sizeof(s), 1, local_arg->infile));
 	 code=s;
 	 }
 	 break;
 	case 2: {
 	 uint16_t s;
-	 fread(&s, sizeof(s), 1, local_arg->infile);
+	 IGNORE_RESULT(fread(&s, sizeof(s), 1, local_arg->infile));
 #ifdef LITTLE_ENDIAN
 	 Intel_int16(&s);
 #endif
@@ -464,7 +464,7 @@ read_vitaport_init(transform_info_ptr tinfo) {
   }
   local_arg->channelnames_length+=actual_fieldlength(local_arg->channelheaders[channel].kname, local_arg->channelheaders[channel].kname+VP_CHANNELNAME_LENGTH)+1;
  }
- fread(&local_arg->checksum, sizeof(uint16_t), 1, local_arg->infile);
+ IGNORE_RESULT(fread(&local_arg->checksum, sizeof(uint16_t), 1, local_arg->infile));
 #ifdef LITTLE_ENDIAN
  Intel_int16((uint16_t *)&local_arg->checksum);
 #endif

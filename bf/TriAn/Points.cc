@@ -1,7 +1,13 @@
-// Copyright (C) 1996,1997 Bernd Feige
+// Copyright (C) 1996,1997,2026 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 #include "Points.hh"
+
+#ifndef IGNORE_RESULT
+/* Suppress -Wunused-result for functions declared with warn_unused_result
+ * (gcc does not honour a plain (void) cast for these). */
+#define IGNORE_RESULT(expr) do { __typeof__(expr) _ignore_result_r = (expr); (void)_ignore_result_r; } while(0)
+#endif
 
 Points::Points(Point* p) {
  this->x=p->x;
@@ -18,7 +24,7 @@ Points::~Points() {
 int Points::read_from_file(FILE *infile) {
  int nr_of_points;
  Points* inpoints=this;
- fscanf(infile, "%d\n", &nr_of_points);
+ IGNORE_RESULT(fscanf(infile, "%d\n", &nr_of_points));
  ((Point*)inpoints)->read_from_file(infile);
  int i;
  for (i=1; i<nr_of_points; i++) {

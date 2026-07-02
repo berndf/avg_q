@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993,1994 Bernd Feige
+ * Copyright (C) 1993,1994,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -9,7 +9,9 @@
  */
 
 #include <stdio.h>
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
+#endif
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
@@ -75,8 +77,8 @@ int main(int argc, char **argv) {
    mfx_write(&nullshort, 1, myfile);
    len=1;
   }
-  while (mfx_read(&trigshort, 1, myfile)==MFX_NOERR && 
-	(trigshort=DATACONV((*trchannelp), trigshort)+0.1), 
+  while ((void)(mfx_read(&trigshort, 1, myfile)==MFX_NOERR && 
+	(trigshort=DATACONV((*trchannelp), trigshort)+0.1)), 
 	IS_TRIGGER(trigshort)) {
    mfx_seek(myfile, -1, 1);
    /* If not leave_first then don't even warn about changing trigcodes... */

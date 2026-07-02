@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003,2010,2013 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003,2010,2013,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -185,7 +185,7 @@ collapse_channels(transform_info_ptr tinfo) {
   do {
    do {
     DATATYPE accu=0.0;
-    int chans_in_range=0, *in_range, channel=0;
+    int chans_in_range=0, *in_range=NULL, channel=0;
     switch (local_arg->collapse_choice) {
      case COLLAPSE_BY_HIGHEST:
       accu= -FLT_MAX;

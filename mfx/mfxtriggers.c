@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993-1996 Bernd Feige
+ * Copyright (C) 1993-1996,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -11,7 +11,9 @@
 /*{{{}}}*/
 /*{{{  #includes*/
 #include <stdio.h>
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +29,7 @@ extern int optind, opterr;
 int main(int argc, char **argv) {
  /*{{{  Local vars*/
  MFX_FILE *myfile;
- int i, c, pos, pos2, trig, len, mintrig, maxtrig, pts_in_epoch;
+ int i, c, pos=0, pos2, trig, len, mintrig, maxtrig, pts_in_epoch;
  int verbose=FALSE, errflag=0;
  int *trigcounts=NULL;
  short trigshort;

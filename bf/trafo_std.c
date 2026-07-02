@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993-2004,2006,2007,2009,2011-2014,2018 Bernd Feige
+ * Copyright (C) 1993-2004,2006,2007,2009,2011-2014,2018,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -10,12 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __linux__
-/* Needed with glibc 2.1 to have NAN defined (from math.h) */
-#define __USE_ISOC9X 1
-/* Needed with glibc 2.2 to have NAN defined (sigh...) */
-#define __USE_ISOC99 1
-#endif
 #include <math.h>
 #include <errno.h>
 #include "transform.h"

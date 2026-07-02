@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Bernd Feige
+ * Copyright (C) 2017,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -52,7 +52,7 @@ main(int argc, char **argv) {
  REC_channel_header channelheader;
  long channelheader_length,record_size=0;
  int channel, infile_ind;
- long nr_of_channels, bytes_in_header, nr_of_records, total_records, record;
+ long nr_of_channels, bytes_in_header, nr_of_records, total_records=0L, record;
  FILE *infile, *outfile;
  int samples_per_record;
  int total_samples_per_record;

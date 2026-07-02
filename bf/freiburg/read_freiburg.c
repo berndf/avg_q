@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003,2004,2007-2012 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003,2004,2007-2012,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -248,7 +248,7 @@ read_freiburg_init(transform_info_ptr tinfo) {
    } else {
     while (!feof(coafile)) {
      Bool repeat;
-     fgets(coa_buf, MAX_COALINE-1, coafile);
+     IGNORE_RESULT(fgets(coa_buf, MAX_COALINE-1, coafile));
      do {
       repeat=FALSE;
       if (strncmp(coa_buf, "Channel_Table ", 14)==0) {
@@ -257,7 +257,7 @@ read_freiburg_init(transform_info_ptr tinfo) {
        char *innames;
        while (!feof(coafile)) {
 	char *eol;
-	fgets(coa_buf, MAX_COALINE-1, coafile);
+	IGNORE_RESULT(fgets(coa_buf, MAX_COALINE-1, coafile));
 	if (!isdigit(*coa_buf)) break;
 	if (strncmp(coa_buf, "0 0 ", 4)==0) {
 	 /* Empty channel descriptors: Don't generate channelnames */
@@ -281,7 +281,7 @@ read_freiburg_init(transform_info_ptr tinfo) {
        havechannels=0;
        while (!feof(coafile)) {
 	char *eol;
-	fgets(coa_buf, MAX_COALINE-1, coafile);
+	IGNORE_RESULT(fgets(coa_buf, MAX_COALINE-1, coafile));
 	if (!isdigit(*coa_buf)) break;
 	for (eol=coa_buf+strlen(coa_buf)-1; eol>=coa_buf && (*eol=='\n' || *eol=='\r'); eol--) *eol='\0';
 	if (innames!=NULL) {
@@ -555,7 +555,7 @@ read_freiburg(transform_info_ptr tinfo) {
 
  /*{{{  Read the 64-Byte header*/
  fseek(infile, 0, SEEK_SET);
- fread(header, 1, FREIBURG_HEADER_LENGTH, infile);
+ IGNORE_RESULT(fread(header, 1, FREIBURG_HEADER_LENGTH, infile));
  for (i=0; i<18; i++) {
 # ifdef LITTLE_ENDIAN
   Intel_int16((uint16_t *)&header[i]);

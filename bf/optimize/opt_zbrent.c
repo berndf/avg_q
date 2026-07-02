@@ -20,7 +20,7 @@
 GLOBAL OPT_DTYPE
 opt_zbrent(optimize_struct *ostructp, OPT_DTYPE x1, OPT_DTYPE x2, OPT_DTYPE tol) {
  int iter;
- OPT_DTYPE a=x1,b=x2,c=x2,d,e,min1,min2;
+ OPT_DTYPE a=x1,b=x2,c=x2,d,e=0.0,min1,min2;
  OPT_DTYPE fa=EVAL_AT(a),fb=EVAL_AT(b),fc,p,q,r,s,tol1,xm;
 
  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))

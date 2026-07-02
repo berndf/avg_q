@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2005,2009-2013,2016,2019 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2005,2009-2013,2016,2019,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -12,14 +12,10 @@
  */
 /*}}}  */
 
-/*{{{  #includes*/
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __GNUC__
-#include <unistd.h>
-#endif
-#include <math.h>
 #include <string.h>
+#include <getopt.h>
 #include "transform.h"
 #include "bf.h"
 
@@ -30,13 +26,6 @@
 #ifdef STANDALONE
 #include "avg_q_dump.h"
 #endif
-/*}}}  */
-
-/*{{{  External declarations*/
-extern char *optarg;
-extern int optind, opterr;
-#include <getopt.h>
-/*}}}  */
 
 /*{{{ argv handling*/
 LOCAL char **mainargv;
@@ -62,7 +51,7 @@ LOCAL struct transform_methods_struct method;
 /*}}}*/
 
 /*{{{  Local functions*/
-LOCAL void 
+LOCAL void
 usage(FILE *stream) {
 #ifndef STANDALONE
  fprintf(stream, "Usage: %s [options] scriptfile [script_argument1 ...]\n"
@@ -99,8 +88,8 @@ usage(FILE *stream) {
 }
 /*}}}  */
 
-/*{{{  int main(int argc, char **argv) {*/
-int main(int argc, char **argv) {
+int
+main(int argc, char **argv) {
  int errflag=0, c;
  int nr_of_script_variables, variables_requested1, variables_requested2, max_var_requested;
  Bool dumponly=FALSE;
@@ -117,29 +106,17 @@ int main(int argc, char **argv) {
   exit(3);
  }
 
- /* setenv VDEVICE=X11 if it isn't already set */
- if (getenv("VDEVICE")==NULL) {
-  char *vdevice, *envbuffer;
-  vdevice="X11";
-  envbuffer=malloc((strlen(vdevice)+9)*sizeof(char));
-  if (envbuffer==NULL) {
-   fprintf(stderr, "avg_q: Error allocating envbuffer!\n");
+	 /* setenv VDEVICE=X11 if it isn't already set */
+	 if (getenv("VDEVICE")==NULL) {
+#ifdef _WIN32
+	  if (_putenv_s("VDEVICE", "X11")!=0) {
+#else
+	  if (setenv("VDEVICE", "X11", 1)!=0) {
+#endif
+   fprintf(stderr, "avg_q: Error setting VDEVICE environment variable!\n");
    exit(1);
   }
-  sprintf(envbuffer, "VDEVICE=%s", vdevice);
-  putenv(envbuffer);
-  /* Note that the buffer cannot be free()d while the
-   * program runs, otherwise `unexpected results' occur... 
-   * This is documented behavior: envbuffer becomes part of the environment. */ 
  }
-
- /*{{{  MetroWerks specials*/
-# ifdef __MWERKS__
- extern int getopt (int argc, char *const *argv, const char *shortopts);
-# include <console.h>
- argc = ccommand(&argv);
-# endif 
- /*}}}  */
 
  /*{{{  Preload tinfostruc values*/
  mainargv=argv;
@@ -159,7 +136,7 @@ int main(int argc, char **argv) {
 #define GETOPT_STRING "t:Ds:"
 #endif
  const struct option longopts[]={{"help",no_argument,NULL,'?'},{"version",no_argument,NULL,'V'},{NULL,0,NULL,0}};
- while ((c=getopt_long(argc, argv, GETOPT_STRING, longopts, NULL))!=EOF) {
+ while ((c=getopt_long(argc, argv, GETOPT_STRING, longopts, NULL))!=-1) {
   switch (c) {
    case 't':
     emethod.trace_level=atoi(optarg);
@@ -249,10 +226,10 @@ int main(int argc, char **argv) {
    continue;
   }
   if (dumponly) {
-   char prefix_buffer[8];
-   sprintf(prefix_buffer, "iter%02d", iter_queue.current_input_script);
+   char prefix_buffer[16];
+   snprintf(prefix_buffer, sizeof(prefix_buffer), "iter%02d", iter_queue.current_input_script);
    dump_queue(&iter_queue, dumpfile, prefix_buffer);
-   sprintf(prefix_buffer, "post%02d", post_queue.current_input_script);
+   snprintf(prefix_buffer, sizeof(prefix_buffer), "post%02d", post_queue.current_input_script);
    dump_queue(&post_queue, dumpfile, prefix_buffer);
   } else {
    variables_requested1=set_queuevariables(&tinfostruc, &iter_queue, nr_of_script_variables, argv+optind+END_OF_ARGS);

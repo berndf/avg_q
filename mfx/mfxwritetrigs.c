@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993,1994,1999,2020 Bernd Feige
+ * Copyright (C) 1993,1994,1999,2020,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -22,7 +22,9 @@
 /*{{{}}}*/
 /*{{{  #includes*/
 #include <stdio.h>
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
+#endif
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>

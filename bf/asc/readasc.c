@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008,2010,2012,2014,2017,2025 Bernd Feige
+ * Copyright (C) 2008,2010,2012,2014,2017,2025,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -182,7 +182,7 @@ readasc_open_file(transform_info_ptr tinfo) {
  }
  ASCFILEPTR=ascfileptr;
  
- fread((void *)&magic, 2, 1, ascfileptr);
+ IGNORE_RESULT(fread((void *)&magic, 2, 1, ascfileptr));
  local_arg->binary=(magic==OLD_ASC_BF_MAGIC || magic==ASC_BF_FLOAT_MAGIC || magic==ASC_BF_DOUBLE_MAGIC);
  if (!local_arg->binary) {
   Intel_int16(&magic);	/* Try swapping */
@@ -192,7 +192,7 @@ readasc_open_file(transform_info_ptr tinfo) {
  }
  if (local_arg->binary) {
   /* Binary file: Read length of keyword section */
-  fread((void *)&shortbuf, 2, 1, ascfileptr);
+  IGNORE_RESULT(fread((void *)&shortbuf, 2, 1, ascfileptr));
   if (Intel_Fix) Intel_int16(&shortbuf);
 # ifdef FLOAT_DATATYPE
   local_arg->otherdatatype= (magic==ASC_BF_DOUBLE_MAGIC);
@@ -216,7 +216,7 @@ readasc_open_file(transform_info_ptr tinfo) {
  while (TRUE) {
   if (local_arg->binary && lensum>=shortbuf) break;
   save_filepos=ftell(ascfileptr);
-  fgets(inbuf, INBUFSIZE, ascfileptr);	/* An assignment header line */
+  IGNORE_RESULT(fgets(inbuf, INBUFSIZE, ascfileptr));	/* An assignment header line */
   lensum+=strlen(inbuf);
   for (i=0; i<NR_OF_KEYWORDS; i++) {
    len=strlen(keywords[i]);
@@ -250,14 +250,14 @@ readasc_open_file(transform_info_ptr tinfo) {
    /*{{{  Skip binary data set*/
    int length_of_string_section;
 
-   fread((void *)&nr_of_channels, sizeof(int), 1, ascfileptr);
+   IGNORE_RESULT(fread((void *)&nr_of_channels, sizeof(int), 1, ascfileptr));
    if (feof(ascfileptr)) {
     ERREXIT(tinfo->emethods, "readasc_init: Error seeking first epoch\n");
    }
-   fread((void *)&nr_of_points, sizeof(int), 1, ascfileptr);
-   fread((void *)&itemsize, sizeof(int), 1, ascfileptr);
+   IGNORE_RESULT(fread((void *)&nr_of_points, sizeof(int), 1, ascfileptr));
+   IGNORE_RESULT(fread((void *)&itemsize, sizeof(int), 1, ascfileptr));
    fseek(ascfileptr, (long)sizeof(int), 1);	/* Skip multiplexed value */
-   fread((void *)&length_of_string_section, sizeof(int), 1, ascfileptr);
+   IGNORE_RESULT(fread((void *)&length_of_string_section, sizeof(int), 1, ascfileptr));
    if (Intel_Fix) {
     Intel_int((unsigned int *)&nr_of_channels);
     Intel_int((unsigned int *)&nr_of_points);
@@ -276,7 +276,7 @@ readasc_open_file(transform_info_ptr tinfo) {
    /* If fscanf finds no match, it leaves all values untouched. So in order
     * to see if it fails or not, preset the values to something illegal: */
    nr_of_channels=nr_of_points=0;
-   fscanf(ascfileptr, "channels=%d, points=%d, itemsize=%d", &nr_of_channels, &nr_of_points, &itemsize);
+   IGNORE_RESULT(fscanf(ascfileptr, "channels=%d, points=%d, itemsize=%d", &nr_of_channels, &nr_of_points, &itemsize));
    if (nr_of_channels<1 || nr_of_points<1 || itemsize<1) {
     ERREXIT(tinfo->emethods, "readasc_init: Skip: Invalid data size indicators\n");
    }
@@ -389,7 +389,7 @@ read_datatype(struct readasc_storage *local_arg, DATATYPE *data, long length) {
    * then transfer the data converting the data type */
   C_OTHERDATATYPE *usestart=calloc(length,sizeof(C_OTHERDATATYPE));
   long i;
-  fread((void *)usestart, sizeof(C_OTHERDATATYPE), length, ASCFILEPTR);
+  IGNORE_RESULT(fread((void *)usestart, sizeof(C_OTHERDATATYPE), length, ASCFILEPTR));
   for (i=0; i<length; i++) {
    if (local_arg->Intel_Fix) {
 #   ifdef FLOAT_DATATYPE
@@ -402,7 +402,7 @@ read_datatype(struct readasc_storage *local_arg, DATATYPE *data, long length) {
   }
   free(usestart);
  } else {
-  fread((void *)data, sizeof(DATATYPE), length, ASCFILEPTR);
+  IGNORE_RESULT(fread((void *)data, sizeof(DATATYPE), length, ASCFILEPTR));
   if (local_arg->Intel_Fix) {
    long i;
    for (i=0; i<length; i++) {
@@ -454,12 +454,12 @@ readasc(transform_info_ptr tinfo) {
   /*{{{  Read binary data set*/
   int length_of_string_section;
 
-  fread((void *)&tinfo->nr_of_channels, sizeof(int), 1, ascfileptr);
+  IGNORE_RESULT(fread((void *)&tinfo->nr_of_channels, sizeof(int), 1, ascfileptr));
   if (feof(ascfileptr)) return NULL;
-  fread((void *)&tinfo->nr_of_points, sizeof(int), 1, ascfileptr);
-  fread((void *)&tinfo->itemsize, sizeof(int), 1, ascfileptr);
-  fread((void *)&tinfo->multiplexed, sizeof(int), 1, ascfileptr);
-  fread((void *)&length_of_string_section, sizeof(int), 1, ascfileptr);
+  IGNORE_RESULT(fread((void *)&tinfo->nr_of_points, sizeof(int), 1, ascfileptr));
+  IGNORE_RESULT(fread((void *)&tinfo->itemsize, sizeof(int), 1, ascfileptr));
+  IGNORE_RESULT(fread((void *)&tinfo->multiplexed, sizeof(int), 1, ascfileptr));
+  IGNORE_RESULT(fread((void *)&length_of_string_section, sizeof(int), 1, ascfileptr));
   if (Intel_Fix) {
    /*{{{  Byte-swap the values just read*/
    Intel_int((unsigned int *)&tinfo->nr_of_channels);
@@ -479,7 +479,7 @@ readasc(transform_info_ptr tinfo) {
    ERREXIT(tinfo->emethods, "readasc: malloc error on string section or data/probe position buffers\n");
   }
 
-  fread((void *)namebuf, sizeof(char), length_of_string_section, ascfileptr);
+  IGNORE_RESULT(fread((void *)namebuf, sizeof(char), length_of_string_section, ascfileptr));
 
   innamebuf=namebuf+strlen(namebuf)+1;
   tinfo->xchannelname=innamebuf; /* Will be changed to the correct position shortly */
@@ -533,11 +533,11 @@ readasc(transform_info_ptr tinfo) {
   }
   free(namebuf);
 
-  fread((void *)tinfo->probepos, sizeof(double), 3*tinfo->nr_of_channels, ascfileptr);
+  IGNORE_RESULT(fread((void *)tinfo->probepos, sizeof(double), 3*tinfo->nr_of_channels, ascfileptr));
   read_datatype(local_arg, tinfo->xdata, tinfo->nr_of_points);
   read_datatype(local_arg, tinfo->tsdata, tinfo->length_of_output_region);
   /* Read the backwards skip count: */
-  fread((void *)&length_of_string_section, sizeof(int), 1, ascfileptr);
+  IGNORE_RESULT(fread((void *)&length_of_string_section, sizeof(int), 1, ascfileptr));
   if (Intel_Fix) {
    /*{{{  Byte-swap the values just read*/
    Intel_int((unsigned int *)&length_of_string_section);
@@ -551,7 +551,7 @@ readasc(transform_info_ptr tinfo) {
  /*{{{  Read ascii data set*/
  int xchannelnamelength;
  /*{{{  Process comment line*/
- fgets(inbuf, INBUFSIZE, ascfileptr);	/* The comment line */
+ IGNORE_RESULT(fgets(inbuf, INBUFSIZE, ascfileptr));	/* The comment line */
  if (feof(ascfileptr)) return NULL;
  new_namebuf=inbuf;
  do {
@@ -595,7 +595,7 @@ readasc(transform_info_ptr tinfo) {
  /*}}}  */
 
  /*{{{  Process the size line*/
- fgets(inbuf, INBUFSIZE, ascfileptr);	/* The size line */
+ IGNORE_RESULT(fgets(inbuf, INBUFSIZE, ascfileptr));	/* The size line */
  tinfo->itemsize=1;	/* The default value */
  /* If sscanf finds no match, it leaves all values untouched. So in order
   * to see if it fails or not, preset the values to something illegal: */
@@ -614,7 +614,7 @@ readasc(transform_info_ptr tinfo) {
  /*}}}  */
 
  /*{{{  Process the channel names line*/
- fgets(inbuf, INBUFSIZE, ascfileptr);	/* The channel names line */
+ IGNORE_RESULT(fgets(inbuf, INBUFSIZE, ascfileptr));	/* The channel names line */
 
  /* First, count how many bytes are necessary to hold the names strings */
  length=lastnonblank=0; ininbuf=inbuf;
@@ -661,7 +661,7 @@ readasc(transform_info_ptr tinfo) {
 
  /*{{{  Read the three probe position lines*/
  for (i=0; i<3; i++) {
-  fgets(inbuf, INBUFSIZE, ascfileptr);	/* The probe position lines */
+  IGNORE_RESULT(fgets(inbuf, INBUFSIZE, ascfileptr));	/* The probe position lines */
   if (readvalues(inbuf, sizeof(double), 3, 1, tinfo->probepos+i, tinfo->probepos+i)!=tinfo->nr_of_channels) {
    ERREXIT(tinfo->emethods, "readasc: Read error on probe positions\n");
   }
@@ -670,7 +670,7 @@ readasc(transform_info_ptr tinfo) {
 
  /*{{{  Read the data lines*/
  for (i=0; i<tinfo->nr_of_points; i++) {
-  fgets(inbuf, INBUFSIZE, ascfileptr);	/* The data lines */
+  IGNORE_RESULT(fgets(inbuf, INBUFSIZE, ascfileptr));	/* The data lines */
   if (readvalues(inbuf, sizeof(DATATYPE), tinfo->nr_of_points, tinfo->itemsize, tinfo->xdata+i, tinfo->tsdata+i*tinfo->itemsize)!=tinfo->nr_of_channels) {
    ERREXIT(tinfo->emethods, "readasc: Read error on data\n");
   }

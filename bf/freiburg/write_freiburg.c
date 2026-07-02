@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003-2005,2007,2012,2025 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003-2005,2007,2012,2025,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -114,11 +114,12 @@ write_freiburg_open_file(transform_info_ptr tinfo) {
    }
    /*{{{  Seek to the end of the current segment table*/
    do {
-    fgets(coa_buffer, COA_BUFSIZE, local_arg->coafptr);
+    IGNORE_RESULT(fgets(coa_buffer, COA_BUFSIZE, local_arg->coafptr));
    } while (!feof(local_arg->coafptr) && strncmp(coa_buffer, SEGMENT_TABLE_STRING, strlen(SEGMENT_TABLE_STRING))!=0);
-   while (!feof(local_arg->coafptr) && 
-          (fgets(coa_buffer, COA_BUFSIZE, local_arg->coafptr), 
-          strchr(coa_buffer, '\n')==NULL));
+   while (!feof(local_arg->coafptr)) {
+    IGNORE_RESULT(fgets(coa_buffer, COA_BUFSIZE, local_arg->coafptr));
+    if (strchr(coa_buffer, '\n')!=NULL) break;
+   }
    fseek(local_arg->coafptr, -2L, SEEK_CUR); /* Step back to before the \r */
    /*}}}  */
   }
@@ -148,7 +149,7 @@ write_freiburg_open_file(transform_info_ptr tinfo) {
   local_arg->btfile.sampling_interval_us=(short int)rint(1e6/tinfo->sfreq);
   local_arg->btfile.blockluecke=0;
   if (tinfo->comment!=NULL) {
-   strncpy(local_arg->btfile.text, tinfo->comment, 32);
+   snprintf(local_arg->btfile.text, sizeof(local_arg->btfile.text), "%s", tinfo->comment);
    if (comment2time(tinfo->comment, &dd, &mm, &yy, &yyyy, &hh, &mi, &ss)) {
      local_arg->btfile.start_month=mm;
      local_arg->btfile.start_day=dd;

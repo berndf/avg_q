@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1998,2000,2001,2003,2004,2018 Bernd Feige
+ * Copyright (C) 1996-1998,2000,2001,2003,2004,2018,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -10,7 +10,9 @@
 /*{{{}}}*/
 /*{{{  #includes*/
 #include <stdio.h>
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
+#endif
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
@@ -94,7 +96,7 @@ LOCAL char *output_nrofavg_names[]={
 int main(int argc, char *argv[]) {
  int i, c, nroffiles=argc-1;
  int channel, point, itempart, newdatasets;
- int channels, points, itemsize, datasets=0, offset, dataset_size, itemstep=1;
+ int channels=0, points=0, itemsize=0, datasets=0, offset, dataset_size=0, itemstep=1;
  int errflag=0, sumsquared=FALSE, sum_only= -1, leave_testparameters=FALSE;
  int nr_of_averages=0, use_nrofavg_as_weight=FALSE, binary_output=FALSE;
  enum output_nrofavg_options output_nrofavg_is=OUTPUT_SUM_WEIGHTS;
@@ -102,7 +104,7 @@ int main(int argc, char *argv[]) {
  char nextfname[MAX_FILENAME_LENGTH], outfname[MAX_FILENAME_LENGTH]="stdout";
  FILE *weightfile=NULL;
  double (*statfun)(double)=NULL;
- DATATYPE datatemp, *avg_buf, *out_tsdata, weight, sum_weights=0;
+ DATATYPE datatemp, *avg_buf, *out_tsdata=NULL, weight, sum_weights=0;
  growing_buf args;
  char writeasc_args[MAX_METHODARG_LENGTH];
 
@@ -196,7 +198,7 @@ int main(int argc, char *argv[]) {
    strcpy(nextfname, argv[optind++]);
    weight=1;	/* This can be changed by the -W option, after the file is read */
   } else {
-   fscanf(weightfile, "%s %lf", nextfname, &weight);
+   IGNORE_RESULT(fscanf(weightfile, "%s %lf", nextfname, &weight));
    if (feof(weightfile) || weight==0.0) break;
    nroffiles++;
    /* Output Nr_of_averages property will be sum_weights only if each of

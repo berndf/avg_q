@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001,2003,2004,2006-2010,2012,2014,2015,2018 Bernd Feige
+ * Copyright (C) 1996-1999,2001,2003,2004,2006-2010,2012,2014,2015,2018,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -152,7 +152,7 @@ write_synamps_init(transform_info_ptr tinfo) {
  }
  /* Since the comment can be of arbitrary length and thus also larger than the
   * rest of the header, we should limit ourselves to the size of the id field */
- strncpy(local_arg->EEG.id, tinfo->comment, sizeof(local_arg->EEG.id));
+ snprintf(local_arg->EEG.id, sizeof(local_arg->EEG.id), "%s", tinfo->comment);
  /* The date is coded in the comment, and read_synamps appends the date and time
   * from the corresponding fields and the contents of the id field, so that
   * the comment2time reader could be confused by the two date/time fields if we
@@ -176,14 +176,16 @@ write_synamps_init(transform_info_ptr tinfo) {
  strcpy(local_arg->EEG.label, "Unspecified");
  {short dd, mm, yy, yyyy, hh, mi, ss;
  if (comment2time(tinfo->comment, &dd, &mm, &yy, &yyyy, &hh, &mi, &ss)) {
-  char buffer[16]; /* Must be long enough to fit date (10) and time (12) +1 */
+  char buffer[40]; /* Must be long enough to fit date (10) and time (12) +1 */
   /* This is necessary because the date field was devised for 2-digit years.
    * With 4-digit years it uses all 10 bytes and the trailing zero
    * does not fit in any more. */
-  snprintf(buffer, 16, "%02d/%02d/%04d", mm, dd, yyyy);
-  strncpy(local_arg->EEG.date, buffer, sizeof(local_arg->EEG.date));
-  snprintf(buffer, 16, "%02d:%02d:%02d", hh, mi, ss);
-  strncpy(local_arg->EEG.time, buffer, sizeof(local_arg->EEG.time));
+  snprintf(buffer, sizeof(buffer), "%02d/%02d/%04d", mm, dd, yyyy);
+  strncpy(local_arg->EEG.date, buffer, sizeof(local_arg->EEG.date)-1);
+  local_arg->EEG.date[sizeof(local_arg->EEG.date)-1]='\0';
+  snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", hh, mi, ss);
+  strncpy(local_arg->EEG.time, buffer, sizeof(local_arg->EEG.time)-1);
+  local_arg->EEG.time[sizeof(local_arg->EEG.time)-1]='\0';
  }
  }
  local_arg->EEG.rejectcnt = 0;
@@ -297,7 +299,7 @@ write_synamps_init(transform_info_ptr tinfo) {
  }
  for (channel=0; channel<NoOfChannels; channel++) {
   /*{{{  Settings in the channel structure*/
-  strncpy(local_arg->Channels[channel].lab, tinfo->channelnames[channel],sizeof(local_arg->Channels[channel].lab));
+  snprintf(local_arg->Channels[channel].lab, sizeof(local_arg->Channels[channel].lab), "%s", tinfo->channelnames[channel]);
   local_arg->Channels[channel].reference=0;
   local_arg->Channels[channel].skip=0;
   local_arg->Channels[channel].reject=0;

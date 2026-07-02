@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1995,1996 Bernd Feige
+ * Copyright (C) 1995,1996,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /* This module holds global values that are needed for the kn (Patrick Berg)
@@ -25,7 +25,7 @@ struct external_methods_struct *kn_emethods;
 int        parsize,      /* size of parameter block */
                    adrsize,      /* size of address block */
                    parpos;       /* position of parameters */
-#endif OBVIOUSLY_OBSOLETE
+#endif /* OBVIOUSLY_OBSOLETE */
 
 struct_member sm_Rheader[]={
 /* The first entry, which gives the struct length, cannot be

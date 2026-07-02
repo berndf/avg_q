@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Bernd Feige
+ * Copyright (C) 2022,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -154,8 +154,8 @@ main(int argc, char **argv) {
  if (logfile!=NULL) {
   printf("\n\nLog file %s:\n", logfilename.buffer_start);
   struct nke_file_header logfile_header;
-  if (read_struct((char *)&logfile_header, sm_nke_file_header, infile)==0) {
-   fprintf(stderr, "%s: Can't read header in file >%s<\n", argv[0], filename);
+  if (read_struct((char *)&logfile_header, sm_nke_file_header, logfile)==0) {
+   fprintf(stderr, "%s: Can't read header in file >%s<\n", argv[0], logfilename.buffer_start);
   }
 #ifndef LITTLE_ENDIAN
   change_byteorder((char *)&logfile_header, sm_nke_file_header);

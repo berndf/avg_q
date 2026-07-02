@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1993,2003,2004 Bernd Feige
+ * Copyright (C) 1993,2003,2004,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -60,7 +60,7 @@
 
 /*{{{  Defines*/
 /* Defines for the construction of channel names */
-#define CHNAMELEN 5
+#define CHNAMELEN 12
 #define CHNAMECONST "A%d"
 /*}}}  */
 

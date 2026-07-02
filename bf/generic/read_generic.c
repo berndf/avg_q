@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2016,2022,2024,2025 Bernd Feige
+ * Copyright (C) 2008-2016,2022,2024-2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -605,7 +605,7 @@ read_generic(transform_info_ptr tinfo) {
 
  tinfo->file_start_point=file_start_point;
  tinfo->z_label=NULL;
- if (args[ARGS_XCHANNELNAME].is_set) tinfo->xchannelname=args[ARGS_XCHANNELNAME].arg.s;
+ if (args[ARGS_XCHANNELNAME].is_set) tinfo->xchannelname=(char *)args[ARGS_XCHANNELNAME].arg.s;
  tinfo->sfreq=local_arg->sfreq;
  tinfo->tsdata=myarray.start;
  tinfo->length_of_output_region=tinfo->nr_of_channels*tinfo->nr_of_points*tinfo->itemsize;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2018,2020,2023,2024 Bernd Feige
+ * Copyright (C) 1996-2018,2020,2023-2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -1182,7 +1182,7 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
 
  do { /* Repeat from here if dev==REDRAW */
   Bool leave=FALSE;
-  DATATYPE selmin, selmax;
+  DATATYPE selmin=0.0, selmax=1.0;
   int lastsel_changed=(local_arg->lastsel_entry!=NULL); /* sel[min,max] have to be reset */
 #ifdef SGI
   Int32 originx, originy;

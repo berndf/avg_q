@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2003,2006,2007,2010,2012,2013,2017 Bernd Feige
+ * Copyright (C) 1996-2003,2006,2007,2010,2012,2013,2017,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -167,10 +167,11 @@ main(int argc, char **argv) {
   if (strncmp(channelheader.kname, VP_MARKERCHANNEL_NAME, VP_CHANNELNAME_LENGTH)==0) {
    marker_channel=channel;
   }
+  (void)marker_channel;
   channellen_ms=(long int)rint(channelheaderII.dlen*1000.0/(channelheader.dasize+1)*fileheaderII.scnrate*channelheader.scanfc*channelheader.stofac/VITAPORT_CLOCKRATE);
   if (channellen_ms>filelen_ms) filelen_ms=channellen_ms;
  }
- fread(&checksum, sizeof(checksum), 1, infile);
+ IGNORE_RESULT(fread(&checksum, sizeof(checksum), 1, infile));
 #ifdef LITTLE_ENDIAN
  Intel_int16((uint16_t *)&checksum);
 #endif
@@ -201,7 +202,7 @@ main(int argc, char **argv) {
 
   printf("Truncating file at %ld+%ld=%ld; writing %ld events to >%s<...\n", ftell(infile), sum_dlen, tablepos, n_events, markertable_entry->markertable_name);
 
-  ftruncate(fileno(infile), tablepos);
+  IGNORE_RESULT(ftruncate(fileno(infile), tablepos));
   fseek(infile, 0, SEEK_END);
 
 #if 0

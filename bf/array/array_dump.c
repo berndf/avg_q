@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1994,1995,1997,2003,2010 Bernd Feige
+ * Copyright (C) 1994,1995,1997,2003,2010,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -15,6 +15,12 @@
 #include <string.h>
 #include "array.h"
 /*}}}  */
+
+#ifndef IGNORE_RESULT
+/* Suppress -Wunused-result for functions declared with warn_unused_result
+ * (gcc does not honour a plain (void) cast for these). */
+#define IGNORE_RESULT(expr) do { __typeof__(expr) _ignore_result_r = (expr); (void)_ignore_result_r; } while(0)
+#endif
 
 LOCAL int mathlab_count=0;	/* To assign different 'variable names' */
 LOCAL char *format_tags[]={
@@ -104,7 +110,7 @@ array_undump(FILE *fp, array *thisarray) {
     }
     array_write(thisarray, inval);
     if (thisarray->message!=ARRAY_CONTINUE) {
-     fscanf(fp, "%*[^\n]");	/* Gobble up anything up to \n */
+     IGNORE_RESULT(fscanf(fp, "%*[^\n]"));	/* Gobble up anything up to \n */
     }
    } while (thisarray->message!=ARRAY_ENDOFSCAN);
    break;

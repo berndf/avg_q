@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-1999,2001-2003,2010,2013 Bernd Feige
+ * Copyright (C) 1996-1999,2001-2003,2010,2013,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
@@ -254,7 +254,7 @@ cspect(transform_info_ptr tinfo, DATATYPE *indata, complex_spectrum *cspec, int 
 LOCAL void
 calc_refspectrum(transform_info_ptr tinfo, complex_spectrum *cspec, complex_spectrum *normspec, int refchannel, complex *p, enum norm_types norm_type) {
  int m1,kk,joff,k,i,j;
- DATATYPE den;
+ DATATYPE den=0.0;
  complex *phaseref, *cwp, *pr;
 
  if (normspec->first_spectrum==NULL) {

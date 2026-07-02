@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022,2023 Bernd Feige
+ * Copyright (C) 2022,2023,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -47,7 +47,6 @@ struct write_nke_storage {
 /*}}}  */
 
 LOCAL void write_21e(char const *eegfilename, transform_info_ptr tinfo) {
- struct write_nke_storage *local_arg=(struct write_nke_storage *)tinfo->methods->local_storage;
  growing_buf filename;
  growing_buf_init(&filename);
  growing_buf_takethis(&filename,eegfilename);
@@ -155,6 +154,7 @@ METHODDEF DATATYPE *
 write_nke(transform_info_ptr tinfo) {
  struct write_nke_storage *local_arg=(struct write_nke_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
+ (void)local_arg; (void)args;
 
  return tinfo->tsdata;	/* Simply to return something `useful' */
 }

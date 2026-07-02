@@ -3,7 +3,7 @@
 
 */
 
-static char rcsid[] = "@(#)randlcg.c	1.1 15:48:15 11/21/94   EFC";
+static char rcsid[] __attribute__((unused)) = "@(#)randlcg.c	1.1 15:48:15 11/21/94   EFC";
 
 #include <math.h>
 #include <limits.h>

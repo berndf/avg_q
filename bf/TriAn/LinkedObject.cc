@@ -1,4 +1,4 @@
-// Copyright (C) 1996 Bernd Feige
+// Copyright (C) 1996,2026 Bernd Feige
 // This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
 
 #include "LinkedObject.hh"
@@ -78,8 +78,9 @@ int LinkedObject::after_members() {
  return after;
 }
 LinkedObject* LinkedObject::addmember(LinkedObject* n) {
- if (this!=Empty) {
-  n->previous_member=this;
+ LinkedObject* self=this;
+ if (self!=Empty) {
+  n->previous_member=self;
   if (next_member!=Empty) {
    n->next_member=next_member;
    n->next_member->previous_member=n;

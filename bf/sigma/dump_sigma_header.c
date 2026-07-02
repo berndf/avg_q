@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Bernd Feige
+ * Copyright (C) 2020,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -91,7 +91,7 @@ main(int argc, char **argv) {
  growing_buf_init(&buf);
  growing_buf_allocate(&buf,fileheader.pos_channelheader-fileheader.pos_patinfo+1);
  fseek(infile, fileheader.pos_patinfo, SEEK_SET);
- fread((void *)buf.buffer_start,1,fileheader.pos_channelheader-fileheader.pos_patinfo,infile);
+ IGNORE_RESULT(fread((void *)buf.buffer_start,1,fileheader.pos_channelheader-fileheader.pos_patinfo,infile));
  printf("%s\n",buf.buffer_start);
 
  pos=fileheader.pos_channelheader+39-4;
