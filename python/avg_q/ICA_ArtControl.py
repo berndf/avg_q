@@ -21,7 +21,8 @@ class ICA_ArtControl(object):
   self.nr_of_components=None
  def remove_tmpfiles(self):
   for tmpfile in self.tmpfiles:
-   if os.path.exists(tmpfile): os.unlink(tmpfile)
+   if os.path.exists(tmpfile):
+    os.unlink(tmpfile)
   self.tmpfiles=[]
  def __del__(self):
   # Destructor.
@@ -104,13 +105,17 @@ null_sink
   start=None
   for point,code,description in t:
    if code== -1:
-    if start: ranges.append((start,point))
-    else: ranges.append((0,point))
+    if start:
+     ranges.append((start,point))
+    else:
+     ranges.append((0,point))
     start=None
    else:
     start=point
-  if start: ranges.append((start,nr_of_points))
-  if len(ranges)==0: ranges.append((0,nr_of_points))
+  if start:
+   ranges.append((start,nr_of_points))
+  if len(ranges)==0:
+   ranges.append((0,nr_of_points))
   return '  '.join(["%d %d" % (start,end-start) for start,end in ranges])
  def get_Artifact_Components2(self,artifactfile,relative_cutoff,relative_strength_cutoff=0.3,fromepoch=1):
   '''In contrast to get_Artifact_Components, This version tries to normalize
