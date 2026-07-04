@@ -58,7 +58,7 @@ ConvexMesh::ConvexMesh(TPoints *ttp) {
   do {
    nonconvex=boundary;
    boundary_is_convex=TRUE;
-   while ((nonconvex=nonconvex->non_convex_point(tr))!=(Boundary*)Empty) {
+   while (nonconvex!=(Boundary*)Empty && (nonconvex=nonconvex->non_convex_point(tr))!=(Boundary*)Empty) {
     Point* previous_p=((Boundary*)nonconvex->ringprevious())->point();
     Point* next_p=((Boundary*)nonconvex->ringnext())->point();
 
@@ -238,7 +238,9 @@ void ConvexMesh::Revise() {
    // triangles is less than of the two old triangles
    Triangles* adjacent_tr=first_tr->find(tr1.p1, tr1.p2);
    if (adjacent_tr==in_triangles) {
-    adjacent_tr=((Triangles*)in_triangles->next())->find(tr1.p1, tr1.p2);
+    adjacent_tr=(Triangles*)in_triangles->next();
+    if (adjacent_tr!=(Triangles*)Empty)
+     adjacent_tr=adjacent_tr->find(tr1.p1, tr1.p2);
    }
    if (adjacent_tr!=(Triangles*)Empty) {
     // The adjacent triangle is reordered so that p1s==p1 and p2s==p2

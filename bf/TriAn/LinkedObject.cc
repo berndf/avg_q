@@ -78,15 +78,12 @@ int LinkedObject::after_members() {
  return after;
 }
 LinkedObject* LinkedObject::addmember(LinkedObject* n) {
- LinkedObject* self=this;
- if (self!=Empty) {
-  n->previous_member=self;
-  if (next_member!=Empty) {
-   n->next_member=next_member;
-   n->next_member->previous_member=n;
-  }
-  next_member=n;
+ n->previous_member=this;
+ if (next_member!=Empty) {
+  n->next_member=next_member;
+  n->next_member->previous_member=n;
  }
+ next_member=n;
  return n;
 }
 void LinkedObject::delall() {

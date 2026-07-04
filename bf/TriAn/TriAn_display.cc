@@ -24,7 +24,11 @@ TriAn_init(transform_info_ptr tinfo) {
  int channel=0;
  TPoints* tp=(TPoints*)Empty;
  do {
-  tp=(TPoints*)tp->addmember(new TPoints(tinfo->probepos[3*channel], tinfo->probepos[3*channel+1], tinfo->probepos[3*channel+2]));
+  TPoints* newtp=new TPoints(tinfo->probepos[3*channel], tinfo->probepos[3*channel+1], tinfo->probepos[3*channel+2]);
+  if (tp==(TPoints*)Empty)
+   tp=newtp;
+  else
+   tp=(TPoints*)tp->addmember(newtp);
   channel++;
  } while (channel<tinfo->nr_of_channels);
  cm=new ConvexMesh(tp);
