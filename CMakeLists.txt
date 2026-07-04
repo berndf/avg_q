@@ -11,7 +11,7 @@ project(avg_q
 )
 
 # Include the local signature file before anything that might depend on it.
-include("${CMAKE_CURRENT_SOURCE_DIR}/Signatures/Signature.ERPLabFreiburg")
+include("${CMAKE_CURRENT_SOURCE_DIR}/Signatures/Signature.GPL")
 
 # ---------------------------------------------------------------------------
 # Build options
