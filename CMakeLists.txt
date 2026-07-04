@@ -53,6 +53,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
  set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 elseif(CMAKE_BUILD_TYPE STREQUAL Debug)
  set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+else()
+ set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
 endif()
 
 # ---------------------------------------------------------------------------
