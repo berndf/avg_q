@@ -37,13 +37,13 @@ extern int optind, opterr;
 /*}}}  */
 
 /*{{{  #defines*/
-#define LENOFBUFFER 160
+#define GLOBAL_BUFFER_LEN 160
 #define POS_START "at:"
 #define CODE_START "code:"
 /*}}}  */
 
 /*{{{  Global vars*/
-char buffer[LENOFBUFFER];
+char global_buffer[GLOBAL_BUFFER_LEN];
 short trig;
 char *inbuf, *endnum;
 MFX_FILE *myfile;
@@ -166,10 +166,10 @@ int main(int argc, char **argv) {
 
  switch(trigfileformat) {
   case JUSTPOINTS:
-   while ((fgets(buffer, LENOFBUFFER, trigfile))!=NULL) {
+   while ((fgets(global_buffer, GLOBAL_BUFFER_LEN, trigfile))!=NULL) {
     /*{{{  Process triggerfile line*/
     /* endnum is set to inbuf if strtod can't form any number from the string */
-    for (i=1, inbuf=buffer; position=strtod(inbuf, &endnum), inbuf!=endnum; inbuf=endnum, i++) {
+    for (i=1, inbuf=global_buffer; position=strtod(inbuf, &endnum), inbuf!=endnum; inbuf=endnum, i++) {
      if (position<0) continue;
      write1trig(position, i, seconds);
     }
@@ -177,22 +177,22 @@ int main(int argc, char **argv) {
    }
    break;
   case MFXTRIGFORMAT:
-   while ((fgets(buffer, LENOFBUFFER, trigfile))!=NULL) {
+   while ((fgets(global_buffer, GLOBAL_BUFFER_LEN, trigfile))!=NULL) {
     /*{{{  Process triggerfile line*/
-    if (*buffer=='#') continue;	/* Line commented out */
+    if (*global_buffer=='#') continue;	/* Line commented out */
     /*{{{  Read position value*/
-    if ((inbuf=strstr(buffer, POS_START))==NULL) continue;
+    if ((inbuf=strstr(global_buffer, POS_START))==NULL) continue;
     position=strtod(inbuf+strlen(POS_START), &endnum);
     if (inbuf==endnum) {
-     fprintf(stderr, "Can't read position on line:\n%s", buffer);
+     fprintf(stderr, "Can't read position on line:\n%s", global_buffer);
      continue;
     }
     /*}}}  */
     /*{{{  Read trigcode value*/
-    if ((inbuf=strstr(buffer, CODE_START))==NULL) continue;
+    if ((inbuf=strstr(global_buffer, CODE_START))==NULL) continue;
     i=strtod(inbuf+strlen(CODE_START), &endnum);
     if (inbuf==endnum) {
-     fprintf(stderr, "Can't read trigger code on line:\n%s", buffer);
+     fprintf(stderr, "Can't read trigger code on line:\n%s", global_buffer);
      continue;
     }
     /*}}}  */
