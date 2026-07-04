@@ -87,7 +87,7 @@ jobs:
         tar cJvf avg_q.tar.xz ${{ steps.strings.outputs.build-output-dir }}/GPL
 
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact
       with:
         name: avg_q.tar.xz
         path: avg_q.tar.xz
