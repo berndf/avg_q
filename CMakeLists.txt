@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.21...4.3)
 
 project(avg_q
- VERSION 6.2.0
+ VERSION 6.3.0
  LANGUAGES C CXX
  DESCRIPTION "Multichannel (EEG/MEG) data processing tool"
 )
