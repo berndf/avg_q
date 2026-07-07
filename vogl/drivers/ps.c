@@ -256,7 +256,7 @@ PS_draw(int x, int y)
 	return(0);
 }
 
-static int
+static int __attribute__((unused))
 PS_pnt(int x, int y)
 {
 	fprintf(fp, "%d %d m\n", x, y);

@@ -3,11 +3,7 @@
 
 PROJECT(mfxlib LANGUAGES C)
 
-IF(CMAKE_SYSTEM_NAME STREQUAL Windows)
- SET(BUILD_SHARED_LIBS OFF)
-ELSE(CMAKE_SYSTEM_NAME STREQUAL Windows)
- SET(ADD_LIBS)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL Windows)
+SET(ADD_LIBS)
 
 SET(sources
  mfx_file.c mfx_errors.c mfx_infoout.c Intel_compat.c fix_headers.c read_struct.c

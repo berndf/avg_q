@@ -1039,10 +1039,30 @@ static DevEntry VGUIdev = {
 
 /*
  * _VGUI_devcpy
- * 
+ *
  * copy the pc device into vdevice.dev. (as listed in drivers.c)
+ *
+ * In the Windows shared-library build, libvogl.dll provides _VGUI_devcpy()
+ * as a trampoline forwarding to a hook set by vogl_set_vgui_devcpy(). This
+ * object is pulled whole into the executable (OBJECT library) and registers
+ * the real GTK/cairo driver via a constructor so it is selected at runtime.
+ * In the static/ELF build, _VGUI_devcpy() is defined directly and resolved
+ * by the linker from this object.
  */
-void
-_VGUI_devcpy(void) {
+static void
+VGUI_devcpy_impl(void) {
  vdevice.dev = VGUIdev;
 }
+
+#ifdef VOGL_VGUI_USE_HOOK
+__attribute__((constructor))
+static void
+vogl_vgui_register(void) {
+ vogl_set_vgui_devcpy(VGUI_devcpy_impl);
+}
+#else
+void
+_VGUI_devcpy(void) {
+ VGUI_devcpy_impl();
+}
+#endif

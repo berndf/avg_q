@@ -5,7 +5,7 @@ PROJECT(bflib LANGUAGES C CXX)
 
 SET(ALL_SOURCES
  complex.c fourier.c realfft.c real2fft.c trafo_std.c
- fftspect.c chg_multiplex.c 
+ fftspect.c chg_multiplex.c
  average.c reject_flor.c reject_bandwidth.c fftfilter.c
  histogram.c differentiate.c sliding_average.c demean_maps.c
  tinfo_array.c integrate.c swap_fc.c swap_xz.c subtract.c
@@ -17,7 +17,7 @@ SET(ALL_SOURCES
  orthogonalize.c
  project.c scale_by.c zero_phase.c import_point.c write_crossings.c
  calc_binomial_items.c change_axes.c minmax.c correlate.c
- growing_buf.c set_comment.c svdecomp.c add_channels.c query.c 
+ growing_buf.c set_comment.c svdecomp.c add_channels.c query.c
  raw_fft.c add_zerochannel.c
  laplacian.cc append.c add_value.c
  recode.c assert.c null_source.c invert.c echo.c push.c pop.c
@@ -28,7 +28,7 @@ SET(ALL_SOURCES
 IF (TIMEOUT)
  ADD_CUSTOM_COMMAND(
   # The "tmstamp" output is deliberately fake to force execution each time!
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tmstamp ${CMAKE_CURRENT_BINARY_DIR}/.chksum 
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tmstamp ${CMAKE_CURRENT_BINARY_DIR}/.chksum
   COMMAND cc -o ${CMAKE_CURRENT_BINARY_DIR}/date_now ${CMAKE_CURRENT_SOURCE_DIR}/date_now.c
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/date_now >${CMAKE_CURRENT_BINARY_DIR}/.tmstamp
   COMMAND cc -o ${CMAKE_CURRENT_BINARY_DIR}/calc_time ${CMAKE_CURRENT_SOURCE_DIR}/calc_time.c
@@ -39,7 +39,7 @@ IF (TIMEOUT)
   -I${CMAKE_CURRENT_SOURCE_DIR}/array -I${CMAKE_CURRENT_SOURCE_DIR}/biomag -I${CMAKE_CURRENT_SOURCE_DIR}/../mfx -DVERSION=\"\\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\\"\" -DDATE=\"\\\"`cat ${CMAKE_CURRENT_BINARY_DIR}/.tmstamp`\\\"\" -DSIGNATURE=\\\"${SIGNATURE}\\\"
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/calc_chksum >${CMAKE_CURRENT_BINARY_DIR}/.chksum
  )
- SET_SOURCE_FILES_PROPERTIES(validate.c PROPERTIES 
+ SET_SOURCE_FILES_PROPERTIES(validate.c PROPERTIES
   COMPILE_FLAGS "-DVERSION=\"\\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\\"\" -DDATE=\"\\\"`cat ${CMAKE_CURRENT_BINARY_DIR}/.tmstamp`\\\"\" -DSIGNATURE=\"\\\"${SIGNATURE}\\\"\" -DTIMEOUT=`cat ${CMAKE_CURRENT_BINARY_DIR}/.timeout` -DCHKSUM=`cat ${CMAKE_CURRENT_BINARY_DIR}/.chksum`"
   # This target never exists, only needed to renew .tmstamp each time!
   OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/tmstamp
@@ -47,7 +47,7 @@ IF (TIMEOUT)
 ELSE (TIMEOUT)
  ADD_CUSTOM_COMMAND(
   # The "tmstamp" output is deliberately fake to force execution each time!
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tmstamp ${CMAKE_CURRENT_BINARY_DIR}/.chksum 
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/tmstamp ${CMAKE_CURRENT_BINARY_DIR}/.chksum
   COMMAND cc -o ${CMAKE_CURRENT_BINARY_DIR}/date_now ${CMAKE_CURRENT_SOURCE_DIR}/date_now.c
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/date_now >${CMAKE_CURRENT_BINARY_DIR}/.tmstamp
   COMMAND cc -o ${CMAKE_CURRENT_BINARY_DIR}/calc_time ${CMAKE_CURRENT_SOURCE_DIR}/calc_time.c
@@ -57,7 +57,7 @@ ELSE (TIMEOUT)
   -I${CMAKE_CURRENT_SOURCE_DIR}/array -I${CMAKE_CURRENT_SOURCE_DIR}/biomag -I${CMAKE_CURRENT_SOURCE_DIR}/../mfx -DVERSION=\"\\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\\"\" -DDATE=\"\\\"`cat ${CMAKE_CURRENT_BINARY_DIR}/.tmstamp`\\\"\" -DSIGNATURE=\\\"${SIGNATURE}\\\"
   COMMAND ${CMAKE_CURRENT_BINARY_DIR}/calc_chksum >${CMAKE_CURRENT_BINARY_DIR}/.chksum
  )
- SET_SOURCE_FILES_PROPERTIES(validate.c PROPERTIES 
+ SET_SOURCE_FILES_PROPERTIES(validate.c PROPERTIES
   COMPILE_FLAGS "-DVERSION=\"\\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\\"\" -DDATE=\"\\\"`cat ${CMAKE_CURRENT_BINARY_DIR}/.tmstamp`\\\"\" -DSIGNATURE=\"\\\"${SIGNATURE}\\\"\" -DCHKSUM=`cat ${CMAKE_CURRENT_BINARY_DIR}/.chksum`"
   # This target never exists, only needed to renew .tmstamp each time!
   OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/tmstamp
@@ -111,7 +111,7 @@ if (WITH_POSPLOT)
  ADD_DEFINITIONS(-DWITH_POSPLOT)
 endif (WITH_POSPLOT)
 
-SET_SOURCE_FILES_PROPERTIES(method_list.c PROPERTIES 
+SET_SOURCE_FILES_PROPERTIES(method_list.c PROPERTIES
  COMPILE_FLAGS "${METHOD_LIST_DEFINES}"
 )
 
@@ -144,6 +144,17 @@ ADD_LIBRARY(bf ${ALL_SOURCES})
 SET_TARGET_PROPERTIES(bf
  PROPERTIES VERSION 2.0 SOVERSION 2
 )
+
+# On Windows a shared library (DLL) must resolve all symbols at link time;
+# PE links do not allow undefined references the way ELF shared libs do. When bf
+# was static these external dependencies (mfx, vogl, LAPACK, SOX, HDF4, ...) were
+# pulled in only when the executables linked ${BF_LIBS}. As a DLL, bf must link
+# them itself.
+IF(CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_SHARED_LIBS)
+ SET(BF_DEPS ${BF_LIBS})
+ LIST(REMOVE_ITEM BF_DEPS bf dummy_vogl_vgui)
+ TARGET_LINK_LIBRARIES(bf ${BF_DEPS})
+ENDIF()
 
 IF(BUILD_SHARED_LIBS)
 INSTALL(

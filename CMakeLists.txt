@@ -47,11 +47,9 @@ elseif(NOT CMAKE_BUILD_TYPE)
  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-# The original build forced static libraries for Windows and for Debug builds.
-# Preserve that behaviour unless the user explicitly requested otherwise.
-if(CMAKE_SYSTEM_NAME STREQUAL Windows)
- set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
-elseif(CMAKE_BUILD_TYPE STREQUAL Debug)
+# The original build forced static libraries for Debug builds.
+# Preserve that behaviour; otherwise build shared libraries (including on Windows).
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
  set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 else()
  set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
@@ -103,6 +101,9 @@ find_package(LAPACK)
 if(LAPACK_FOUND)
  set(ICA_LIBS ${LAPACK_LIBRARIES})
 endif()
+
+INCLUDE(CheckIncludeFiles)
+CHECK_INCLUDE_FILES("f2c.h" F2C_H_AVAILABLE)
 
 find_package(PkgConfig)
 if(PkgConfig_FOUND)
@@ -249,7 +250,15 @@ endif()
 if(AVG_Q_WITH_POSPLOT)
  list(APPEND AVG_Q_INCLUDES ${CMAKE_SOURCE_DIR}/vogl/src)
  set(BF_LIBS_VGUI ${BF_LIBS} ${VOGL_LIBS} vogl_vgui)
- add_library(dummy_vogl_vgui STATIC avg_q_ui/dummy_vogl_vgui_driver.c)
+ if(CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_SHARED_LIBS)
+  # As an OBJECT library the driver object is always pulled into the
+  # executable so its constructor registers the (dummy) VGUI driver with
+  # libvogl.dll's trampoline (see vogl/src/vgui_hook.c).
+  add_library(dummy_vogl_vgui OBJECT avg_q_ui/dummy_vogl_vgui_driver.c)
+  target_compile_definitions(dummy_vogl_vgui PRIVATE VOGL_VGUI_USE_HOOK)
+ else()
+  add_library(dummy_vogl_vgui STATIC avg_q_ui/dummy_vogl_vgui_driver.c)
+ endif()
  list(APPEND BF_LIBS ${VOGL_LIBS} dummy_vogl_vgui)
 else()
  set(BF_LIBS_VGUI ${BF_LIBS})

@@ -9,17 +9,15 @@ FIND_PROGRAM(_LYX_EXECUTABLE lyx)
 IF(NOT ${_LYX_EXECUTABLE} STREQUAL "_LYX_EXECUTABLE-NOTFOUND")
  SET(Programs_handbook_pdf ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.pdf)
  SET(Programs_handbook_lyx ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx)
- # O well, this is only checked at configuration time so it's no use...
- #IF (NOT EXISTS ${Programs_handbook_pdf} OR ${Programs_handbook_lyx} IS_NEWER_THAN ${Programs_handbook_pdf})
-  ADD_CUSTOM_TARGET(Programs_handbook ALL)
-  ADD_CUSTOM_COMMAND(
-   TARGET Programs_handbook
-   #OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.pdf
-   COMMAND ${_LYX_EXECUTABLE} -e pdf4 ${CMAKE_CURRENT_SOURCE_DIR}/Programs_handbook.lyx
-   POST_BUILD
-   COMMENT "Running LyX"
-  )
- #ENDIF (NOT EXISTS ${Programs_handbook_pdf} OR ${Programs_handbook_lyx} IS_NEWER_THAN ${Programs_handbook_pdf})
+ # OUTPUT-based custom command: make checks at *build* time whether the
+ # PDF is missing or older than the .lyx source, and only then reruns LyX.
+ ADD_CUSTOM_COMMAND(
+  OUTPUT ${Programs_handbook_pdf}
+  COMMAND ${_LYX_EXECUTABLE} -e pdf4 ${Programs_handbook_lyx}
+  DEPENDS ${Programs_handbook_lyx}
+  COMMENT "Running LyX"
+ )
+ ADD_CUSTOM_TARGET(Programs_handbook ALL DEPENDS ${Programs_handbook_pdf})
 
  IF(CMAKE_BUILD_TYPE STREQUAL Release)
   INSTALL(

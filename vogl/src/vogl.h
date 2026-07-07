@@ -683,6 +683,9 @@ extern void _DXY_devcpy(void);
 extern void _TEK_devcpy(void);
 extern void _grx_devcpy(void);
 extern void _VGUI_devcpy(void);
+#ifdef _WIN32
+extern void vogl_set_vgui_devcpy(void (*fn)(void));
+#endif
 extern void _hgc_devcpy(void);
 extern void _mswin_devcpy(void);
 extern void _cga_devcpy(void);

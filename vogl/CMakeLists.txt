@@ -42,6 +42,12 @@ ENDFOREACH(src)
 FOREACH(src ${driversources})
  LIST(APPEND ALL_SOURCES "drivers/${src}")
 ENDFOREACH(src)
+IF(CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_SHARED_LIBS)
+ # Provide a trampoline _VGUI_devcpy() in the DLL (see src/vgui_hook.c) so
+ # libvogl has no undefined symbol; executables register their driver via
+ # vogl_set_vgui_devcpy().
+ LIST(APPEND ALL_SOURCES "src/vgui_hook.c")
+ENDIF()
 SET_SOURCE_FILES_PROPERTIES("src/drivers.c"
  PROPERTIES COMPILE_FLAGS ${driverflags}
 )

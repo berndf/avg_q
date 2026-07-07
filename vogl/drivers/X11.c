@@ -83,7 +83,7 @@ void _X11_devcpy(void);
  *
  *	Just sets the drawable to the partucular window.
  */
-static int
+static int __attribute__((unused))
 vo_xt_set_win(Display *dis, Drawable win, int xw, int xh)
 {
 	int	backb;
@@ -119,7 +119,7 @@ vo_xt_set_win(Display *dis, Drawable win, int xw, int xh)
  *	Tells VOGL/VOGLE to use a window from an X11 toolkit (eg xview)
  *	and not to make it's own window.
  */
-static int
+static int __attribute__((unused))
 vo_xt_window(Display *dis, Window win, int xw, int xh)
 {
 	int	backb, i;
@@ -206,7 +206,7 @@ vo_xt_window(Display *dis, Window win, int xw, int xh)
  * If the X toolkit has changed the window size, then
  * you might wish to call this routine to tell vogl/vogle about it.
  */
-static void
+static void __attribute__((unused))
 vo_xt_win_size(int xw, int xh)
 {
 	char	backb;
@@ -240,6 +240,7 @@ vo_xt_win_size(int xw, int xh)
 /*
  * return the X display in use.
  */
+__attribute__((unused))
 static Display *
 vo_xt_get_display(void)
 {
@@ -249,7 +250,7 @@ vo_xt_get_display(void)
 /*
  * return the X Window in use.
  */
-static Window
+static Window __attribute__((unused))
 vo_xt_get_window(void)
 {
 	return(winder);
@@ -258,7 +259,7 @@ vo_xt_get_window(void)
 /*
  * return the Graphics Context in use.
  */
-static GC
+static GC __attribute__((unused))
 vo_xt_get_GC(void)
 {
 	return(theGC);
@@ -267,7 +268,7 @@ vo_xt_get_GC(void)
 /*
  * Set the Graphics Context to use.
  */
-static void
+static void __attribute__((unused))
 vo_xt_set_GC(GC gc)
 {
 	theGC = gc;
@@ -635,7 +636,7 @@ X11_draw(int x, int y)
 	return(0);
 }
 
-static int
+static int __attribute__((unused))
 X11_pnt(int x, int y)
 {
 	XDrawPoint(display,
@@ -760,8 +761,8 @@ X11_clear(void)
 static int
 X11_clear(void)
 {
-	unsigned int	w = vdevice.maxVx - vdevice.minVx;
-	unsigned int	h = vdevice.maxVy - vdevice.minVy;
+	unsigned int	cw = vdevice.maxVx - vdevice.minVx;
+	unsigned int	ch = vdevice.maxVy - vdevice.minVy;
 
 	XSetBackground(display, theGC, colour);
 
@@ -770,8 +771,8 @@ X11_clear(void)
 		theGC,
 		vdevice.minVx,
 		vdevice.sizeSy - vdevice.maxVy - 1, 
-		w + 1, 
-		h + 1
+		cw + 1, 
+		ch + 1
 	);
 
 	if (vdevice.sync)
@@ -1144,11 +1145,11 @@ X11_dump_pixmap(char *filename, int dx, int dy, int dw, int dh)
  *	Set the line width....
  */
 static int
-X11_setlw(int w)
+X11_setlw(int lw)
 {
 	XGCValues vals;
 
-	vals.line_width = w;
+	vals.line_width = lw;
 	XChangeGC(display, theGC, GCLineWidth, &vals);
 
 	return(0);

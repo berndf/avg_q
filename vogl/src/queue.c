@@ -210,7 +210,7 @@ long
 qread(short int *ret)
 {
 	int	a, b, c1, c2, val;
-	int	eventind, eventmask, retvalue;
+	int	eventind, eventmask, retvalue=0;
 
 	if (!vdevice.initialised)
 		verror("qread: vogl not initialised\n");
