@@ -20,8 +20,6 @@ option(AVG_Q_BUILD_DEBUG "Build avg_q in debug mode" OFF)
 option(AVG_Q_ENABLE_ASAN "Enable AddressSanitizer in debug builds" OFF)
 option(AVG_Q_WITH_POSPLOT "Build the posplot method (requires vogl)" ON)
 option(AVG_Q_WITH_AVG_Q_UI "Build the GTK GUI avg_q_ui" ON)
-option(AVG_Q_WITH_HDF4 "Enable HDF4 readers/writers if HDF4 is found" ON)
-option(AVG_Q_GTK4 "Build avg_q_ui against GTK4" ON)
 
 # Legacy names used by subdirectory CMakeLists.txt files.
 set(WITH_POSPLOT ${AVG_Q_WITH_POSPLOT})
@@ -73,8 +71,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
  set(CMAKE_EXECUTABLE_SUFFIX ".exe")
  set(INSTALLDIR "bin")
  set(VOGL_LIBS vogl)
- set(HDF4_INCLUDES /usr/x86_64-w64-mingw32/usr/include/hdf4)
- set(HDF4_LIBS mfhdf)
 else()
  set(X11_LIBS X11)
  set(VOGL_LIBS vogl ${X11_LIBS})
@@ -90,8 +86,6 @@ else()
   # -D_FILE_OFFSET_BITS=64 is necessary to have working fstat() on CIFS mounts
   set(C_FLAGS_ARCHITECTURE "-march=i686")
  endif()
- set(HDF4_INCLUDES /usr/include/hdf)
- set(HDF4_LIBS mfhdf df)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -110,12 +104,31 @@ if(PkgConfig_FOUND)
  pkg_check_modules(SOX sox)
 endif()
 
-if(AVG_Q_WITH_HDF4)
- # Try to detect HDF4 in a portable way; fall back to the legacy hard-coded
- # configuration if detection fails, so existing builds keep working.
+# Detect HDF4 in a portable way; build with HDF4 support when found.
+#
+# pkg-config is preferred because it is the canonical way mingw/MSYS2
+# packages advertise themselves, and the mingw toolchain file already sets
+# PKG_CONFIG_LIBDIR/PKG_CONFIG_SYSROOT_DIR. find_path/find_library are kept
+# as a fallback for native builds that lack an hdf.pc.
+set(HDF4_FOUND FALSE)
+if(PkgConfig_FOUND)
+ pkg_check_modules(HDF4_PC hdf)
+endif()
+if(HDF4_PC_FOUND)
+ set(HDF4_FOUND TRUE)
+ set(HDF4_LIBS ${HDF4_PC_LIBRARIES})
+ # MSYS2 installs the headers under include/hdf4/ but hdf.pc's Cflags only
+ # yield -I.../include; avg_q uses #include "mfhdf.h", so append the hdf4
+ # subdir to every include prefix returned by pkg-config.
+ set(HDF4_INCLUDES ${HDF4_PC_INCLUDE_DIRS})
+ foreach(_dir ${HDF4_PC_INCLUDE_DIRS})
+  list(APPEND HDF4_INCLUDES "${_dir}/hdf4")
+ endforeach()
+else()
  find_path(HDF4_INCLUDE_DIR hdf.h PATHS ${HDF4_INCLUDES})
  find_library(HDF4_MFHDF_LIBRARY NAMES mfhdf)
- find_library(HDF4_DF_LIBRARY NAMES df)
+ # On Linux the data-format library is "df"; on MSYS2/mingw it is "hdf".
+ find_library(HDF4_DF_LIBRARY NAMES df hdf)
  if(HDF4_INCLUDE_DIR AND HDF4_MFHDF_LIBRARY)
   set(HDF4_FOUND TRUE)
   set(HDF4_LIBS ${HDF4_MFHDF_LIBRARY})
@@ -123,12 +136,7 @@ if(AVG_Q_WITH_HDF4)
    list(APPEND HDF4_LIBS ${HDF4_DF_LIBRARY})
   endif()
   set(HDF4_INCLUDES ${HDF4_INCLUDE_DIR})
- else()
-  message(WARNING "HDF4 not found by CMake; using legacy hard-coded paths. Set AVG_Q_WITH_HDF4=OFF to disable.")
-  set(HDF4_FOUND TRUE)
  endif()
-else()
- set(HDF4_FOUND FALSE)
 endif()
 
 # ---------------------------------------------------------------------------

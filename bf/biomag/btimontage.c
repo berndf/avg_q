@@ -60,7 +60,7 @@
 
 /*{{{  Defines*/
 /* Defines for the construction of channel names */
-#define CHNAMELEN 12
+#define CHNAMELEN 13
 #define CHNAMECONST "A%d"
 /*}}}  */
 
