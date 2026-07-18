@@ -169,15 +169,28 @@ if(PkgConfig_FOUND)
 endif()
 if(HDF5_PC_FOUND)
  set(HDF5_FOUND TRUE)
- set(HDF5_LIBS ${HDF5_PC_LIBRARIES})
  set(HDF5_INCLUDES ${HDF5_PC_INCLUDE_DIRS})
- # Ensure the high-level library is linked even when hdf5.pc omits it
- # (e.g. MSYS2). pkg-config may already list it under either name.
- if(NOT "hdf5_hl" IN_LIST HDF5_LIBS AND NOT "hdf5_serial_hl" IN_LIST HDF5_LIBS)
-  find_library(HDF5_HL_LIBRARY NAMES hdf5_hl hdf5_serial_hl)
+ # Resolve the HDF5 libraries to full paths using pkg-config's library
+ # dirs as hints. On Debian/Ubuntu the libraries live in a subdirectory
+ # (e.g. lib/<arch>/hdf5/serial/) that is not in the linker's default
+ # search path; hdf5.pc's Libs line carries a -L flag for it, but
+ # HDF5_PC_LIBRARIES (bare names) drops that -L, so linking with -lhdf5
+ # alone fails with "cannot find -lhdf5". find_library + HINTS preserves
+ # the directory information by yielding full paths.
+ find_library(HDF5_MAIN_LIBRARY
+  NAMES hdf5 hdf5_serial
+  HINTS ${HDF5_PC_LIBRARY_DIRS})
+ find_library(HDF5_HL_LIBRARY
+  NAMES hdf5_hl hdf5_serial_hl
+  HINTS ${HDF5_PC_LIBRARY_DIRS})
+ if(HDF5_MAIN_LIBRARY)
+  set(HDF5_LIBS ${HDF5_MAIN_LIBRARY})
   if(HDF5_HL_LIBRARY)
    list(APPEND HDF5_LIBS ${HDF5_HL_LIBRARY})
   endif()
+ else()
+  # find_library failed; fall back to raw LDFLAGS (includes -L paths).
+  set(HDF5_LIBS ${HDF5_PC_LDFLAGS})
  endif()
 else()
  # Fallback for native builds without pkg-config.
