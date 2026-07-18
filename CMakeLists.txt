@@ -108,11 +108,15 @@ endif()
 #
 # pkg-config is preferred because it is the canonical way mingw/MSYS2
 # packages advertise themselves, and the mingw toolchain file already sets
-# PKG_CONFIG_LIBDIR/PKG_CONFIG_SYSROOT_DIR. find_path/find_library are kept
-# as a fallback for native builds that lack an hdf.pc.
+# PKG_CONFIG_LIBDIR/PKG_CONFIG_SYSROOT_DIR. MSYS2 ships the module as "hdf",
+# Debian/Ubuntu as "hdf4". find_path/find_library are kept as a fallback for
+# native builds that lack a matching .pc file.
 set(HDF4_FOUND FALSE)
 if(PkgConfig_FOUND)
  pkg_check_modules(HDF4_PC hdf)
+ if(NOT HDF4_PC_FOUND)
+  pkg_check_modules(HDF4_PC hdf4)
+ endif()
 endif()
 if(HDF4_PC_FOUND)
  set(HDF4_FOUND TRUE)
@@ -125,7 +129,10 @@ if(HDF4_PC_FOUND)
   list(APPEND HDF4_INCLUDES "${_dir}/hdf4")
  endforeach()
 else()
- find_path(HDF4_INCLUDE_DIR hdf.h PATHS ${HDF4_INCLUDES})
+ # Fallback for native builds without a pkg-config file.
+ # Debian/Ubuntu install HDF4 headers under include/hdf/ (to avoid colliding
+ # with HDF5's headers), hence the PATH_SUFFIXES. avg_q includes "mfhdf.h".
+ find_path(HDF4_INCLUDE_DIR mfhdf.h PATH_SUFFIXES hdf)
  find_library(HDF4_MFHDF_LIBRARY NAMES mfhdf)
  # On Linux the data-format library is "df"; on MSYS2/mingw it is "hdf".
  find_library(HDF4_DF_LIBRARY NAMES df hdf)
@@ -140,22 +147,45 @@ else()
 endif()
 
 # Detect HDF5 in a portable way; build with HDF5 support when found.
-# Dimension Scales (H5DS*) live in the high-level library libhdf5_hl, so we
-# require both the hdf5 and hdf5_hl pkg-config modules (the latter already
-# pulls in -lhdf5). find_path/find_library are kept as a fallback.
+# Dimension Scales (H5DS*) live in the high-level library libhdf5_hl.
+#
+# Layouts seen in the wild:
+#  * Gentoo/MSYS2: flat layout, headers in include/, libs in lib/; hdf5.pc
+#    either pulls in libhdf5_hl via a separate hdf5_hl.pc (Gentoo) or omits
+#    it (MSYS2).
+#  * Debian/Ubuntu: headers in include/hdf5/serial/, libs in
+#    lib/<arch>/hdf5/serial/, plus _serial-suffixed symlinks (libhdf5_serial,
+#    libhdf5_serial_hl) in the standard lib dir; the pkg-config module is
+#    hdf5-serial.pc, exposed as hdf5.pc via the alternatives system. There is
+#    no separate hdf5_hl pkg-config module.
+#
+# We therefore only require the hdf5 pkg-config module and make sure an HL
+# library ends up in the link list. find_path/find_library are kept as a
+# fallback for native builds without pkg-config; both try the _serial names
+# and the hdf5/serial subdirectory used by Debian/Ubuntu.
 set(HDF5_FOUND FALSE)
 if(PkgConfig_FOUND)
  pkg_check_modules(HDF5_PC hdf5)
- pkg_check_modules(HDF5_HL_PC hdf5_hl)
 endif()
-if(HDF5_PC_FOUND AND HDF5_HL_PC_FOUND)
+if(HDF5_PC_FOUND)
  set(HDF5_FOUND TRUE)
- set(HDF5_LIBS ${HDF5_HL_PC_LIBRARIES} ${HDF5_PC_LIBRARIES})
+ set(HDF5_LIBS ${HDF5_PC_LIBRARIES})
  set(HDF5_INCLUDES ${HDF5_PC_INCLUDE_DIRS})
+ # Ensure the high-level library is linked even when hdf5.pc omits it
+ # (e.g. MSYS2). pkg-config may already list it under either name.
+ if(NOT "hdf5_hl" IN_LIST HDF5_LIBS AND NOT "hdf5_serial_hl" IN_LIST HDF5_LIBS)
+  find_library(HDF5_HL_LIBRARY NAMES hdf5_hl hdf5_serial_hl)
+  if(HDF5_HL_LIBRARY)
+   list(APPEND HDF5_LIBS ${HDF5_HL_LIBRARY})
+  endif()
+ endif()
 else()
- find_path(HDF5_INCLUDE_DIR hdf5.h)
- find_library(HDF5_LIBRARY NAMES hdf5)
- find_library(HDF5_HL_LIBRARY NAMES hdf5_hl)
+ # Fallback for native builds without pkg-config.
+ # Debian/Ubuntu install HDF5 headers under include/hdf5/serial/ and ship
+ # _serial-suffixed library symlinks in the standard lib directory.
+ find_path(HDF5_INCLUDE_DIR hdf5.h PATH_SUFFIXES hdf5 hdf5/serial)
+ find_library(HDF5_LIBRARY NAMES hdf5 hdf5_serial)
+ find_library(HDF5_HL_LIBRARY NAMES hdf5_hl hdf5_serial_hl)
  if(HDF5_INCLUDE_DIR AND HDF5_LIBRARY AND HDF5_HL_LIBRARY)
   set(HDF5_FOUND TRUE)
   set(HDF5_LIBS ${HDF5_HL_LIBRARY} ${HDF5_LIBRARY})
