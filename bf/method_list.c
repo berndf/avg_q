@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1999-2003,2005,2007,2008,2010,2013,2014,2016,2018,2020,2022,2024 Bernd Feige
+ * Copyright (C) 1999-2003,2005,2007,2008,2010,2013,2014,2016,2018,2020,2022,2024,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #include <bf.h>
@@ -16,6 +16,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_read_generic,
 #ifdef AVG_Q_WITH_HDF
  select_read_hdf,
+#endif
+#ifdef AVG_Q_WITH_HDF5
+ select_read_hdf5,
 #endif
  select_read_inomed,
  select_read_labview,
@@ -106,6 +109,9 @@ LOCAL void (* const method_selects[])(transform_info_ptr)={
  select_write_generic,
 #ifdef AVG_Q_WITH_HDF
  select_write_hdf,
+#endif
+#ifdef AVG_Q_WITH_HDF5
+ select_write_hdf5,
 #endif
  select_write_kn,
  select_write_mfx,

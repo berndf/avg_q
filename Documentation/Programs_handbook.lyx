@@ -3685,7 +3685,11 @@ read_hdf
  Any arrays of higher dimension are silently skipped.
  If beforetrig and aftertrig are given,
  only this many points of each data set are read.
- For epoched data written by write_hdf,
+ For epoched data written by 
+\series bold
+write_hdf
+\series default
+,
  both can usually be omitted and all epochs will be restored as written.
  Continuous data will,
  as with the other get-epoch methods,
@@ -3694,7 +3698,196 @@ read_hdf
  the -c option must be supplied.
  Caution:
  If beforetrig and aftertrig are omitted,
- the whole file will be read as a single epoch in this case.
+ the whole file will be read as a single epoch.
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Arguments:
+ Inputfile [beforetrig [aftertrig]]
+\end_layout
+
+\begin_layout Description
+Options:
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+-c:
+ Continuous:
+ Read a continuous file in adjacent chunks of the given size disregarding triggers 
+\end_layout
+
+\begin_layout Description
+-T:
+ Transfer a list of triggers within the read epoch 
+\end_layout
+
+\begin_layout Description
+-R
+\begin_inset space ~
+\end_inset
+
+trigger_file:
+ Read trigger points and codes from file trigger_file in the format described in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Sec:TriggerFile"
+nolink "false"
+
+\end_inset
+
+,
+ page 
+\begin_inset CommandInset ref
+LatexCommand pageref
+reference "Sec:TriggerFile"
+nolink "false"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Description
+-t
+\begin_inset space ~
+\end_inset
+
+trigger_list:
+ Restrict epochs to those marked with a condition code contained in the trigger_list.
+ The list consists of comma-separated integer values,
+ for example:
+ 5,2,3.
+\end_layout
+
+\begin_layout Description
+-f
+\begin_inset space ~
+\end_inset
+
+fromepoch:
+ Specify start epoch beginning with 1 
+\end_layout
+
+\begin_layout Description
+-e
+\begin_inset space ~
+\end_inset
+
+epochs:
+ Specify maximum number of epochs to get 
+\end_layout
+
+\begin_layout Description
+-o
+\begin_inset space ~
+\end_inset
+
+offset:
+ The zero point `beforetrig' is shifted by offset 
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Description
+read_hdf5:
+\begin_inset Index idx
+range none
+pageformat default
+status collapsed
+
+\begin_layout Plain Layout
+read
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+\backslash
+_
+\end_layout
+
+\end_inset
+
+hdf5
+\end_layout
+
+\end_inset
+
+ Get-epoch method to read epochs from HDF5(R) (Hierarchical Data Format 5)
+\begin_inset Index idx
+range none
+pageformat default
+status collapsed
+
+\begin_layout Plain Layout
+HDF (Hierarchical Data Format 5)
+\end_layout
+
+\end_inset
+
+ files.
+ The HDF5(R) data model (HDFGroup) is used.
+ The data is stored as floats,
+ and 
+\series bold
+write_hdf5
+\series default
+ writes meta-information like the sampling frequency,
+ channel names/positions and the trigger list as annotations.
+ Therefore,
+ HDF5 is quite close to the asc file format in terms of conservation of 
+\series bold
+avg_q
+\series default
+'s internal epoch information as far as epoched data is concerned.
+ In addition,
+ it can also contain data sets with unlimited first dimension,
+ corresponding to 
+\begin_inset Quotes eld
+\end_inset
+
+continuous
+\begin_inset Quotes erd
+\end_inset
+
+ data in other formats.
+\begin_inset Newline newline
+\end_inset
+
+
+\series bold
+read_hdf5
+\series default
+ will read one,
+ two and three-dimensional data arrays.
+ Any arrays of higher dimension are silently skipped.
+ If beforetrig and aftertrig are given,
+ only this many points of each data set are read.
+ For epoched data written by 
+\series bold
+write_hdf5
+\series default
+,
+ both can usually be omitted and all epochs will be restored as written.
+ Continuous data will,
+ as with the other get-epoch methods,
+ be read around triggers either stored within the HDF5 file or supplied via an external trigger file.
+ To read continuous data in chunks of a given size,
+ the -c option must be supplied.
+ Caution:
+ If beforetrig and aftertrig are omitted,
+ the whole file will be read as a single epoch.
 \begin_inset Separator latexpar
 \end_inset
 
@@ -12961,7 +13154,11 @@ hdf
 
  Put-epoch method to write epochs to an HDF file.
  The compression options are provided by HDF 4.0;
- Deflation does not yet work correctly.
+ Note that HDF 4 does not support compression with an unlimited dimension and therefore compression cannot be used with 
+\series bold
+-c
+\series default
+.
  See 
 \series bold
 read_hdf
@@ -13029,11 +13226,108 @@ Options:
 \begin_inset space ~
 \end_inset
 
--nbit
+-skphuff
 \begin_inset space ~
 \end_inset
 
--skphuff
+-deflate
+\begin_inset space ~
+\end_inset
+
+}:
+ Choose output compression
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Description
+write_hdf5:
+ 
+\begin_inset Index idx
+range none
+pageformat default
+status collapsed
+
+\begin_layout Plain Layout
+write
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+\backslash
+_
+\end_layout
+
+\end_inset
+
+hdf5
+\end_layout
+
+\end_inset
+
+ Put-epoch method to write epochs to an HDF5(R) file.
+ The compression option is provided by HDF5.
+ See 
+\series bold
+read_hdf5
+\series default
+ for more information about the library.
+ 
+\begin_inset Newline newline
+\end_inset
+
+If option 
+\series bold
+-c
+\series default
+ is given,
+ a continuous (also called `record') data set is written along the points dimension.
+ If option 
+\series bold
+-a
+\series default
+ is also selected to append to an existing file,
+ a data set to append to is searched that has the same dimensionality as the data set to be written.
+ If none is found,
+ the method falls back to creating a new data set in the file as without the option 
+\series bold
+-c
+\series default
+ .
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+Arguments:
+ Outfile
+\end_layout
+
+\begin_layout Description
+Options:
+\begin_inset Separator latexpar
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+-a:
+ Append data if file exists
+\end_layout
+
+\begin_layout Description
+-c:
+ Continuous output (unlimited first dimension)
+\end_layout
+
+\begin_layout Description
+{
 \begin_inset space ~
 \end_inset
 

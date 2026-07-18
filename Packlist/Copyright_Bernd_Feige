@@ -39,6 +39,8 @@ bf/BrainVision/read_brainvision.c
 bf/BrainVision/write_brainvision.c
 bf/HDF/read_hdf.c
 bf/HDF/write_hdf.c
+bf/HDF/read_hdf5.c
+bf/HDF/write_hdf5.c
 bf/Inomed/Inomed_sm.c
 bf/Inomed/Inomed_smd.c
 bf/Inomed/dump_Inomed_header.c

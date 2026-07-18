@@ -1,0 +1,13 @@
+# HDF4 compression test: write with deflate, read back, verify data integrity.
+# Exits non-zero (via assert -E) if any property is wrong.
+dip_simulate 4 2 32 100 eg_source
+write_hdf -deflate test_hdf4_compress.hdf
+null_sink
+-
+read_hdf test_hdf4_compress.hdf
+assert -E nr_of_channels == 37
+assert -E nr_of_points == 132
+assert -E sfreq == 4
+assert -E channelname == A1
+assert -E channelname == A37
+null_sink

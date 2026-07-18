@@ -1,0 +1,21 @@
+# HDF5 append test: write 2 epochs, append 2 more, read back and verify.
+# Exits non-zero (via assert -E) if any property is wrong.
+dip_simulate 4 2 32 100 eg_source
+write_hdf5 test_hdf5_append.hdf5
+null_sink
+-
+dip_simulate 4 2 32 100 eg_source
+write_hdf5 -a test_hdf5_append.hdf5
+null_sink
+-
+read_hdf5 -f 1 -e 1 test_hdf5_append.hdf5
+assert -E nr_of_channels == 37
+assert -E nr_of_points == 132
+null_sink
+-
+read_hdf5 -f 3 -e 1 test_hdf5_append.hdf5
+assert -E nr_of_channels == 37
+assert -E nr_of_points == 132
+assert -E channelname == A1
+assert -E channelname == A37
+null_sink

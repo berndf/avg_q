@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2011,2013,2014,2016,2018,2020,2022,2024 Bernd Feige
+ * Copyright (C) 1996-2011,2013,2014,2016,2018,2020,2022,2024,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 #ifndef BF_H
@@ -190,6 +190,8 @@ void select_write_sound(transform_info_ptr tinfo);
 void select_read_sound(transform_info_ptr tinfo);
 void select_write_hdf(transform_info_ptr tinfo);
 void select_read_hdf(transform_info_ptr tinfo);
+void select_write_hdf5(transform_info_ptr tinfo);
+void select_read_hdf5(transform_info_ptr tinfo);
 void select_raw_fft(transform_info_ptr tinfo);
 void select_read_generic(transform_info_ptr tinfo);
 void select_write_generic(transform_info_ptr tinfo);

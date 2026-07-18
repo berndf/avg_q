@@ -10,6 +10,7 @@ formats_and_extensions=[
  ('BrainVision', ['.vhdr','.ahdr','.vmrk','.amrk','.eeg']),
  ('asc', ['.asc']),
  ('hdf', ['.hdf']),
+ ('hdf5', ['.hdf5']),
  ('edf', ['.edf','.rec','.bdf']),
  ('freiburg', ['.co']),
  ('neurofile', ['.eeg']),
@@ -66,6 +67,10 @@ readasc %(fromepoch_arg)s %(epochs_arg)s %(filename)s
   elif fileformat=='hdf':
    self.getepochmethod='''
 read_hdf %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
+'''
+  elif fileformat=='hdf5':
+   self.getepochmethod='''
+read_hdf5 %(continuous_arg)s %(fromepoch_arg)s %(epochs_arg)s %(offset_arg)s %(triglist_arg)s %(trigfile_arg)s %(trigtransfer_arg)s %(filename)s %(beforetrig)s %(aftertrig)s
 '''
   elif fileformat=='edf':
    self.getepochmethod='''

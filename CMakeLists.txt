@@ -139,6 +139,30 @@ else()
  endif()
 endif()
 
+# Detect HDF5 in a portable way; build with HDF5 support when found.
+# Dimension Scales (H5DS*) live in the high-level library libhdf5_hl, so we
+# require both the hdf5 and hdf5_hl pkg-config modules (the latter already
+# pulls in -lhdf5). find_path/find_library are kept as a fallback.
+set(HDF5_FOUND FALSE)
+if(PkgConfig_FOUND)
+ pkg_check_modules(HDF5_PC hdf5)
+ pkg_check_modules(HDF5_HL_PC hdf5_hl)
+endif()
+if(HDF5_PC_FOUND AND HDF5_HL_PC_FOUND)
+ set(HDF5_FOUND TRUE)
+ set(HDF5_LIBS ${HDF5_HL_PC_LIBRARIES} ${HDF5_PC_LIBRARIES})
+ set(HDF5_INCLUDES ${HDF5_PC_INCLUDE_DIRS})
+else()
+ find_path(HDF5_INCLUDE_DIR hdf5.h)
+ find_library(HDF5_LIBRARY NAMES hdf5)
+ find_library(HDF5_HL_LIBRARY NAMES hdf5_hl)
+ if(HDF5_INCLUDE_DIR AND HDF5_LIBRARY AND HDF5_HL_LIBRARY)
+  set(HDF5_FOUND TRUE)
+  set(HDF5_LIBS ${HDF5_HL_LIBRARY} ${HDF5_LIBRARY})
+  set(HDF5_INCLUDES ${HDF5_INCLUDE_DIR})
+ endif()
+endif()
+
 # ---------------------------------------------------------------------------
 # Compiler flags
 # ---------------------------------------------------------------------------
@@ -211,6 +235,9 @@ endif()
 if(NOT HDF4_FOUND)
  message(STATUS "HDF4 library not found - compiling without read_hdf/write_hdf")
 endif()
+if(NOT HDF5_FOUND)
+ message(STATUS "HDF5 library not found - compiling without read_hdf5/write_hdf5")
+endif()
 if(NOT AVG_Q_WITH_POSPLOT)
  message(STATUS "Compiling without the posplot method.")
 endif()
@@ -253,6 +280,11 @@ endif()
 if(HDF4_FOUND)
  list(APPEND AVG_Q_INCLUDES ${HDF4_INCLUDES})
  list(APPEND BF_LIBS ${HDF4_LIBS})
+endif()
+
+if(HDF5_FOUND)
+ list(APPEND AVG_Q_INCLUDES ${HDF5_INCLUDES})
+ list(APPEND BF_LIBS ${HDF5_LIBS})
 endif()
 
 if(AVG_Q_WITH_POSPLOT)
@@ -319,6 +351,28 @@ endforeach()
 include(CTest)
 if(BUILD_TESTING)
  add_test(NAME test_avg_q_vogl COMMAND avg_q_vogl ${CMAKE_CURRENT_SOURCE_DIR}/TestSuite/basic_run_test.script)
+
+ # HDF4 round-trip / append / compress / varying-channels tests.
+ # Each script uses relative filenames and is run in its own working
+ # directory so the generated .hdf files don't clutter the build tree.
+ if(HDF4_FOUND)
+  set(HDF4_TESTDIR ${CMAKE_CURRENT_BINARY_DIR}/test_hdf4)
+  file(MAKE_DIRECTORY ${HDF4_TESTDIR})
+  foreach(testname hdf4_roundtrip hdf4_append hdf4_compress hdf4_varying_channels)
+   add_test(NAME ${testname} COMMAND avg_q_vogl ${CMAKE_CURRENT_SOURCE_DIR}/TestSuite/${testname}.script)
+   set_tests_properties(${testname} PROPERTIES WORKING_DIRECTORY ${HDF4_TESTDIR})
+  endforeach()
+ endif()
+
+ # HDF5 equivalents (Dimension Scales based).
+ if(HDF5_FOUND)
+  set(HDF5_TESTDIR ${CMAKE_CURRENT_BINARY_DIR}/test_hdf5)
+  file(MAKE_DIRECTORY ${HDF5_TESTDIR})
+  foreach(testname hdf5_roundtrip hdf5_append hdf5_compress hdf5_varying_channels)
+   add_test(NAME ${testname} COMMAND avg_q_vogl ${CMAKE_CURRENT_SOURCE_DIR}/TestSuite/${testname}.script)
+   set_tests_properties(${testname} PROPERTIES WORKING_DIRECTORY ${HDF5_TESTDIR})
+  endforeach()
+ endif()
 endif()
 
 # ---------------------------------------------------------------------------

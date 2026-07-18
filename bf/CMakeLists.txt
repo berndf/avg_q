@@ -105,6 +105,13 @@ if (HDF4_FOUND)
  STRING(APPEND METHOD_LIST_DEFINES " -DAVG_Q_WITH_HDF")
 endif (HDF4_FOUND)
 
+if (HDF5_FOUND)
+ if (NOT HDF4_FOUND)
+  LIST(APPEND subdirs HDF)
+ endif (NOT HDF4_FOUND)
+ STRING(APPEND METHOD_LIST_DEFINES " -DAVG_Q_WITH_HDF5")
+endif (HDF5_FOUND)
+
 if (WITH_POSPLOT)
  LIST(APPEND ALL_SOURCES posplot.c)
  # This is passed globally because it is also used in TriAn display modules

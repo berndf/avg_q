@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2010,2012-2014,2024 Bernd Feige
+ * Copyright (C) 2008-2010,2012-2014,2024,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -211,7 +211,7 @@ read_hdf_locate_dimensions(transform_info_ptr tinfo) {
  for (dim=0; dim<=1; dim++) {
   dimid=SDgetdimid(local_arg->sdsid, dim);
   SDdiminfo(dimid, dimname, &dimsize, &dimnt, &dimnattr);
-  if (strcmp(dimname, channelsname)==0) {
+  if (strncmp(dimname, channelsname, strlen(channelsname))==0) {
    //printf("Channels dimid %ld, dim %d:Dimname=%s, nattr=%ld\n", dimid, dim, dimname, dimnattr);
    tinfo->multiplexed=(dim==1); /* Multiplexed means pointsdim=0, channelsdim=1 */
    if (dimnattr==local_arg->dims[dim]) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2010,2012,2014 Bernd Feige
+ * Copyright (C) 2008-2010,2012,2014,2026 Bernd Feige
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*{{{}}}*/
@@ -24,16 +24,18 @@
 /*}}}  */
 
 /*{{{  Arguments*/
+/* NBIT is not offered: it packs N significant bits of each element and is
+ * meant for integer data (e.g. 12-bit ADC values in 16-bit ints). For the
+ * float/double data written here it either corrupts the values (bit_len<64)
+ * or is a pointless no-op (bit_len=64), so it has no valid use case. */
 LOCAL const char *const compression_choice[]={
  "-rle",
- "-nbit",
  "-skphuff",
  "-deflate",
  NULL
 };
 LOCAL comp_coder_t compression_types[]={
  COMP_CODE_RLE,
- COMP_CODE_NBIT,
  COMP_CODE_SKPHUFF,
  COMP_CODE_DEFLATE,
 };
@@ -47,7 +49,7 @@ enum ARGS_ENUM {
 LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_NOTHING, "Append data if file exists", "a", FALSE, NULL},
  {T_ARGS_TAKES_NOTHING, "Continuous output (unlimited first dimension)", "c", FALSE, NULL},
- {T_ARGS_TAKES_SELECTION, "Choose output compression", " ", 3, compression_choice},
+ {T_ARGS_TAKES_SELECTION, "Choose output compression", " ", 2, compression_choice},
  {T_ARGS_TAKES_FILENAME, "Output file", "", ARGDESC_UNUSED, (const char *const *)"*.hdf"}
 };
 /*}}}  */
@@ -77,11 +79,21 @@ struct write_hdf_storage {
 /*}}}  */
 
 /*{{{  write_hdf_init(transform_info_ptr tinfo) {*/
+LOCAL void write_hdf_load_existing_triggers(transform_info_ptr tinfo, int32 sdsid);
+
 METHODDEF void
 write_hdf_init(transform_info_ptr tinfo) {
  struct write_hdf_storage *local_arg=(struct write_hdf_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  Bool append=args[ARGS_APPEND].is_set;
+
+ /* HDF4 compression requires chunked storage, but SDsetchunk explicitly
+  * cannot handle an UNLIMITED dimension (see mfhdf.h). Continuous (-c) mode
+  * uses SD_UNLIMITED for the first dimension, so the two are incompatible.
+  * write_hdf5 does not have this restriction. */
+ if (args[ARGS_CONTINUOUS].is_set && args[ARGS_COMPRESS].is_set) {
+  ERREXIT(tinfo->emethods, "write_hdf: HDF4 does not support compression together with continuous (-c) output; use write_hdf5 for compressed continuous data\n");
+ }
 
  local_arg->pointno=0;
  if (append) {
@@ -120,6 +132,12 @@ write_hdf_init(transform_info_ptr tinfo) {
   } while (again);
   /* Initialize the buffer to record triggers in */
   growing_buf_init(&local_arg->triggers);
+  /* If appending to an existing dataset, pre-load its triggers so the
+   * combined list (previous runs + this run) gets rewritten by
+   * write_triggers() at exit. */
+  if (local_arg->sdsid!=FAIL) {
+   write_hdf_load_existing_triggers(tinfo, local_arg->sdsid);
+  }
   /*}}}  */
  } else {
   /* This means that a new dataset will be created */
@@ -127,6 +145,39 @@ write_hdf_init(transform_info_ptr tinfo) {
  }
 
  tinfo->methods->init_done=TRUE;
+}
+/*}}}  */
+
+/*{{{  write_hdf_load_existing_triggers(transform_info_ptr tinfo, int32 sdsid) {*/
+/* Continuous-append mode: read the "Triggers" attribute already stored on the
+ * existing dataset into local_arg->triggers so that, after record_triggers()
+ * appends the new run's triggers, write_triggers() can rewrite the attribute
+ * (via SDsetattr, which overwrites) with the full combined list. The stored
+ * layout is [pos0, code0, pos1, code1, ...] of the actual triggers (the
+ * file-start marker is not stored, see write_triggers()). We re-create that
+ * marker here as the first entry. */
+LOCAL void
+write_hdf_load_existing_triggers(transform_info_ptr tinfo, int32 sdsid) {
+ struct write_hdf_storage *local_arg=(struct write_hdf_storage *)tinfo->methods->local_storage;
+ char attrname[MAX_NC_NAME];
+ int32 attrnum, attrnt, attrcount;
+ if ((attrnum=SDfindattr(sdsid, "Triggers"))==FAIL) return;
+ SDattrinfo(sdsid, attrnum, attrname, &attrnt, &attrcount);
+ if (attrnt==DFNT_INT32 && attrcount%2==0) {
+  int32 n_entries=attrcount/2;
+  int32 *trigentries;
+  if (n_entries>=0 && (trigentries=(int32 *)malloc(attrcount*sizeof(int32)))!=NULL) {
+   int32 i;
+   SDreadattr(sdsid, attrnum, trigentries);
+   /* Re-create the file-start marker that record_triggers() expects as the
+    * first entry (position 0, code -1). */
+   push_trigger(&local_arg->triggers, 0L, -1, NULL);
+   for (i=0; i<n_entries; i++) {
+    push_trigger(&local_arg->triggers, (long)trigentries[2*i], (int)trigentries[2*i+1], NULL);
+   }
+   free(trigentries);
+  }
+ }
 }
 /*}}}  */
 
@@ -179,13 +230,65 @@ write_triggers(transform_info_ptr tinfo, growing_buf *triggersp, int32 sdsid) {
 }
 /*}}}  */
 
+/*{{{  write_hdf_dimname_in_use(int32 fileid, const char *name) {*/
+/* Check whether a dimension name is already in use by any dataset in the
+ * file. SDsetdimname silently fails (returns -1) when a dimension of the
+ * same name but a different size already exists, and even on success it
+ * *shares* the dimension between datasets -- which corrupts per-dataset
+ * channel attributes when channel names differ. We therefore assign each
+ * dataset a truly unique "Channels" dimension name. */
+LOCAL Bool
+write_hdf_dimname_in_use(int32 fileid, const char *name) {
+ int32 ndatasets, ngattr;
+ int i;
+ SDfileinfo(fileid, &ndatasets, &ngattr);
+ for (i=0; i<ndatasets; i++) {
+  int32 sdsid=SDselect(fileid, i);
+  int32 rank, dims[MAXRANK_FOR_MYDATA], nt, nattr;
+  char dsname[MAX_NC_NAME];
+  int d;
+  if (sdsid==FAIL) continue;
+  SDgetinfo(sdsid, dsname, &rank, dims, &nt, &nattr);
+  for (d=0; d<rank; d++) {
+   int32 dimid=SDgetdimid(sdsid, d);
+   char dimname[MAX_NC_NAME];
+   int32 dimsize, dimnt, dimnattr;
+   SDdiminfo(dimid, dimname, &dimsize, &dimnt, &dimnattr);
+   if (strcmp(dimname, name)==0) { SDendaccess(sdsid); return TRUE; }
+  }
+  SDendaccess(sdsid);
+ }
+ return FALSE;
+}
+/*}}}  */
+
+/*{{{  write_hdf_set_unique_channels_dimname(int32 fileid, int32 sdsid, int channelsdim) {*/
+/* Set a unique "Channels" dimension name on the given dataset's channel
+ * dimension. Tries "Channels", then "Channels_1", "Channels_2", ... until
+ * SDsetdimname succeeds and the name is not already in use by another
+ * dataset. The reader matches on the "Channels" prefix, so the suffixed
+ * variants are still recognized. */
+LOCAL void
+write_hdf_set_unique_channels_dimname(int32 fileid, int32 sdsid, int channelsdim) {
+ int32 dimid=SDgetdimid(sdsid, channelsdim);
+ char tryname[32];
+ int suffix=0;
+ do {
+  if (suffix==0) strcpy(tryname, "Channels");
+  else snprintf(tryname, sizeof(tryname), "Channels_%d", suffix);
+  suffix++;
+  if (write_hdf_dimname_in_use(fileid, tryname)) continue;
+ } while (SDsetdimname(dimid, tryname)!=0 && suffix<999);
+}
+/*}}}  */
+
 /*{{{  write_hdf(transform_info_ptr tinfo) {*/
 METHODDEF DATATYPE *
 write_hdf(transform_info_ptr tinfo) {
  struct write_hdf_storage *local_arg=(struct write_hdf_storage *)tinfo->methods->local_storage;
  transform_argument *args=tinfo->methods->arguments;
  int channel;
- char const *pointsname=(tinfo->data_type==TIME_DATA ? "Time" : "Frequency"), *channelsname="Channels";
+ char const *pointsname=(tinfo->data_type==TIME_DATA ? "Time" : "Frequency");
  int32 pointsdim, channelsdim;
 
  int ret;
@@ -222,17 +325,28 @@ write_hdf(transform_info_ptr tinfo) {
    ERREXIT(tinfo->emethods, "write_hdf: SDcreate failed\n");
   }
   if (args[ARGS_COMPRESS].is_set) {
-   cinfo.skphuff.skp_size=sizeof(DATATYPE);
-   cinfo.deflate.level=9;
-   ret=SDsetcompress(sdsid, compression_types[args[ARGS_COMPRESS].arg.i], &cinfo);
+   comp_coder_t const comp_type=compression_types[args[ARGS_COMPRESS].arg.i];
+   memset(&cinfo, 0, sizeof(cinfo));
+   switch (comp_type) {
+    case COMP_CODE_SKPHUFF:
+     cinfo.skphuff.skp_size=sizeof(DATATYPE);
+     break;
+    case COMP_CODE_DEFLATE:
+     cinfo.deflate.level=9;
+     break;
+    default:
+     /* COMP_CODE_RLE needs no cinfo fields */
+     break;
+   }
+   ret=SDsetcompress(sdsid, comp_type, &cinfo);
    if (ret == FAIL) {
     ERREXIT(tinfo->emethods, "write_hdf: SDsetcompress failed\n");
    }
   }
   dimid=SDgetdimid(sdsid, pointsdim);
   SDsetdimname(dimid, pointsname);
+  write_hdf_set_unique_channels_dimname(local_arg->fileid, sdsid, channelsdim);
   dimid=SDgetdimid(sdsid, channelsdim);
-  SDsetdimname(dimid, channelsname);
   /* For now, we store channel names and probe positions as name=position
    * attributes of the channel dimension. There doesn't appear to be a string
    * array type (only a char array), otherwise that would be better... */

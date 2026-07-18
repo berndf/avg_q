@@ -1,0 +1,13 @@
+# HDF5 compression test: write with deflate, read back, verify data integrity.
+# Exits non-zero (via assert -E) if any property is wrong.
+dip_simulate 4 2 32 100 eg_source
+write_hdf5 -deflate test_hdf5_compress.hdf5
+null_sink
+-
+read_hdf5 test_hdf5_compress.hdf5
+assert -E nr_of_channels == 37
+assert -E nr_of_points == 132
+assert -E sfreq == 4
+assert -E channelname == A1
+assert -E channelname == A37
+null_sink

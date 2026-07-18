@@ -1,0 +1,25 @@
+# HDF5 varying channels test: write 37ch data, append 35ch data (A1,A2 removed),
+# read back the 35ch epoch and verify channel names are A3-A37 (not defaults).
+# Exits non-zero (via assert -E) if any property is wrong.
+dip_simulate 4 2 32 100 eg_source
+write_hdf5 test_hdf5_varying.hdf5
+null_sink
+-
+dip_simulate 4 2 32 100 eg_source
+remove_channel -n A1
+remove_channel -n A2
+write_hdf5 -a test_hdf5_varying.hdf5
+null_sink
+-
+read_hdf5 -f 1 -e 1 test_hdf5_varying.hdf5
+assert -E nr_of_channels == 37
+assert -E channelname == A1
+null_sink
+-
+read_hdf5 -f 3 -e 1 test_hdf5_varying.hdf5
+assert -E nr_of_channels == 35
+assert -E channelname == A3
+assert -E channelname == A37
+assert -E channelname != A1
+assert -E channelname != A2
+null_sink
