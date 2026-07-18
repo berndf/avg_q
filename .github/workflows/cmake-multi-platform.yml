@@ -51,7 +51,7 @@ jobs:
     - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get install libgtk-4-dev libhdf4-dev libhdf5-dev libsox-dev liblapack-dev libblas-dev libf2c2-dev
+        sudo apt-get install libgtk-4-dev libhdf4-dev libhdf5-openmpi-dev libsox-dev liblapack-dev libblas-dev libf2c2-dev
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
