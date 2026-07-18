@@ -30,6 +30,10 @@
 #include "transform.h"
 #include "bf.h"
 
+/* Pin the HDF5 1.10 API so the code builds against both 1.10.x and 1.12+/
+ * 1.14: on 1.12+ this maps H5Literate etc. to their 1.10 (H5L_info_t)
+ * variants; on 1.10.x it is a no-op. Must precede the HDF5 headers. */
+#define H5_USE_110_API
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #include "H5DSpublic.h"
@@ -369,7 +373,7 @@ typedef struct {
 } append_visitor_ctx;
 
 static herr_t
-write_hdf5_append_visitor(hid_t group, const char *name, const H5L_info2_t *info, void *op_data) {
+write_hdf5_append_visitor(hid_t group, const char *name, const H5L_info_t *info, void *op_data) {
  append_visitor_ctx *ctx=(append_visitor_ctx *)op_data;
  hid_t objid;
  hid_t space, type;
