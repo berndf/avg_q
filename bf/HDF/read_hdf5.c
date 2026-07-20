@@ -149,8 +149,13 @@ read_hdf5_build_trigbuffer(transform_info_ptr tinfo) {
  } else {
   /* Triggers are stored as an int32 attribute "Triggers" on the dataset,
    * laid out as [pos0, code0, pos1, code1, ...] exactly as in read_hdf.c.
-   * The first entry holds the file start point (code -1). */
-  hid_t attrid=H5Aopen(local_arg->sdsid, "Triggers", H5P_DEFAULT);
+   * The first entry holds the file start point (code -1).
+   * It is not an error if the attribute is absent (epoch written without
+   * triggers); check with H5Aexists first to avoid HDF5-DIAG noise that
+   * H5Aopen would emit for a missing attribute. */
+  hid_t attrid=H5I_INVALID_HID;
+  if (H5Aexists(local_arg->sdsid, "Triggers")>0)
+   attrid=H5Aopen(local_arg->sdsid, "Triggers", H5P_DEFAULT);
   if (attrid>=0) {
    hid_t spacetype=H5Aget_type(attrid);
    hid_t space=H5Aget_space(attrid);
