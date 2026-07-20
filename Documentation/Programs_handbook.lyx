@@ -2702,6 +2702,22 @@ readasc
 
  Get-epoch method to read epochs from asc files.
  
+\series bold
+readasc
+\series default
+ will transparently read both the 
+\begin_inset Quotes eld
+\end_inset
+
+ascii
+\begin_inset Quotes erd
+\end_inset
+
+ text version and the binary version written by 
+\series bold
+writeasc
+\series default
+.
 \begin_inset Separator latexpar
 \end_inset
 
@@ -3627,7 +3643,16 @@ hdf
 
 \end_inset
 
- Get-epoch method to read epochs from HDF (Hierarchical Data Format)
+ Get-epoch method to read epochs from HDF (
+\begin_inset CommandInset href
+LatexCommand href
+name "Hierarchical Data Format 4"
+target "https://www.hdfgroup.org/solutions/hdf4/"
+literal "false"
+
+\end_inset
+
+)
 \begin_inset Index idx
 range none
 pageformat default
@@ -3640,16 +3665,8 @@ HDF (Hierarchical Data Format)
 \end_inset
 
  files.
- This is a data format and data access library from the National Center for Supercomputing Applications (NCSA <softdev@\SpecialChar softhyphen
-ncsa.\SpecialChar softhyphen
-uiuc.\SpecialChar softhyphen
-edu>) that is,
- together with netCDF,
- a standard for the cross-platform data representation of scientific data.
- The HDF 4.0 specification is used that is converged with Unidata netCDF,
- i.e.
- netCDF files can be read transparently.
- The data is stored as floats,
+ The HDF 4.0 specification converged with Unidata netCDF-3.
+ The data is stored in binary floating-point representation,
  and 
 \series bold
 write_hdf
@@ -3695,9 +3712,17 @@ write_hdf
  as with the other get-epoch methods,
  be read around triggers either stored within the HDF file or supplied via an external trigger file.
  To read continuous data in chunks of a given size,
- the -c option must be supplied.
+ the 
+\series bold
+-c
+\series default
+ option must be supplied.
  Caution:
- If beforetrig and aftertrig are omitted,
+ If beforetrig and aftertrig are omitted with 
+\series bold
+-c
+\series default
+,
  the whole file will be read as a single epoch.
 \begin_inset Separator latexpar
 \end_inset
@@ -3824,7 +3849,16 @@ hdf5
 
 \end_inset
 
- Get-epoch method to read epochs from HDF5(R) (Hierarchical Data Format 5)
+ Get-epoch method to read epochs from HDF5(R) (
+\begin_inset CommandInset href
+LatexCommand href
+name "Hierarchical Data Format 5"
+target "https://www.hdfgroup.org/solutions/hdf5/"
+literal "false"
+
+\end_inset
+
+)
 \begin_inset Index idx
 range none
 pageformat default
@@ -3837,8 +3871,8 @@ HDF (Hierarchical Data Format 5)
 \end_inset
 
  files.
- The HDF5(R) data model (HDFGroup) is used.
- The data is stored as floats,
+ HDF5 is the basis of netCDF-4.
+ The data is stored in binary floating-point representation,
  and 
 \series bold
 write_hdf5
@@ -3884,9 +3918,17 @@ write_hdf5
  as with the other get-epoch methods,
  be read around triggers either stored within the HDF5 file or supplied via an external trigger file.
  To read continuous data in chunks of a given size,
- the -c option must be supplied.
+ the 
+\series bold
+-c
+\series default
+ option must be supplied.
  Caution:
- If beforetrig and aftertrig are omitted,
+ If beforetrig and aftertrig are omitted with 
+\series bold
+-c
+\series default
+,
  the whole file will be read as a single epoch.
 \begin_inset Separator latexpar
 \end_inset
@@ -12649,6 +12691,12 @@ writeasc
 \end_inset
 
  Put-epoch method to write epochs to an ASCII (asc) file.
+ This conserves closely the internal representation of an epoch in 
+\series bold
+avg_q
+\series default
+ including attributes and triggers.
+ The binary version writes data in binary floating-point representation according to the internally used precision (single or double).
 \begin_inset Separator latexpar
 \end_inset
 
@@ -13153,6 +13201,7 @@ hdf
 \end_inset
 
  Put-epoch method to write epochs to an HDF file.
+ Data is written in binary floating-point representation according to the internally used precision (single or double).
  The compression options are provided by HDF 4.0;
  Note that HDF 4 does not support compression with an unlimited dimension and therefore compression cannot be used with 
 \series bold
@@ -13267,6 +13316,7 @@ hdf5
 \end_inset
 
  Put-epoch method to write epochs to an HDF5(R) file.
+ Data is written in binary floating-point representation according to the internally used precision (single or double).
  The compression option is provided by HDF5.
  See 
 \series bold

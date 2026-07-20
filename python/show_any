@@ -25,6 +25,7 @@ completely to build the trigger list, so that display is speedier when suppressi
 ''')
 argparser.add_argument('-a', '--appendopt', default='l', choices=['l','p','c','i'], dest='appendopt', help='(l)ink epochs in memory (default) or append (p)oints, (c)hannels or (i)tems')
 argparser.add_argument('-A', '--avg_q', dest='avg_q', action='store_true', help='Use avg_q instead of avg_q_ui')
+argparser.add_argument('-p', '--prefer_epoched', dest='epoched', action='store_true', help='Prefer epoched over continuous for formats supporting both')
 argparser.add_argument('-t', '--tracelevel', type=int, default=0, dest='tracelevel', help='Set avg_q trace level (verbosity)')
 argparser.add_argument('-d', '--debug', dest='debug', action='store_true', help='Debug mode, ie dump avg_q scripts to stdout during processing')
 args = argparser.parse_args()
@@ -79,6 +80,8 @@ for filename_and_triggerfile in args.files:
     continue
    print("Opening file: %s type %s" % (filename,filetype))
    infile=avg_q.avg_q_file(filename,filetype)
+   if args.epoched and infile.fileformat in ['hdf', 'hdf5']:
+    infile.epoched=True
  if trgfile:
   if infile.fileformat=='asc':
    addmethods=['set triggers_from_trigfile '+trgfile]
@@ -98,7 +101,7 @@ for filename_and_triggerfile in args.files:
    # Show fMRI gradient correction residual files
    epochsource=avg_q.Epochsource(infile, 0, '1s', continuous=True, fromepoch=args.fromepoch, epochs=args.epochs)
   else:
-   epochsource=avg_q.Epochsource(infile, 0, args.epochlen, continuous=True, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
+   epochsource=avg_q.Epochsource(infile, 0, args.epochlen, continuous=not infile.epoched, fromepoch=args.fromepoch, epochs=args.epochs, trigtransfer=not args.notrig)
  if addmethods is not None:
   epochsource.add_branchtransform(addmethods)
  script.add_Epochsource(epochsource)
