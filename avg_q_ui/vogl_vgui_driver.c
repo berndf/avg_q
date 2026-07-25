@@ -302,12 +302,17 @@ canvas_configure_event(GtkWidget *widget, void *event) {
 static Bool
 canvas_resize_event(GtkWidget *widget, void *event) {
  cairo_text_extents_t te;
- //printf("canvas_resize_event\n");
+ int const to_width=gtk_widget_get_width(VGUI.canvas);
+ int const to_height=gtk_widget_get_height(VGUI.canvas);
+ //printf("canvas_resize_event %d %d\n", to_width, to_height);
+ if (to_width<100 || to_height<100) {
+  return 0;
+ }
  vdevice.sizeX = 1;
  vdevice.sizeY = 1;
  vdevice.minVx = vdevice.minVy = 0;
- vdevice.maxVx = vdevice.sizeSx = gtk_widget_get_width(VGUI.canvas);
- vdevice.maxVy = vdevice.sizeSy = gtk_widget_get_height(VGUI.canvas);
+ vdevice.maxVx = vdevice.sizeSx = to_width;
+ vdevice.maxVy = vdevice.sizeSy = to_height;
  vdevice.depth = 3;
  if (VGUI.cr!=NULL) {
   cairo_destroy (VGUI.cr);
