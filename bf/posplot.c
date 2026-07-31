@@ -2674,8 +2674,9 @@ do { /* Repeat from here if dev==NEWBORDER || dev==NEWDATA */
           local_arg->lastsel_pos=i;
 	 }
         } else {
-	 local_arg->lastselected=(DATATYPE)atof(inputbuffer);
-         local_arg->lastsel_pos=find_pointnearx(tinfo_to_use, local_arg->lastselected);
+	 DATATYPE const inputvalue=(DATATYPE)atof(inputbuffer);
+         local_arg->lastsel_pos=find_pointnearx(tinfo_to_use, inputvalue);
+	 local_arg->lastselected=tinfo_to_use->xdata[local_arg->lastsel_pos];
         }
 	if (local_arg->lastsel_entry==NULL) local_arg->lastsel_entry=get_first_selected_channel(local_arg);
         lastsel_changed=TRUE;
