@@ -126,7 +126,7 @@ class GrandAverage(object):
     self.sfreq,self.epochlength_points,self.beforetrig_points=self.avg_q_instance.get_description(f,('sfreq','nr_of_points','beforetrig'))
    self.alltuples[avgfile]=self.avg_q_instance.get_filetriggers(f).gettuples()
    self.infiles.append(avgfile)
- def get_one_average(self,avgfile,conditions,eventindex=None):
+ def get_one_average(self,avgfile,conditions,eventindex=None,branchtransforms=''):
   '''Get one single average for these conditions and eventindex, properly aligned and ready for averaging.
      This allows to process the input files one by one if so desired.
      Otherwise use get_averages below to read all inputs for a given condition and eventindex.
@@ -142,6 +142,7 @@ class GrandAverage(object):
      if any(condstr in description for condstr in condstrs)]:
    #print position,code,description
    self.avg_q_instance.getepoch(f,fromepoch=position+1,epochs=1)
+   self.avg_q_instance.write(branchtransforms)
    n_averages+=1
    if eventindex is not None and eventindex!=self.event0index:
     shift=get_shift_from_description(description)

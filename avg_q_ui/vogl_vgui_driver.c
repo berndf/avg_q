@@ -3,7 +3,6 @@
  * This file is part of avg_q and released under the GPL v3 (see avg_q/COPYING).
  */
 /*
- * GTK driver for VOGL (c) 1998-2002,2004,2006-2014,2025 by Bernd Feige (Bernd.Feige@uniklinik-freiburg.de)
  * 
  * To compile:
  * 
@@ -293,20 +292,10 @@ draw_function(GtkDrawingArea *area, cairo_t *cr, int width, int height, gpointer
  cairo_paint (cr);
 }
 static Bool
-canvas_configure_event(GtkWidget *widget, void *event) {
- //printf("canvas_configure_event\n");
- // Note that in this event, the widget (VGUI.canvas) size is still 0!
- // Have to do all relevant work in canvas_resize_event...
- return TRUE;
-}
-static Bool
-canvas_resize_event(GtkWidget *widget, void *event) {
+canvas_setsize(int to_width, int to_height) {
  cairo_text_extents_t te;
- int const to_width=gtk_widget_get_width(VGUI.canvas);
- int const to_height=gtk_widget_get_height(VGUI.canvas);
- //printf("canvas_resize_event %d %d\n", to_width, to_height);
  if (to_width<100 || to_height<100) {
-  return 0;
+  return FALSE;
  }
  vdevice.sizeX = 1;
  vdevice.sizeY = 1;
@@ -327,10 +316,28 @@ canvas_resize_event(GtkWidget *widget, void *event) {
  vdevice.hheight = te.height;
  vdevice.hwidth = te.x_advance;
  VGUI.line_width=1;
+ VGUI.width=to_width;
+ VGUI.height=to_height;
  //printf("vdevice address=%ld, vdevice.sizeSx=%d, vdevice.sizeSy=%d\n", (long)&vdevice,  vdevice.sizeSx, vdevice.sizeSy);
  Keyboard_Buffer_push('');	// queue a redraw command
  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(VGUI.canvas), draw_function, NULL, NULL);
- return 1;
+ return TRUE;
+}
+static Bool
+canvas_configure_event(GtkWidget *widget, void *event) {
+ //printf("canvas_configure_event\n");
+ // Note that in this event, the widget (VGUI.canvas) size is still 0.
+ // It seems to be undefined whether there will be a resize event triggered at the start,
+ // so we have to set up a VDEVICE here or vogl will crash with "viewport: x dimension value is invalid"
+ canvas_setsize(VGUI.width,VGUI.height);
+ return TRUE;
+}
+static Bool
+canvas_resize_event(GtkWidget *widget, void *event) {
+ int const to_width=gtk_widget_get_width(VGUI.canvas);
+ int const to_height=gtk_widget_get_height(VGUI.canvas);
+ //printf("canvas_resize_event %d %d\n", to_width, to_height);
+ return canvas_setsize(to_width,to_height);
 }
 LOCAL void
 window_destroy_event(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
@@ -370,7 +377,7 @@ static void
 posplot_about(GSimpleAction *menuitem, GVariant *gv, gpointer data) {
  Notice(
   "posplot/VOGL GUI driver\n"
-  "(c) 1998-2007,2011-2014,2025 by Bernd Feige, Bernd.Feige@gmx.net\n"
+  "(c) 1996-1999,2001,2005,2009-2013,2016,2019,2026 by Bernd Feige, Bernd.Feige@gmx.net\n"
   "Using the free GTK library: See http://www.gtk.org/"
  );
 }
@@ -425,12 +432,13 @@ VGUI_init(void) {
 
  VGUI.window = gtk_window_new();
  gtk_window_set_title (GTK_WINDOW (VGUI.window), "posplot");
+ //printf("VGUI.width,height=%d %d\n", VGUI.width, VGUI.height);
  if (VGUI.width==0) {
   /* This means that we're executed for the first time */
-  gtk_window_set_default_size(GTK_WINDOW(VGUI.window), FRAME_SIZE_X, FRAME_SIZE_Y);
- } else {
-  gtk_window_set_default_size(GTK_WINDOW(VGUI.window), VGUI.width, VGUI.height);
+  VGUI.width=FRAME_SIZE_X;
+  VGUI.height=FRAME_SIZE_Y;
  }
+ gtk_window_set_default_size(GTK_WINDOW(VGUI.window), VGUI.width, VGUI.height);
  g_signal_connect(G_OBJECT (VGUI.window), "destroy", G_CALLBACK(window_destroy_event), NULL);
 
  box1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -701,7 +709,7 @@ VGUI_init(void) {
  g_action_map_add_action(G_ACTION_MAP(action_group), G_ACTION(g_action));
  gtk_widget_insert_action_group(GTK_WIDGET(VGUI.window), "app", G_ACTION_GROUP(action_group));
 
- VGUI.cr = NULL; /* Allocated by canvas_configure_event */
+ VGUI.cr = NULL; /* Allocated by canvas_setsize() */
  VGUI.surface = NULL;
  VGUI.canvas = gtk_drawing_area_new ();
  gtk_widget_set_name (VGUI.canvas, "posplot");
