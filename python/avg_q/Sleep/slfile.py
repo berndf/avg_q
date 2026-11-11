@@ -293,7 +293,7 @@ class slfile(object):
   if self.Date is not None:
    day,month,year=(int(x) for x in self.Date.split('.'))
    hour,minute,second=(int(x) for x in self.Time.split(':'))
-   self.start_datetime=datetime.datetime(year,month,day,hour,minute,second)
+   self.start_datetime=datetime.datetime(year,month,day,hour,minute,second).astimezone()
   else:
    import klinik
    import sqlalchemy as sa

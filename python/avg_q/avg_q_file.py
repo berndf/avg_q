@@ -10,7 +10,7 @@ formats_and_extensions=[
  ('BrainVision', ['.vhdr','.ahdr','.vmrk','.amrk','.eeg']),
  ('asc', ['.asc']),
  ('hdf', ['.hdf']),
- ('hdf5', ['.hdf5']),
+ ('hdf5', ['.hdf5','.h5']),
  ('edf', ['.edf','.rec','.bdf']),
  ('freiburg', ['.co']),
  ('neurofile', ['.eeg']),

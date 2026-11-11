@@ -1,7 +1,7 @@
 import numpy
 import mne
 
-def to_Evokeds(epochs, montage='standard_1020'):
+def to_Evokeds(epochs, montage='colin27_1020'):
  '''epochs is a list of epochs as avg_q.numpy_Script epochs
  '''
  evokeds=[]

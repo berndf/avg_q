@@ -3748,12 +3748,12 @@ Options:
 \begin_layout Description
 -c:
  Continuous:
- Read a continuous file in adjacent chunks of the given size disregarding triggers 
+ Read a continuous file in adjacent chunks of the given size disregarding triggers
 \end_layout
 
 \begin_layout Description
 -T:
- Transfer a list of triggers within the read epoch 
+ Transfer a list of triggers within the read epoch
 \end_layout
 
 \begin_layout Description
@@ -3819,7 +3819,17 @@ epochs:
 \end_inset
 
 offset:
- The zero point `beforetrig' is shifted by offset 
+ The zero point `beforetrig' is shifted by offset
+\end_layout
+
+\begin_layout Description
+-d
+\begin_inset space ~
+\end_inset
+
+dataset:
+ In HDF files with multiple data sets,
+ read this one (name fragment or 1-based index)
 \end_layout
 
 \end_deeper
@@ -3929,7 +3939,32 @@ write_hdf5
 -c
 \series default
 ,
- the whole file will be read as a single epoch.
+ the whole data set will be read as a single epoch.
+\begin_inset Newline newline
+\end_inset
+
+
+\series bold
+read_hdf5
+\series default
+ will go to some lengths to read time series written by other applications,
+ in both 
+\begin_inset Quotes eld
+\end_inset
+
+wide
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+long
+\begin_inset Quotes erd
+\end_inset
+
+ formats.
 \begin_inset Separator latexpar
 \end_inset
 
@@ -4025,7 +4060,17 @@ epochs:
 \end_inset
 
 offset:
- The zero point `beforetrig' is shifted by offset 
+ The zero point `beforetrig' is shifted by offset
+\end_layout
+
+\begin_layout Description
+-d
+\begin_inset space ~
+\end_inset
+
+dataset:
+ In HDF files with multiple data sets,
+ read this one (name fragment or 1-based index)
 \end_layout
 
 \end_deeper

@@ -43,6 +43,7 @@ enum ARGS_ENUM {
  ARGS_EPOCHS,
  ARGS_OFFSET,
  ARGS_TRIGFILE,
+ ARGS_DATASET,
  ARGS_IFILE,
  ARGS_BEFORETRIG,
  ARGS_AFTERTRIG,
@@ -56,6 +57,7 @@ LOCAL transform_argument_descriptor argument_descriptors[NR_OF_ARGUMENTS]={
  {T_ARGS_TAKES_LONG, "epochs: Specify maximum number of epochs to get", "e", 1, NULL},
  {T_ARGS_TAKES_STRING_WORD, "offset: The zero point 'beforetrig' is shifted by offset", "o", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_FILENAME, "trigger_file: Read trigger points and codes from this file", "R", ARGDESC_UNUSED, (const char *const *)"*.trg"},
+ {T_ARGS_TAKES_STRING_WORD, "dataset: Only read this dataset (name fragment or 1-based index)", "d", ARGDESC_UNUSED, NULL},
  {T_ARGS_TAKES_FILENAME, "Input file", "", ARGDESC_UNUSED, (const char *const *)"*.hdf"},
  {T_ARGS_TAKES_STRING_WORD, "beforetrig", " ", ARGDESC_UNUSED, (const char *const *)"1s"},
  {T_ARGS_TAKES_STRING_WORD, "aftertrig", " ", ARGDESC_UNUSED, (const char *const *)"1s"}
@@ -163,6 +165,11 @@ read_hdf_build_trigbuffer(transform_info_ptr tinfo) {
    }
    free(trigentries);
   }
+  if (local_arg->triggers.current_length==0) {
+   /* Dataset without trigger information (common for foreign files): read
+    * it as a single epoch starting at point 0. This is not an error. */
+   push_trigger(&local_arg->triggers, 0, -1, NULL);
+  }
  } else {
   TRACEMS(tinfo->emethods, 0, "read_hdf_build_trigbuffer: No trigger source known.\n");
  }
@@ -208,7 +215,7 @@ read_hdf_locate_dimensions(transform_info_ptr tinfo) {
  local_arg->channelsdim=FAIL;
  local_arg->pointsdim=FAIL;
  //printf("Getting dimensions for sdsid=%ld\n", local_arg->sdsid);
- for (dim=0; dim<=1; dim++) {
+ for (dim=0; dim<local_arg->rank && dim<=1; dim++) {
   dimid=SDgetdimid(local_arg->sdsid, dim);
   SDdiminfo(dimid, dimname, &dimsize, &dimnt, &dimnattr);
   if (strncmp(dimname, channelsname, strlen(channelsname))==0) {
@@ -340,11 +347,35 @@ read_hdf(transform_info_ptr tinfo) {
    if (local_arg->sdsid == FAIL || ret==FAIL) {
     ERREXIT2(tinfo->emethods, "read_hdf: Error accessing data set %d of %d\n", MSGPARM(local_arg->current_dataset), MSGPARM(local_arg->ndatasets));
    }
+   if (local_arg->rank==1) {
+    /* Rank-1 datasets have no channels dimension; without this, dims[1]
+     * holds garbage and corrupts the heap in SDreaddata. */
+    local_arg->dims[1]=1;
+   }
    local_arg->current_dataset++;
    if (SDiscoordvar(local_arg->sdsid) || (local_arg->df_datatype!=DFNT_FLOAT32 && local_arg->df_datatype!=DFNT_FLOAT64) || local_arg->rank>MAXRANK_FOR_MYDATA) {
+    SDendaccess(local_arg->sdsid);
     local_arg->sdsid=FAIL;
     continue;
    }
+   /*{{{  Apply the -d dataset selection*/
+   if (args[ARGS_DATASET].is_set) {
+    const char *sel=args[ARGS_DATASET].arg.s;
+    Bool matched;
+    if (sel[0]!='\0' && sel[strspn(sel, "0123456789")]=='\0') {
+     /* Purely numeric: 1-based dataset index. current_dataset was already
+      * incremented above, so the selected index is current_dataset-1. */
+     matched=((long)local_arg->current_dataset==strtol(sel, NULL, 10));
+    } else {
+     matched=(strstr(local_arg->descbuf, sel)!=NULL);
+    }
+    if (!matched) {
+     SDendaccess(local_arg->sdsid);
+     local_arg->sdsid=FAIL;
+     continue;
+    }
+   }
+   /*}}}  */
    dimid=SDgetdimid(local_arg->sdsid, 0);
    SDdiminfo(dimid, dimname, &dimsize0, &dimnt, &dimnattr);
    if (dimsize0>0) {
@@ -370,17 +401,20 @@ read_hdf(transform_info_ptr tinfo) {
 	trigno++;
        }
        if (not_correct_trigger) {
-	local_arg->sdsid=FAIL;
-	continue;
+        SDendaccess(local_arg->sdsid);
+        local_arg->sdsid=FAIL;
+        continue;
        }
       } else {
+       SDendaccess(local_arg->sdsid);
        local_arg->sdsid=FAIL;
        continue;
       }
      }
-    }
-    if (--local_arg->fromepoch>0) {
-     local_arg->sdsid=FAIL;
+     if (--local_arg->fromepoch>0) {
+      SDendaccess(local_arg->sdsid);
+      local_arg->sdsid=FAIL;
+     }
     }
    }
   }
